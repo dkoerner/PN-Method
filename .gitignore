@@ -1,0 +1,25 @@
+*.user
+/build*
+/docs*
+/data*
+/houdini*
+/python/*.png
+*.pyc
+*.pdf
+
+
+*.log
+*.gz
+*.pdf
+*.aux
+*.bbl
+*.blg
+*.brf
+*.lbl
+*.fls
+*.fdb_latexmk
+*.out
+*.toc
+
+# we want to include pdf images for latex
+!/*/images/*.pdf

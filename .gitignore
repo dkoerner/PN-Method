@@ -6,6 +6,8 @@
 /python/*.png
 *.pyc
 *.pdf
+/cpp/*_build
+/cpp/*-build
 
 
 *.log

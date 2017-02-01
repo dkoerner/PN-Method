@@ -1,5 +1,12 @@
 import numpy as np
 
+def pointsource_2d_fluence( pWS, center = np.array([0.0, 0.0]), power = 1.0 ):
+	''' returns fluence at position pWS for a unit power point light located at origin'''
+	r = np.linalg.norm(pWS-center)
+	if r == 0.0:
+		return power/(2.0*np.pi*max(r, 1.0e-4))
+	return power/(2.0*np.pi*r)
+
 class Domain:
 	def __init__(self, size, res):
 		self.res = res
@@ -26,6 +33,9 @@ class Domain:
 
 	def worldToVoxel(self, pWS):
 		return self.localToVoxel(self.worldToLocal(pWS))
+
+	def voxelToIndex(self, pVS):
+		return (int(pVS[1]), int(pVS[0]))
 
 	def rasterize( self, fun ):
 		field = np.zeros((self.res, self.res))

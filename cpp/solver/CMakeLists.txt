@@ -12,4 +12,4 @@ endif ()
 include_directories( ${CMAKE_INSTALL_PREFIX}/include/eigen3 )
 
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/include )
-pybind11_add_module(solver src/main.cpp src/util/string.cpp)
+pybind11_add_module(solver src/main.cpp src/util/string.cpp src/util/dda2d.cpp)

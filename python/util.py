@@ -7,7 +7,7 @@ def pointsource_2d_fluence( pWS, center = np.array([0.0, 0.0]), power = 1.0 ):
 		return power/(2.0*np.pi*max(r, 1.0e-4))
 	return power/(2.0*np.pi*r)
 
-class Domain:
+class Domain2D:
 	def __init__(self, size, res):
 		self.res = res
 		self.size = size
@@ -79,3 +79,59 @@ class Domain:
 		return grad_field
 
 
+class Domain1D:
+	def __init__(self, size, res):
+		self.res = res
+		self.size = size
+		self.h = size/float(res)
+		self.bound_min = -size*0.5
+		self.bound_max = size*0.5
+
+	def voxelToLocal( self, pVS ):
+		return pVS/self.res
+
+	def localToVoxel(self, pLS):
+		return pLS*self.res
+
+	def localToWorld( self, pLS ):
+		return pLS*self.size + self.bound_min
+
+	def worldToLocal( self, pWS ):
+		return (pWS-self.bound_min)/self.size
+
+	def voxelToWorld(self, pVS):
+		return self.localToWorld(self.voxelToLocal(pVS))
+
+	def worldToVoxel(self, pWS):
+		return self.localToVoxel(self.worldToLocal(pWS))
+
+	def voxelToIndex(self, pVS):
+		return int(pVS)
+
+	def rasterize( self, fun ):
+		field = np.zeros((self.res))
+		for i in range(0, self.res):
+				pVS = i+0.5
+				pWS = self.voxelToWorld(pVS)
+				field[i] = fun(pWS)
+		return field
+
+	def rasterizeVS( self, fun ):
+		field = np.zeros((self.res))
+		for i in range(0, self.res):
+				field[i] = fun(i)
+		return field
+
+	def gradient( self, field ):
+		grad_field = np.zeros((self.res))
+		for i in range(0, self.res):
+				if i==0:
+					# forward differences for x
+					grad_field[i] = (field[i+1]-field[i])/self.h
+				elif i==self.res-1:
+					#backward differences for x
+					grad_field[i] = (field[i]-field[i-1])/self.h
+				else:
+					# central differences for x
+					grad_field[i] = (field[i+1]-field[i-1])/(self.h*2.0)
+		return grad_field

@@ -11,9 +11,9 @@
 namespace py = pybind11;
 
 
-int index_2d(int i, int j, int res_x)
+int index_2d(int i, int j, int res_x, int stride = 1)
 {
-	return i*res_x + j;
+	return i*res_x*stride + j*stride;
 }
 
 int index_M_2d(int i, int j, int res_x)
@@ -104,17 +104,179 @@ void iterate_2d(py::array_t<double> phi_array, // phi grid
 
 			phi[idx] = numerator / denominator;
 			D[idx] = dc;
-
-			if( i==76 && j==93 && debug == true )
-			{
-				std::cout << "debug!!!\n";
-				std::cout << "phi=" << phi[idx];
-				std::cout << "grad_phi=" << grad_phi.toString() << std::endl;
-			}
 		}
 }
 
+void iterate_2d_diffusion(py::array_t<double> phi_array, // phi grid
+	py::array_t<double> D_array, // diffusion coefficient grid
+	py::array_t<double> Q_array, // grid of emission values
+	py::array_t<double> phi_boundary_array, // boundary values for phi
+	py::array_t<double> D_boundary_array, // boundary values for D
+	double h, // voxelsize (in x and y)
+	bool debug = false
+)
+{
+	py::buffer_info phi_array_info = phi_array.request();
+	py::buffer_info D_array_info = D_array.request();
+	py::buffer_info Q_array_info = Q_array.request();
+	py::buffer_info phi_boundary_array_info = phi_boundary_array.request();
+	py::buffer_info D_boundary_array_info = D_boundary_array.request();
 
+	auto phi = static_cast<double *>(phi_array_info.ptr);
+	auto D = static_cast<double *>(D_array_info.ptr);
+	auto Q = static_cast<double *>(Q_array_info.ptr);
+	auto phi_boundary = static_cast<double *>(phi_boundary_array_info.ptr);
+	auto D_boundary = static_cast<double *>(D_boundary_array_info.ptr);
+
+	int res_y = phi_array_info.shape[0];
+	int res_x = phi_array_info.shape[1];
+
+	// update boundary conditions ---
+	// here we copy over just the ghost cell values from the boundary grids
+	for (int i = 0; i < res_y; ++i)
+	{
+		int idx_0 = index_2d(i, 0, res_x);
+		int idx_1 = index_2d(i, res_x - 1, res_x);
+		phi[idx_0] = phi_boundary[idx_0];
+		phi[idx_1] = phi_boundary[idx_1];
+		D[idx_0] = D_boundary[idx_0];
+		D[idx_1] = D_boundary[idx_1];
+	}
+	for (int i = 0; i < res_x; ++i)
+	{
+		int idx_0 = index_2d(0, i, res_x);
+		int idx_1 = index_2d(res_y - 1, i, res_x);
+		phi[idx_0] = phi_boundary[idx_0];
+		phi[idx_1] = phi_boundary[idx_1];
+		D[idx_0] = D_boundary[idx_0];
+		D[idx_1] = D_boundary[idx_1];
+	}
+
+	// now iterate over all inner cells and update phi and D
+	for (int i=1; i < res_y-1; ++i)
+		for (int j=1; j < res_x-1; ++j)
+		{
+			int idx = index_2d(i, j, res_x);
+			int idx_xp = index_2d(i, j+1, res_x);
+			int idx_xm = index_2d(i, j-1, res_x);
+			int idx_yp = index_2d(i-1, j, res_x);
+			int idx_ym = index_2d(i+1, j, res_x);
+
+			
+
+			// compute diffusion coefficients at cell faces-- -
+			double dc = D[idx];
+			double D_xph = (dc + D[idx_xp])*0.5;
+			double D_xmh = (dc + D[idx_xm])*0.5;
+			double D_yph = (dc + D[idx_yp])*0.5;
+			double D_ymh = (dc + D[idx_ym])*0.5;
+
+			double numerator = 0.0;
+			numerator += D_xph*phi[idx_xp];
+			numerator += D_xmh*phi[idx_xm];
+			numerator += D_yph*phi[idx_yp];
+			numerator += D_ymh*phi[idx_ym];
+			numerator /= h;
+			numerator += h*Q[idx];
+
+			double denominator = 0.0;
+			denominator += (D_xph + D_xmh + D_yph + D_ymh)/h;
+
+			phi[idx] = numerator / denominator;
+		}
+}
+
+void iterate_2d_p1(
+	py::array_t<double> phi_array, // phi grid
+	py::array_t<double> E_array, // E grid
+	py::array_t<double> D_array, // diffusion coefficient grid
+	py::array_t<double> Q_array, // grid of emission values
+	py::array_t<double> phi_boundary_array, // boundary values for phi
+	py::array_t<double> D_boundary_array, // boundary values for D
+	double h, // voxelsize (in x and y)
+	bool debug = false
+)
+{
+	py::buffer_info phi_array_info = phi_array.request();
+	py::buffer_info E_array_info = E_array.request();
+	py::buffer_info D_array_info = D_array.request();
+	py::buffer_info Q_array_info = Q_array.request();
+	py::buffer_info phi_boundary_array_info = phi_boundary_array.request();
+	py::buffer_info D_boundary_array_info = D_boundary_array.request();
+
+	auto phi = static_cast<double *>(phi_array_info.ptr);
+	auto E = static_cast<double *>(E_array_info.ptr);
+	auto D = static_cast<double *>(D_array_info.ptr);
+	auto Q = static_cast<double *>(Q_array_info.ptr);
+	auto phi_boundary = static_cast<double *>(phi_boundary_array_info.ptr);
+	auto D_boundary = static_cast<double *>(D_boundary_array_info.ptr);
+
+	int res_y = phi_array_info.shape[0];
+	int res_x = phi_array_info.shape[1];
+
+	double hInv = 1.0/h;
+
+	// update boundary conditions ---
+	// here we copy over just the ghost cell values from the boundary grids
+	for (int i = 0; i < res_y; ++i)
+	{
+		int idx_0 = index_2d(i, 0, res_x);
+		int idx_1 = index_2d(i, res_x - 1, res_x);
+		phi[idx_0] = phi_boundary[idx_0];
+		phi[idx_1] = phi_boundary[idx_1];
+		D[idx_0] = D_boundary[idx_0];
+		D[idx_1] = D_boundary[idx_1];
+	}
+	for (int i = 0; i < res_x; ++i)
+	{
+		int idx_0 = index_2d(0, i, res_x);
+		int idx_1 = index_2d(res_y - 1, i, res_x);
+		phi[idx_0] = phi_boundary[idx_0];
+		phi[idx_1] = phi_boundary[idx_1];
+		D[idx_0] = D_boundary[idx_0];
+		D[idx_1] = D_boundary[idx_1];
+	}
+
+	// now iterate over all inner cells and update phi and D
+	for (int i=1; i < res_y-1; ++i)
+		for (int j=1; j < res_x-1; ++j)
+		{
+			int idx = index_2d(i, j, res_x);
+			int idx_xp = index_2d(i, j+1, res_x);
+			int idx_xm = index_2d(i, j-1, res_x);
+			int idx_yp = index_2d(i-1, j, res_x);
+			int idx_ym = index_2d(i+1, j, res_x);
+
+			int idx_E = index_2d(i, j, res_x, 2);
+			int idx_E_xp = index_2d(i, j+1, res_x, 2);
+			int idx_E_xm = index_2d(i, j-1, res_x, 2);
+			int idx_E_yp = index_2d(i-1, j, res_x, 2);
+			int idx_E_ym = index_2d(i+1, j, res_x, 2);
+
+
+			// first we update Ex
+			double Ex = E[idx_E+0];
+			double Ey = E[idx_E+1];
+
+			//for( int k=0;k<10;++k )
+			{
+				Ey = h*Q[idx] + E[idx_E_xm+0] - E[idx_E+0] + E[idx_E_ym+1];
+				Ex = h*Q[idx] + E[idx_E_xm+0] - E[idx_E+1] + E[idx_E_ym+1];
+			}
+
+
+			// then we update phi
+			//double phi_ij = h*Ex + phi[idx_xm];
+
+			// finally we upadte Ey
+			//double Ey = hInv*( phi_ij - phi[idx_ym] );
+
+			// write new values
+			E[idx_E+0] = Ex;
+			E[idx_E+1] = Ey;
+			//phi[idx] = phi_ij;
+		}
+}
 
 void iterate_2d_anisotropic(py::array_t<double> phi_array, // phi grid
 	py::array_t<double> D_array, // diffusion coefficient grid
@@ -362,6 +524,8 @@ PYBIND11_PLUGIN(solver)
 
 	m.def("iterate_2d", &iterate_2d);
 	m.def("iterate_2d_anisotropic", &iterate_2d_anisotropic);
+	m.def("iterate_2d_diffusion", &iterate_2d_diffusion);
+	m.def("iterate_2d_p1", &iterate_2d_p1);
 	m.def("rasterize_line", &rasterize_line);
 	m.def("trace_2d", &trace_2d);
 	m.def("toSRGB", &toSRGB);

@@ -1,5 +1,5 @@
 #pragma once
-
+#include <sys/stat.h>
 #include <fstream>
 #include <memory>
 #include <math/vector.h>
@@ -11,6 +11,11 @@
 
 
 
+inline bool file_exists(const std::string& name)
+{
+	struct stat buffer;
+	return (stat (name.c_str(), &buffer) == 0);
+}
 
 
 // utility stuff ===================================

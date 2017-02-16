@@ -573,6 +573,31 @@ HeterogeneousMedium::Ptr HeterogeneousMedium::load(const std::string &path)
 		return grid_new;
 	}
 
+	template<typename T>
+	typename Field<T>::Ptr read(const std::string &path )
+	{
+		std::cout << "bgeo: loading " << path << std::endl;
+		houio::ScalarField::Ptr grid = houio::HouGeoIO::importVolume( path );
+
+		if(!grid)
+			throw std::runtime_error("bgeo: unable to load " + path);
+
+		// extract transform
+		Eigen::Matrix4d m;
+		m << grid->m_localToWorld.ma[0], grid->m_localToWorld.ma[1], grid->m_localToWorld.ma[2], grid->m_localToWorld.ma[3],
+			 grid->m_localToWorld.ma[4], grid->m_localToWorld.ma[5], grid->m_localToWorld.ma[6], grid->m_localToWorld.ma[7],
+			 grid->m_localToWorld.ma[8], grid->m_localToWorld.ma[9], grid->m_localToWorld.ma[10], grid->m_localToWorld.ma[11],
+			 grid->m_localToWorld.ma[12], grid->m_localToWorld.ma[13], grid->m_localToWorld.ma[14], grid->m_localToWorld.ma[15];
+		Transformd localToWorld = Transformd(Eigen::Affine3d(m.transpose()));
+
+		// extract voxeldata
+		V3i res(grid->getResolution().x, grid->getResolution().y, grid->getResolution().z);
+		float* data = grid->getRawPointer();
+		typename VoxelGridField<T, float>::Ptr grid_new = std::make_shared<VoxelGridField<T, float>>(res, data);
+
+		return xform<T>(grid_new, localToWorld);
+	}
+
 	// export
 	//void write(const std::string& filename, Field<double>::Ptr field, const Box3d &bound, const V3i& res);
 	//void write(const std::string& filename, const Transformd& localToWorld, const V3i& res, const Box3d &bound_ls=Box3d(P3d(0.0, 0.0, 0.0), P3d(1.0, 1.0, 1.0)) );

@@ -83,6 +83,7 @@ void putBitmap( Bitmap& dest, Bitmap& src, const V2d& dest_uv_min, const V2d& de
 void expose( Bitmap& map, float exposure );
 void flip( Bitmap& map );
 Bitmap::Ptr makeLeftRightImage(Bitmap &left, Bitmap &right );
+Bitmap::Ptr readImage(const std::string& filename);
 Color3f variance( Bitmap& map );
 Color3f mean( Bitmap& map );
 Color3f variance(Bitmap &map, Color3f mean);

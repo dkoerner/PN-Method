@@ -1,20 +1,16 @@
 #include <iostream>
-#include <sys/stat.h>
+
 
 #include <scene.h>
 #include <integrator.h>
 #include <util/threadpool.h>
 #include <util/field.h>
-#include <util/dda3d.h>
 
 #include <houio/Geometry.h>
 
+#include <pncache.h>
 
-inline bool file_exists(const std::string& name)
-{
-	struct stat buffer;
-	return (stat (name.c_str(), &buffer) == 0);
-}
+
 
 
 
@@ -96,38 +92,6 @@ void render_volume( RenderTaskInfo& ti )
 	++ti.samples;
 }
 
-void render_fluence( RenderTaskInfo& ti )
-{
-	V3i resolution = ti.g.fluence_grid->grid.getResolution();
-	int numVoxels = resolution.x()*resolution.y()*resolution.z();
-	for (int voxel = ti.taskid; voxel< numVoxels; voxel += ti.numTasks)
-	{
-		// work out voxel coordinate
-		int i,j, k;
-		ti.g.fluence_grid->grid.getCoordFromIndex(voxel, i, j, k);
-
-		// sample position within voxel
-		P3d pVS(i+ti.rng.next1D(), j+ti.rng.next1D(), k+ti.rng.next1D());
-		P3d pLS = ti.g.fluence_grid->grid.voxelToLocal(pVS);
-		P3d pWS = ti.g.localToWorld*pLS;
-
-		// sample direction
-		V3d d = sampleSphere<double>(ti.rng);
-		double d_pdf = sampleSpherePDF();
-
-		// integrate
-		RadianceQuery rq;
-		rq.ray = Ray3d(pWS, d);
-		//rq.debug = true;
-		double fluence_sample = ti.g.scene->integrator->Li( ti.g.scene, rq, ti.rng )[0]*INV_FOURPI;
-
-		// accumulate
-		double& fluence = ti.g.fluence_grid->grid.lvalue(i, j, k);
-		fluence += (fluence_sample/d_pdf - fluence)/float(ti.samples+1);
-	}
-
-	++ti.samples;
-}
 
 int main()
 {
@@ -138,7 +102,6 @@ int main()
 
 
 
-	int numSamples = 10000;
 
 	// output image ---
 	V2i res = V2i(512, 512);
@@ -152,17 +115,33 @@ int main()
 	Volume::Ptr volume = volumes::nebulae();
 	//Light::Ptr light = lights::point( volume->getBound().getCenter() + P3d(0.0, volume->getBound().getExtents().y()*0.6, 0.0) );
 	Light::Ptr light = lights::directional( V3d(0.0, -1.0, 0.0), volume->getBound() );
-	//Integrator::Ptr integrator = integrators::raymarcher(0.005);
-	Integrator::Ptr integrator = integrators::volume_path_tracer();
 
 	Scene scene;
 	scene.bound = volume->getBound();
 	scene.id = "nebulae";
 	scene.volume = volume.get();
 	scene.light = light.get();
-	scene.integrator = integrator.get();
+
 
 	//Camera::Ptr camera = createView( V3d(0.0, 0.0, 1.0), scene.bound, res );
+
+
+
+	/*
+	// generate pn cache -----------------------
+	{
+		Integrator::Ptr integrator = integrators::volume_path_tracer();
+		scene.integrator = integrator.get();
+		std::string filename = outpath + "/nebulae.moments";
+
+		PNCache cache;
+		int numMoments = 4;
+		int numSamples = 100;
+		int res = 128;
+		cache.generate( outpath + "/nebulae.moments", &scene, numMoments, numSamples, res );
+		return;
+	}
+	*/
 
 
 	Eigen::Affine3d cameraToWorld;
@@ -175,35 +154,23 @@ int main()
 
 	scene.camera = camera.get();
 
-	// compute fluence grid -----------------------
-	{
-		int numSamples = 500;
-		int res = 128;
-		V3i resolution(res, res, res);
-		Transformd localToWorld = scene.volume->getLocalToWorld();
-
-		// rasterize local space
-		// parallel version ---
-		RenderTaskInfo::g.scene = &scene;
-		RenderTaskInfo::g.fluence_grid = std::make_shared<field::VoxelGridField<double>>(resolution);
-		RenderTaskInfo::g.localToWorld = localToWorld;
-
-		Terminator terminator(numSamples);
-		std::cout << "rendering fluence..."<< std::endl;std::flush(std::cout);
-		runGenericTasks<RenderTaskInfo>( render_fluence, terminator, ThreadPool::getNumSystemCores() );
-
-		field::write(outpath + "/nebulae_fluence.bgeo", field::xform<double>(RenderTaskInfo::g.fluence_grid, RenderTaskInfo::g.localToWorld), V3i(res, res, res), RenderTaskInfo::g.localToWorld );
-	}
-
-	/*
+	///*
 	// RENDERING -----------------------------------
 	{
+		//Integrator::Ptr integrator = integrators::raymarcher(0.005);
+		PNCache::Ptr cache = std::make_shared<PNCache>(outpath + "/nebulae.moments");
+		//Bitmap::Ptr pixel_estimates = readImage(outpath + "/nebulae_pixel_estimate.exr");
+		Integrator::Ptr integrator = integrators::cache_raymarcher(0.005, cache);
+		//Integrator::Ptr integrator = integrators::adrrs_volume_path_tracer(pixel_estimates, fluence_field);
+		scene.integrator = integrator.get();
+
+		int numSamples = 1;
+
 		// prepare render info ---
 		RenderTaskInfo::g.scene = &scene;
 		RenderTaskInfo::g.image = &image_color;
 		RenderTaskInfo::g.image_transmittance = &image_transmittance;
 		RenderTaskInfo::g.crop_window = Box2i( V2i(0,0), res );
-		//RenderTaskInfo::g.sample_function = integrator.sample_function;
 		//RenderTaskInfo::g.debug_pixel = P2i(318, 209);
 		//RenderTaskInfo::g.debug_pixel = P2i(256, 256);
 		//RenderTaskInfo::g.debug_pixel = P2i(340, 340);
@@ -218,12 +185,11 @@ int main()
 		// save results ---
 		flip(image_color);
 		flip(image_transmittance);
-		image.saveEXR( outpath + "/" + scene.id + "_color.exr" );
-		image_color.saveEXR(color_exr);
+		image_color.saveEXR( outpath + "/" + scene.id + "_color.exr" );
 		std::string transmittance_exr = outpath + "/test_transmittance.exr";
 		image_transmittance.saveEXR(transmittance_exr);
 	}
-	*/
+	//*/
 
 
 

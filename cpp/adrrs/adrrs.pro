@@ -16,7 +16,8 @@ SOURCES += \
     src/util/dda3d.cpp \
     src/light.cpp \
     src/scene.cpp \
-    src/integrator.cpp
+    src/integrator.cpp \
+    src/pncache.cpp
 
 include(deployment.pri)
 qtcAddDeployment()
@@ -114,4 +115,6 @@ HEADERS += \
     include/util/dda3d.h \
     include/light.h \
     include/scene.h \
-    include/integrator.h
+    include/integrator.h \
+    include/pncache.h \
+    include/cache.h

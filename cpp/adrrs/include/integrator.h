@@ -10,15 +10,8 @@
 #include <math/common.h>
 #include <math/rng.h>
 
+#include <cache.h>
 
-/*
-
-  VolumeIntegrator
-
-  integrate( ray, min, max, pix, T )
-  sample_distance
-
-*/
 
 
 struct Scene;
@@ -46,13 +39,7 @@ struct Integrator
 	typedef std::shared_ptr<Integrator> Ptr;
 
 	virtual Color3f Li( const Scene* scene, RadianceQuery& rq, RNGd& rng )const=0;
-
-	/*
-	typedef std::function<Color3f(RenderTaskInfo&, const Ray3d&, double, double, const V2i& pix, Color3f&, bool)> SampleFunction;
-	std::string id;
-	std::string info;
-	SampleFunction sample_function;
-	*/
+	virtual Color3f sample_transmittance( const Scene* scene, const Ray3d& ray, double maxt, RNGd& rng )const=0;
 };
 
 
@@ -107,6 +94,8 @@ struct RenderTaskInfo
 namespace integrators
 {
 	Integrator::Ptr raymarcher(double stepsize = 0.1);
+	Integrator::Ptr cache_raymarcher(double stepSize, Cache::Ptr cache );
 	Integrator::Ptr volume_path_tracer(int maxDepth = std::numeric_limits<int>::max());
+	Integrator::Ptr adrrs_volume_path_tracer( Bitmap::Ptr pixel_estimates, Field3d::Ptr fluence );
 }
 

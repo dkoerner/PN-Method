@@ -9,6 +9,8 @@
 #include <sstream>
 #include <util/timer.h>
 
+#include <math/RNG.h>
+
 class ThreadPool;
 
 //! Abstract task base class.
@@ -168,6 +170,27 @@ struct Terminator
 };
 
 
+struct MonteCarloTaskInfo
+{
+	MonteCarloTaskInfo(int taskid, int numTasks):
+		taskid(taskid),
+		numTasks(numTasks),
+		samples(0),
+		rng(123+taskid)
+	{
+	}
+
+	static MonteCarloTaskInfo create( int taskid, int numTasks )
+	{
+		return MonteCarloTaskInfo(taskid, numTasks);
+	}
+
+	// per task info ---
+	int taskid;
+	int numTasks;
+	int samples;
+	RNGd rng;
+};
 
 
 template<typename TaskInfo>

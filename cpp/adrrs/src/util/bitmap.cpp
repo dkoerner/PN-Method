@@ -558,3 +558,7 @@ Filter bilateralFilter(double alpha, double beta)
 }
 
 
+Bitmap::Ptr readImage(const std::string& filename)
+{
+	return std::make_shared<Bitmap>(filename);
+}

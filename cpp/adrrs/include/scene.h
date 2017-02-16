@@ -2,12 +2,24 @@
 #include <string>
 #include <math/common.h>
 #include <math/vector.h>
+#include <math/color.h>
 #include <math/bbox.h>
+#include <math/RNG.h>
 
+#include <light.h>
 
+struct Intersection
+{
+	void reset()
+	{
+		t = std::numeric_limits<double>::infinity();
+	}
+
+	P3d p;
+	double t;
+};
 
 struct Camera;
-struct Light;
 struct Volume;
 struct Integrator;
 struct Scene
@@ -27,6 +39,10 @@ struct Scene
 
 	// integrator
 	const Integrator* integrator;
+
+
+	bool intersect( const Ray3d& ray, Intersection& its )const;
+	Color3f sample_attenuated_directlight( LightSample& ls, RNGd& rng )const;
 };
 
 

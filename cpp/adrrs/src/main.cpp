@@ -5,6 +5,7 @@
 #include <integrator.h>
 #include <util/threadpool.h>
 #include <util/field.h>
+#include <util/sh.h>
 
 #include <houio/Geometry.h>
 
@@ -93,8 +94,193 @@ void render_volume( RenderTaskInfo& ti )
 }
 
 
+
+
+struct EnvMap
+{
+	typedef std::shared_ptr<EnvMap> Ptr;
+
+	EnvMap( const std::string& filename )
+	{
+		m_bitmap = Bitmap(filename);
+		m_transform = Transformd();
+	}
+
+	// evaluate environment map
+	Color3f eval( double theta, double phi )const
+	{
+		V3d d = sphericalDirection<double>(theta, phi);
+		P2d uv = directionToUV(d);
+		return m_bitmap.eval(uv);
+	}
+
+
+	P2d directionToUV( const V3d& d )const
+	{
+		// using formulas given in http://gl.ict.usc.edu/Data/HighResProbes/
+		// with the difference that u=[0,1] (instead of [0,2]) and we negate z
+		P2d uv( (1+std::atan2(d.x(), d.z())/M_PI)/2,
+				 safe_acos(d.y())/M_PI );
+		return uv;
+	}
+	V3d uvToDirection( const P2d& uv )const
+	{
+		// using formulas given in http://gl.ict.usc.edu/Data/HighResProbes/
+		// with the difference that u=[0,1] (instead of [0,2]) and we negate z
+		// azimuthal angle
+		double theta = M_PI*(uv.x()*2.0-1.0);
+		// elevation angle
+		double phi = M_PI*uv.y();
+		return V3d( std::sin(phi)*std::sin(theta), std::cos(phi), std::sin(phi)*cos(theta) );
+	}
+	P2d uvToXY(const P2d& uv)const
+	{
+		P2d xy(
+			(uv.x()*(m_bitmap.cols()-1)),
+			(uv.y()*(m_bitmap.rows()-1))
+			);
+		return xy;
+	}
+
+	P2d xyToUV(const P2d& xy)const
+	{
+		return P2d(
+			(xy.x())/double(m_bitmap.cols()-1),
+			(xy.y())/double(m_bitmap.rows()-1)
+			);
+	}
+
+	V3d xyToDirection( const P2d& xy )const
+	{
+		return uvToDirection( xyToUV(xy) );
+	}
+	P2d directionToXY( const V3d& d )const
+	{
+		return uvToXY(directionToUV(d));
+	}
+
+private:
+	Transformd m_transform;
+	Bitmap m_bitmap;
+};
+
+
+void writeSphericalFunction(const std::string& filename, sh::SphericalFunction<Color3f> func )
+{
+	houio::Geometry::Ptr geo = houio::Geometry::createSphere(120, 120, 1.0);
+	houio::Attribute::Ptr pAttr = geo->getAttr("P");
+	houio::Attribute::Ptr cdAttr = houio::Attribute::createV3f(pAttr->numElements());
+	for( int i=0;i<pAttr->numElements();++i )
+	{
+		houio::math::V3f p = pAttr->get<houio::math::V3f>(i);
+		P2d theta_phi = sphericalCoordinates<double>(V3d(p.x, p.y, p.z));
+		double theta = theta_phi.x();
+		double phi = theta_phi.y();
+		Color3f col = func(theta, phi);
+		cdAttr->set<houio::math::V3f>( i, houio::math::V3f(col.r(), col.g(), col.b()) );
+	}
+	geo->setAttr("Cd", cdAttr);
+	houio::HouGeoIO::xport( filename, geo);
+}
+
+
+double test( int n, int l )
+{
+	int n2 = 2*n;
+	int l2 = 2*l;
+	return tensor::ipow(-1, n)*double(sh::factorial(l)*sh::doubleFactorial(l2-n2-1))/double(sh::factorial(l-n2)*sh::doubleFactorial(l2-1)*sh::doubleFactorial(n2));
+}
+
 int main()
 {
+
+	std::cout << "kuckuck\n";
+
+	int l = 3;
+	int n_end = std::ceil( double(l)/2.0 );
+
+	for( int n=0;n<n_end;++n )
+	{
+		std::cout << test(n, l)<<std::endl;
+	}
+
+
+
+	/*
+	EnvMap map("envmap.exr");
+
+	sh::SphericalFunction<Color3f> fun = [&](double theta, double phi) -> Color3f
+	{
+		return map.eval(theta, phi);
+	};
+
+	writeSphericalFunction( "groundtruth.bgeo", fun );
+
+	// project
+	int order = 30;
+	int numSamples = 50000;
+	std::unique_ptr<std::vector<Color3f>> sh_coeffs;
+	sh_coeffs = sh::project<Color3f>(order, fun, numSamples);
+
+	// reconstruction
+	for( int l=0;l<=order;++l )
+	{
+		sh::SphericalFunction<Color3f> reconstruction = [&](double theta, double phi) -> Color3f
+		{
+			return sh::evalSum(l, *sh_coeffs.get(), theta, phi);
+		};
+
+		std::string filename("testfit_reconstruction_$0.bgeo");
+		filename = replace(filename, "$0", toString(l));
+
+		writeSphericalFunction( filename, reconstruction );
+	}
+	*/
+
+
+	/*
+	int L = 6;
+	for( int l=0;l<L;++l )
+	{
+		for( int m=-l;m<=l;++m )
+		{
+
+			// visualization for houdini
+			{
+				houio::Geometry::Ptr geo = houio::Geometry::createSphere(120, 120, 1.0);
+				houio::Attribute::Ptr pAttr = geo->getAttr("P");
+				houio::Attribute::Ptr cdAttr = houio::Attribute::createV3f(pAttr->numElements());
+				for( int i=0;i<pAttr->numElements();++i )
+				{
+					houio::math::V3f p = pAttr->get<houio::math::V3f>(i);
+					P2d theta_phi = sphericalCoordinates<double>(V3d(p.x, p.y, p.z));
+					double theta = theta_phi.x();
+					double phi = theta_phi.y();
+					//Color3f col = map.eval(theta_phi.x(), theta_phi.y());
+
+					float sh = EvalSHSlow(l, m, theta, phi);
+
+					//Color3f col(sh);
+					//cdAttr->set<houio::math::V3f>( i, houio::math::V3f(col.r(), col.g(), col.b()) );
+
+					pAttr->set<houio::math::V3f>( i, p*sh );
+				}
+				//geo->setAttr("Cd", cdAttr);
+				std::string filename("test_$0_$1.bgeo");
+				filename = replace(filename, "$0", toString(l));
+				filename = replace(filename, "$1", toString(m));
+				houio::HouGeoIO::xport( filename, geo);
+			}
+		}
+	}
+	*/
+
+
+
+
+	return 0;
+
+
 	//std::string basePath = "c:/projects/visus/data";
 	std::string basePath = ".";
 	//std::string outpath = basePath + "/noisereduction/fitting4";

@@ -17,7 +17,8 @@ SOURCES += \
     src/light.cpp \
     src/scene.cpp \
     src/integrator.cpp \
-    src/pncache.cpp
+    src/pncache.cpp \
+    src/util/sh.cpp
 
 include(deployment.pri)
 qtcAddDeployment()
@@ -117,4 +118,5 @@ HEADERS += \
     include/scene.h \
     include/integrator.h \
     include/pncache.h \
-    include/cache.h
+    include/cache.h \
+    include/util/sh.h

@@ -543,4 +543,25 @@ namespace integrators
 		return std::make_shared<ADRRSVolumePathTracer>(pixel_estimates, fluence);
 	}
 
-}
+
+	struct Dummy :public Integrator
+	{
+		virtual Color3f Li( const Scene* scene, RadianceQuery& rq, RNGd& rng )const override
+		{
+			return Color3f(1.0);
+		}
+
+		virtual Color3f sample_transmittance( const Scene* scene, const Ray3d& ray, double maxt, RNGd& rng )const override
+		{
+			return Color3f(1.0);
+		}
+	};
+
+	Integrator::Ptr dummy()
+	{
+		return std::make_shared<Dummy>();
+	}
+
+} // namespace integrator
+
+

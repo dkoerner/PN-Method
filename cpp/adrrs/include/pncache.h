@@ -62,6 +62,12 @@ namespace tensor
 				return m_ptr;
 			}
 
+			// returns value of the current component
+			T& value()
+			{
+				return *m_ptr;
+			}
+
 			double weight( const V3d& d )
 			{
 				double weight = 1.0;
@@ -122,6 +128,26 @@ namespace tensor
 				std::cout << std::endl;
 			}
 
+			std::string toString()const
+			{
+				std::string result = "";
+
+				result += "index=";
+				for( int i=0;i<m_order;++i )
+					result += ::toString(m_indices[i]);
+				return result;
+			}
+
+			std::string index_str()const
+			{
+				std::string result = "";
+				//if(m_order==0)
+				//	return "0";
+				for( int i=0;i<m_order;++i )
+					result += ::toString(m_indices[i]);
+				return result;
+			}
+
 		private:
 			T* m_ptr;
 			std::vector<int> m_indices;
@@ -138,6 +164,7 @@ namespace tensor
 		{
 			return Iterator(m_data+numComponents(m_order, m_dimension), m_order, m_dimension, m_dimension-1);
 		}
+
 
 	private:
 		T* m_data;
@@ -166,14 +193,18 @@ struct PNCache : public Cache
 {
 	PNCache():
 		Cache(),
-		m_dimension(3)
+		m_dimension(3),
+		m_override(false),
+		m_doZeroScattering(true)
 	{
 
 	}
 
 	PNCache( const std::string& filename ):
 		Cache(),
-		m_dimension(3)
+		m_dimension(3),
+		m_override(false),
+		m_doZeroScattering(true)
 	{
 		load(filename);
 	}
@@ -184,12 +215,18 @@ struct PNCache : public Cache
 		return m_data[voxelIndex * m_numComponentsPerVoxel];
 	}
 
-	virtual Color3f eval( const P3d& pWS )const override;
-	virtual Color3f eval( const P3d& pWS, const V3d& d )const override;
+	const double* get_voxel_data( int i, int j, int k )const;
+	double* get_voxel_data( int i, int j, int k );
 
+	virtual Color3f eval(const P3d& pWS, const V3d& d, bool debug = false)const override;
+
+	bool m_override;
+	bool m_doZeroScattering;
 
 	void generate( const std::string& filename, const Scene* scene, int numMoments, int numSamples, int res );
 
+
+	tensor::Tensor<double> getMoment( int i, int j, int k, int moment );
 private:
 	void save(const std::string& filename)
 	{

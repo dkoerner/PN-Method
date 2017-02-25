@@ -93,6 +93,7 @@ struct RenderTaskInfo
 
 namespace integrators
 {
+	Integrator::Ptr dummy();
 	Integrator::Ptr raymarcher(double stepsize = 0.1);
 	Integrator::Ptr cache_raymarcher(double stepSize, Cache::Ptr cache );
 	Integrator::Ptr volume_path_tracer(int maxDepth = std::numeric_limits<int>::max());

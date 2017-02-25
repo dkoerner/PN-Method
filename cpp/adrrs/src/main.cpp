@@ -5,6 +5,7 @@
 #include <integrator.h>
 #include <util/threadpool.h>
 #include <util/field.h>
+#include <util/wedge.h>
 
 #include <houio/Geometry.h>
 
@@ -95,6 +96,10 @@ void render_volume( RenderTaskInfo& ti )
 
 int main()
 {
+	{
+		houio::HouGeoIO::makeLog("c:/projects/msc/houdini/flip_fluids_seminar_part2/flip_air_waterfall/geo/test.bgeo", &std::cout);
+		return 0;
+	}
 	//std::string basePath = "c:/projects/visus/data";
 	std::string basePath = ".";
 	//std::string outpath = basePath + "/noisereduction/fitting4";
@@ -143,6 +148,55 @@ int main()
 	}
 	*/
 
+	// pn analysis and debugging ---
+	{
+		Integrator::Ptr integrator = integrators::dummy();
+		scene.integrator = integrator.get();
+
+		PNCache cache;
+		cache.m_override = true;
+		cache.m_doZeroScattering = false;
+		int numMoments = 4;
+		int numSamples = 1000000;
+		int res = 1;
+		cache.generate( outpath + "/analysis", &scene, numMoments, numSamples, res );
+
+
+		Wedge wedge;
+		std::vector<int> moment_values = {0, 1, 2, 3, 4};
+		wedge.addParm("moment", moment_values);
+		wedge.build();
+
+		std::cout << "4pi=" << 4.0*M_PI << std::endl;
+		std::cout << "4pi/3=" << 4.0*M_PI/3.0 << std::endl;
+
+		std::vector<Wedge::Iteration> iterations = wedge.iterations();
+		for( auto it : iterations )
+		{
+			int moment_index = it.getInt("moment");
+			std::cout << "moment=" << moment_index << std::endl;
+
+			tensor::Tensor<double> moment_tensor = cache.getMoment( 0, 0, 0, moment_index );
+
+			for(auto component = moment_tensor.begin(), end=moment_tensor.end(); component!=end;++component)
+			{
+				std::cout << "\t" << component.index_str() << "=" << component.value() << std::endl;
+				/*
+				houio::Geometry::Ptr geo = houio::Geometry::createSphere(50, 50, 1.0);
+				houio::Attribute::Ptr pattr = geo->getAttr("P");
+				int numPoints = pattr->numElements();
+				for(int i=0;i<numPoints;++i)
+				{
+					houio::math::V3f d = pattr->get<houio::math::V3f>(i).normalized();
+					d *= std::abs(component.weight(V3d(d.x, d.y, d.z)));
+					pattr->set<houio::math::V3f>(i, d);
+				}
+				houio::HouGeoIO::xport(it.expand_value( outpath+"/analysis_$0_" + component.index_str() + ".bgeo"), geo);
+				*/
+			}
+		}
+	}
+
 
 	Eigen::Affine3d cameraToWorld;
 	cameraToWorld = Eigen::Translation3d(V3d(0.0, 0.0, -2.5));
@@ -154,11 +208,14 @@ int main()
 
 	scene.camera = camera.get();
 
-	///*
+
+	/*
 	// RENDERING -----------------------------------
 	{
 		//Integrator::Ptr integrator = integrators::raymarcher(0.005);
 		PNCache::Ptr cache = std::make_shared<PNCache>(outpath + "/nebulae.moments");
+		cache->eval(P3d(0.0f, 0.0, 0.0), normalize(V3d(1.0, 1.0, 1.0)), true);
+
 		//Bitmap::Ptr pixel_estimates = readImage(outpath + "/nebulae_pixel_estimate.exr");
 		Integrator::Ptr integrator = integrators::cache_raymarcher(0.005, cache);
 		//Integrator::Ptr integrator = integrators::adrrs_volume_path_tracer(pixel_estimates, fluence_field);
@@ -189,7 +246,7 @@ int main()
 		std::string transmittance_exr = outpath + "/test_transmittance.exr";
 		image_transmittance.saveEXR(transmittance_exr);
 	}
-	//*/
+	*/
 
 
 

@@ -1,5 +1,5 @@
 #include <iostream>
-
+#include <complex>
 
 #include <scene.h>
 #include <integrator.h>
@@ -107,6 +107,12 @@ struct EnvMap
 		m_transform = Transformd();
 	}
 
+	EnvMap()
+	{
+		m_bitmap = Bitmap(V2i(512, 256));
+		m_transform = Transformd();
+	}
+
 	// evaluate environment map
 	Color3f eval( double theta, double phi )const
 	{
@@ -160,6 +166,11 @@ struct EnvMap
 		return uvToXY(directionToUV(d));
 	}
 
+	Bitmap& bitmap()
+	{
+		return m_bitmap;
+	}
+
 private:
 	Transformd m_transform;
 	Bitmap m_bitmap;
@@ -184,12 +195,43 @@ void writeSphericalFunction(const std::string& filename, sh::SphericalFunction<C
 	houio::HouGeoIO::xport( filename, geo);
 }
 
+void rasterizeSphericalFunction( EnvMap& envmap, sh::SphericalFunction<Color3f> func )
+{
+	int xres = envmap.bitmap().cols();
+	int yres = envmap.bitmap().rows();
+	for( int j=0;j<yres;++j )
+		for( int i=0;i<xres;++i )
+		{
+			P2d xy( i+0.5f, j+0.5f );
+			V3d d = envmap.xyToDirection(xy);
+			P2d theta_phi = sphericalCoordinates(d);
+			double theta = theta_phi.x();
+			double phi = theta_phi.y();
+			envmap.bitmap().coeffRef(j, i) = func(theta, phi);
+		}
+}
 
 double test( int n, int l )
 {
 	int n2 = 2*n;
 	int l2 = 2*l;
 	return tensor::ipow(-1, n)*double(sh::factorial(l)*sh::doubleFactorial(l2-n2-1))/double(sh::factorial(l-n2)*sh::doubleFactorial(l2-1)*sh::doubleFactorial(n2));
+}
+
+
+double Clm( int l, int m )
+{
+	double a = tensor::ipow(-1, m);
+	double b1 = (2*l+1)*INV_FOURPI;
+	double b2 = sh::factorial(l-m)/sh::factorial(l+m);
+	return a*std::sqrt(b1*b2);
+}
+
+double sh_eval2( int l, int m, double theta, double phi )
+{
+	std::complex<double> test2(0.0, 1.0);
+	std::complex<double> test = std::exp(test2*phi*double(m));
+	return test.real()*sh::P(l, m, std::cos(theta));
 }
 
 int main()
@@ -203,6 +245,36 @@ int main()
 	{
 		std::cout << test(n, l)<<std::endl;
 	}
+
+
+
+	// investigate SH functions ---
+	int order = 2;
+	for( int l=0;l<order;++l )
+	{
+		for( int m=-l;m<=l;++m )
+		{
+			EnvMap map;
+
+			sh::SphericalFunction<Color3f> ylm = [&](double theta, double phi) -> Color3f
+			{
+				//return sh::eval(l, m, theta, phi);
+				return sh_eval2(l, m, theta, phi);
+			};
+
+			rasterizeSphericalFunction(map, ylm);
+
+			std::string filename("test2_ylm_$0_$1.exr");
+			filename = replace(filename, "$0", toString(l));
+			filename = replace(filename, "$1", toString(m));
+
+			map.bitmap().saveEXR(filename);
+		}
+	}
+
+
+
+
 
 
 

@@ -98,7 +98,9 @@ namespace sh
 	// This implementation is based off the approach described in [1],
 	// instead of computing Pml(x) directly, Pmm(x) is computed. Pmm can be
 	// lifted to Pmm+1 recursively until Pml is found
-	double EvalLegendrePolynomial(int l, int m, double x)
+	//
+	// note that the Condon-Shorteley Phase is included...
+	double P(int l, int m, double x)
 	{
 		// Compute Pmm(x) = (-1)^m(2m - 1)!!(1 - x^2)^(m/2), where !! is the double
 		// factorial.
@@ -148,15 +150,15 @@ namespace sh
 		if (m > 0)
 		{
 			return sqrt(2.0) * kml * cos(m * phi) *
-				EvalLegendrePolynomial(l, m, cos(theta));
+				P(l, m, cos(theta));
 		}else
 		if(m < 0)
 		{
 			return sqrt(2.0) * kml * sin(-m * phi) *
-				EvalLegendrePolynomial(l, -m, cos(theta));
+				P(l, -m, cos(theta));
 		}else
 		{
-			return kml * EvalLegendrePolynomial(l, 0, cos(theta));
+			return kml * P(l, 0, cos(theta));
 		}
 	}
 

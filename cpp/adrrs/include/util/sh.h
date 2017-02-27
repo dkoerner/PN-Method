@@ -27,6 +27,8 @@ namespace sh
 	double factorial(int x);
 	double doubleFactorial(int x);
 
+	// includes Condon-Shorteley Phase...
+	double P(int l, int m, double x);
 
 	// l must be >= 0
 	// m must be >= -l and <= l

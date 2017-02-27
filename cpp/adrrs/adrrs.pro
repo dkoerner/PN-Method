@@ -18,8 +18,9 @@ SOURCES += \
     src/scene.cpp \
     src/integrator.cpp \
     src/pncache.cpp \
-    src/wedge.cpp
+    src/wedge.cpp \
     src/util/sh.cpp
+
 
 include(deployment.pri)
 qtcAddDeployment()

@@ -121,5 +121,5 @@ HEADERS += \
     include/integrator.h \
     include/pncache.h \
     include/cache.h \
-    include/util/wedge.h
-    include/util/sh.h
+    include/util/wedge.h \
+	include/util/sh.h

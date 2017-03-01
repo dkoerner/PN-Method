@@ -197,6 +197,7 @@ void writeSphericalFunction(const std::string& filename, sh::SphericalFunction<C
 
 void rasterizeSphericalFunction( EnvMap& envmap, sh::SphericalFunction<Color3f> func )
 {
+	//std::ofstream f( "test_pixels_coords.txt", std::ios::binary | std::ios::trunc );
 	int xres = envmap.bitmap().cols();
 	int yres = envmap.bitmap().rows();
 	for( int j=0;j<yres;++j )
@@ -208,6 +209,7 @@ void rasterizeSphericalFunction( EnvMap& envmap, sh::SphericalFunction<Color3f> 
 			double theta = theta_phi.x();
 			double phi = theta_phi.y();
 			envmap.bitmap().coeffRef(j, i) = func(theta, phi);
+			//f << theta << " "  << phi << std::endl;
 		}
 }
 
@@ -218,15 +220,32 @@ double test( int n, int l )
 	return tensor::ipow(-1, n)*double(sh::factorial(l)*sh::doubleFactorial(l2-n2-1))/double(sh::factorial(l-n2)*sh::doubleFactorial(l2-1)*sh::doubleFactorial(n2));
 }
 
+// condon-shortley phase
+double csp( int m )
+{
+	return (m % 2 == 0 ? 1.0 : -1.0);
+}
 
 double Clm( int l, int m )
 {
-	double a = tensor::ipow(-1, m);
+	//double a = csp(m);
+	double a = 1.0;
 	double b1 = (2*l+1)*INV_FOURPI;
 	double b2 = sh::factorial(l-m)/sh::factorial(l+m);
 	return a*std::sqrt(b1*b2);
+	return a;
 }
 
+double Clm_including_csp( int l, int m )
+{
+	double a = csp(m);
+	double b1 = (2*l+1)*INV_FOURPI;
+	double b2 = sh::factorial(l-m)/sh::factorial(l+m);
+	return a*std::sqrt(b1*b2);
+	return a;
+}
+
+using complex = std::complex<double>;
 double sh_eval2( int l, int m, double theta, double phi )
 {
 	std::complex<double> test2(0.0, 1.0);
@@ -234,43 +253,1146 @@ double sh_eval2( int l, int m, double theta, double phi )
 	return test.real()*sh::P(l, m, std::cos(theta));
 }
 
-int main()
+complex Y( int l, int m, double theta, double phi )
 {
-	std::cout << "kuckuck\n";
+	return Clm(l,m)*sh::P(l, m, std::cos(theta))*complex(std::cos(m*phi), std::sin(m*phi));
+}
 
-	int l = 3;
-	int n_end = std::ceil( double(l)/2.0 );
+complex Y_cc( int l, int m, double theta, double phi )
+{
+	return Clm(l,m)*sh::P(l, m, std::cos(theta))*complex(std::cos(m*phi), -std::sin(m*phi));
+}
 
-	for( int n=0;n<n_end;++n )
+complex complex_sh( int l, int m, double theta, double phi )
+{
+	if(m>=0)
+		return Y(l, m, theta, phi);
+	else
+		return csp(m)*Y_cc(l, std::abs(m), theta, phi);
+}
+
+
+
+double almj( int l, int m, int j, bool debug = false )
+{
+	double a = csp(j);
+	double b = tensor::ipow(2, l)*sh::factorial(j)*sh::factorial(l-j);
+	double c = sh::factorial(2*l-2*j);
+	double frac1 = a/b;
+	double frac2;
+	double d_fac = l-m-2*j;
+	// it appears that fractions which contain negative factorials are considered zero by convention
+	// see http://mathoverflow.net/questions/10124/the-factorial-of-1-2-3#comment14723_10129
+	if( d_fac < 0)
+		frac2 = 0.0;
+	else
+		frac2 = c/sh::factorial(d_fac);
+	return frac1*frac2;
+}
+
+double P2( int l, int m, double theta, bool debug = false )
+{
+	double a = std::pow( std::sin(theta), double(m) );
+	double b = 0.0;
+	int j_end = int(std::ceil((l-m)/2.0));
+	for( int j=0;j<=j_end;++j )
+		b+= almj(l, m, j)*std::pow(std::cos(theta), double(l-m-2*j));
+	return csp(m)*a*b;
+}
+
+
+complex Y2( int l, int m, double theta, double phi )
+{
+	return Clm(l,m)*P2(l, m, theta)*complex(std::cos(m*phi), std::sin(m*phi));
+}
+
+complex Y2_cc( int l, int m, double theta, double phi )
+{
+	return Clm(l,m)*P2(l, m, theta)*complex(std::cos(m*phi), -std::sin(m*phi));
+}
+
+
+complex complex_sh2( int l, int m, double theta, double phi )
+{
+	if(m>=0)
+		return Y2(l, m, theta, phi);
+	else
+		return csp(m)*Y2_cc(l, std::abs(m), theta, phi);
+}
+
+
+double P3( int l, int m, const V3d& n )
+{
+	double a = 1.0;
+	double b = 0.0;
+	int j_end = int(std::ceil((l-m)/2.0));
+	for( int j=0;j<=j_end;++j )
+		b+= almj(l, m, j)*std::pow(n.z(), double(l-m-2*j));
+	return csp(m)*a*b;
+}
+
+complex Y3( int l, int m, const V3d& n )
+{
+	return Clm(l,m)*P3(l, m, n)*std::pow(complex(n.x(), n.y()), double(m));
+}
+
+complex Y3_cc( int l, int m, const V3d& n )
+{
+	return Clm(l,m)*P3(l, m, n)*std::pow(complex(n.x(), -n.y()), double(m));
+}
+
+
+complex complex_sh3( int l, int m, const V3d& n )
+{
+	if(m>=0)
+		return Y3(l, m, n);
+	else
+		return csp(m)*Y3_cc(l, std::abs(m), n);
+}
+
+
+namespace xp
+{
+
+
+	struct Expression
 	{
-		std::cout << test(n, l)<<std::endl;
+		typedef std::shared_ptr<Expression> Ptr;
+		virtual std::string toLatex()const=0;
+		virtual void print_hierarchy( int indent = 0 )const
+		{
+			for(int i=0;i<indent;++i)std::cout<<"\t";
+			std::cout << "Expression" << std::endl;
+		}
+		virtual Ptr deep_copy()const=0;
+
+	};
+
+	Expression::Ptr num( int value );
+	Expression::Ptr var( const std::string& name );
+	Expression::Ptr add( Expression::Ptr a, Expression::Ptr b );
+	Expression::Ptr add( Expression::Ptr a, Expression::Ptr b, Expression::Ptr c );
+	Expression::Ptr sum( const std::string& index, Expression::Ptr end, Expression::Ptr body );
+	Expression::Ptr mul( Expression::Ptr a, Expression::Ptr b );
+	Expression::Ptr mul( Expression::Ptr a, Expression::Ptr b, Expression::Ptr c );
+	Expression::Ptr mul( Expression::Ptr a, Expression::Ptr b, Expression::Ptr c, Expression::Ptr d );
+	Expression::Ptr pow( Expression::Ptr base, Expression::Ptr exp );
+	Expression::Ptr largest_integer( Expression::Ptr expr );
+
+	Expression::Ptr index( Expression::Ptr base, Expression::Ptr a, Expression::Ptr b, Expression::Ptr c );
+	Expression::Ptr index( Expression::Ptr base, Expression::Ptr a, Expression::Ptr b);
+
+	std::string toLatex(Expression::Ptr expr);
+
+
+	struct Scope
+	{
+		std::map<std::string, Expression::Ptr> m_variables;
+	};
+
+	namespace rewrite
+	{
+		Expression::Ptr expand( Expression::Ptr expr, Scope& scope );
+		Expression::Ptr expand(Expression::Ptr e);
+		void replace_variable( Expression::Ptr expr, const std::string& variable, Expression::Ptr replacement );
+		Expression::Ptr fold_constants( Expression::Ptr expr );
 	}
 
+	struct Variable : public Expression
+	{
+		typedef std::shared_ptr<Variable> Ptr;
+		Variable( const std::string& name )
+			:Expression(),
+			 m_name(name)
+		{
+		}
+
+		Variable( const Variable& other )
+			:Expression(),
+			 m_name(other.m_name)
+		{
+
+		}
+
+
+		virtual Expression::Ptr deep_copy()const override
+		{
+			return std::make_shared<Variable>(*this);
+		}
+
+		const std::string& getName()const
+		{
+			return m_name;
+		}
+
+		virtual std::string toLatex()const override
+		{
+			return m_name;
+		}
+
+		virtual void print_hierarchy( int indent = 0 )const override
+		{
+			for(int i=0;i<indent;++i)std::cout<<"\t";
+			std::cout << "Variable " << m_name << std::endl;
+		}
+
+	private:
+		std::string m_name;
+	};
+
+	struct Number : public Expression
+	{
+		typedef std::shared_ptr<Number> Ptr;
+		Number(int value) :
+			Expression()
+		{
+			set_int(value);
+		}
+
+		Number( const Number& other )
+			:Expression(),
+			 m_type(other.m_type)
+		{
+			switch(m_type)
+			{
+			case EInteger:m_i = other.m_i;break;
+			case EReal:m_d = other.m_d;break;
+			};
+		}
+
+
+		virtual Expression::Ptr deep_copy()const override
+		{
+			return std::make_shared<Number>(*this);
+		}
+
+		enum EType
+		{
+			EInteger,
+			EReal//,
+			//EComplex
+		};
+
+		virtual std::string toLatex()const override
+		{
+			switch(m_type)
+			{
+			case EInteger:return toString(m_i);break;
+			case EReal:return toString(m_d);break;
+			};
+
+			return "number:n/a";
+		}
+
+		virtual void print_hierarchy( int indent = 0 )const override
+		{
+			for(int i=0;i<indent;++i)std::cout<<"\t";
+			std::cout << "Number ";
+			switch(m_type)
+			{
+			case EInteger:std::cout << "integer " << m_i;break;
+			case EReal:std::cout << "real " << m_d;break;
+			};
+			std::cout << std::endl;
+		}
+
+		Number& operator*=(const Number& rhs)
+		{
+			if( (m_type == EInteger) && (rhs.m_type == EInteger) )
+				set_int( m_i*rhs.m_i );
+			else
+			if( (m_type == EInteger) && (rhs.m_type == EReal) )
+				set_real( m_i*rhs.m_d );
+			else
+			if( (m_type == EReal) && (rhs.m_type == EInteger) )
+				set_real( m_d*rhs.m_i );
+			else
+			if( (m_type == EReal) && (rhs.m_type == EReal) )
+				set_real( m_d*rhs.m_d );
+			else
+			{
+				std::cout << "Number::*= error: unknown type combination\n";
+				throw std::runtime_error("safasfsaf");
+			}
+			return *this;
+		}
+		Number& operator+=(const Number& rhs)
+		{
+			if( (m_type == EInteger) && (rhs.m_type == EInteger) )
+				set_int( m_i+rhs.m_i );
+			else
+			if( (m_type == EInteger) && (rhs.m_type == EReal) )
+				set_real( m_i+rhs.m_d );
+			else
+			if( (m_type == EReal) && (rhs.m_type == EInteger) )
+				set_real( m_d+rhs.m_i );
+			else
+			if( (m_type == EReal) && (rhs.m_type == EReal) )
+				set_real( m_d+rhs.m_d );
+			else
+			{
+				std::cout << "Number::*= error: unknown type combination\n";
+				throw std::runtime_error("safasfsaf");
+			}
+			return *this;
+		}
+		Number& pow(const Number& exp)
+		{
+			if( (m_type == EInteger) && (exp.m_type == EInteger) )
+				set_real( std::pow(m_i, exp.m_i) );
+			else
+			if( (m_type == EInteger) && (exp.m_type == EReal) )
+				set_real( std::pow(double(m_i), exp.m_d) );
+			else
+			if( (m_type == EReal) && (exp.m_type == EInteger) )
+				set_real( std::pow(m_d, double(exp.m_i)) );
+			else
+			if( (m_type == EReal) && (exp.m_type == EReal) )
+				set_real( std::pow(m_d, exp.m_d) );
+			else
+			{
+				std::cout << "Number::*= error: unknown type combination\n";
+				throw std::runtime_error("safasfsaf");
+			}
+			return *this;
+		}
+
+		EType getType()
+		{
+			return m_type;
+		}
+		int get_int()
+		{
+			return m_i;
+		}
+		double get_real()
+		{
+			return m_d;
+		}
+
+	private:
+		union
+		{
+			int m_i;
+			double m_d;
+		};
+		EType m_type;
+
+		void set_int( int value )
+		{
+			m_i = value;
+			m_type = EInteger;
+		}
+		void set_real( double value )
+		{
+			m_d = value;
+			m_type = EReal;
+		}
+	};
+
+	struct Operator : public Expression
+	{
+		typedef std::shared_ptr<Operator> Ptr;
+		virtual int getNumOperands()const=0;
+		virtual Expression::Ptr getOperand(int index)=0;
+		virtual void setOperand(int index, Expression::Ptr expr)=0;
+	};
+
+	struct LargestInteger : public Operator
+	{
+		typedef std::shared_ptr<LargestInteger> Ptr;
+		LargestInteger( Expression::Ptr expr ):
+			Operator(),
+			m_expr(expr)
+		{
+		}
+
+		virtual Expression::Ptr deep_copy()const override
+		{
+			return std::make_shared<LargestInteger>(m_expr->deep_copy());
+		}
+
+		virtual std::string toLatex()const override
+		{
+			return "\\lfloor " + m_expr->toLatex() + " \\rfloor";
+		}
+
+		virtual int getNumOperands()const
+		{
+			return 1;
+		}
+		virtual Expression::Ptr getOperand(int index)
+		{
+			if( index == 0 )
+				return m_expr;
+			return Expression::Ptr();
+		}
+
+		virtual void setOperand(int index, Expression::Ptr expr)
+		{
+			if(index==0)
+				m_expr = expr;
+		}
+
+
+	private:
+		Expression::Ptr m_expr;
+	};
+
+	struct Index : public Operator
+	{
+		typedef std::shared_ptr<Index> Ptr;
+
+		Index(Expression::Ptr base):Operator(),m_base(base)
+		{
+		}
+
+
+		virtual Expression::Ptr deep_copy()const override
+		{
+			Ptr idx = std::make_shared<Index>(m_base->deep_copy());
+			for( auto index:m_indices )
+				idx->addIndex(index->deep_copy());
+			return idx;
+		}
+
+		virtual std::string toLatex()const override
+		{
+			std::string result = m_base->toLatex() + "^{";
+
+			int numIndices = m_indices.size();
+			for( int i=0;i<numIndices;++i )
+			{
+				result+=m_indices[i]->toLatex();
+				if( i<numIndices-1 )
+					result+=",";
+			}
+			return result + "}";
+		}
+
+		virtual void print_hierarchy( int indent = 0 )const
+		{
+			for(int i=0;i<indent;++i)std::cout<<"\t";
+			std::cout << "Index" << std::endl;
+		}
+
+		void addIndex( Expression::Ptr expr )
+		{
+			m_indices.push_back(expr);
+		}
+
+		virtual int getNumOperands()const
+		{
+			return m_indices.size()+1;
+		}
+		virtual Expression::Ptr getOperand(int index)
+		{
+			if( index == 0 )
+				return m_base;
+			return m_indices[index-1];
+		}
+
+		virtual void setOperand(int index, Expression::Ptr expr)
+		{
+			if(index==0)
+				m_base = expr;
+			else
+			{
+				m_indices[index-1] = expr;
+			}
+		}
+
+		std::string getBaseName()
+		{
+			Variable::Ptr base = std::dynamic_pointer_cast<Variable>(m_base);
+			return base->getName();
+		}
+
+		int getExponent(int index)
+		{
+			Number::Ptr num =  std::dynamic_pointer_cast<Number>(m_indices[index]);
+			return num->get_int();
+		}
+
+
+	private:
+		Expression::Ptr m_base;
+		std::vector<Expression::Ptr> m_indices;
+	};
+
+	struct Addition : public Operator
+	{
+		typedef std::shared_ptr<Addition> Ptr;
+
+
+		virtual Expression::Ptr deep_copy()const override
+		{
+			Ptr add = std::make_shared<Addition>();
+			for( auto operand:m_operands )
+				add->addOperand(operand->deep_copy());
+			return add;
+		}
+
+		virtual std::string toLatex()const override
+		{
+			std::string result;
+			int numOperands = m_operands.size();
+			for( int i=0;i<numOperands;++i )
+			{
+				result+=m_operands[i]->toLatex();
+				if( i<numOperands-1 )
+					result+="+";
+			}
+			return result;
+		}
+
+		virtual void print_hierarchy( int indent = 0 )const override
+		{
+			for(int i=0;i<indent;++i)std::cout<<"\t";
+			std::cout << "Addition " << std::endl;
+			for( auto it:m_operands )
+				it->print_hierarchy(indent+1);
+		}
+
+		void addOperand( Expression::Ptr expr )
+		{
+			m_operands.push_back(expr);
+		}
+
+		virtual int getNumOperands()const
+		{
+			return m_operands.size();
+		}
+		virtual Expression::Ptr getOperand(int index)
+		{
+			return m_operands[index];
+		}
+
+		virtual void setOperand(int index, Expression::Ptr expr)
+		{
+			m_operands[index] = expr;
+		}
+
+	private:
+		std::vector<Expression::Ptr> m_operands;
+	};
+
+	struct Multiplication : public Operator
+	{
+		typedef std::shared_ptr<Multiplication> Ptr;
+
+		virtual Expression::Ptr deep_copy()const override
+		{
+			Ptr mul = std::make_shared<Multiplication>();
+			for( auto operand:m_operands )
+				mul->addOperand(operand->deep_copy());
+			return mul;
+		}
+
+		virtual std::string toLatex()const override
+		{
+			std::string result;
+			int numOperands = m_operands.size();
+			for( int i=0;i<numOperands;++i )
+			{
+				bool parentheses = false;
+				Expression::Ptr op = m_operands[i];
+				// if operand is an addition operator, we will put it in parentheses
+				if( std::dynamic_pointer_cast<Addition>(op) )
+					parentheses=true;
+				if(parentheses)
+					result+= "\\left ( " + op->toLatex() + " \\right )";
+				else
+					result+= op->toLatex();
+				if( i<numOperands-1 )
+					result+="";
+			}
+			return result;
+		}
+
+		virtual void print_hierarchy( int indent = 0 )const override
+		{
+			for(int i=0;i<indent;++i)std::cout<<"\t";
+			std::cout << "Multiplication " << std::endl;
+			for( auto it:m_operands )
+				it->print_hierarchy(indent+1);
+		}
+
+		void addOperand( Expression::Ptr expr )
+		{
+			m_operands.push_back(expr);
+		}
+
+		virtual int getNumOperands()const
+		{
+			return m_operands.size();
+		}
+		virtual Expression::Ptr getOperand(int index)
+		{
+			return m_operands[index];
+		}
+
+		virtual void setOperand(int index, Expression::Ptr expr)
+		{
+			m_operands[index] = expr;
+		}
+
+	private:
+		std::vector<Expression::Ptr> m_operands;
+	};
+
+	struct Sum : public Operator
+	{
+		typedef std::shared_ptr<Sum> Ptr;
+
+		Sum( const std::string& index, Expression::Ptr end, Expression::Ptr body ):
+			Operator(),
+			m_index(index),
+			m_end(end),
+			m_body(body)
+		{
+		}
+
+		virtual Expression::Ptr deep_copy()const override
+		{
+			return std::make_shared<Sum>(m_index, m_end->deep_copy(), m_body->deep_copy());
+		}
+
+		virtual std::string toLatex()const override
+		{
+			std::string result = "\\sum_"+m_index+"^{" + m_end->toLatex() + "}{" + m_body->toLatex() + "}";
+			return result;
+		}
+
+		virtual int getNumOperands()const
+		{
+			return 2;
+		}
+		virtual Expression::Ptr getOperand(int index)
+		{
+			if( index == 0 )
+				return m_end;
+			else
+			if( index == 1 )
+				return m_body;
+			return Expression::Ptr();
+		}
+
+		virtual void setOperand(int index, Expression::Ptr expr)
+		{
+			if(index==0)
+				m_end = expr;
+			else
+			if( index == 1 )
+				m_body = expr;
+		}
+
+		const std::string& getIndexName()const
+		{
+			return m_index;
+		}
+
+
+	private:
+		std::string m_index;
+		Expression::Ptr m_end;
+		Expression::Ptr m_body;
+	};
+
+	struct Power : public Operator
+	{
+		typedef std::shared_ptr<Power> Ptr;
+		Power(Expression::Ptr base, Expression::Ptr exp):
+			Operator(),
+			m_base(base),
+			m_exp(exp)
+		{
+
+		}
+
+		virtual Expression::Ptr deep_copy()const override
+		{
+			return std::make_shared<Power>( m_base->deep_copy(), m_exp->deep_copy());
+		}
+
+		virtual std::string toLatex()const override
+		{
+			bool doparentheses = false;
+			if( std::dynamic_pointer_cast<Operator>(m_base) )
+				doparentheses = true;
+
+			std::string result;
+
+			if(doparentheses)
+				result = "\\left ( " + m_base->toLatex() + " \\right )";
+			else
+				result = m_base->toLatex();
+			result += "^{" + m_exp->toLatex() + "}";
+			return result;
+		}
+
+		virtual void print_hierarchy( int indent = 0 )const override
+		{
+			for(int i=0;i<indent;++i)std::cout<<"\t";
+			std::cout << "Power" << std::endl;
+			m_base->print_hierarchy(indent+1);
+			m_exp->print_hierarchy(indent+1);
+		}
+
+		virtual int getNumOperands()const
+		{
+			return 2;
+		}
+		virtual Expression::Ptr getOperand(int index)
+		{
+			if( index == 0 )
+				return m_base;
+			else
+			if( index == 1 )
+				return m_exp;
+			return Expression::Ptr();
+		}
+
+		virtual void setOperand(int index, Expression::Ptr expr)
+		{
+			if(index==0)
+				m_base = expr;
+			else
+			if( index == 1 )
+				m_exp = expr;
+		}
+	private:
+		Expression::Ptr m_base;
+		Expression::Ptr m_exp;
+	};
+
+
+
+
+
+}
+
+
+complex contract_moment( tensor::Tensor<complex>& a, const V3d& d  )
+{
+	complex result = 0.0;
+
+	// iterate over all components of tensor a
+	for( auto it = a.begin(), end = a.end(); it!=end;++it  )
+		result += it.weight(d)*it.value();
+
+	return result;
+}
+
+std::vector<complex> get_components( int l, int m, xp::Expression::Ptr ylm )
+{
+	std::vector<complex> ylm_components( tensor::numComponents(l) );
+
+	xp::Addition::Ptr add = std::dynamic_pointer_cast<xp::Addition>(ylm);
+	if(!add)
+		return ylm_components;
+	//std::cout << "extracting components\n";
+
+	// build component codes...this is used to associate
+	// individual terms with their tensor component
+	std::vector<V3i> component_codes;
+
+	{
+		tensor::Tensor<double> t( 0, l );
+		for( auto it = t.begin(), end = t.end(); it!=end;++it )
+		{
+			V3i code(0,0,0);
+			for( int j=0;j<l;++j )
+				++code[it.index(j)];
+			component_codes.push_back(code);
+		}
+	}
+
+	/*
+	// print component codes for debugging
+	for( auto& code:component_codes )
+	{
+		for( int i=0;i<3;++i )
+			std::cout << code[i];
+		std::cout << std::endl;
+	}
+	*/
+
+	int numTerms = add->getNumOperands();
+	for( int i=0;i<numTerms;++i )
+	{
+		xp::Multiplication::Ptr mul = std::dynamic_pointer_cast<xp::Multiplication>(add->getOperand(i));
+		if(!mul)
+			std::cout << "error\n";
+
+		// each term contributes to one tensor component
+		double component_contribution = 1.0;
+
+		// in each term, we expect l number of variables to occur, from
+		// which we can figure out the component
+		V3i code(0,0,0);
+
+		bool flag = false;
+
+		int numFactors = mul->getNumOperands();
+		for( int j=0;j<numFactors;++j )
+		{
+			xp::Expression::Ptr factor = mul->getOperand(j);
+
+			if( std::dynamic_pointer_cast<xp::Number>(factor) )
+			{
+				xp::Number::Ptr n = std::dynamic_pointer_cast<xp::Number>(factor);
+				component_contribution *= n->get_real();
+			}
+
+			// check for Clm or almj
+			if( std::dynamic_pointer_cast<xp::Index>(factor) )
+			{
+				xp::Index::Ptr index = std::dynamic_pointer_cast<xp::Index>(factor);
+				if(index->getBaseName() == "C")
+					component_contribution *= Clm_including_csp(index->getExponent(0), index->getExponent(1));
+				else
+				if(index->getBaseName() == "a")
+					component_contribution *= almj(index->getExponent(0), index->getExponent(1), index->getExponent(2));
+			}
+
+			xp::Variable::Ptr var = std::dynamic_pointer_cast<xp::Variable>(factor);
+			xp::Power::Ptr pow = std::dynamic_pointer_cast<xp::Power>(factor);
+			if(var)
+			{
+				if(var->getName() == "n_x")
+					code[0] += 1;
+				else
+				if(var->getName() == "in_y")
+					code[1] += 1;
+				else
+				if(var->getName() == "n_z")
+					code[2] += 1;
+			}else
+			if(!var && pow)
+			{
+				var = std::dynamic_pointer_cast<xp::Variable>(pow->getOperand(0));
+				xp::Number::Ptr exp = std::dynamic_pointer_cast<xp::Number>(pow->getOperand(1));
+				if(!var)
+					std::cout << "error: power of non variable encountered\n";
+				if(!exp)
+					std::cout << "error: power with non number exponent encountered\n";
+				if(exp->getType() != xp::Number::EInteger)
+					std::cout << "error: power with non integer exponent encountered\n";
+
+				int exp_number = exp->get_int();
+				if(exp_number >=0)
+				{
+					if(var->getName() == "n_x")
+						code[0] += exp_number;
+					else
+					if(var->getName() == "in_y")
+						code[1] += exp_number;
+					else
+					if(var->getName() == "n_z")
+						code[2] += exp_number;
+				}else
+					flag = true;
+			}else
+			{
+				//...
+			}
+
+		} // for each factor of current term
+
+		//if(flag)
+		//	std::cout << "warning: variable with negative exponent found\n";
+
+		if(!flag)
+		{
+			complex final_contribution = std::pow( complex(0.0, 1.0), code[1] )*component_contribution;
+
+			int numComponents = ylm_components.size();
+			for( int c=0;c<numComponents;++c )
+			{
+				if( component_codes[c] == code )
+				{
+					ylm_components[c] += final_contribution;
+				}
+			}
+		}
+	}
+	//tensor::Tensor<complex>
+
+	return ylm_components;
+}
+
+int main()
+{
+	std::cout << Clm_including_csp(2, 0)*almj(2, 0, 0) << std::endl;
+	std::cout << Clm_including_csp(2, 0)*almj(2, 0, 1) << std::endl;
+
+	std::cout << Clm_including_csp(2, 1)*almj(2, 1, 0) << std::endl;
+	std::cout << Clm_including_csp(2, 1)*almj(2, 1, 1) << std::endl;
+
+	int order = 3;
+	std::vector<std::vector<complex>> ylm_components_all;
+	///*
+	{
+		using namespace xp;
+		Expression::Ptr Ylm = mul( index(var("C"), var("l"), var("m")), pow(add(var("n_x"), var("in_y")), var("m")),sum( "j", largest_integer(mul(pow(num(2), num(-1)) , add(var("l"), mul(num(-1), var("m"))))), mul( index( var("a"), var("l"), var("m"), var("j")),
+																		pow( var("n_z"), add(var("l"), mul( num(-1), var("m")), mul( num(-2), var("j")))))));
+		Expression::Ptr Ylm2 = mul( pow(num(-1), var("m")), index(var("C"), var("l"), var("m")), pow(add(var("n_x"), mul(num(-1), var("in_y"))), var("m")),sum( "j", largest_integer(mul(pow(num(2), num(-1)) , add(var("l"), mul(num(-1), var("m"))))), mul( index( var("a"), var("l"), var("m"), var("j")),
+																		pow( var("n_z"), add(var("l"), mul( num(-1), var("m")), mul( num(-2), var("j")))))));
+
+
+		//std::cout << "$$" << toLatex(Ylm)  << "$$" << std::endl;
+		//std::cout << "$$" << toLatex(Ylm2)  << "$$" << std::endl;
+
+
+
+
+		for( int l=0;l<order;++l )
+			for( int m=-l;m<=l;++m )
+			{
+
+				std::vector<complex> ylm_components;
+
+				// m>=0
+				if( m>= 0 )
+				{
+					Scope scope;
+					scope.m_variables["l"] = num(l);
+					scope.m_variables["m"] = num(m);
+
+					Expression::Ptr ylm= rewrite::expand(Ylm->deep_copy(), scope);
+					//std::cout << "l=" << l << " m=" << m << std::endl;
+					//std::cout << "$$" << toLatex(ylm) << "$$" << std::endl;
+					ylm_components = get_components(l, m, ylm);
+				}
+				else
+				{
+					// m<0
+					Scope scope;
+					scope.m_variables["l"] = num(l);
+					scope.m_variables["m"] = num(std::abs(m));
+
+					Expression::Ptr ylm2= rewrite::expand(Ylm2->deep_copy(), scope);
+					//std::cout << "l=" << l << " m=" << -m << std::endl;
+					//std::cout << "$$" << toLatex(ylm2) << "$$" << std::endl;
+					ylm_components = get_components(l, m, ylm2);
+				}
+
+				std::cout << "y" << l << m << "=\n";
+				for( auto& it:ylm_components )
+				{
+					std::cout << "\t" << it << std::endl;
+				}
+				ylm_components_all.push_back(ylm_components);
+			}
+		//e->print_hierarchy();
+		//return 0;
+	}
+	//*/
+	/*
+	{
+		int order = 2;
+		for( int l=0;l<order;++l )
+		{
+			std::cout << "l=" << l <<std::endl;
+			for( int m=-l;m<=l;++m )
+			{
+				std::cout << "\tm=" << m <<std::endl;
+				int j_end = int(std::ceil((l-m)/2.0));
+				std::cout << "\tjend=" << j_end <<std::endl;
+				for( int j=0;j<=j_end;++j )
+				{
+					std::cout << "\tj=" << j << " l-m-2*j=" << l-m-2*j << std::endl;
+					std::cout << "\talmj=" << almj(l,m,j) << std::endl;
+				}
+
+				std::cout << std::endl;
+			}
+		}
+		return 0;
+	}
+	*/
+
+	/*
+	// gg
+	{
+		std::vector<double> x_list = linearSamples(-1.0, 1.0, 50);
+
+		int order = 6;
+		for( int l=0;l<order;++l )
+			for( int m=0;m<=l;++m )
+			{
+				//bool debug = (l==2)&&(m==1);
+				//if(!debug)
+				//	continue;
+				bool debug = false;
+
+				std::vector<double> y_list;
+				std::vector<double> y2_list;
+				for( double x:x_list )
+				{
+					double theta = safe_acos(x);
+					double y = sh::P(l, m, x);
+
+					double y2 = P2(l, m, theta, debug);
+					y_list.push_back(y);
+					y2_list.push_back(y2);
+				}
+				{
+					std::string filename("test_P_$0_$1.txt");
+					filename = replace(filename, "$0", toString(l));
+					filename = replace(filename, "$1", toString(m));
+					writeSamples( filename, x_list, y_list );
+				}
+				{
+					std::string filename("test_P2_$0_$1.txt");
+					filename = replace(filename, "$0", toString(l));
+					filename = replace(filename, "$1", toString(m));
+					writeSamples( filename, x_list, y2_list );
+				}
+			}
+	}
+	*/
+
+
+
+	// convert groudtruth results to exr
+	/*
+	{
+		int resx = 512;
+		int resy = 256;
+		int order = 2;
+		for( int l=0;l<order;++l )
+		{
+			for( int m=-l;m<=l;++m )
+			{
+				EnvMap map;
+
+				std::string prefix = "c:/projects/epfl/epfl17/python";
+				std::string filename("test_$0_$1.txt");
+				filename = replace(filename, "$0", toString(l));
+				filename = replace(filename, "$1", toString(m));
+
+				std::ifstream in( prefix + "/" + filename );
+
+				for( int j=0;j<resy;++j )
+					for( int i=0;i<resx;++i )
+					{
+						std::string line;
+						std::getline(in, line);
+						std::vector<std::string> parts;
+						splitString(line, parts);
+						complex csh( fromString<double>(parts[0]), fromString<double>(parts[1]) );
+						map.bitmap().coeffRef(j, i) = Color3f(std::abs(csh.real()), std::abs(csh.imag()), 0.0f);
+					}
+
+				{
+					std::string filename("test2_cshnp_$0_$1.exr");
+					filename = replace(filename, "$0", toString(l));
+					filename = replace(filename, "$1", toString(m));
+					map.bitmap().saveEXR(filename);
+				}
+			}
+		}
+	}
+	*/
 
 
 	// investigate SH functions ---
-	int order = 2;
+	///*
+	int ylm_componenets_index = 0;
 	for( int l=0;l<order;++l )
 	{
-		for( int m=-l;m<=l;++m )
+		for( int m=-l;m<=l;++m, ++ylm_componenets_index )
+		//for( int m=1;m<=l;++m )
+		//for( int m=-1;m<=-1;++m )
 		{
-			EnvMap map;
+			//std::vector<complex> ylm_components(tensor::numComponents(l));
+			std::vector<complex>& ylm_components = ylm_components_all[ylm_componenets_index];
+			tensor::Tensor<complex> ylm(ylm_components.data(), l);
 
-			sh::SphericalFunction<Color3f> ylm = [&](double theta, double phi) -> Color3f
+			/*
+			switch(l)
 			{
-				//return sh::eval(l, m, theta, phi);
-				return sh_eval2(l, m, theta, phi);
+				case 0:ylm_components[0] = Clm(l,m);break;
+				case 1:
+				{
+					switch(m)
+					{
+						case -1:
+						{
+							ylm_components[0] = csp(m)*Clm_including_csp(l,std::abs(m));
+							ylm_components[1] = csp(m)*Clm_including_csp(l,std::abs(m))*complex(0.0, -1.0);
+							ylm_components[2] = 0.0;
+						}break;
+						case 0:
+						{
+							ylm_components[0] = 0.0;
+							ylm_components[1] = 0.0;
+							ylm_components[2] = Clm_including_csp(l,m);
+						}break;
+						case 1:
+						{
+							ylm_components[0] = Clm_including_csp(l,m);
+							ylm_components[1] = Clm_including_csp(l,m)*complex(0.0, 1.0);
+							ylm_components[2] = 0.0;
+						}break;
+					};
+				}break;
+			};
+			*/
+
+			/*
+			std::cout << "y" << l << m << "=\n";
+			for( auto& it:ylm_components )
+			{
+				std::cout << "\t" << it << std::endl;
+			}
+			*/
+
+
+			//std::cout << "C(" << l << "," << m << ")=" << Clm(l,m) << std::endl;
+			//std::cout << "a(" << l << "," << m << "," << "0"  << ")=" << almj(l,m, 0) << std::endl;
+			//EnvMap map_csh_groundtruth;
+			//EnvMap map_csh_new;
+			EnvMap map_error;
+			//EnvMap map_tensor;
+
+			/*
+			sh::SphericalFunction<Color3f> ylm_complex = [&](double theta, double phi) -> Color3f
+			{
+				complex csh = complex_sh(l,m,theta, phi);
+				return Color3f(std::abs(csh.real()), std::abs(csh.imag()), 0.0f);
+			};
+			*/
+
+
+
+			sh::SphericalFunction<Color3f> error = [&](double theta, double phi) -> Color3f
+			{
+				V3d n = sphericalDirection(theta, phi);
+				complex csh = complex_sh(l, m, theta, phi);
+				complex csh3 = complex_sh3(l, m, n);
+
+				complex csh4 = contract_moment(ylm, n);
+
+				//std::cout << csh.real() << " " << csh4.real() << std::endl;
+
+				double error = std::abs(csh-csh4);
+				return Color3f(error);
 			};
 
-			rasterizeSphericalFunction(map, ylm);
+			rasterizeSphericalFunction(map_error, error);
 
-			std::string filename("test2_ylm_$0_$1.exr");
-			filename = replace(filename, "$0", toString(l));
-			filename = replace(filename, "$1", toString(m));
-
-			map.bitmap().saveEXR(filename);
+			{
+				std::string filename("error_$0_$1.exr");
+				filename = replace(filename, "$0", toString(l));
+				filename = replace(filename, "$1", toString(m));
+				map_error.bitmap().saveEXR(filename);
+			}
 		}
 	}
+	//*/
 
 
 
@@ -507,3 +1629,571 @@ int main()
 	return 0;
 }
 
+
+namespace xp
+{
+	Expression::Ptr num( int value )
+	{
+		return std::make_shared<Number>(value);
+	}
+
+
+	Expression::Ptr var( const std::string& name )
+	{
+		return std::make_shared<Variable>(name);
+	}
+
+	Expression::Ptr add( Expression::Ptr a, Expression::Ptr b )
+	{
+		Addition::Ptr add = std::make_shared<Addition>();
+		add->addOperand(a);
+		add->addOperand(b);
+		return add;
+	}
+
+	Expression::Ptr add( Expression::Ptr a, Expression::Ptr b, Expression::Ptr c )
+	{
+		Addition::Ptr add = std::make_shared<Addition>();
+		add->addOperand(a);
+		add->addOperand(b);
+		add->addOperand(c);
+		return add;
+	}
+
+	Expression::Ptr sum( const std::string& index, Expression::Ptr end, Expression::Ptr body )
+	{
+		return std::make_shared<Sum>(index, end, body);
+	}
+
+	Expression::Ptr mul( Expression::Ptr a, Expression::Ptr b )
+	{
+		// if one of the two factors is a one, we will just return the other side
+		Number::Ptr num_a = std::dynamic_pointer_cast<Number>(a);
+		Number::Ptr num_b = std::dynamic_pointer_cast<Number>(b);
+		if(num_a && (num_a->getType() == Number::EInteger)&& (num_a->get_int() == 1) )
+			return b;
+		if(num_b && (num_b->getType() == Number::EInteger)&& (num_b->get_int() == 1) )
+			return a;
+
+
+		Multiplication::Ptr mul = std::make_shared<Multiplication>();
+		mul->addOperand(a);
+		mul->addOperand(b);
+		return mul;
+	}
+	Expression::Ptr mul( Expression::Ptr a, Expression::Ptr b, Expression::Ptr c )
+	{
+		Multiplication::Ptr mul = std::make_shared<Multiplication>();
+		mul->addOperand(a);
+		mul->addOperand(b);
+		mul->addOperand(c);
+		return mul;
+	}
+	Expression::Ptr mul( Expression::Ptr a, Expression::Ptr b, Expression::Ptr c, Expression::Ptr d )
+	{
+		Multiplication::Ptr mul = std::make_shared<Multiplication>();
+		mul->addOperand(a);
+		mul->addOperand(b);
+		mul->addOperand(c);
+		mul->addOperand(d);
+		return mul;
+	}
+
+	Expression::Ptr pow( Expression::Ptr base, Expression::Ptr exp )
+	{
+		Number::Ptr num_exp = std::dynamic_pointer_cast<Number>(exp);
+		// if exponent is 0, we return 1
+		if( num_exp && (num_exp->getType() == Number::EInteger) && (num_exp->get_int() == 0) )
+			return num(1);
+		// if exponent is 1, we return base
+		if( num_exp && (num_exp->getType() == Number::EInteger) && (num_exp->get_int() == 1) )
+			return base;
+
+
+		return std::make_shared<Power>(base, exp);
+	}
+
+	Expression::Ptr index( Expression::Ptr base, Expression::Ptr a, Expression::Ptr b)
+	{
+		Index::Ptr idx = std::make_shared<Index>(base);
+		idx->addIndex(a);
+		idx->addIndex(b);
+		return idx;
+	}
+
+	Expression::Ptr index( Expression::Ptr base, Expression::Ptr a, Expression::Ptr b, Expression::Ptr c )
+	{
+		Index::Ptr idx = std::make_shared<Index>(base);
+		idx->addIndex(a);
+		idx->addIndex(b);
+		idx->addIndex(c);
+		return idx;
+	}
+
+	Expression::Ptr largest_integer( Expression::Ptr expr )
+	{
+		return std::make_shared<LargestInteger>(expr);
+	}
+
+	std::string toLatex(Expression::Ptr expr)
+	{
+		return expr->toLatex();
+	}
+
+	namespace rewrite
+	{
+		Expression::Ptr expand( Expression::Ptr expr, Scope& scope )
+		{
+			Expression::Ptr result = expr;
+
+			// we replace all variables
+			for( auto& it : scope.m_variables )
+			{
+				std::string name = it.first;
+				Expression::Ptr replacement = it.second;
+				replace_variable(result, name, replacement);
+			}
+
+			// and fold constants
+			result = fold_constants(result);
+
+			// expand sum, binomial coefficients
+			result = expand(result);
+
+			// fold constants again
+			result = fold_constants(result);
+
+			// expand sum, binomial coefficients
+			result = expand(result);
+
+			return result;
+		}
+
+
+		Expression::Ptr expand_sum(Sum::Ptr sum)
+		{
+			Addition::Ptr add = std::make_shared<Addition>();
+			Number::Ptr end = std::dynamic_pointer_cast<Number>(sum->getOperand(0));
+			Expression::Ptr body = sum->getOperand(1);
+			if(!end && end->getType() != Number::EInteger)
+			{
+				std::cout << "expand_sum: error: end index is no number or not an integer\n";
+				throw std::runtime_error("afasfasf");
+			}
+			int numIterations = end->get_int();
+			for(int i=0;i<=numIterations;++i)
+			{
+				Expression::Ptr expr = body->deep_copy();
+				rewrite::replace_variable( expr, sum->getIndexName(), num(i));
+				add->addOperand(expr);
+			}
+			return add;
+		}
+
+		Expression::Ptr expand_binomial( Power::Ptr p )
+		{
+			Addition::Ptr base = std::dynamic_pointer_cast<Addition>( p->getOperand(0) );
+			Number::Ptr exp = std::dynamic_pointer_cast<Number>( p->getOperand(1) );
+
+			if(base && exp && base->getNumOperands()==2 && exp->getType()==Number::EInteger)
+			{
+				Expression::Ptr x = base->getOperand(0);
+				Expression::Ptr y = base->getOperand(1);
+				Addition::Ptr add = std::make_shared<Addition>();
+
+				int n = exp->get_int();
+
+				if(n==0)
+					return num(1);
+
+				for( int k=0;k<=n;++k )
+				{
+					int exp_x = n-k;
+					int exp_y = k;
+
+					Expression::Ptr pow_x;
+					Expression::Ptr pow_y;
+
+					if( exp_x > 0 )
+					{
+						if(exp_x>1)
+							pow_x = pow(x->deep_copy(), num(exp_x));
+						else
+							pow_x = x->deep_copy();
+					}
+					if( exp_y > 0 )
+					{
+						if(exp_y>1)
+							pow_y = pow(y->deep_copy(), num(exp_y));
+						else
+							pow_y = y->deep_copy();
+					}
+
+					int coeff = sh::factorial(n)/(sh::factorial(k)*sh::factorial(n-k));
+
+					if( pow_x && pow_y )
+					{
+						if(coeff > 1)
+							add->addOperand( mul(num(coeff), pow_x, pow_y) );
+						else
+							add->addOperand( mul(pow_x, pow_y) );
+					}else
+					if( pow_x )
+					{
+						if(coeff > 1)
+							add->addOperand( mul(num(coeff), pow_x) );
+						else
+							add->addOperand( pow_x );
+					}
+					else
+					if( pow_y )
+					{
+						if(coeff > 1)
+							add->addOperand( mul(num(coeff), pow_y) );
+						else
+							add->addOperand( pow_y );
+					}else
+					{
+						std::cout << "expand_binomial: error: \n";
+						throw std::runtime_error("asfsfasf");
+					}
+
+				} // for all combinations
+
+				return add;
+			}
+
+			return p;
+		}
+
+		Expression::Ptr expand_distributive( Multiplication::Ptr m )
+		{
+			// find addition
+			Addition::Ptr add;
+			Multiplication::Ptr factor = std::make_shared<Multiplication>();
+			{
+				int numOperands = m->getNumOperands();
+				for( int i=0;i<numOperands;++i )
+				{
+					add = std::dynamic_pointer_cast<Addition>(m->getOperand(i));
+					if(add)
+						break;
+				}
+				if(!add)
+					// no addition term
+					return m;
+
+				for( int i=0;i<numOperands;++i )
+				{
+					Expression::Ptr operand = m->getOperand(i);
+					if(operand != add)
+						factor->addOperand(operand);
+				}
+			}
+
+
+			Addition::Ptr result = std::make_shared<Addition>();
+
+			int numOperands = add->getNumOperands();
+			for( int i=0;i<numOperands;++i )
+			{
+				Expression::Ptr term = mul(add->getOperand(i)->deep_copy(), factor->deep_copy());
+				result->addOperand( expand(term) );
+			}
+
+			return expand(result);
+		}
+
+		Expression::Ptr expand(Expression::Ptr expr)
+		{
+			// first we expand all childs...
+			if(std::dynamic_pointer_cast<Operator>(expr))
+			{
+				Operator::Ptr op = std::dynamic_pointer_cast<Operator>(expr);
+				int numOperands = op->getNumOperands();
+				for( int i=0;i<numOperands;++i )
+					op->setOperand(i, expand(op->getOperand(i)));
+			}
+
+			// now handle concrete expansion rules..
+			// expand sumation signs
+			if(std::dynamic_pointer_cast<Sum>(expr))
+				return expand_sum(std::dynamic_pointer_cast<Sum>(expr));
+			else
+			if(std::dynamic_pointer_cast<Power>(expr))
+			{
+				Power::Ptr p = std::dynamic_pointer_cast<Power>(expr);
+
+				// apply binomial expansion
+				{
+					Addition::Ptr base = std::dynamic_pointer_cast<Addition>( p->getOperand(0) );
+					Number::Ptr exp = std::dynamic_pointer_cast<Number>( p->getOperand(1) );
+
+					if(base && exp && base->getNumOperands()==2 && exp->getType()==Number::EInteger)
+						return expand_binomial(p);
+				}
+				// apply exponent shortcuts
+				{
+					Expression::Ptr base = p->getOperand(0);
+					Number::Ptr exp = std::dynamic_pointer_cast<Number>( p->getOperand(1) );
+					if( exp && (exp->getType()==Number::EInteger) && (exp->get_int()==0) )
+						return num(1);
+					if( exp && (exp->getType()==Number::EInteger) && (exp->get_int()==1) )
+						return p->getOperand(0);
+				}
+				// distribute exponent over multiplication
+				{
+					Multiplication::Ptr mul = std::dynamic_pointer_cast<Multiplication>(p->getOperand(0));
+					Number::Ptr exp = std::dynamic_pointer_cast<Number>( p->getOperand(1) );
+					if(mul)
+					{
+						int numFactors = mul->getNumOperands();
+						Multiplication::Ptr mul_new = std::make_shared<Multiplication>();
+						for( int i=0;i<numFactors;++i )
+							mul_new->addOperand(pow(mul->getOperand(i), exp->deep_copy()));
+						return expand(mul_new);
+					}
+				}
+			}else
+			// apply distributive law
+			if(std::dynamic_pointer_cast<Multiplication>(expr))
+			{
+				Multiplication::Ptr mul = std::dynamic_pointer_cast<Multiplication>(expr);
+
+				int numOperands = mul->getNumOperands();
+				for( int i=0;i<numOperands;++i )
+				{
+					if(std::dynamic_pointer_cast<Addition>(mul->getOperand(i)))
+						return expand_distributive(mul);
+				}
+
+				// flatten nested multiplcations
+				{
+					Multiplication::Ptr mul_new = std::make_shared<Multiplication>();
+					bool got_new = false;
+					int numOperands = mul->getNumOperands();
+					for( int i=0;i<numOperands;++i )
+					{
+						Expression::Ptr term = mul->getOperand(i);
+						Multiplication::Ptr term_mul = std::dynamic_pointer_cast<Multiplication>(term);
+						if(term_mul)
+						{
+							got_new = true;
+							int num_nested = term_mul->getNumOperands();
+							for(int j=0;j<num_nested;++j)
+								mul_new->addOperand(term_mul->getOperand(j));
+						}else
+						{
+							Number::Ptr num = std::dynamic_pointer_cast<Number>(term);
+							// we ignore constants of one
+							if( (num && (num->getType() == Number::EInteger) && (num->get_int() == 1))||
+								(num && (num->getType() == Number::EReal) && (num->get_real() == 1.0)))
+							{
+								got_new = true;
+							}else
+								mul_new->addOperand(term);
+						}
+					}
+					if(got_new)
+					{
+						if( mul_new->getNumOperands() == 1 )
+							return mul_new->getOperand(0);
+						else
+							return mul_new;
+					}
+				}
+			}else
+			// flatten nested additions
+			if(std::dynamic_pointer_cast<Addition>(expr))
+			{
+				Addition::Ptr add = std::dynamic_pointer_cast<Addition>(expr);
+				Addition::Ptr add_new = std::make_shared<Addition>();
+				bool got_nested = false;
+				int numOperands = add->getNumOperands();
+				for( int i=0;i<numOperands;++i )
+				{
+					Expression::Ptr term = add->getOperand(i);
+					Addition::Ptr term_add = std::dynamic_pointer_cast<Addition>(term);
+					if(term_add)
+					{
+						got_nested = true;
+						int num_nested = term_add->getNumOperands();
+						for(int j=0;j<num_nested;++j)
+							add_new->addOperand(term_add->getOperand(j));
+					}else
+						add_new->addOperand(term);
+				}
+				if(got_nested)
+					return add_new;
+			}
+
+
+
+			return expr;
+		}
+
+		void replace_variable( Expression::Ptr expr, const std::string& variable, Expression::Ptr replacement )
+		{
+			if( std::dynamic_pointer_cast<Operator>(expr) )
+			{
+				Operator::Ptr op = std::dynamic_pointer_cast<Operator>(expr);
+				int numChilds = op->getNumOperands();
+				for( int i=0;i<numChilds;++i )
+				{
+					Expression::Ptr child = op->getOperand(i);
+
+					Variable::Ptr var = std::dynamic_pointer_cast<Variable>(child);
+					if(var)
+					{
+						if(var->getName() == variable)
+							op->setOperand(i, replacement);
+					}else
+						replace_variable(child, variable, replacement);
+				}
+			}
+		}
+
+		Expression::Ptr fold_constants( Addition::Ptr add )
+		{
+			std::vector<Number::Ptr> number_childs;
+			std::vector<Expression::Ptr> other_childs;
+
+			int numChilds = add->getNumOperands();
+			for( int i=0;i<numChilds;++i )
+			{
+				Expression::Ptr child = fold_constants( add->getOperand(i) );
+
+				if( std::dynamic_pointer_cast<Number>(child) )
+					number_childs.push_back(std::dynamic_pointer_cast<Number>(child));
+				else
+					other_childs.push_back(child);
+			}
+
+			// fold all the numbers we have
+			Number::Ptr num;
+			if( number_childs.size() > 0 )
+				num = std::dynamic_pointer_cast<Number>(number_childs[0]->deep_copy());
+
+			for( int i=1;i<number_childs.size();++i )
+				*num += *number_childs[i];
+
+			if( number_childs.size() == numChilds )
+			{
+				// all childs are numbers, we can return a pure number
+				return num;
+			}else
+			{
+				// only sum (or even no) childs are numbers, fold all the numbers we have
+				Addition::Ptr add_folded = std::make_shared<Addition>();
+				if(num)
+					add_folded->addOperand(num);
+				for( auto expr:other_childs )
+					add_folded->addOperand(expr);
+				return add_folded;
+			}
+		}
+
+		Expression::Ptr fold_constants( Multiplication::Ptr mul )
+		{
+			std::vector<Number::Ptr> number_childs;
+			std::vector<Expression::Ptr> other_childs;
+
+			int numChilds = mul->getNumOperands();
+			for( int i=0;i<numChilds;++i )
+			{
+				Expression::Ptr child = fold_constants( mul->getOperand(i) );
+
+				if( std::dynamic_pointer_cast<Number>(child) )
+					number_childs.push_back(std::dynamic_pointer_cast<Number>(child));
+				else
+					other_childs.push_back(child);
+			}
+
+			// fold all the numbers we have
+			Number::Ptr num;
+			if( number_childs.size() > 0 )
+				num = std::dynamic_pointer_cast<Number>(number_childs[0]->deep_copy());
+
+			for( int i=1;i<number_childs.size();++i )
+			{
+				*num *= *number_childs[i];
+			}
+
+			if( number_childs.size() == numChilds )
+			{
+				// all childs are numbers, we can return a pure number
+				return num;
+			}else
+			{
+				// only sum (or even no) childs are numbers, fold all the numbers we have
+				Multiplication::Ptr mul_folded = std::make_shared<Multiplication>();
+				if(num)
+					mul_folded->addOperand(num);
+				for( auto expr:other_childs )
+					mul_folded->addOperand(expr);
+				return mul_folded;
+			}
+		}
+
+		Expression::Ptr fold_constants( Power::Ptr pow )
+		{
+			pow->setOperand(0, fold_constants(pow->getOperand(0)));
+			pow->setOperand(1, fold_constants(pow->getOperand(1)));
+
+			Number::Ptr base = std::dynamic_pointer_cast<Number>(pow->getOperand(0));
+			Number::Ptr exp = std::dynamic_pointer_cast<Number>(pow->getOperand(1));
+			if( base && exp )
+			{
+				base = std::dynamic_pointer_cast<Number>(base->deep_copy());
+				base->pow(*exp);
+				return base;
+			}
+			return pow;
+		}
+
+		Expression::Ptr fold_constants( LargestInteger::Ptr li )
+		{
+			li->setOperand(0, fold_constants(li->getOperand(0)));
+
+			Number::Ptr base = std::dynamic_pointer_cast<Number>(li->getOperand(0));
+			if(base)
+			{
+				if( base->getType() == Number::EInteger )
+					return num(base->get_int());
+				else
+				if( base->getType() == Number::EReal )
+					return num(int(std::ceil( base->get_real() )));
+			}
+			return li;
+		}
+
+		Expression::Ptr fold_constants( Expression::Ptr expr )
+		{
+			if( std::dynamic_pointer_cast<Operator>(expr) )
+			{
+				Operator::Ptr op = std::dynamic_pointer_cast<Operator>(expr);
+
+				if( std::dynamic_pointer_cast<Multiplication>(op) )
+					return fold_constants( std::dynamic_pointer_cast<Multiplication>(op));
+				else
+				if( std::dynamic_pointer_cast<Addition>(op) )
+					return fold_constants( std::dynamic_pointer_cast<Addition>(op));
+				else
+				if( std::dynamic_pointer_cast<Power>(op) )
+					return fold_constants( std::dynamic_pointer_cast<Power>(op));
+				else
+				if( std::dynamic_pointer_cast<LargestInteger>(op) )
+					return fold_constants( std::dynamic_pointer_cast<LargestInteger>(op));
+
+				int numChilds = op->getNumOperands();
+				for( int i=0;i<numChilds;++i )
+				{
+					Expression::Ptr child = op->getOperand(i);
+					op->setOperand(i, fold_constants(child));
+				}
+			}
+
+			return expr;
+		}
+	}
+}

@@ -32,7 +32,7 @@ namespace tensor
 	template<typename T>
 	struct Tensor
 	{
-		Tensor(T* data, int order, int dimension=3):
+		Tensor(T* data=0, int order=0, int dimension=3):
 			m_data(data),
 			m_order(order),
 			m_dimension(dimension)

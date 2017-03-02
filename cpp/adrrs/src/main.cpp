@@ -979,34 +979,156 @@ complex contract_moment( tensor::Tensor<complex>& a, const V3d& d  )
 
 	// iterate over all components of tensor a
 	for( auto it = a.begin(), end = a.end(); it!=end;++it  )
+	{
 		result += it.weight(d)*it.value();
+	}
 
 	return result;
 }
 
-std::vector<complex> get_components( int l, int m, xp::Expression::Ptr ylm )
+struct ylm_t
 {
-	std::vector<complex> ylm_components( tensor::numComponents(l) );
-
-	xp::Addition::Ptr add = std::dynamic_pointer_cast<xp::Addition>(ylm);
-	if(!add)
-		return ylm_components;
-	//std::cout << "extracting components\n";
-
-	// build component codes...this is used to associate
-	// individual terms with their tensor component
-	std::vector<V3i> component_codes;
-
+	struct TensorData
 	{
-		tensor::Tensor<double> t( 0, l );
-		for( auto it = t.begin(), end = t.end(); it!=end;++it )
+		typedef std::shared_ptr<TensorData> Ptr;
+		tensor::Tensor<complex> tensor;
+		std::vector<complex> tensor_components;
+	};
+
+	static std::vector<std::vector<V3i>> g_component_codes;
+
+	struct compare_V3i
+	{
+		bool operator()(const V3i& a, const V3i& b) const
 		{
-			V3i code(0,0,0);
-			for( int j=0;j<l;++j )
-				++code[it.index(j)];
-			component_codes.push_back(code);
+			return std::make_tuple(a.x(), a.y(), a.z()) < std::make_tuple(b.x(), b.y(), b.z());
+		}
+	};
+	static std::map<V3i, int, compare_V3i> g_component_count;
+
+	static void build(int order)
+	{
+		g_component_codes.resize(order);
+		for( int l=0;l<order;++l)
+		{
+			std::vector<V3i>& component_codes = g_component_codes[l];
+
+			tensor::Tensor<double> t( 0, l );
+			for( auto it = t.begin(), end = t.end(); it!=end;++it )
+			{
+				V3i code(0,0,0);
+				for( int j=0;j<l;++j )
+					++code[it.index(j)];
+				component_codes.push_back(code);
+
+				if( g_component_count.find(code) == g_component_count.end() )
+					g_component_count[code] = 0;
+				++g_component_count[code];
+			}
 		}
 	}
+
+	ylm_t( int l, int m ):
+		m_l(l),
+		m_m(m)
+	{
+		/*
+		m_components_l.resize(tensor::numComponents(l), 0.0);
+		m_tensor_l = tensor::Tensor<complex>(m_components_l.data(), m_l);
+		if( l>= 2 )
+		{
+			m_components_lm2.resize(tensor::numComponents(l-2), 0.0);
+			m_tensor_lm2 = tensor::Tensor<complex>(m_components_lm2.data(), m_l-2);
+		}
+		*/
+	}
+
+	ylm_t( const ylm_t& other ):
+		m_l(other.m_l),
+		m_m(other.m_m),
+		m_tensordata(other.m_tensordata.begin(), other.m_tensordata.end())
+	{
+	}
+
+
+	void print()
+	{
+		std::cout << "ylm l=" << m_l << " m=" << m_m << std::endl;
+		for( auto& it:m_tensordata )
+		{
+			int l = it.first;
+			TensorData::Ptr td = it.second;
+			std::cout << "\tl=" << l << std::endl;
+			int numComponents = td->tensor_components.size();
+			for( int i=0;i<numComponents;++i )
+			{
+				std::cout << "\t" << g_component_codes[l][i].toString() << "=" << td->tensor_components[i] << std::endl;
+			}
+		}
+	}
+
+	void add_contribution_to_component( const V3i& code, complex contribution )
+	{
+		// find the rank of the tensor to which the current component belongs
+		int component_l = code[0] + code[1] + code[2];
+
+		TensorData::Ptr td;
+		if( m_tensordata.find(component_l) == m_tensordata.end() )
+		{
+			td = std::make_shared<TensorData>();
+			m_tensordata[component_l] = td;
+			td->tensor_components.resize(tensor::numComponents(component_l));
+			td->tensor = tensor::Tensor<complex>( td->tensor_components.data(), component_l );
+		}else
+			td = m_tensordata[component_l];
+
+		if( (component_l != m_l) && (component_l != m_l-2))
+		{
+		//if( (component_l != m_l) )
+			std::cout << "error: component rank is not of type l-2=" << m_l-2 << " or l=" << m_l << " code=" << code.toString() << std::endl;
+			//return;
+		}
+
+
+		std::vector<V3i>& component_codes = g_component_codes[component_l];
+
+		int numComponents = td->tensor_components.size();
+		for( int c=0;c<numComponents;++c )
+		{
+			if( component_codes[c] == code )
+			{
+				td->tensor_components[c] += contribution/double(g_component_count[code]);
+			}
+		}
+	}
+
+
+
+	std::map<int, TensorData::Ptr> m_tensordata;
+
+	/*
+	tensor::Tensor<complex> m_tensor_l;
+	tensor::Tensor<complex> m_tensor_lm2;
+	std::vector<complex> m_components_l; // tensor components of rank l tensor
+	std::vector<complex> m_components_lm2; // tensor components of rank l-2 tensor
+	*/
+	int m_l;
+	int m_m;
+};
+
+std::vector<std::vector<V3i>> ylm_t::g_component_codes;
+std::map<V3i, int, ylm_t::compare_V3i> ylm_t::g_component_count;
+
+ylm_t get_components( int l, int m, xp::Expression::Ptr ylm_expr )
+{
+	ylm_t ylm(l,m);
+
+	xp::Addition::Ptr add = std::dynamic_pointer_cast<xp::Addition>(ylm_expr);
+	if(!add)
+		return ylm;
+	//std::cout << "extracting components\n";
+
+
 
 	/*
 	// print component codes for debugging
@@ -1024,6 +1146,7 @@ std::vector<complex> get_components( int l, int m, xp::Expression::Ptr ylm )
 		xp::Multiplication::Ptr mul = std::dynamic_pointer_cast<xp::Multiplication>(add->getOperand(i));
 		if(!mul)
 			std::cout << "error\n";
+		//std::cout << "term " << i << "= " << mul->toLatex() << std::endl;
 
 		// each term contributes to one tensor component
 		double component_contribution = 1.0;
@@ -1039,21 +1162,40 @@ std::vector<complex> get_components( int l, int m, xp::Expression::Ptr ylm )
 		{
 			xp::Expression::Ptr factor = mul->getOperand(j);
 
+			//std::cout << "\tfactor " << j << "= " << factor->toLatex() << std::endl;
+
 			if( std::dynamic_pointer_cast<xp::Number>(factor) )
 			{
 				xp::Number::Ptr n = std::dynamic_pointer_cast<xp::Number>(factor);
-				component_contribution *= n->get_real();
+				double value = 1.0;
+				switch(n->getType())
+				{
+					case xp::Number::EInteger:value = n->get_int();break;
+					case xp::Number::EReal:value = n->get_real();break;
+					default:
+					{
+						std::cout << "unable to handle number type\n";
+						throw std::runtime_error("hrhhrhth");
+					}break;
+				};
+
+				component_contribution *= value;
+				//std::cout << "\tgot number  value=" << value << std::endl;
 			}
 
 			// check for Clm or almj
 			if( std::dynamic_pointer_cast<xp::Index>(factor) )
 			{
+				double index_contribution = 1.0;
 				xp::Index::Ptr index = std::dynamic_pointer_cast<xp::Index>(factor);
 				if(index->getBaseName() == "C")
-					component_contribution *= Clm_including_csp(index->getExponent(0), index->getExponent(1));
+					index_contribution *= Clm_including_csp(index->getExponent(0), index->getExponent(1));
 				else
 				if(index->getBaseName() == "a")
-					component_contribution *= almj(index->getExponent(0), index->getExponent(1), index->getExponent(2));
+					index_contribution *= almj(index->getExponent(0), index->getExponent(1), index->getExponent(2));
+
+				component_contribution *= index_contribution;
+				//std::cout << "\tgot index " << index->getBaseName() << " value=" << index_contribution << std::endl;
 			}
 
 			xp::Variable::Ptr var = std::dynamic_pointer_cast<xp::Variable>(factor);
@@ -1100,38 +1242,28 @@ std::vector<complex> get_components( int l, int m, xp::Expression::Ptr ylm )
 
 		} // for each factor of current term
 
-		//if(flag)
-		//	std::cout << "warning: variable with negative exponent found\n";
-
-		if(!flag)
+		if(flag)
 		{
-			complex final_contribution = std::pow( complex(0.0, 1.0), code[1] )*component_contribution;
-
-			int numComponents = ylm_components.size();
-			for( int c=0;c<numComponents;++c )
-			{
-				if( component_codes[c] == code )
-				{
-					ylm_components[c] += final_contribution;
-				}
-			}
+			std::cout << "warning: variable with negative exponent found contribution=" << component_contribution << std::endl;
+			continue;
 		}
-	}
-	//tensor::Tensor<complex>
 
-	return ylm_components;
+		complex final_contribution = std::pow( complex(0.0, 1.0), code[1] )*component_contribution;
+
+
+		ylm.add_contribution_to_component(code, final_contribution);
+	}
+
+	return ylm;
 }
 
 int main()
 {
-	std::cout << Clm_including_csp(2, 0)*almj(2, 0, 0) << std::endl;
-	std::cout << Clm_including_csp(2, 0)*almj(2, 0, 1) << std::endl;
+	int order = 5;
 
-	std::cout << Clm_including_csp(2, 1)*almj(2, 1, 0) << std::endl;
-	std::cout << Clm_including_csp(2, 1)*almj(2, 1, 1) << std::endl;
+	ylm_t::build(order);
 
-	int order = 3;
-	std::vector<std::vector<complex>> ylm_components_all;
+	std::vector<ylm_t> ylm_all;
 	///*
 	{
 		using namespace xp;
@@ -1150,8 +1282,10 @@ int main()
 		for( int l=0;l<order;++l )
 			for( int m=-l;m<=l;++m )
 			{
+				//if( !(l==3 && m==1) )
+				//	continue;
 
-				std::vector<complex> ylm_components;
+				ylm_t ylm(l,m);
 
 				// m>=0
 				if( m>= 0 )
@@ -1160,10 +1294,10 @@ int main()
 					scope.m_variables["l"] = num(l);
 					scope.m_variables["m"] = num(m);
 
-					Expression::Ptr ylm= rewrite::expand(Ylm->deep_copy(), scope);
+					Expression::Ptr ylm_expr = rewrite::expand(Ylm->deep_copy(), scope);
 					//std::cout << "l=" << l << " m=" << m << std::endl;
 					//std::cout << "$$" << toLatex(ylm) << "$$" << std::endl;
-					ylm_components = get_components(l, m, ylm);
+					ylm = get_components(l, m, ylm_expr);
 				}
 				else
 				{
@@ -1172,22 +1306,27 @@ int main()
 					scope.m_variables["l"] = num(l);
 					scope.m_variables["m"] = num(std::abs(m));
 
-					Expression::Ptr ylm2= rewrite::expand(Ylm2->deep_copy(), scope);
+					Expression::Ptr ylm2_expr= rewrite::expand(Ylm2->deep_copy(), scope);
 					//std::cout << "l=" << l << " m=" << -m << std::endl;
 					//std::cout << "$$" << toLatex(ylm2) << "$$" << std::endl;
-					ylm_components = get_components(l, m, ylm2);
+					ylm = get_components(l, m, ylm2_expr);
 				}
 
-				std::cout << "y" << l << m << "=\n";
-				for( auto& it:ylm_components )
-				{
-					std::cout << "\t" << it << std::endl;
-				}
-				ylm_components_all.push_back(ylm_components);
+				//std::cout << "y" << l << m << "=\n";
+				//for( auto& it:ylm_components )
+				//{
+				//	std::cout << "\t" << it << std::endl;
+				//}
+				ylm_all.push_back(ylm);
 			}
 		//e->print_hierarchy();
 		//return 0;
 	}
+
+
+	for(auto it:ylm_all)
+		it.print();
+
 	//*/
 	/*
 	{
@@ -1300,95 +1439,87 @@ int main()
 
 	// investigate SH functions ---
 	///*
-	int ylm_componenets_index = 0;
+	int ylm_index = 0;
 	for( int l=0;l<order;++l )
 	{
-		for( int m=-l;m<=l;++m, ++ylm_componenets_index )
-		//for( int m=1;m<=l;++m )
-		//for( int m=-1;m<=-1;++m )
+		for( int m=-l;m<=l;++m, ++ylm_index )
 		{
-			//std::vector<complex> ylm_components(tensor::numComponents(l));
-			std::vector<complex>& ylm_components = ylm_components_all[ylm_componenets_index];
-			tensor::Tensor<complex> ylm(ylm_components.data(), l);
-
-			/*
-			switch(l)
-			{
-				case 0:ylm_components[0] = Clm(l,m);break;
-				case 1:
-				{
-					switch(m)
-					{
-						case -1:
-						{
-							ylm_components[0] = csp(m)*Clm_including_csp(l,std::abs(m));
-							ylm_components[1] = csp(m)*Clm_including_csp(l,std::abs(m))*complex(0.0, -1.0);
-							ylm_components[2] = 0.0;
-						}break;
-						case 0:
-						{
-							ylm_components[0] = 0.0;
-							ylm_components[1] = 0.0;
-							ylm_components[2] = Clm_including_csp(l,m);
-						}break;
-						case 1:
-						{
-							ylm_components[0] = Clm_including_csp(l,m);
-							ylm_components[1] = Clm_including_csp(l,m)*complex(0.0, 1.0);
-							ylm_components[2] = 0.0;
-						}break;
-					};
-				}break;
-			};
-			*/
-
-			/*
-			std::cout << "y" << l << m << "=\n";
-			for( auto& it:ylm_components )
-			{
-				std::cout << "\t" << it << std::endl;
-			}
-			*/
+			//if( (l != 2) && (m!=0))
+			//	continue;
+			ylm_t ylm = ylm_all[ylm_index];
 
 
-			//std::cout << "C(" << l << "," << m << ")=" << Clm(l,m) << std::endl;
-			//std::cout << "a(" << l << "," << m << "," << "0"  << ")=" << almj(l,m, 0) << std::endl;
-			//EnvMap map_csh_groundtruth;
-			//EnvMap map_csh_new;
+			EnvMap map_csh_groundtruth;
+			EnvMap map_csh;
 			EnvMap map_error;
 			//EnvMap map_tensor;
 
-			/*
+
 			sh::SphericalFunction<Color3f> ylm_complex = [&](double theta, double phi) -> Color3f
 			{
 				complex csh = complex_sh(l,m,theta, phi);
 				return Color3f(std::abs(csh.real()), std::abs(csh.imag()), 0.0f);
 			};
-			*/
 
+			sh::SphericalFunction<Color3f> ylm_complex_ours = [&](double theta, double phi) -> Color3f
+			{
+				V3d n = sphericalDirection(theta, phi);
+				complex csh = complex_sh(l,m,theta, phi);
+				if( (l==2) && (m==0) )
+				{
+					csh = Clm(2, 0)*almj(2, 0, 0)*n.z()*n.z();// + Clm(2, 0)*almj(2, 0, 1);
+				}else
+				if( (l==2) && (m==1) )
+				{
+					csh = Clm(2, 1)*almj(2, 1, 0)*n.x()*n.z() + Clm(2, 1)*almj(2, 1, 0)*n.z()*complex(0.0, n.y());
+				}
+
+				return Color3f(std::abs(csh.real()), std::abs(csh.imag()), 0.0f);
+			};
 
 
 			sh::SphericalFunction<Color3f> error = [&](double theta, double phi) -> Color3f
 			{
 				V3d n = sphericalDirection(theta, phi);
 				complex csh = complex_sh(l, m, theta, phi);
-				complex csh3 = complex_sh3(l, m, n);
+				//complex csh3 = complex_sh3(l, m, n);
+				//complex csh3 = contract_moment(ylm.m_tensor_l, n);
+				complex csh3;
 
-				complex csh4 = contract_moment(ylm, n);
+				//if(l>=2)
+				//	csh3 += contract_moment(ylm.m_tensor_lm2, n);
+				for( auto& it:ylm.m_tensordata )
+				{
+					csh3 += contract_moment(it.second->tensor, n);
+				}
 
-				//std::cout << csh.real() << " " << csh4.real() << std::endl;
+				double error = std::abs(csh-csh3);
+				//double error = std::abs(csh-csh4);
 
-				double error = std::abs(csh-csh4);
 				return Color3f(error);
 			};
 
 			rasterizeSphericalFunction(map_error, error);
+			rasterizeSphericalFunction(map_csh_groundtruth, ylm_complex);
+			rasterizeSphericalFunction(map_csh, ylm_complex_ours);
 
 			{
 				std::string filename("error_$0_$1.exr");
 				filename = replace(filename, "$0", toString(l));
 				filename = replace(filename, "$1", toString(m));
 				map_error.bitmap().saveEXR(filename);
+			}
+			{
+				std::string filename("csh_$0_$1.exr");
+				filename = replace(filename, "$0", toString(l));
+				filename = replace(filename, "$1", toString(m));
+				map_csh_groundtruth.bitmap().saveEXR(filename);
+			}
+			{
+				std::string filename("csh_ours_$0_$1.exr");
+				filename = replace(filename, "$0", toString(l));
+				filename = replace(filename, "$1", toString(m));
+				map_csh.bitmap().saveEXR(filename);
 			}
 		}
 	}

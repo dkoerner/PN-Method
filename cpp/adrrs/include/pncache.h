@@ -172,19 +172,6 @@ namespace tensor
 		int m_dimension;
 	};
 
-	/*
-	template<typename T>
-	void add( const SymmetricTensor<T>& a, const SymmetricTensor<T>& b )
-	{
-
-	}
-
-	template<typename T>
-	void contract( const SymmetricTensor<T>& a, int idx_a, const SymmetricTensor<T>& b, int idx_b )
-	{
-
-	}
-	*/
 } // namespace tensor
 
 

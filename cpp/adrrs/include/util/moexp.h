@@ -53,6 +53,7 @@ namespace moexp
 	double a( int l, int m, int j );
 	double P(int l, int m, double x); // associated Legendre polynomial
 	complex Y( int l, int m, double theta, double phi ); // complex spherical harmonics
+	double Y_real(int l, int m, double theta, double phi); // real spherical harmonics
 
 
 	// tensor is basically a multidimensional array with dynamic number of axes
@@ -287,6 +288,53 @@ namespace moexp
 
 	std::unique_ptr<std::vector<complex>> project_Y(int order, const SphericalFunction<double>& func, int sample_count);
 
+	template<typename T>
+	std::unique_ptr<std::vector<T>> project_Y_real(int order, const SphericalFunction<T>& func, int sample_count)
+	{
+		std::unique_ptr<std::vector<T>> coeffs(new std::vector<T>());
+		coeffs->assign(numSHCoefficients(order), 0.0);
+
+		RNGd rng;
+		// integrate func times sh basis function to get the coefficient associated with that basis
+		for( int i=0;i<sample_count;++i )
+		{
+			V3d d = sampleSphere<double>(rng);
+			P2d theta_phi = sphericalCoordinates(d);
+			double theta = theta_phi.x();
+			double phi = theta_phi.y();
+			double d_pdf = sampleSpherePDF();
+
+			T f = func( theta_phi.x(), theta_phi.y() );
+
+			// integrate and accumulate for each sh basis function
+			for( int l=0;l<=order;++l )
+				for( int m=-l;m<=l;++m )
+				{
+					double sh = Y_real(l, m, theta, phi);
+					T sample = f*sh/d_pdf;
+					T& sh_coeff = (*coeffs)[shIndex(l, m)];
+					sh_coeff += (sample - sh_coeff)/float(i+1);
+				}
+		}
+		return coeffs;
+	}
+
 	complex Y_sum(int order, const std::vector<complex>& coeffs, double theta, double phi);
+
+
+	template <typename T>
+	T Y_real_sum(int order, const std::vector<T>& coeffs, double theta, double phi)
+	{
+		//CHECK(GetCoefficientCount(order) == coeffs.size(), "Incorrect number of coefficients provided.");
+		T sum = T(0.0);//Zero<T>();
+		for (int l = 0; l <= order; l++)
+		{
+			for (int m = -l; m <= l; m++)
+			{
+				sum += Y_real(l, m, theta, phi) * coeffs[shIndex(l, m)];
+			}
+		}
+		return sum;
+	}
 
 }//namespace moexp

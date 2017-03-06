@@ -2,8 +2,11 @@
 
 
 #include <map>
+#include <math/transform.h>
 #include <util/cas.h>
-
+#include <util/bitmap.h>
+#include <houio/Geometry.h>
+#include <houio/HouGeoIO.h>
 
 
 
@@ -199,6 +202,27 @@ namespace moexp
 		}else
 		{
 			return csp(m)*Y_cc(l, std::abs(m), theta, phi);
+		}
+	}
+
+	// real spherical harmonics...
+	// l must be >= 0
+	// m must be >= -l and <= l
+	double Y_real(int l, int m, double theta, double phi)
+	{
+		//CHECK(l >= 0, "l must be at least 0.");
+		//CHECK(-l <= m && m <= l, "m must be between -l and l.");
+		double kml = sqrt((2.0 * l + 1) * factorial(l - abs(m)) / (4.0 * M_PI * factorial(l + abs(m))));
+		if (m > 0)
+		{
+			return sqrt(2.0)*kml*cos(m * phi)*csp(m)*P(l, m, cos(theta));
+		}else
+		if(m < 0)
+		{
+			return sqrt(2.0)*kml*sin(-m * phi)*csp(-m)*P(l, -m, cos(theta));
+		}else
+		{
+			return kml*P(l, 0, cos(theta));
 		}
 	}
 
@@ -510,5 +534,299 @@ namespace moexp
 		return builder->compute_Y_tensors( l, m );
 	}
 } // namespace moexp
+
+
+
+
+struct EnvMap
+{
+	typedef std::shared_ptr<EnvMap> Ptr;
+
+	EnvMap( const std::string& filename )
+	{
+		m_bitmap = Bitmap(filename);
+		m_transform = Transformd();
+	}
+
+	EnvMap()
+	{
+		m_bitmap = Bitmap(V2i(512, 256));
+		m_transform = Transformd();
+	}
+
+	// evaluate environment map
+	Color3f eval( double theta, double phi )const
+	{
+		V3d d = sphericalDirection<double>(theta, phi);
+		P2d uv = directionToUV(d);
+		return m_bitmap.eval(uv);
+	}
+
+
+	P2d directionToUV( const V3d& d )const
+	{
+		// using formulas given in http://gl.ict.usc.edu/Data/HighResProbes/
+		// with the difference that u=[0,1] (instead of [0,2]) and we negate z
+		P2d uv( (1+std::atan2(d.x(), d.z())/M_PI)/2,
+				 safe_acos(d.y())/M_PI );
+		return uv;
+	}
+	V3d uvToDirection( const P2d& uv )const
+	{
+		// using formulas given in http://gl.ict.usc.edu/Data/HighResProbes/
+		// with the difference that u=[0,1] (instead of [0,2]) and we negate z
+		// azimuthal angle
+		double theta = M_PI*(uv.x()*2.0-1.0);
+		// elevation angle
+		double phi = M_PI*uv.y();
+		return V3d( std::sin(phi)*std::sin(theta), std::cos(phi), std::sin(phi)*cos(theta) );
+	}
+	P2d uvToXY(const P2d& uv)const
+	{
+		P2d xy(
+			(uv.x()*(m_bitmap.cols()-1)),
+			(uv.y()*(m_bitmap.rows()-1))
+			);
+		return xy;
+	}
+
+	P2d xyToUV(const P2d& xy)const
+	{
+		return P2d(
+			(xy.x())/double(m_bitmap.cols()-1),
+			(xy.y())/double(m_bitmap.rows()-1)
+			);
+	}
+
+	V3d xyToDirection( const P2d& xy )const
+	{
+		return uvToDirection( xyToUV(xy) );
+	}
+	P2d directionToXY( const V3d& d )const
+	{
+		return uvToXY(directionToUV(d));
+	}
+
+	Bitmap& bitmap()
+	{
+		return m_bitmap;
+	}
+
+private:
+	Transformd m_transform;
+	Bitmap m_bitmap;
+};
+
+
+void rasterizeSphericalFunctionSphere(const std::string& filename, moexp::SphericalFunction<Color3f> func )
+{
+	houio::Geometry::Ptr geo = houio::Geometry::createSphere(120, 120, 1.0);
+	houio::Attribute::Ptr pAttr = geo->getAttr("P");
+	houio::Attribute::Ptr cdAttr = houio::Attribute::createV3f(pAttr->numElements());
+	for( int i=0;i<pAttr->numElements();++i )
+	{
+		houio::math::V3f p = pAttr->get<houio::math::V3f>(i);
+		P2d theta_phi = sphericalCoordinates<double>(V3d(p.x, p.y, p.z));
+		double theta = theta_phi.x();
+		double phi = theta_phi.y();
+		Color3f col = func(theta, phi);
+		cdAttr->set<houio::math::V3f>( i, houio::math::V3f(col.r(), col.g(), col.b()) );
+	}
+	geo->setAttr("Cd", cdAttr);
+	houio::HouGeoIO::xport( filename, geo);
+}
+
+void rasterizeSphericalFunctionMap( EnvMap& envmap, moexp::SphericalFunction<Color3f> func )
+{
+	//std::ofstream f( "test_pixels_coords.txt", std::ios::binary | std::ios::trunc );
+	int xres = envmap.bitmap().cols();
+	int yres = envmap.bitmap().rows();
+	for( int j=0;j<yres;++j )
+		for( int i=0;i<xres;++i )
+		{
+			P2d xy( i+0.5f, j+0.5f );
+			V3d d = envmap.xyToDirection(xy);
+			P2d theta_phi = sphericalCoordinates(d);
+			double theta = theta_phi.x();
+			double phi = theta_phi.y();
+			envmap.bitmap().coeffRef(j, i) = func(theta, phi);
+			//f << theta << " "  << phi << std::endl;
+		}
+}
+
+
+
+// compute sh coefficients
+void validate_moexp( int order )
+{
+	EnvMap map("envmap.exr");
+
+
+	moexp::SphericalFunction<double> fun = [&](double theta, double phi) -> double
+	{
+		return map.eval(theta, phi).getLuminance();
+	};
+
+	rasterizeSphericalFunctionSphere( "groundtruth.bgeo", fun );
+
+	// complex sh ---
+	{
+		// project
+		int order = 30;
+		int numSamples = 50000;
+		std::unique_ptr<std::vector<moexp::complex>> sh_coeffs;
+		sh_coeffs = moexp::project_Y(order, fun, numSamples);
+
+		// reconstruct
+		for( int l=0;l<=order;++l )
+		{
+			moexp::SphericalFunction<double> reconstruction = [&](double theta, double phi) -> double
+			{
+				// for some reason our complexSH reconstruction is flipped in y
+				// when compared to real SH reconstruction
+				V3d d = sphericalDirection(theta, phi);
+				d.y() = -d.y();
+				double theta2, phi2;
+				P2d theta_phi2 = sphericalCoordinates(d);
+				theta2 = theta_phi2.x();
+				phi2 = theta_phi2.y();
+
+				moexp::complex value = moexp::Y_sum(l, *sh_coeffs.get(), theta2, phi2);
+				//return std::abs(value);
+				return value.real();
+			};
+
+			std::string filename("testfit_complexsh_reconstruction_$0.bgeo");
+			filename = replace(filename, "$0", toString(l));
+
+			rasterizeSphericalFunctionSphere( filename, reconstruction );
+		}
+	}
+
+	// real sh
+	{
+		// project
+		int order = 30;
+		int numSamples = 50000;
+		std::unique_ptr<std::vector<double>> sh_coeffs;
+		sh_coeffs = moexp::project_Y_real(order, fun, numSamples);
+
+		// reconstruct
+		for( int l=0;l<=order;++l )
+		{
+			moexp::SphericalFunction<double> reconstruction = [&](double theta, double phi) -> double
+			{
+				return moexp::Y_real_sum<double>(l, *sh_coeffs.get(), theta, phi);
+			};
+			std::string filename("testfit_realsh_reconstruction_$0.bgeo");
+			filename = replace(filename, "$0", toString(l));
+			rasterizeSphericalFunctionSphere( filename, reconstruction );
+		}
+	}
+
+	// moment expansion ---
+	{
+		// produce tensors...
+		std::vector<std::vector<moexp::Tensor<moexp::complex>>> Y_tensors_all;
+		for( int l=0;l<order;++l )
+		{
+			std::cout << "building Y_tensor for order l=" << l << std::endl;
+			for( int m=-l;m<=l;++m )
+			{
+				std::cout << "\tm=" << m << std::endl;
+				std::vector<moexp::Tensor<moexp::complex>> tensors = moexp::Y_tensors(l, m);
+				Y_tensors_all.push_back(tensors);
+			}
+		}
+
+		// validate that comples SH basis functions are identical to our ylm tensors ---
+		/*
+		std::vector<Bitmap::Ptr> error_bitmaps;
+		int Ylm_index = 0;
+		for( int l=0;l<order;++l )
+		{
+			for( int m=-l;m<=l;++m, ++Ylm_index )
+			{
+				//if( (l != 1) && (m!=1))
+				//	continue;
+				std::vector<moexp::Tensor<moexp::complex>>& Y_tensors = Y_tensors_all[Ylm_index];
+
+				EnvMap map_error;
+
+
+				moexp::SphericalFunction<Color3f> error = [&](double theta, double phi) -> Color3f
+				{
+					V3d n = sphericalDirection(theta, phi);
+					moexp::complex csh = moexp::Y(l, m, theta, phi);
+					moexp::complex csh_from_tensor_contraction;
+
+					for( auto& tensor:Y_tensors )
+						csh_from_tensor_contraction += moexp::contract(tensor, n);
+
+					double error = std::abs(csh-csh_from_tensor_contraction);
+
+					return Color3f(error);
+				};
+
+				rasterizeSphericalFunction(map_error, error);
+
+				{
+					std::string filename("error_$0_$1.exr");
+					filename = replace(filename, "$0", toString(l));
+					filename = replace(filename, "$1", toString(m));
+					map_error.bitmap().saveEXR(filename);
+					error_bitmaps.push_back(std::make_shared<Bitmap>(filename));
+				}
+			}
+		}
+		compositeImages(error_bitmaps, "error_all.exr");
+		*/
+
+
+		// project
+		int numSamples = 50000;
+		std::unique_ptr<std::vector<moexp::complex>> sh_coeffs;
+		sh_coeffs = moexp::project_Y(order, fun, numSamples);
+
+		// we wedge this for every order
+		for( int k=1;k<order;++k )
+		{
+			// compute F_kl tensors according to eq. 2.13a in [thorn80]
+			std::vector<moexp::Tensor<moexp::complex>> F_list;
+
+			for( int l=0;l<k;++l )
+				F_list.push_back(moexp::Tensor<moexp::complex>(l));
+
+			for( int l=0;l<k;++l )
+				for( int m=-l;m<=l;++m )
+				{
+					int shindex = moexp::shIndex(l,m);
+					std::vector<moexp::Tensor<moexp::complex>> Y_tensors = Y_tensors_all[shindex];
+					for( auto& tensor : Y_tensors )
+						F_list[tensor.getOrder()].multiplyAdd((*sh_coeffs)[shindex], tensor);
+				}
+
+			// reconstruct
+			moexp::SphericalFunction<double> reconstruction = [&](double theta, double phi) -> double
+			{
+				V3d n = sphericalDirection(theta, phi);
+
+				// for some reason our complexSH reconstruction is flipped in y
+				// when compared to real SH reconstruction
+				n.y() = -n.y();
+
+				moexp::complex value(0.0, 0.0);
+				for( auto& F:F_list )
+					value += moexp::contract(F, n);
+
+				return value.real();
+			};
+
+			std::string filename("testfit_moexp_reconstruction_$0.bgeo");
+			filename = replace(filename, "$0", toString(k-1));
+			rasterizeSphericalFunctionSphere( filename, reconstruction );
+		}
+	}
+}
 
 

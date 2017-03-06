@@ -19,7 +19,6 @@ SOURCES += \
     src/integrator.cpp \
     src/pncache.cpp \
     src/wedge.cpp \
-    src/util/sh.cpp \
     src/util/cas.cpp \
     src/util/moexp.cpp
 
@@ -124,6 +123,5 @@ HEADERS += \
     include/pncache.h \
     include/cache.h \
     include/util/wedge.h \
-	include/util/sh.h \
     include/util/cas.h \
     include/util/moexp.h

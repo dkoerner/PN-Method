@@ -6,13 +6,12 @@
 #include <util/threadpool.h>
 #include <util/field.h>
 #include <util/wedge.h>
-#include <util/sh.h>
 #include <util/cas.h>
 #include <util/moexp.h>
 
 
 
-#include <pncache.h>
+#include <shcache.h>
 
 
 
@@ -101,8 +100,6 @@ void render_volume( RenderTaskInfo& ti )
 
 int main()
 {
-
-
 	//std::string basePath = "c:/projects/visus/data";
 	std::string basePath = ".";
 	//std::string outpath = basePath + "/noisereduction/fitting4";
@@ -135,23 +132,162 @@ int main()
 
 
 
-	/*
-	// generate pn cache -----------------------
+	// generate sh cache -----------------------
 	{
 		Integrator::Ptr integrator = integrators::volume_path_tracer();
 		scene.integrator = integrator.get();
-		std::string filename = outpath + "/nebulae.moments";
+		std::string filename = outpath + "/nebulae.shcache";
 
-		PNCache cache;
-		int numMoments = 4;
-		int numSamples = 100;
-		int res = 128;
-		cache.generate( outpath + "/nebulae.moments", &scene, numMoments, numSamples, res );
-		return;
+
+		RNGd rng;
+
+
+		SHCache cache;
+		cache.m_override = true;
+		int order = 30;
+		int numSamples = 50000;
+		int res = 1;
+		//cache.generate( filename, &scene, order, numSamples, res );
+		cache.generate_images( filename, &scene, order, numSamples, res );
+		/*
+		P3d p = cache.m_localToWorld*P3d(0.5, 0.5, 0.5);
+
+		for( int i=0;i<order;++i )
+		{
+			cache.m_evaluationOrder = i;
+
+			moexp::SphericalFunction<Color3f> fun = [&](double theta, double phi)->Color3f
+			{
+				V3d d = sphericalDirection(theta, phi);
+				Color3f c = cache.eval(p, d);
+				return c;
+			};
+
+			std::string filename("shcache_reconstruction_$0.exr");
+			filename = replace(filename, "$0", toString(i));
+			rasterizeSphericalFunctionMap( filename, fun );
+		}
+		*/
+
+		/*
+		std::string groundtruth_map_filename = "groundtruth_spherical_function.exr";
+		//std::string groundtruth_map_filename = "envmap.exr";
+
+		double exposure = 8.0;
+
+		std::vector<EnvMap> filtered_maps;
+		auto filter_widths = linearSamples(0.0f, 10.0f, 5 );
+		//std::vector<float> filter_widths = {0.0};
+		for( int i=0;i<filter_widths.size();++i )
+		{
+			float filter_width = filter_widths[i];
+			filtered_maps.push_back( EnvMap(groundtruth_map_filename) );
+			EnvMap& map = filtered_maps[i];
+			if(filter_width>0.0)
+				map.bitmap() = filter(map.bitmap(), gaussFilter(filter_width));
+
+			std::string filename = "groundtruth_$0.exr";
+			filename = replace(filename, "$0", toString(i));
+			std::string filename_geo = "groundtruth_$0.bgeo";
+			filename_geo = replace(filename_geo, "$0", toString(i));
+
+			map.bitmap().saveEXR(filename);
+			map.saveGeo(filename_geo, exposure);
+		}
+
+
+
+		Wedge wedge;
+		//std::vector<int> order_list = {30};
+		std::vector<int> order_list = linearSamples(0, 30, 30);
+		wedge.addParm( "order", order_list );
+		wedge.addParm("filterwidth", filter_widths);
+		for( auto it = wedge.begin(), end = wedge.end();it!=end;++it )
+		{
+			int order = it.getInt("order");
+			int filter_width_index = it.getIndex("filterwidth");
+
+
+			EnvMap& map = filtered_maps[filter_width_index];
+
+			moexp::SphericalFunction<Color3f> fun = [&](double theta, double phi)->Color3f
+			{
+				return map.eval(theta, phi);
+			};
+			std::unique_ptr<std::vector<Color3f>> coeffs = moexp::project_Y_real( order, fun, numSamples );
+			moexp::SphericalFunction<Color3f> fun_reconstruction = [&](double theta, double phi)->Color3f
+			{
+				return moexp::Y_real_sum(order,*coeffs, theta, phi);
+			};
+
+			rasterizeSphericalFunctionMap( it.expand_index( "sh_reconstruction_$0_$1.exr"), fun_reconstruction );
+			rasterizeSphericalFunctionSphere( it.expand_index( "sh_reconstruction_$0_$1.bgeo"), fun_reconstruction, exposure );
+		}
+		*/
+		return 0;
+
+
+		/*
+		rasterizeSphericalFunctionSphere("groundtruth.bgeo", [&](double theta, double phi)->Color3f
+		{
+			return map.eval(theta, phi)*std::pow(2.0, exposure);
+		});
+		*/
+
+		//int order = 15;
+		//for( int l=0;l<=order;++l )
+		{
+			/*
+			std::unique_ptr<std::vector<Color3f>> coeffs = moexp::project_Y_real<Color3f>( order, fun, 100 );
+
+			moexp::SphericalFunction<Color3f> fun_reconstruction = [&](double theta, double phi)->Color3f
+			{
+				return moexp::Y_real_sum<Color3f>( l, coeffs->data(), theta, phi );
+			};
+			*/
+
+
+
+//			std::string filename("shcache_reconstruction_$0.exr");
+//			filename = replace(filename, "$0", toString(l));
+//			//rasterizeSphericalFunctionMap( filename, fun_reconstruction );
+
+//			///*
+//			EnvMap map(filename);
+//			std::string filename_geo("shcache_reconstruction_$0.bgeo");
+//			filename_geo = replace(filename_geo, "$0", toString(l));
+
+//			rasterizeSphericalFunctionSphere(filename_geo, [&](double theta, double phi)->Color3f
+//			{
+//				return map.eval(theta, phi)*std::pow(2.0, exposure);
+//			});
+			//*/
+		}
+
+
+
+
+		/*
+		moexp::SphericalFunction<Color3f> fun_groundtruth = [&](double theta, double phi)->Color3f
+		{
+			Color3f result(0.0);
+			for( int i=0;i<numSamples;++i )
+			{
+				V3d d = sphericalDirection(theta, phi);
+				RadianceQuery rq;
+				rq.ray = Ray3d(p, d);
+				Color3f sample = scene.integrator->Li(&scene, rq, rng);
+				result+=(sample-result)/double(i+1);
+			}
+			return result;
+		};
+		rasterizeSphericalFunctionMap( "groundtruth.exr", fun_groundtruth );
+		*/
 	}
-	*/
 
+	return 0;
 	// pn analysis and debugging ---
+	/*
 	{
 		Integrator::Ptr integrator = integrators::dummy();
 		scene.integrator = integrator.get();
@@ -184,21 +320,21 @@ int main()
 			for(auto component = moment_tensor.begin(), end=moment_tensor.end(); component!=end;++component)
 			{
 				std::cout << "\t" << component.index_str() << "=" << component.value() << std::endl;
-				/*
-				houio::Geometry::Ptr geo = houio::Geometry::createSphere(50, 50, 1.0);
-				houio::Attribute::Ptr pattr = geo->getAttr("P");
-				int numPoints = pattr->numElements();
-				for(int i=0;i<numPoints;++i)
-				{
-					houio::math::V3f d = pattr->get<houio::math::V3f>(i).normalized();
-					d *= std::abs(component.weight(V3d(d.x, d.y, d.z)));
-					pattr->set<houio::math::V3f>(i, d);
-				}
-				houio::HouGeoIO::xport(it.expand_value( outpath+"/analysis_$0_" + component.index_str() + ".bgeo"), geo);
-				*/
+
+//				houio::Geometry::Ptr geo = houio::Geometry::createSphere(50, 50, 1.0);
+//				houio::Attribute::Ptr pattr = geo->getAttr("P");
+//				int numPoints = pattr->numElements();
+//				for(int i=0;i<numPoints;++i)
+//				{
+//					houio::math::V3f d = pattr->get<houio::math::V3f>(i).normalized();
+//					d *= std::abs(component.weight(V3d(d.x, d.y, d.z)));
+//					pattr->set<houio::math::V3f>(i, d);
+//				}
+//				houio::HouGeoIO::xport(it.expand_value( outpath+"/analysis_$0_" + component.index_str() + ".bgeo"), geo);
 			}
 		}
 	}
+	*/
 
 
 	Eigen::Affine3d cameraToWorld;

@@ -17,10 +17,10 @@ SOURCES += \
     src/light.cpp \
     src/scene.cpp \
     src/integrator.cpp \
-    src/pncache.cpp \
     src/wedge.cpp \
     src/util/cas.cpp \
-    src/util/moexp.cpp
+    src/util/moexp.cpp \
+    src/shcache.cpp
 
 
 include(deployment.pri)
@@ -120,8 +120,8 @@ HEADERS += \
     include/light.h \
     include/scene.h \
     include/integrator.h \
-    include/pncache.h \
     include/cache.h \
     include/util/wedge.h \
     include/util/cas.h \
-    include/util/moexp.h
+    include/util/moexp.h \
+    include/shcache.h

@@ -9,7 +9,7 @@
 #include <sstream>
 #include <util/timer.h>
 
-#include <math/RNG.h>
+#include <math/rng.h>
 
 class ThreadPool;
 
@@ -198,7 +198,7 @@ struct GenericTask : Task
 {
 	typedef std::function<void(TaskInfo&)> RunMethod;
 
-	GenericTask( TaskInfo& info, RunMethod _run )
+	GenericTask( const TaskInfo& info, RunMethod _run )
 		: Task(),
 		  m_info(info),
 		  m_run(_run)

@@ -26,7 +26,7 @@
 #include <iostream>
 #include <memory>
 #include <math/vector.h>
-#include <math/RNG.h>
+#include <math/rng.h>
 #include <math/color.h>
 #include <math/transform.h>
 #include <util/bitmap.h>

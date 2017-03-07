@@ -4,7 +4,7 @@
 #include <math/vector.h>
 #include <math/color.h>
 #include <math/bbox.h>
-#include <math/RNG.h>
+#include <math/rng.h>
 
 #include <light.h>
 

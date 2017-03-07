@@ -573,6 +573,9 @@ HeterogeneousMedium::Ptr HeterogeneousMedium::load(const std::string &path)
 		return grid_new;
 	}
 
+	// forward declaring xform template function
+	template<typename T> typename Field<T>::Ptr xform( typename Field<T>::Ptr input, Transformd localToWorld );
+
 	template<typename T>
 	typename Field<T>::Ptr read(const std::string &path )
 	{

@@ -1,6 +1,7 @@
 #include <util/bitmap.h>
 #include <fstream>
 
+/*
 #include <OpenEXR/ImfInputFile.h>
 #include <OpenEXR/ImfOutputFile.h>
 #include <OpenEXR/ImfChannelList.h>
@@ -8,6 +9,7 @@
 #include <OpenEXR/ImfVersion.h>
 #include <OpenEXR/ImfHeader.h>
 #include <OpenEXR/ImfIO.h>
+*/
 
 #include <util/string.h>
 
@@ -65,7 +67,6 @@ Bitmap::Bitmap(const std::string &filename)
 	frameBuffer.insert(ch_b, Imf::Slice(Imf::FLOAT, ptr, pixelStride, rowStride)); 
 	file.setFrameBuffer(frameBuffer);
 	file.readPixels(dw.min.y, dw.max.y);
-
 }
 
 

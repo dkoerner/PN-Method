@@ -248,7 +248,8 @@ namespace integrators
 			if( distance < its.t )
 			{
 				// volume scattering event ---
-				current_vertex.setPosition( ray(distance), sigma_t, scene->volume->evalAlbedo(its.p));
+				P3d pWS = ray(distance);
+				current_vertex.setPosition( pWS, sigma_t, scene->volume->evalAlbedo(pWS));
 
 				// apply pdf and volume attenuation
 				throughput_over_pdf[0] *= 1.0/sigma_t.x();

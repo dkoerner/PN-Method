@@ -1,6 +1,7 @@
 #pragma once
 #include <util/data.h>
 #include <util/threadpool.h>
+#include <util/moexp.h>
 #include <math/transform.h>
 #include <math/color.h>
 
@@ -45,6 +46,10 @@ struct SHCache : public Cache
 	void generate( const std::string& filename, const Scene* scene, int order, int numSamples, int res );
 	void generate_images( const std::string& filename, const Scene* scene, int order, int numSamples, int res );
 	void sample_images( MonteCarloTaskInfo& ti, const Scene* scene );
+
+	EnvMap m_current_map;
+	int m_current_voxel;
+	void sample_image( MonteCarloTaskInfo& ti, const Scene* scene );
 
 
 //private:

@@ -7,10 +7,56 @@ CONFIG += console
 CONFIG -= app_bundle
 CONFIG -= qt
 
-SOURCES += main.cpp
+SOURCES += main.cpp \
+			src/Camera.cpp \
+			src/volume.cpp \
+			src/util/string.cpp \
+			src/util/bitmap.cpp \
+			src/util/envmap.cpp \
+			src/util/data.cpp \
+			src/util/field.cpp \
+			src/util/voxelgrid.cpp \
+			src/util/cas.cpp \
+			src/util/moexp.cpp
+
+HEADERS += \
+	include/camera.h \
+	include/volume.h \
+	include/math/bbox.h \
+	include/math/color.h \
+	include/math/common.h \
+	include/math/dpdf.h \
+	include/math/frame.h \
+	include/math/pcf.h \
+	include/math/plf.h \
+	include/math/ray.h \
+	include/math/rng.h \
+	include/math/transform.h \
+	include/math/vector.h \
+	include/util/string.h \
+	include/util/bitmap.h \
+	include/util/envmap.h \
+	include/util/data.h \
+	include/util/timer.h \
+	include/util/field.h \
+	include/util/voxelgrid.h \
+	include/util/cas.h \
+	include/util/moexp.h \
+	include/cuda/cumath/cumath.h \
+	include/cuda/cumath/Vec3.h \
+	include/cuda/cumath/Vec3Algo.h \
+	include/cuda/CudaData.h \
+	include/cuda/CudaPixelBuffer.h \
+	include/cuda/CudaEnvMap.h \
+	include/cuda/pathtracing.cu.h \
+	include/cuda/CudaVoxelGrid.h \
+	include/cuda/CudaVolume.h \
+	include/cuda/CudaLight.h
+
 
 # This makes the .cu files appear in your project
-OTHER_FILES +=  vectorAddition.cu
+OTHER_FILES +=  vectorAddition.cu \
+				include/cuda/pathtracing.cu.h
 
 include(deployment.pri)
 qtcAddDeployment()
@@ -28,20 +74,32 @@ CUDA_DIR = "c:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v7.5"
 #CUDA_DIR = "C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v4.2"            # Path to cuda toolkit install
 SYSTEM_NAME = x64         # Depending on your system either 'Win32', 'x64', or 'Win64'
 SYSTEM_TYPE = 64            # '32' or '64', depending on your system
-CUDA_ARCH = compute_53           # Type of CUDA architecture, for example 'compute_10', 'compute_11', 'sm_10'
+#CUDA_ARCH = compute_35           # Type of CUDA architecture, for example 'compute_10', 'compute_11', 'sm_10'
+CUDA_ARCH = compute_20           # Type of CUDA architecture, for example 'compute_10', 'compute_11', 'sm_10'
 NVCC_OPTIONS = --use_fast_math
 
 # include paths
-INCLUDEPATH += $$CUDA_DIR/include \
-			   $$CUDA_SDK/common/inc/ \
-			   $$CUDA_SDK/../shared/inc/
+INCLUDEPATH +=  $$CUDA_DIR/include \
+				$$CUDA_SDK/common/inc/ \
+				$$CUDA_SDK/../shared/inc/
+
+
+QMAKE_LIBDIR += "c:/libs-msvc2013/lib"
+INCLUDEPATH += "c:/libs-msvc2013/include"
+
+INCLUDEPATH += $$PWD/include
+INCLUDEPATH += "c:/libs-msvc2013/include/eigen3"
+INCLUDEPATH += "c:/libs-msvc2013/include/houio"
+
 
 # library directories
 QMAKE_LIBDIR += $$CUDA_DIR/lib/$$SYSTEM_NAME \
 				$$CUDA_SDK/common/lib/$$SYSTEM_NAME \
 				$$CUDA_SDK/../shared/lib/$$SYSTEM_NAME
 # Add the necessary libraries
-LIBS += -lcuda -lcudart
+CUDA_LIBS = -lcuda -lcudart
+LIBS += $$CUDA_LIBS
+LIBS += "zlibstatic.lib"
 
 # The following library conflicts with something in Cuda
 #QMAKE_LFLAGS_RELEASE = /NODEFAULTLIB:msvcrt.lib
@@ -55,12 +113,14 @@ MSVCRT_LINK_FLAG_DEBUG = "/MDd"
 MSVCRT_LINK_FLAG_RELEASE = "/MD"
 
 # Configuration of the Cuda compiler
-CONFIG(debug, debug|release) {
-	#Debug settings
+CONFIG(debug, debug|release){
+	# Debug settings
+	LIBS+= "houiod.lib"
+	LIBS += IlmImf-2_1d.lib Iex-2_1d.lib IlmThread-2_1d.lib Imath-2_1d.lib Halfd.lib
 	# Debug mode
 	cuda_d.input    = CUDA_SOURCES
 	cuda_d.output   = $$CUDA_OBJECTS_DIR/${QMAKE_FILE_BASE}_cuda.obj
-	cuda_d.commands = $$CUDA_DIR/bin/nvcc.exe -D_DEBUG $$NVCC_OPTIONS $$CUDA_INC $$LIBS \
+	cuda_d.commands = $$CUDA_DIR/bin/nvcc.exe -D_DEBUG $$NVCC_OPTIONS $$CUDA_INC $$CUDA_LIBS \
 					  --machine $$SYSTEM_TYPE -arch=$$CUDA_ARCH \
 					  --compile -cudart static -g -DWIN32 -D_MBCS \
 					  -Xcompiler "/wd4819,/EHsc,/W3,/nologo,/Od,/Zi,/RTC1" \
@@ -71,14 +131,16 @@ CONFIG(debug, debug|release) {
 }
 else {
 	 # Release settings
-	 cuda.input    = CUDA_SOURCES
-	 cuda.output   = $$CUDA_OBJECTS_DIR/${QMAKE_FILE_BASE}_cuda.obj
-	 cuda.commands = $$CUDA_DIR/bin/nvcc.exe $$NVCC_OPTIONS $$CUDA_INC $$LIBS \
+	LIBS+= "houio.lib"
+	LIBS += IlmImf-2_1.lib Iex-2_1.lib IlmThread-2_1.lib Imath-2_1.lib Half.lib
+	cuda.input    = CUDA_SOURCES
+	cuda.output   = $$CUDA_OBJECTS_DIR/${QMAKE_FILE_BASE}_cuda.obj
+	cuda.commands = $$CUDA_DIR/bin/nvcc.exe $$NVCC_OPTIONS $$CUDA_INC $$CUDA_LIBS \
 					--machine $$SYSTEM_TYPE -arch=$$CUDA_ARCH \
 					--compile -cudart static -DWIN32 -D_MBCS \
 					-Xcompiler "/wd4819,/EHsc,/W3,/nologo,/O2,/Zi" \
 					-Xcompiler $$MSVCRT_LINK_FLAG_RELEASE \
 					-c -o ${QMAKE_FILE_OUT} ${QMAKE_FILE_NAME}
-	 cuda.dependency_type = TYPE_C
-	 QMAKE_EXTRA_COMPILERS += cuda
+	cuda.dependency_type = TYPE_C
+	QMAKE_EXTRA_COMPILERS += cuda
 }

@@ -11,6 +11,8 @@ bool Scene::intersect( const Ray3d& ray, Intersection& its )const
 	bool result = volume->intersectBound(ray, mint, maxt);
 	if( result )
 	{
+		//TODO: here we assume that mint is behind are exactly at the ray origin
+		// if the ray is outside the box, then mint would be the correct choice
 		its.t = maxt;
 		its.p = ray(its.t);
 		return true;

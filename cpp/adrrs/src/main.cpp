@@ -134,7 +134,7 @@ int main()
 
 	// generate sh cache -----------------------
 	{
-		Integrator::Ptr integrator = integrators::volume_path_tracer();
+		Integrator::Ptr integrator = integrators::volume_path_tracer(10);
 		scene.integrator = integrator.get();
 		std::string filename = outpath + "/nebulae.shcache";
 

@@ -1,5 +1,5 @@
 #include <shcache.h>
-#include <util/moexp.h>
+
 
 
 
@@ -67,10 +67,35 @@ void SHCache::generate_images( const std::string& filename, const Scene* scene, 
 	runGenericTasks<MonteCarloTaskInfo>( f, terminator, ThreadPool::getNumSystemCores() );
 */
 
+	/*
 	// sample and accumulate moments (parallel version) ---
 	Terminator terminator(1);
 	auto f = std::bind(&SHCache::sample_images, this, std::placeholders::_1, scene );
 	runGenericTasks<MonteCarloTaskInfo>( f, terminator, ThreadPool::getNumSystemCores() );
+	*/
+
+	// todo: for each voxel...
+	{
+		m_current_voxel = 0;
+		m_current_map = EnvMap(V2i(128, 64));
+		Terminator terminator(100);
+		auto f = std::bind(&SHCache::sample_image, this, std::placeholders::_1, scene );
+		runGenericTasks<MonteCarloTaskInfo>( f, terminator, ThreadPool::getNumSystemCores() );
+		//runGenericTasks<MonteCarloTaskInfo>( f, terminator, 24 );
+
+		{
+			std::string filename("shcache_images/image_$0.exr");
+			filename = replace(filename, "$0", toString(m_current_voxel));
+			m_current_map.bitmap().saveEXR(filename);
+		}
+		{
+			double filter_width = 3.0;
+			m_current_map.bitmap() = filter(m_current_map.bitmap(), gaussFilter(filter_width));
+			std::string filename("shcache_images/image_$0_filtered.exr");
+			filename = replace(filename, "$0", toString(m_current_voxel));
+			m_current_map.bitmap().saveEXR(filename);
+		}
+	}
 
 
 	// save data to disk ---
@@ -219,6 +244,49 @@ void SHCache::sample_images( MonteCarloTaskInfo& ti, const Scene* scene )
 
 	++ti.samples;
 }
+
+
+
+
+void SHCache::sample_image( MonteCarloTaskInfo& ti, const Scene* scene )
+{
+	int width = m_current_map.bitmap().cols();
+	int height = m_current_map.bitmap().rows();
+
+
+	for (int j = ti.taskid; j < height; j += ti.numTasks)
+	{
+		//if(ti.taskid == 0)
+		//	std::cout << "at scanline " << j << "/" << height << std::endl;
+
+		for (int i = 0; i < width; ++i)
+		{
+
+			// work out voxel coordinate
+			int v_i,v_j,v_k;
+			getCoordFromIndex(m_current_voxel, v_i, v_j, v_k);
+
+			// sample position within voxel
+			//P3d pVS(v_i+ti.rng.next1D(), v_j+ti.rng.next1D(), v_k+ti.rng.next1D());
+			P3d pVS(v_i+0.5, v_j+0.5, v_k+0.5);
+			P3d pLS = voxelToLocal(pVS);
+			P3d pWS = m_localToWorld*pLS;
+
+			// todo: maybe precompute direction vectors for performance?
+			V3d d_indirect = m_current_map.xyToDirection( P2d(i+ti.rng.next1D(), j+ti.rng.next1D()) );
+
+			// integrate (produce radiance field sample)
+			RadianceQuery rq;
+			rq.ray = Ray3d(pWS, d_indirect);
+			Color3f L_indirect_sample = scene->integrator->Li( scene, rq, ti.rng );
+
+			Color3f& c = m_current_map.bitmap().coeffRef(j, i);
+			c += (L_indirect_sample-c)/double(ti.samples+1);
+		}
+	}
+	++ti.samples;
+}
+
 
 
 /*

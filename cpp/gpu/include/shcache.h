@@ -89,10 +89,6 @@ struct SHCache : public Cache
 		// read data
 		m_data.resize(m_numVoxels*m_numSHCoefficientsPerVoxel);
 		in.read( (char*)m_data.data(), sizeof(Color3f)*m_data.size() );
-
-		std::cout << "resolution=" << m_resolution.toString() << std::endl;
-		std::cout << "m_order=" << m_order<< std::endl;
-
 	}
 
 	void getCoordFromIndex( int index, int& x, int& y, int& z ) const

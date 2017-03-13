@@ -10,6 +10,7 @@ CONFIG -= qt
 SOURCES += main.cpp \
 			src/Camera.cpp \
 			src/volume.cpp \
+			src/shcache.cpp \
 			src/util/string.cpp \
 			src/util/bitmap.cpp \
 			src/util/envmap.cpp \
@@ -22,6 +23,8 @@ SOURCES += main.cpp \
 HEADERS += \
 	include/camera.h \
 	include/volume.h \
+	include/shcache.h \
+	include/cache.h \
 	include/math/bbox.h \
 	include/math/color.h \
 	include/math/common.h \

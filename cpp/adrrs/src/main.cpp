@@ -133,6 +133,23 @@ int main()
 
 
 	// load sh cache -----------------------
+	SHCache shcache("nebulae200.shcache");
+
+	// verification
+	/*
+	for( int l=0;l<=shcache.m_order;++l )
+	{
+		std::string filename = "sh_reconstruction_alt_$0.bgeo";
+		filename = replace(filename, "$0", toString(l));
+
+		Color3f* coeffs = shcache.getCoefficients(0);
+		rasterizeSphericalFunctionSphere(filename, [&](double theta, double phi)->Color3f
+		{
+			return moexp::Y_real_sum<Color3f>(l, coeffs, theta, phi);
+		}, 8.0);
+	}
+	*/
+
 	return 0;
 
 	// pn analysis and debugging ---

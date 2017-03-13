@@ -9,6 +9,7 @@
 #include <util/moexp.h>
 
 #include <volume.h>
+#include <shcache.h>
 
 #include <cuda.h>
 #include <builtin_types.h>
@@ -103,6 +104,7 @@ int main()
 	//
 	V2i envmap_resolution(128, 64);
 	//V3i sampling_resolution(64,64,64);
+	int order = 30;
 	V3i sampling_resolution(1);
 	int numVoxels = sampling_resolution.x()*sampling_resolution.y()*sampling_resolution.z();
 
@@ -150,9 +152,13 @@ int main()
 	CudaPtr<CudaPixelBuffer> cushcoeffs_ptr(&cushcoeffs);
 
 
-	// kick of rendering ------------
+	// environment map of the current voxel...
 	EnvMap map(envmap_resolution);
 
+	// shcache which holds the final sh coefficients for all voxels...
+	SHCache shcache(order, sampling_resolution, volume_localToWorld);
+
+	// go for each voxel...
 	Timer timer;
 	timer.start();
 	for( int voxel=0;voxel<numVoxels;++voxel )
@@ -217,7 +223,6 @@ int main()
 		// compute sh coefficients
 		if(1)
 		{
-			int order = 30;
 			int numCoeffs = moexp::numSHCoefficients(order);
 
 
@@ -239,7 +244,9 @@ int main()
 			double dtheta = (max_theta-min_theta)/double(resolution_theta);
 			double dphi = (max_phi-min_phi)/double(resolution_phi);
 
-			std::vector<Color3f> coeffs(numCoeffs, Color3f(0.0f, 0.0f, 0.0f));
+			//std::vector<Color3f> coeffs(numCoeffs, Color3f(0.0f, 0.0f, 0.0f));
+			//Color3f* coeffs_ptr = coeffs.data();
+			Color3f* coeffs_ptr = shcache.getCoefficients(voxel);
 
 			/*
 			// cpu version for computing moments ---
@@ -285,7 +292,7 @@ int main()
 
 			CudaPtr<CudaPixelBuffer> gpu_input_coords_ptr(&gpu_input_coords);
 			CudaPtr<CudaPixelBuffer> gpu_input_f_ptr(&gpu_input_f);
-			compute_sh_coefficients( &gpu_input_coords_ptr, &gpu_input_f_ptr, (cumath::V3f*)coeffs.data(), order, numCoeffs );
+			compute_sh_coefficients( &gpu_input_coords_ptr, &gpu_input_f_ptr, (cumath::V3f*)coeffs_ptr, order, numCoeffs );
 
 			/*
 			for( int l=0;l<=order;++l )
@@ -329,9 +336,9 @@ int main()
 	}
 	timer.stop();
 
-
 	std::cout << "path tracing took " << timer.elapsedSeconds()/double(numVoxels) << "s/voxel in average" << std::endl;
 
+	shcache.save("nebulae200.shcache");
 	/*
 	rasterizeSphericalFunctionSphere( "test.bgeo", [&](double theta, double phi) -> Color3f
 	{

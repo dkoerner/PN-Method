@@ -25,6 +25,11 @@
 // Forward declare the function in the .cu file
 void vectorAddition(const float* a, const float* b, float* c, int n);
 void pathtrace_envmap( cumath::V3f pWS, CudaPtr<CudaEnvMap>* envmap, CudaPtr<CudaVolume>* volume, CudaPtr<CudaLight>* light, int numSamples );
+void compute_sh_coefficients( CudaPtr<CudaPixelBuffer>* coords_ptr,
+							  CudaPtr<CudaPixelBuffer>* f_ptr,
+							  cumath::V3f* coeffs_host,
+							  int order,
+							  int numCoeffs);
 
 
 void getCoordFromIndex( const V3i& resolution, int index, int& x, int& y, int& z )
@@ -97,7 +102,8 @@ int main()
 
 	//
 	V2i envmap_resolution(128, 64);
-	V3i sampling_resolution(64,64,64);
+	//V3i sampling_resolution(64,64,64);
+	V3i sampling_resolution(1);
 	int numVoxels = sampling_resolution.x()*sampling_resolution.y()*sampling_resolution.z();
 
 
@@ -165,6 +171,7 @@ int main()
 		cumath::V3f p(pWS.x(), pWS.y(), pWS.z());
 
 		// kick of rendering
+		/*
 		{
 			int numSamples = 80;
 			pathtrace_envmap( p, &cumap_ptr, &cuvolume_ptr, &culight_ptr, numSamples );
@@ -173,90 +180,78 @@ int main()
 		// download result and save to disk
 		{
 			cumap.download((unsigned char*)map.bitmap().data());
-			std::string filename = "nebulae_envmaps/envmap_$0.exr";
+			//std::string filename = "nebulae_envmaps/envmap_$0.exr";
+			std::string filename = "test_$0.exr";
 			filename = replace(filename, "$0", toString(voxel));
 			map.bitmap().saveEXR(filename);
+		}
+		*/
+
+		{
+			std::string filename = "test_$0.exr";
+			filename = replace(filename, "$0", toString(voxel));
+			// load rendered images
+			map.bitmap() = Bitmap(filename);
 		}
 
 		// apply filter
-		if(0)
+		if(1)
 		{
 			double filter_width = 3.0;
-			map.bitmap() = filter(map.bitmap(), gaussFilter(filter_width));
-			std::string filename("test_$0_filtered.exr");
-			filename = replace(filename, "$0", toString(voxel));
-			map.bitmap().saveEXR(filename);
+			map.filter(gaussFilter(filter_width));
 
-			// upload filtered image to device
-			//cumap.upload( (unsigned char*)map.bitmap().data() );
+			// save to disk ---
+			//std::string filename("test_$0_filtered.exr");
+			//filename = replace(filename, "$0", toString(voxel));
+			//map.bitmap().saveEXR(filename);
+
+			/*
+			filename = replace(filename, ".exr", ".bgeo");
+			rasterizeSphericalFunctionSphere(filename, [&](double theta, double phi)->Color3f
+			{
+				return map.eval(theta, phi);
+			}, 8.0);
+			*/
 		}
 
 		// compute sh coefficients
-		if(0)
+		if(1)
 		{
 			int order = 30;
 			int numCoeffs = moexp::numSHCoefficients(order);
-			std::cout << numCoeffs << std::endl;
 
-			//double min_theta = std::numeric_limits<double>::max();
-			//double max_theta = std::numeric_limits<double>::min();
 
 			moexp::SphericalFunction<Color3f> fun = [&]( double theta, double phi ) -> Color3f
 			{
 				return map.eval(theta, phi);
-				//return 1.0;
 			};
 
 			//std::unique_ptr<std::vector<Color3f>> coeffs_gt = moexp::project_Y_real( order, fun, 150000 );
 
-
-			{
-				V2i res(1024, 1024);
-				EnvMap map2(res);
-
-				for( int i=0;i<res.y();++i )
-					for( int j=0;j<res.x();++j )
-					{
-						double u = double(j)/double(res.x());
-						double v = double(i)/double(res.y());
-						map2.bitmap().coeffRef( i, j ) = Color3f(u, 0.0f, 0.0f);
-					}
-				map2.bitmap().saveEXR("uv.exr");
-				rasterizeSphericalFunctionSphere("uv.bgeo", [&](double theta, double phi)->Color3f
-				{
-					return map2.eval(theta, phi);
-				});
-			}
-
-
-			/*
-			std::vector<Color3f> coeffs(numCoeffs, Color3f(0.0f, 0.0f, 0.0f));
 
 			double min_theta = 0;
 			double max_theta = M_PI;
 			double min_phi = 0;
 			double max_phi = 2.0*M_PI;
 
-			V2i res(1024, 1024);
-			EnvMap map2(res);
-			rasterizeSphericalFunctionMap2(map2, fun);
-			map2.bitmap().saveEXR("test2.exr");
-			double dtheta = (max_theta-min_theta)/double(res.y());
-			double dphi = (max_phi-min_phi)/double(res.x());
+			int resolution_phi=map.bitmap().cols(); // resolution along phi angle
+			int resolution_theta=map.bitmap().rows(); // resolution along theta angle
+			double dtheta = (max_theta-min_theta)/double(resolution_theta);
+			double dphi = (max_phi-min_phi)/double(resolution_phi);
+
+			std::vector<Color3f> coeffs(numCoeffs, Color3f(0.0f, 0.0f, 0.0f));
+
+			/*
+			// cpu version for computing moments ---
 			double pixel_area = dtheta*dphi;
 
-			for( int i=0;i<res.y();++i )
-				for( int j=0;j<res.x();++j )
+			for( int t=0;t<resolution_theta;++t )
+				for( int p=0;p<resolution_phi;++p )
 				{
-					//P2d theta_phi = sphericalCoordinates( map2.xyToDirection(P2d(j+0.5, i+0.5)));
-					//double theta = theta_phi.x();
-					//double phi = theta_phi.y();
-					double phi = dphi*j;
-					double theta = dtheta*i;
+					double phi = dphi*p;
+					double theta = dtheta*t;
 
-
-
-					Color3f f = map2.bitmap().coeffRef(i, j);
+					Color3f f = map.eval(theta, phi);
 
 					for( int l=0;l<=order;++l )
 						for( int m=-l;m<=l;++m )
@@ -268,19 +263,43 @@ int main()
 				}
 			*/
 
+			// gpu version for computing moments ---
+			EnvMap input_coords(V2i(resolution_theta, resolution_phi));
+			EnvMap input_f(V2i(resolution_theta, resolution_phi));
+			for( int t=0;t<resolution_theta;++t )
+				for( int p=0;p<resolution_phi;++p )
+				{
+					double phi = dphi*p;
+					double theta = dtheta*t;
+
+					Color3f f = map.eval(theta, phi);
+					input_coords.bitmap().coeffRef( p, t ) = Color3f(theta, phi, 0.0f);
+					input_f.bitmap().coeffRef( p, t ) = f;
+				}
 
 
+			CudaPixelBuffer gpu_input_coords;
+			gpu_input_coords.initialize(resolution_theta, resolution_phi, (unsigned char*)input_coords.bitmap().data());
+			CudaPixelBuffer gpu_input_f;
+			gpu_input_f.initialize(resolution_theta, resolution_phi, (unsigned char*)input_f.bitmap().data());
+
+			CudaPtr<CudaPixelBuffer> gpu_input_coords_ptr(&gpu_input_coords);
+			CudaPtr<CudaPixelBuffer> gpu_input_f_ptr(&gpu_input_f);
+			compute_sh_coefficients( &gpu_input_coords_ptr, &gpu_input_f_ptr, (cumath::V3f*)coeffs.data(), order, numCoeffs );
+
+			/*
 			for( int l=0;l<=order;++l )
 			{
-				for( int m=-l;m<=l;++m )
+				std::string filename = "sh_reconstruction_alt_$0.bgeo";
+				filename = replace(filename, "$0", toString(l));
+
+				rasterizeSphericalFunctionSphere(filename, [&](double theta, double phi)->Color3f
 				{
-					//std::cout << "l=" << l  << " " << (*coeffs_gt)[moexp::shIndex(l,m)].r() << " " << coeffs[moexp::shIndex(l,m)].r() << std::endl;
-					//std::cout << "l=" << l  << " " << coeffs[moexp::shIndex(l,m)].r() << std::endl;
-				}
+					//return moexp::Y_real_sum<Color3f>(order, coeffs.data(), theta, phi);
+					return moexp::Y_real_sum<Color3f>(l, coeffs.data(), theta, phi);
+				}, 8.0);
 			}
-
-			//std::cout << "check=" << sum << " " << 4.0*M_PI << std::endl;
-
+			*/
 
 			//rasterizeSphericalFunctionMap( "test.exr", fun, res );
 			//rasterizeSphericalFunctionSphere("groundtruth.bgeo", fun, 8.0);
@@ -293,54 +312,19 @@ int main()
 			/*
 			rasterizeSphericalFunctionSphere("sh_reconstruction_alt.bgeo", [&](double theta, double phi)->Color3f
 			{
-				return moexp::Y_real_sum<Color3f>(order, coeffs.data(), theta, phi);
+				//return moexp::Y_real_sum<Color3f>(order, coeffs.data(), theta, phi);
+				return moexp::Y_real_sum<Color3f>(order, coeffs_gpu.data(), theta, phi);
 			}, 8.0);
 			*/
 
+			/*
 			rasterizeSphericalFunctionSphere("uv.bgeo", [&](double theta, double phi)->Color3f
 			{
 				return Color3f(phi/(2.0*M_PI), 0.0f, 0.0f);
 			});
+			*/
 
 			//std::cout << integral << " " << 4.0*M_PI << std::endl;
-
-
-			/*
-			// check
-			{
-				V2i res(1024, 1024);
-				sh::DefaultImage env_sh(res.x(), res.y());
-				for( int i=0;i<res.y();++i )
-					for( int j=0;j<res.x();++j )
-					{
-						Eigen::Array3f p;
-						p.coeffRef(0) = 1.0;
-						p.coeffRef(1) = 1.0;
-						p.coeffRef(2) = 1.0;
-						env_sh.SetPixel( j, i, p );
-					}
-				std::unique_ptr<std::vector<Eigen::Array3f>> coeff_sh = sh::ProjectEnvironment( order, env_sh );
-				for( int l=0;l<=order;++l )
-					for( int m=-l;m<=l;++m )
-						std::cout << "l=" <<" " << (*coeff_sh)[sh::GetIndex(l,m)].coeff(0) << " " << std::endl;
-			}
-			*/
-
-			/*
-			//int numSamples = 100;
-			//compute_sh_coefficients( &cumap_ptr, &cushcoeffs_ptr, numSamples );
-			for( int l=0;l<=order;++l )
-				for( int m=-l;m<=l;++m )
-				{
-					//int l = 1;
-					//int m = -1;
-					double phi = 0.4*M_PI/2.0;
-					double theta = 0.6*M_PI;
-					double sh_gt = sh::EvalSHSlow(l, m, phi, theta);
-					double sh = moexp::Y_real(l, m, theta, phi);
-					std::cout << "l=" << l << " m=" << m << " " << sh_gt << " " << sh << std::endl;
-				}
-			*/
 		}
 	}
 	timer.stop();

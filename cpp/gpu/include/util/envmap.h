@@ -79,6 +79,46 @@ struct EnvMap
 		return uvToXY(directionToUV(d));
 	}
 
+	int wrapIndex(int i, int i_max)
+	{
+		return ((i % i_max) + i_max) % i_max;
+	}
+
+	void filter( Filter filter )
+	{
+		int resx = m_bitmap.cols();
+		int resy = m_bitmap.rows();
+
+		Bitmap tmp( V2i(resx, resy) );
+
+		int kshift = filter.size/2; // used to center the kernel at current pixel
+		for( int j=0;j<resy;++j )
+			for( int i=0;i<resx;++i )
+			{
+				Color3f c(0.0, 0.0, 0.0);
+				// iterate over kernel
+				int j_kstart = std::max( j-kshift, 0 );
+				int j_kend = std::min( j+kshift, int(m_bitmap.rows())-1);
+				int i_kstart = i-kshift;
+				int i_kend = i+kshift;
+				double sum = 0.0;
+				for( int kj=j_kstart;kj<=j_kend;++kj )
+					for( int ki=i_kstart;ki<=i_kend;++ki )
+					{
+						double w = filter.weight( m_bitmap, i, j, ki, kj );
+						//TODO: not sure why I have to use -2 here. but without it, we get a subtle seam...
+						c += m_bitmap.coeffRef(kj, wrapIndex(ki, resx-2))*w;
+						sum += w;
+					}
+
+				// set center pixel
+				tmp.coeffRef(j,i) = c/sum;
+			}
+
+
+		m_bitmap = tmp;
+	}
+
 	Bitmap& bitmap()
 	{
 		return m_bitmap;

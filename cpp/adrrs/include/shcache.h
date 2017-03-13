@@ -15,41 +15,20 @@
 struct SHCache : public Cache
 {
 	SHCache():
-		Cache(),
-		m_override(false),
-		m_doZeroScattering(true)
+		Cache()
 	{
 
 	}
 
 	SHCache( const std::string& filename ):
-		Cache(),
-		m_override(false),
-		m_doZeroScattering(true)
+		Cache()
 	{
 		//load(filename);
 	}
 
 	virtual Color3f eval( const P3d& pWS, const V3d& d, bool debug = false )const override;
 
-	/*
-	const double& sample( int i, int j, int k )const
-	{
-		int voxelIndex = k*m_resolution.x()*m_resolution.y() + j*m_resolution.x() + i;
-		return m_data[voxelIndex * m_numComponentsPerVoxel];
-	}
-	*/
 
-	const Color3f* get_voxel_data( int i, int j, int k )const;
-	Color3f* get_voxel_data( int i, int j, int k );
-
-	void generate( const std::string& filename, const Scene* scene, int order, int numSamples, int res );
-	void generate_images( const std::string& filename, const Scene* scene, int order, int numSamples, int res );
-	void sample_images( MonteCarloTaskInfo& ti, const Scene* scene );
-
-	EnvMap m_current_map;
-	int m_current_voxel;
-	void sample_image( MonteCarloTaskInfo& ti, const Scene* scene );
 
 
 //private:
@@ -149,20 +128,20 @@ struct SHCache : public Cache
 					p.z()*m_resolution.z());
 	}
 
+	const Color3f* get_voxel_data( int i, int j, int k )const;
+	Color3f* get_voxel_data( int i, int j, int k );
 
-	void sample_SHCoefficients( MonteCarloTaskInfo& ti, const Scene* scene );
 
 
-	V3i m_resolution;
+
 	int m_order; // order
 	int m_evaluationOrder;
+
+	V3i m_resolution;
+	Transformd m_localToWorld;
+
 	int m_numVoxels;
 	int m_numSHCoefficientsPerVoxel;
 
-	Transformd m_localToWorld;
-
 	std::vector<Color3f> m_data; // sh coefficients (real sh)
-
-	bool m_override;
-	bool m_doZeroScattering;
 };

@@ -46,6 +46,28 @@ void getCoordFromIndex( const V3i& resolution, int index, int& x, int& y, int& z
 }
 
 
+void pathtrace_fluencefield( CudaPtr<CudaVoxelGrid<float>>* fluencegrid, CudaPtr<CudaVolume>* volume, CudaPtr<CudaLight>* light, int numSamples );
+void generate_fluencefield( const std::string& filename, Transformd volume_localToWorld, CudaPtr<CudaVolume> cuvolume_ptr, CudaPtr<CudaLight> culight_ptr)
+{
+	int numSamples = 1000;
+	V3i resolution(64, 64, 64);
+
+	CudaVoxelGrid<float> cufluencegrid;
+	CudaPtr<CudaVoxelGrid<float>> cufluencegrid_ptr(&cufluencegrid);
+	cufluencegrid.initialize( cumath::V3i(resolution.x(), resolution.y(), resolution.z()));
+
+
+	pathtrace_fluencefield(&cufluencegrid_ptr, &cuvolume_ptr, &culight_ptr, numSamples);
+
+	std::vector<float> data( resolution.x()*resolution.y()*resolution.z() );
+	cufluencegrid_ptr.host()->download( (unsigned char*)data.data() );
+	field::VoxelGridField<float>::Ptr fluencegrid = std::make_shared<field::VoxelGridField<float>>(resolution, data.data());
+
+	Fieldf::Ptr fluencefield = field::xform<float>(fluencegrid, volume_localToWorld);
+	field::write( filename, fluencefield, resolution, volume_localToWorld );
+}
+
+
 int main()
 {
 	int deviceCount = 0;
@@ -100,16 +122,6 @@ int main()
 	}
 
 
-
-	//
-	V2i envmap_resolution(128, 64);
-	//V3i sampling_resolution(64,64,64);
-	int order = 30;
-	V3i sampling_resolution(1);
-	int numVoxels = sampling_resolution.x()*sampling_resolution.y()*sampling_resolution.z();
-
-
-
 	// ...
 	CudaVolume cuvolume;
 	cuvolume.m_boundWS = cumath::Box3f( cumath::V3f(volume_boundWS.min.x(), volume_boundWS.min.y(), volume_boundWS.min.z()),
@@ -127,16 +139,7 @@ int main()
 			cuvolume.m_localToWorld.inverse.m[j][i] = float(l2w_inv.coeff(i,j));
 		}
 
-	//P3d test = volume_localToWorld*P3d(0.5, 0.5, 0.5);
-	//cumath::V3f test2 = cumath::V3f(0.5, 0.5, 0.5)*cuvolume.m_localToWorld.matrix;
-	//return 0;
 	CudaPtr<CudaVolume> cuvolume_ptr(&cuvolume);
-
-
-	// setup envmap which is being sampled -----------
-	CudaEnvMap cumap;
-	CudaPtr<CudaEnvMap> cumap_ptr(&cumap);
-	cumap.initialize(envmap_resolution.x(), envmap_resolution.y());
 
 
 	// setup light ----------------
@@ -145,6 +148,40 @@ int main()
 	culight.m_direction = cumath::V3f(0.0, -1.0, 0.0);
 	culight.m_radiance = cumath::V3f(1.0, 1.0, 1.0);
 	culight.m_distance = volume_boundWS.getExtents().norm();
+
+
+
+
+
+	generate_fluencefield("nebulae_fluence.bgeo", volume_localToWorld, cuvolume_ptr, culight_ptr);
+	//generate_shcache(volume_localToWorld, cuvolume_ptr, culight_ptr);
+
+
+
+
+
+
+
+	return 0;
+}
+
+
+
+
+
+void generate_shcache( Transformd volume_localToWorld, CudaPtr<CudaVolume> cuvolume_ptr, CudaPtr<CudaLight> culight_ptr )
+{
+	V2i envmap_resolution(128, 64);
+	V3i sampling_resolution(64,64,64);
+	//V3i sampling_resolution(1);
+	int order = 30;
+	int numVoxels = sampling_resolution.x()*sampling_resolution.y()*sampling_resolution.z();
+
+
+	// setup envmap which is being sampled -----------
+	CudaEnvMap cumap;
+	CudaPtr<CudaEnvMap> cumap_ptr(&cumap);
+	cumap.initialize(envmap_resolution.x(), envmap_resolution.y());
 
 
 	// Buffer for sh coefficients
@@ -157,6 +194,7 @@ int main()
 
 	// shcache which holds the final sh coefficients for all voxels...
 	SHCache shcache(order, sampling_resolution, volume_localToWorld);
+
 
 	// go for each voxel...
 	Timer timer;
@@ -177,13 +215,14 @@ int main()
 		cumath::V3f p(pWS.x(), pWS.y(), pWS.z());
 
 		// kick of rendering
-		/*
+		if(0)
 		{
 			int numSamples = 80;
 			pathtrace_envmap( p, &cumap_ptr, &cuvolume_ptr, &culight_ptr, numSamples );
 		}
 
 		// download result and save to disk
+		if(0)
 		{
 			cumap.download((unsigned char*)map.bitmap().data());
 			//std::string filename = "nebulae_envmaps/envmap_$0.exr";
@@ -191,37 +230,26 @@ int main()
 			filename = replace(filename, "$0", toString(voxel));
 			map.bitmap().saveEXR(filename);
 		}
-		*/
 
+		// load precomputed envmap per voxel
+		if(0)
 		{
-			std::string filename = "test_$0.exr";
+			//std::string filename = "test_$0.exr";
+			std::string filename = "nebulae_envmaps/envmap_$0.exr";
 			filename = replace(filename, "$0", toString(voxel));
 			// load rendered images
 			map.bitmap() = Bitmap(filename);
 		}
 
 		// apply filter
-		if(1)
+		if(0)
 		{
 			double filter_width = 3.0;
 			map.filter(gaussFilter(filter_width));
-
-			// save to disk ---
-			//std::string filename("test_$0_filtered.exr");
-			//filename = replace(filename, "$0", toString(voxel));
-			//map.bitmap().saveEXR(filename);
-
-			/*
-			filename = replace(filename, ".exr", ".bgeo");
-			rasterizeSphericalFunctionSphere(filename, [&](double theta, double phi)->Color3f
-			{
-				return map.eval(theta, phi);
-			}, 8.0);
-			*/
 		}
 
 		// compute sh coefficients
-		if(1)
+		if(0)
 		{
 			int numCoeffs = moexp::numSHCoefficients(order);
 
@@ -270,7 +298,7 @@ int main()
 				}
 			*/
 
-			// gpu version for computing moments ---
+			// gpu version for computing sh coefficients ---
 			EnvMap input_coords(V2i(resolution_theta, resolution_phi));
 			EnvMap input_f(V2i(resolution_theta, resolution_phi));
 			for( int t=0;t<resolution_theta;++t )
@@ -308,45 +336,11 @@ int main()
 			}
 			*/
 
-			//rasterizeSphericalFunctionMap( "test.exr", fun, res );
-			//rasterizeSphericalFunctionSphere("groundtruth.bgeo", fun, 8.0);
-			/*
-			rasterizeSphericalFunctionSphere("sh_reconstruction_gt.bgeo", [&](double theta, double phi)->Color3f
-			{
-				return moexp::Y_real_sum<Color3f>(order, coeffs_gt->data(), theta, phi);
-			}, 8.0);
-			*/
-			/*
-			rasterizeSphericalFunctionSphere("sh_reconstruction_alt.bgeo", [&](double theta, double phi)->Color3f
-			{
-				//return moexp::Y_real_sum<Color3f>(order, coeffs.data(), theta, phi);
-				return moexp::Y_real_sum<Color3f>(order, coeffs_gpu.data(), theta, phi);
-			}, 8.0);
-			*/
-
-			/*
-			rasterizeSphericalFunctionSphere("uv.bgeo", [&](double theta, double phi)->Color3f
-			{
-				return Color3f(phi/(2.0*M_PI), 0.0f, 0.0f);
-			});
-			*/
-
-			//std::cout << integral << " " << 4.0*M_PI << std::endl;
 		}
 	}
 	timer.stop();
 
 	std::cout << "path tracing took " << timer.elapsedSeconds()/double(numVoxels) << "s/voxel in average" << std::endl;
 
-	shcache.save("nebulae200.shcache");
-	/*
-	rasterizeSphericalFunctionSphere( "test.bgeo", [&](double theta, double phi) -> Color3f
-	{
-		return map.eval(theta, phi);
-	});
-	*/
-
-
-	return 0;
+	//shcache.save("nebulae200.shcache");
 }
-

@@ -18,7 +18,11 @@ struct CudaVoxelGrid
 	DEVICE cumath::V3f          voxelToLocal(const cumath::V3f &pVS);
 
 	DEVICE const T&             sample( int i, int j, int k )const; // returns discrete voxel value
+	DEVICE T&                   lvalue( int i, int j, int k ); // returns discrete voxel value reference
 	DEVICE T                    eval( const cumath::V3f &vsP )const; // returns linearly interpolated value at voxepspace position
+
+
+	HOST void download( unsigned char *host_ptr );
 
 	/*
 
@@ -107,6 +111,13 @@ DEVICE const T& CudaVoxelGrid<T>::sample( int i, int j, int k )const
 }
 
 template<typename T>
+DEVICE T& CudaVoxelGrid<T>::lvalue( int i, int j, int k )
+{
+	return m_data[k*m_resolution.x*m_resolution.y + j*m_resolution.x + i];
+}
+
+
+template<typename T>
 DEVICE T CudaVoxelGrid<T>::eval( const cumath::V3f &vsP )const
 {
 	// voxelgrid ---
@@ -147,6 +158,13 @@ DEVICE T CudaVoxelGrid<T>::eval( const cumath::V3f &vsP )const
 													 sample( c2.x, c1.y, c2.z ), tx ),
 									   cumath::lerp( sample( c1.x, c2.y, c2.z ),
 													 sample( c2.x, c2.y, c2.z ), tx ), ty ), tz );
+}
+
+template<typename T>
+HOST void CudaVoxelGrid<T>::download( unsigned char *host_ptr )
+{
+	int size =  m_resolution.x*m_resolution.y*m_resolution.z*sizeof(T);
+	CudaSafeCall( cudaMemcpy( host_ptr, m_data, size, cudaMemcpyDeviceToHost ));
 }
 
 

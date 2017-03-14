@@ -349,3 +349,120 @@ void compute_sh_coefficients( CudaPtr<CudaPixelBuffer>* coords_ptr,
 
 	free(coeffmap_list_host);
 }
+
+
+// ==================================================================
+
+
+extern "C"
+__global__ void pathtrace_fluencefield_sample(  int sample,
+												CudaVoxelGrid<float>* fluencegrid,
+												CudaVolume* volume,
+												CudaLight* light )
+{
+	cumath::V3f resolution = fluencegrid->m_resolution;
+	int x = blockIdx.x * blockDim.x + threadIdx.x;
+	int y = blockIdx.y * blockDim.y + threadIdx.y;
+	int z = blockIdx.z * blockDim.z + threadIdx.z;
+
+	if( (x<resolution.x)&&(y<resolution.y)&&(z<resolution.z) )
+	{
+		bool debug = false;
+		//int index = z*resolution.x*resolution.y + y*resolution.x + x;
+
+		cumath::RNG rng( (sample+1)*cumath::randhash(x*y*z) );
+
+
+		// work out voxelcenter in worldspace
+		cumath::V3f pVS( x+0.5, y+0.5, z+0.5 );
+		cumath::V3f pLS = fluencegrid->voxelToLocal(pVS);
+		cumath::V3f pWS = pLS*volume->getLocalToWorld();
+
+
+		// pick random direction
+		float d_pdf;
+		cumath::V3f d = cumath::sampleSphere(rng, &d_pdf);
+
+		// assemble ray
+		cumath::Ray3<float> ray( pWS, d, 0.0f, 1000.0f );
+
+		cumath::V3f f_over_pdf(0.0f);
+		//double mint, maxt;
+		//if( scene->volume->intersectBound(rq.ray, mint, maxt, rq.debug) )
+		{
+			// start tracing
+			TraceInfo ti;
+			ti.debug = debug;
+			ti.volume = volume;
+			ti.light = light;
+			ti.depth = 0;
+			ti.maxDepth = 100;
+			ti.current_vertex = Vertex();
+			ti.current_vertex.setPosition(pWS, cumath::V3f(0.0, 0.0, 0.0), cumath::V3f(0.0, 0.0, 0.0));
+			ti.current_direction = ray.d;
+			if(debug)
+				printf("ti.current_direction=%f %f %f\n", ti.current_direction.x, ti.current_direction.y, ti.current_direction.z );
+
+			//ti.scene = scene;
+			//ti.debug = rq.debug;
+			f_over_pdf = trace( ti, rng )/d_pdf;
+		}//else
+		{
+			// no intersection with the medium boundary
+		}
+
+		/*
+
+		float L = pt_ms<float>( rng, grid_density, density_max, kcs, albedo, lightDir, lightIntensity, ray, maxScatteringOrder );
+		*/
+
+		// for testing: set a gradient
+		//sample = cumath::V3f( float(x)/float(width), float(y)/float(height), 0.0f );
+		//cumath::V3f rgb( rng.randomFloat() );
+		//cumath::V3f sample( ray.d.x, ray.d.y, ray.d.z*0.5 );
+
+		//cumath::V3f rgb( float(x)/float(width), float(y)/float(height), 0.0f );
+		//cumath::V3f rgb( float(x)/float(width), 0.0f, 0.0f );
+		//cumath::V3f& c = envmap->lvalue(index);
+		//c += (f_over_pdf-c)/float(sample+1);
+		float& c = fluencegrid->lvalue(x, y, z);
+		c += (f_over_pdf.x-c)/float(sample+1);
+	}
+}
+
+
+
+
+void pathtrace_fluencefield( CudaPtr<CudaVoxelGrid<float>>* fluencegrid,
+							 CudaPtr<CudaVolume>* volume,
+							 CudaPtr<CudaLight>* light,
+							 int numSamples )
+{
+	cumath::V3i resolution = fluencegrid->host()->m_resolution;
+
+	printf("pathtrace_fluencefield\n");
+	dim3 threadsPerBlock = dim3( 8, 8, 8 );
+	dim3 numBlocks = dim3(  int(ceil(double(resolution.x)/double(threadsPerBlock.x))),
+							int(ceil(double(resolution.y)/double(threadsPerBlock.y))),
+							int(ceil(double(resolution.z)/double(threadsPerBlock.z))));
+
+
+	for( int i=0;i<numSamples;++i )
+	{
+		std::cout << "pathtrace_fluencefield sample=" << i << std::endl;std::flush(std::cout);
+		pathtrace_fluencefield_sample<<<numBlocks, threadsPerBlock>>>(i, fluencegrid->device(), volume->device(), light->device());
+
+		cudaError_t err = cudaGetLastError();
+		if (err != cudaSuccess)
+			printf("Error: %s\n", cudaGetErrorString(err));
+
+		CudaSafeCall( cudaDeviceSynchronize() );
+	}
+	cudaError_t err = cudaGetLastError();
+	if (err != cudaSuccess)
+		printf("Error: %s\n", cudaGetErrorString(err));
+
+	CudaSafeCall( cudaDeviceSynchronize() );
+}
+
+

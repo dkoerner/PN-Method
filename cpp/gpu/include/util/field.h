@@ -605,6 +605,7 @@ HeterogeneousMedium::Ptr HeterogeneousMedium::load(const std::string &path)
 	//void write(const std::string& filename, Field<double>::Ptr field, const Box3d &bound, const V3i& res);
 	//void write(const std::string& filename, const Transformd& localToWorld, const V3i& res, const Box3d &bound_ls=Box3d(P3d(0.0, 0.0, 0.0), P3d(1.0, 1.0, 1.0)) );
 	void write(const std::string& filename, Field<double>::Ptr field, const V3i& res, const Transformd& localToWorld = Transformd(), const Box3d &bound_ls=Box3d(P3d(0.0, 0.0, 0.0), P3d(1.0, 1.0, 1.0)));
+	void write(const std::string& filename, Field<float>::Ptr field, const V3i& res, const Transformd& localToWorld = Transformd(), const Box3d &bound_ls=Box3d(P3d(0.0, 0.0, 0.0), P3d(1.0, 1.0, 1.0)));
 
 
 	// =============================================

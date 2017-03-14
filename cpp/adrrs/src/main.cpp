@@ -95,7 +95,62 @@ void render_volume( RenderTaskInfo& ti )
 	++ti.samples;
 }
 
+// globals
+VoxelGridf::Ptr g_fluencegrid;
+Transformd      g_localToWorld;
+Scene*          g_scene;
 
+void render_fluence_slice( MonteCarloTaskInfo& ti )
+{
+	V3i resolution = g_fluencegrid->getResolution();
+	int numVoxels = resolution.x()*resolution.y()*resolution.z();
+
+
+	// note that y goes from bottom=0 to top=max
+
+	for (int voxel = ti.taskid; voxel< numVoxels; voxel += ti.numTasks)
+	{
+		int i, j, k;
+		g_fluencegrid->getCoordFromIndex(voxel, i, j, k);
+
+
+		// work out voxel center
+		P3d pWS = g_localToWorld*g_fluencegrid->voxelToLocal(P3d(i+0.5, j+0.5, k+0.5));
+		V3d d = sampleSphere<double>(ti.rng);
+		double d_pdf = sampleSpherePDF();
+
+		Ray3d rayWS( pWS, d );
+
+		Color3f f(0.0f);
+
+		// do raycast ---
+		try
+		{
+			RadianceQuery rq;
+			rq.ray = rayWS;
+			//rq.debug = debug;
+			f = g_scene->integrator->Li(g_scene, rq, ti.rng)/d_pdf;
+		}
+		catch (std::exception& e)
+		{
+			std::cout << "render_fluence_slice: caught exception at task=" << ti.taskid << " voxel=" << voxel << " sample=" << ti.samples << std::endl;
+			std::cout << e.what() << '\n';
+			std::flush(std::cout);
+			throw e;
+		}
+
+
+		if( std::isnan(f.getLuminance()) )
+			std::cout << "PathTracingTask::run: got NaN value @ voxel=" << voxel << " sample=" << ti.samples << std::endl;
+
+		// update voxel value
+		float& c = g_fluencegrid->lvalue(i, j, k);
+		c += (f.r() - c)/float(ti.samples+1);
+	} // voxel
+
+
+	++ti.samples;
+}
 
 
 int main()
@@ -133,7 +188,7 @@ int main()
 
 
 	// load sh cache -----------------------
-	SHCache shcache("nebulae200.shcache");
+	SHCache::Ptr shcache = std::make_shared<SHCache>("nebulae200.shcache");
 
 	// verification
 	/*
@@ -150,7 +205,6 @@ int main()
 	}
 	*/
 
-	return 0;
 
 	// pn analysis and debugging ---
 	/*
@@ -214,19 +268,22 @@ int main()
 	scene.camera = camera.get();
 
 
-	/*
 	// RENDERING -----------------------------------
+	for( int i=0;i<=30;++i )
 	{
-		//Integrator::Ptr integrator = integrators::raymarcher(0.005);
-		PNCache::Ptr cache = std::make_shared<PNCache>(outpath + "/nebulae.moments");
-		cache->eval(P3d(0.0f, 0.0, 0.0), normalize(V3d(1.0, 1.0, 1.0)), true);
+		image_color.fill(Color3f(0.0f, 0.0f, 0.0f));
+		image_transmittance.fill(Color3f(0.0f, 0.0f, 0.0f));
+		shcache->m_evaluationOrder = i;
 
+		//Integrator::Ptr integrator = integrators::raymarcher(0.005);
+		//Integrator::Ptr integrator = integrators::volume_path_tracer(100, false);
+		Integrator::Ptr integrator = integrators::volume_path_tracer_cached(shcache);
+		//Integrator::Ptr integrator = integrators::cache_raymarcher(0.05, fluencecache_gpu);
 		//Bitmap::Ptr pixel_estimates = readImage(outpath + "/nebulae_pixel_estimate.exr");
-		Integrator::Ptr integrator = integrators::cache_raymarcher(0.005, cache);
 		//Integrator::Ptr integrator = integrators::adrrs_volume_path_tracer(pixel_estimates, fluence_field);
 		scene.integrator = integrator.get();
 
-		int numSamples = 1;
+		int numSamples = 10;
 
 		// prepare render info ---
 		RenderTaskInfo::g.scene = &scene;
@@ -236,6 +293,7 @@ int main()
 		//RenderTaskInfo::g.debug_pixel = P2i(318, 209);
 		//RenderTaskInfo::g.debug_pixel = P2i(256, 256);
 		//RenderTaskInfo::g.debug_pixel = P2i(340, 340);
+		//RenderTaskInfo::g.debug_pixel = P2i(195, 512-25);
 
 
 		// execute multithreaded render ---
@@ -247,9 +305,33 @@ int main()
 		// save results ---
 		flip(image_color);
 		flip(image_transmittance);
-		image_color.saveEXR( outpath + "/" + scene.id + "_color.exr" );
-		std::string transmittance_exr = outpath + "/test_transmittance.exr";
+		image_color.saveEXR( outpath + "/" + scene.id + "_" + integrator->getId() + "_color.exr" );
+		std::string transmittance_exr = outpath + "/" + scene.id + "_" + integrator->getId() + "_transmittance.exr";
 		image_transmittance.saveEXR(transmittance_exr);
+	}
+
+
+	// compute fluence grid ----------------
+	/*
+	{
+		int numSamples = 100;
+		V3i resolution(64, 64, 64);
+
+		Integrator::Ptr integrator = integrators::volume_path_tracer(100);
+		scene.integrator = integrator.get();
+
+		g_fluencegrid = VoxelGrid<float>::create(resolution);
+		g_localToWorld = volume->getLocalToWorld();
+		g_scene = &scene;
+
+		// execute multithreaded render ---
+		Terminator terminator(numSamples);
+		std::cout << "rendering fluence grid..."<< std::endl;std::flush(std::cout);
+		runGenericTasks<MonteCarloTaskInfo>( render_fluence_slice, terminator, ThreadPool::getNumSystemCores() );
+
+		//
+		Fieldf::Ptr fluencefield = std::make_shared<field::VoxelGridFieldf>(resolution, g_fluencegrid->getRawPointer());
+		field::write( "nebulae_fluence_cpu.bgeo", field::xform<float>(fluencefield, g_localToWorld), resolution, g_localToWorld );
 	}
 	*/
 

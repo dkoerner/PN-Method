@@ -42,7 +42,7 @@ struct Scene
 
 
 	bool intersect( const Ray3d& ray, Intersection& its )const;
-	Color3f sample_attenuated_directlight( LightSample& ls, RNGd& rng )const;
+	Color3f sample_attenuated_directlight( LightSample& ls, RNGd& rng, bool debug = false )const;
 };
 
 

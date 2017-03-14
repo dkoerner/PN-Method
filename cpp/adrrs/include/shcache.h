@@ -8,9 +8,10 @@
 #include <cache.h>
 
 
-
 struct SHCache : public Cache
 {
+	typedef std::shared_ptr<SHCache> Ptr;
+
 	SHCache( int order, V3i resolution, Transformd localToWorld ):
 		Cache(),
 		m_order(order),
@@ -28,6 +29,11 @@ struct SHCache : public Cache
 		Cache()
 	{
 		load(filename);
+	}
+
+	virtual std::string getId()const override
+	{
+		return toString<int>(m_evaluationOrder);
 	}
 
 	virtual Color3f eval( const P3d& pWS, const V3d& d, bool debug = false )const override;
@@ -138,3 +144,65 @@ struct SHCache : public Cache
 
 	std::vector<Color3f> m_data; // sh coefficients (real sh)
 };
+
+
+
+template<typename T>
+struct SHField : public Field<T>
+{
+	typedef std::shared_ptr<SHField<T>> Ptr;
+
+	SHField( SHCache::Ptr cache ):
+		Field<T>(),
+		m_cache(cache)
+	{
+
+	}
+
+	static Ptr create( SHCache::Ptr cache )
+	{
+		return std::make_shared<SHField>( cache );
+	}
+
+	virtual T eval( const P3d& p, bool debug = false )const override
+	{
+		// we evaluate the first sh band only, so direction doesnt matter
+		V3d d(0.0, 0.0, 1.0);
+		return m_cache->eval(p, d, debug).r();
+	}
+
+	virtual void getValueRange( T& min, T& max )const override
+	{
+	}
+
+	SHCache::Ptr m_cache;
+};
+
+
+
+struct FluenceCache : public Cache
+{
+	typedef std::shared_ptr<FluenceCache> Ptr;
+
+
+	FluenceCache( const std::string& filename ) : Cache()
+	{
+		m_fluence_field = field::read<double>(filename);
+	}
+
+
+	virtual Color3f eval( const P3d& pWS, const V3d& d, bool debug = false )const override
+	{
+		return m_fluence_field->eval(pWS)*INV_FOURPI;
+		//return Color3f(0.0f);
+	}
+
+	virtual std::string getId()const override
+	{
+		return "fluencecache";
+	}
+
+private:
+	Fieldd::Ptr m_fluence_field;
+};
+

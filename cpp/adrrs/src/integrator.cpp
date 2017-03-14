@@ -7,6 +7,29 @@ RenderTaskInfoGlobal RenderTaskInfo::g;
 
 namespace integrators
 {
+	// returns sigma_t at sampled position (is invalid when we exceeded maxt)
+	double delta_tracking( const Scene* scene, const Ray3d& ray, double maxt, int component, RNGd& rng, Color3f& sigma_t )
+	{
+		double sigma_t_max = scene->volume->getMaxExtinction()[component];
+
+		double t = 0.0;
+		while(true)
+		{
+			double step = -log( 1.0-rng.next1D() )/sigma_t_max;
+			t += step;
+
+			if(t>= maxt)
+				break;
+
+			sigma_t = scene->volume->evalExtinction(ray(t));
+
+			// russian roulette
+			if(rng.next1D()<sigma_t[component]/sigma_t_max)
+				break;
+		}
+
+		return t;
+	}
 
 	// intersects the volume bound and raymarches through the intersection segment
 	struct Raymarcher : public Integrator
@@ -21,6 +44,22 @@ namespace integrators
 		{
 		}
 
+
+		Color3f nee( const Scene* scene, const P3d& pWS, const V3d& current_direction, Color3f sigma_s_at_p, RNGd& rng, bool debug = false )const
+		{
+			// sample light source and transmittance ---
+			LightSample ls;
+			ls.refP = pWS;
+			Color3f attenuated_light_over_pdf = scene->sample_attenuated_directlight( ls, rng, debug );
+			if(debug)
+				std::cout << "\tattenuated_light_over_pdf=" << attenuated_light_over_pdf.toString() << std::endl;
+
+			// apply scattering ---
+			Color3f phase = scene->volume->getPhaseFunction()->eval( -ls.d, -current_direction ).cwiseProduct(sigma_s_at_p);
+
+			return attenuated_light_over_pdf.cwiseProduct(phase);
+		}
+
 		virtual Color3f Li( const Scene* scene, RadianceQuery& rq, RNGd& rng )const override
 		{
 			Color3f background(0.0, 0.0, 0.0);
@@ -33,18 +72,28 @@ namespace integrators
 				Color3f f(0.0, 0.0, 0.0);
 
 				int numSteps = int( (maxt-mint)/m_stepSize );
+				double offset = rng.next1D();
 
 
 				for( int i=0;i<numSteps;++i )
 				{
-					double t = mint + i*m_stepSize;
+					double t = mint + (i+offset)*m_stepSize;
 					P3d p = rq.ray(t);
 					Color3f extinction = scene->volume->evalExtinction(p);
-					Color3f emission = scene->volume->evalAlbedo(p);
+					Color3f albedo = scene->volume->evalAlbedo(p);
+					Color3f sigma_s = extinction*albedo;
 
-					f+=rq.transmittance*Color3f(emission.x()*extinction.x()*m_stepSize,
-												emission.y()*extinction.x()*m_stepSize,
-												emission.z()*extinction.x()*m_stepSize);
+					// sample light source ---
+					Color3f light_over_pdf = nee(scene, p, rq.ray.d, sigma_s, rng, rq.debug);
+
+					if(rq.debug)
+					{
+						std::cout << "light_over_pdf=" << light_over_pdf.toString() << std::endl;
+					}
+					//Color3f light_over_pdf(1.0f, 1.0f, 1.0f);
+
+
+					f+=rq.transmittance*light_over_pdf*m_stepSize;
 
 					rq.transmittance.x() *= std::exp(-extinction.x()*m_stepSize);
 					rq.transmittance.y() *= std::exp(-extinction.y()*m_stepSize);
@@ -60,7 +109,21 @@ namespace integrators
 
 		virtual Color3f sample_transmittance( const Scene* scene, const Ray3d& ray, double maxt, RNGd& rng )const override
 		{
-			return Color3f(0.0, 0.0, 0.0);
+			Color3f sigma_t;
+			double distance = delta_tracking( scene, ray, maxt, 0, rng, sigma_t );
+
+			if( distance < maxt )
+				// since we return 0, we dont need to produce the pdf in the denominator
+				return Color3f(0.0, 0.0, 0.0);
+
+			//NB: transmittance sampling pdf cancels out with the transmittance term
+
+			return Color3f(1.0, 1.0, 1.0);
+		}
+
+		virtual std::string getId()const override
+		{
+			return "offsetrm";
 		}
 
 	private:
@@ -73,21 +136,37 @@ namespace integrators
 	}
 
 
-	// intersects the volume bound and raymarches through the intersection segment
-	// this raymarcher uses a voxelgrid to lookup precomputed values for fluence
-	struct CacheRaymarcher : public Integrator
+	// intersects the volume bound and uses delta_tracking to go through the volume
+	// cache is used to lookup indirect illumination
+	// NB: originally this was a raymarcher but the introduced bias would cause a
+	// noticeable mismatch to the groundtruth which I want to avoid
+	struct CachePathTracer : public Integrator
 	{
-		typedef std::shared_ptr<CacheRaymarcher> Ptr;
+		typedef std::shared_ptr<CachePathTracer> Ptr;
 
-		CacheRaymarcher():m_stepSize(0.1)
-		{
-		}
-
-		CacheRaymarcher(double stepSize, Cache::Ptr cache):
-			m_stepSize(stepSize),
+		CachePathTracer(Cache::Ptr cache):
 			m_cache(cache)
 		{
 		}
+
+
+		/*
+		Color3f nee( const Scene* scene, const P3d& pWS, const V3d& current_direction, Color3f sigma_s_at_p, RNGd& rng, bool debug = false )const
+		{
+			// sample light source and transmittance ---
+			LightSample ls;
+			ls.refP = pWS;
+			Color3f attenuated_light_over_pdf = scene->sample_attenuated_directlight( ls, rng, debug );
+			if(debug)
+				std::cout << "\tattenuated_light_over_pdf=" << attenuated_light_over_pdf.toString() << std::endl;
+
+			// apply scattering ---
+			Color3f phase = scene->volume->getPhaseFunction()->eval( -ls.d, -current_direction ).cwiseProduct(sigma_s_at_p);
+
+			return attenuated_light_over_pdf.cwiseProduct(phase);
+		}
+		*/
+
 
 		virtual Color3f Li( const Scene* scene, RadianceQuery& rq, RNGd& rng )const override
 		{
@@ -98,53 +177,76 @@ namespace integrators
 			double mint, maxt;
 			if( scene->volume->intersectBound(rq.ray, mint, maxt, rq.debug) )
 			{
-				Color3f f(0.0, 0.0, 0.0);
+				// find scattering event ---
+				Ray3d rayWS( rq.ray( mint+Epsilon ), rq.ray.d );
+				double max_distance = maxt-mint;
+				Color3f sigma_t;
+				double t = delta_tracking(scene, rayWS, max_distance, 0, rng, sigma_t );
 
-				int numSteps = int( (maxt-mint)/m_stepSize );
 
-				double offset = rng.next1D()*m_stepSize;
-				double offset_pdf = 1.0/m_stepSize;
-				for( int i=0;i<numSteps;++i )
+				if(t<max_distance)
 				{
-					double t = mint + i*m_stepSize + offset;
-					P3d pWS = rq.ray(t);
-					V3d d = sampleSphere<double>(rng);
-					double d_pdf = sampleSpherePDF();
-					Color3f sigma_t = scene->volume->evalExtinction(pWS);
-					Color3f sigma_s = sigma_t.cwiseProduct(scene->volume->evalAlbedo(pWS));
-					Color3f radiance = m_cache->eval(pWS, d);
+					// scattering event found
+					P3d pWS = rayWS(t);
+					Color3f albedo = scene->volume->evalAlbedo(pWS);
+					Color3f sigma_s = sigma_t*albedo;
 
-					Color3f phase = scene->volume->getPhaseFunction()->eval(d, -rq.ray.d);
-					Color3f emission = radiance.cwiseProduct(phase).cwiseProduct(sigma_s);
+					// NB: transmittance cancels out with delta_tracking pdf
+					Color3f throughput_over_pdf = Color3f(1.0f/sigma_t.x(), 1.0f/sigma_t.y(), 1.0f/sigma_t.z());
+					Color3f scatter_attenuation = sigma_s*INV_FOURPI; // assuming isotropic scattering here...
 
-					f+=rq.transmittance.cwiseProduct(emission)/offset_pdf/d_pdf;
 
-					rq.transmittance.x() *= std::exp(-sigma_t.x()*m_stepSize);
-					rq.transmittance.y() *= std::exp(-sigma_t.y()*m_stepSize);
-					rq.transmittance.z() *= std::exp(-sigma_t.z()*m_stepSize);
-				}
-				return f+rq.transmittance*background;
+					// TODO: direct illumination
+					Color3f direct_light_over_pdf(0.0f, 0.0f, 0.0f);
+
+					// use cache for indirect illum
+					Color3f indirect_light_over_pdf;
+					{
+						// sample random direction
+						V3d d = sampleSphere<double>(rng);
+						double d_pdf = sampleSpherePDF();
+						indirect_light_over_pdf = throughput_over_pdf*scatter_attenuation*m_cache->eval( pWS, d )/d_pdf;
+					}
+
+					return direct_light_over_pdf+indirect_light_over_pdf;
+				}else
+					// no scattering event, sample leaves the volume
+					// NB: transmittance terms cancels with delta_tracking transmittance
+					return background;
 			}else
 				// no intersection with the medium boundary
 				return background;
-
-			return Color3f(0.0, 0.0, 0.0);
 		}
+
 
 		virtual Color3f sample_transmittance( const Scene* scene, const Ray3d& ray, double maxt, RNGd& rng )const override
 		{
-			return Color3f(0.0, 0.0, 0.0);
+			Color3f sigma_t;
+			double distance = delta_tracking( scene, ray, maxt, 0, rng, sigma_t );
+
+			if( distance < maxt )
+				// since we return 0, we dont need to produce the pdf in the denominator
+				return Color3f(0.0, 0.0, 0.0);
+
+			//NB: transmittance sampling pdf cancels out with the transmittance term
+
+			return Color3f(1.0, 1.0, 1.0);
+		}
+
+
+		virtual std::string getId()const override
+		{
+			return "cacherm_"+m_cache->getId();
 		}
 
 
 	private:
-		double m_stepSize;
 		Cache::Ptr m_cache;
 	};
 
-	Integrator::Ptr cache_raymarcher(double stepSize, Cache::Ptr cache)
+	Integrator::Ptr volume_path_tracer_cached(Cache::Ptr cache)
 	{
-		return std::make_shared<CacheRaymarcher>(stepSize, cache);
+		return std::make_shared<CachePathTracer>(cache);
 	}
 
 
@@ -190,29 +292,7 @@ namespace integrators
 		Color3f m_albedo;
 	};
 
-	// returns sigma_t at sampled position (is invalid when we exceeded maxt)
-	double delta_tracking( const Scene* scene, const Ray3d& ray, double maxt, int component, RNGd& rng, Color3f& sigma_t )
-	{
-		double sigma_t_max = scene->volume->getMaxExtinction()[component];
 
-		double t = 0.0;
-		while(true)
-		{
-			double step = -log( 1.0-rng.next1D() )/sigma_t_max;
-			t += step;
-
-			if(t>= maxt)
-				break;
-
-			sigma_t = scene->volume->evalExtinction(ray(t));
-
-			// russian roulette
-			if(rng.next1D()<sigma_t[component]/sigma_t_max)
-				break;
-		}
-
-		return t;
-	}
 
 	struct TraceInfo
 	{
@@ -316,9 +396,10 @@ namespace integrators
 	{
 		typedef std::shared_ptr<VolumePathTracer> Ptr;
 
-		VolumePathTracer( int maxDepth = std::numeric_limits<int>::max() ):
+		VolumePathTracer( int maxDepth = std::numeric_limits<int>::max(), bool doSingleScattering = true ):
 			Integrator(),
-			m_maxDepth(maxDepth)
+			m_maxDepth(maxDepth),
+			m_doSingleScattering(doSingleScattering)
 		{
 		}
 
@@ -347,7 +428,8 @@ namespace integrators
 					return L;
 
 				// perform next event estimation ---
-				L += ti.nee(rng, ti.debug);
+				if( ((ti.depth == 0) && m_doSingleScattering ) || (ti.depth > 0) )
+					L += ti.nee(rng, ti.debug);
 
 				// handle scattering and find outgoing direction at next vertex ---
 				if( !ti.scatter(rng) )
@@ -406,13 +488,23 @@ namespace integrators
 			return Color3f(1.0, 1.0, 1.0);
 		}
 
+		virtual std::string getId()const override
+		{
+			if(!m_doSingleScattering)
+				return "volpt_ms";
+			if((m_maxDepth == 1) && m_doSingleScattering)
+				return "volpt_ss";
+			return "volpt";
+		}
+
 	private:
+		bool m_doSingleScattering;
 		int m_maxDepth;
 	};
 
-	Integrator::Ptr volume_path_tracer( int maxDepth )
+	Integrator::Ptr volume_path_tracer( int maxDepth, bool doSingleScattering )
 	{
-		return std::make_shared<VolumePathTracer>(maxDepth);
+		return std::make_shared<VolumePathTracer>(maxDepth, doSingleScattering);
 	}
 
 
@@ -534,6 +626,11 @@ namespace integrators
 
 		}
 
+		virtual std::string getId()const override
+		{
+			return "adrrs";
+		}
+
 	private:
 		Bitmap::Ptr m_pixel_estimates;
 		Field3d::Ptr m_fluence_field;
@@ -555,6 +652,11 @@ namespace integrators
 		virtual Color3f sample_transmittance( const Scene* scene, const Ray3d& ray, double maxt, RNGd& rng )const override
 		{
 			return Color3f(1.0);
+		}
+
+		virtual std::string getId()const override
+		{
+			return "dummy";
 		}
 	};
 

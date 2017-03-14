@@ -456,7 +456,7 @@ namespace moexp
 	}
 
 	template <typename T>
-	T Y_real_sum(int order, const Color3f* coeffs, double theta, double phi)
+	T Y_real_sum(int order, const Color3f* coeffs, double theta, double phi, bool debug = false)
 	{
 		//CHECK(GetCoefficientCount(order) == coeffs.size(), "Incorrect number of coefficients provided.");
 		T sum = T(0.0);//Zero<T>();
@@ -464,7 +464,10 @@ namespace moexp
 		{
 			for (int m = -l; m <= l; m++)
 			{
-				sum += Y_real(l, m, theta, phi) * coeffs[shIndex(l, m)];
+				double sh = Y_real(l, m, theta, phi);
+				if(debug)
+					std::cout << "l=" << l << " m="<< m << "sh=" << sh << std::endl;
+				sum += sh * coeffs[shIndex(l, m)];
 			}
 		}
 		return sum;

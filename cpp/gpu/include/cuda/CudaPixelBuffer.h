@@ -46,6 +46,50 @@ struct CudaPixelBuffer// : public CudaData<CudaPixelBuffer>
 	{
 		return m_data[index];
 	}
+	DEVICE cumath::V3f& lvalue( int i, int j )
+	{
+		return m_data[j*m_width + i];
+	}
+
+
+	DEVICE const cumath::V3f& value( int i, int j )const
+	{
+		return m_data[j*m_width + i];
+	}
+
+
+	DEVICE cumath::V3f eval( const cumath::V2f &vsP )const
+	{
+		// voxelgrid ---
+		cumath::Vec2<float> vs = vsP;
+
+		// voxels defined at cell centers
+		vs.x -= 0.5f;
+		vs.y -= 0.5f;
+
+		float tx = vs.x - floor(vs.x);
+		float ty = vs.y - floor(vs.y);
+
+		// lower left corner
+		cumath::V2i c1;
+		c1.x = (int)floor(vs.x);
+		c1.y = (int)floor(vs.y);
+
+		// upper right corner
+		cumath::V2i c2 = c1+cumath::V2i(1,1);
+
+		// clamp the indexing coordinates
+		c1.x = cumath::max(0, cumath::min(c1.x, m_width-1));
+		c2.x = cumath::max(0, cumath::min(c2.x, m_width-1));
+		c1.y = cumath::max(0, cumath::min(c1.y, m_height-1));
+		c2.y = cumath::max(0, cumath::min(c2.y, m_height-1));
+
+		//lerp...
+		return cumath::lerp( cumath::lerp( value( c1.x, c1.y ),
+										   value( c2.x, c1.y ), tx ),
+							 cumath::lerp( value( c1.x, c2.y ),
+										   value( c2.x, c2.y ), tx ), ty );
+	}
 
 	void clear()
 	{

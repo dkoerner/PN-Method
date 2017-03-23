@@ -198,6 +198,7 @@ inline double dot( const V3d& a, const V3d& b )
 {
 	return a.dot(b);
 }
+
 inline float dot2( const V3f& a, const V3f& b )
 {
 	return a.dot(b);

@@ -18,7 +18,8 @@ SOURCES += main.cpp \
 			src/util/field.cpp \
 			src/util/voxelgrid.cpp \
 			src/util/cas.cpp \
-			src/util/moexp.cpp
+			src/util/moexp.cpp \
+			src/util/moexp2d.cpp
 
 HEADERS += \
 	include/camera.h \
@@ -45,9 +46,19 @@ HEADERS += \
 	include/util/voxelgrid.h \
 	include/util/cas.h \
 	include/util/moexp.h \
+	include/util/moexp2d.h \
 	include/cuda/cumath/cumath.h \
+	include/cuda/cumath/Vec2.h \
+	include/cuda/cumath/Vec2Algo.h \
 	include/cuda/cumath/Vec3.h \
 	include/cuda/cumath/Vec3Algo.h \
+	include/cuda/cumath/Matrix22.h \
+	include/cuda/cumath/Matrix33.h \
+	include/cuda/cumath/Matrix33Algo.h \
+	include/cuda/cumath/Matrix44.h \
+	include/cuda/cumath/Matrix44Algo.h \
+	include/cuda/cumath/Ray2.h \
+	include/cuda/cumath/Ray3.h \
 	include/cuda/CudaData.h \
 	include/cuda/CudaPixelBuffer.h \
 	include/cuda/CudaEnvMap.h \
@@ -55,11 +66,6 @@ HEADERS += \
 	include/cuda/CudaVoxelGrid.h \
 	include/cuda/CudaVolume.h \
 	include/cuda/CudaLight.h
-
-
-# This makes the .cu files appear in your project
-OTHER_FILES +=  vectorAddition.cu \
-				include/cuda/pathtracing.cu.h
 
 include(deployment.pri)
 qtcAddDeployment()
@@ -70,7 +76,7 @@ OBJECTS_DIR = release/obj
 CUDA_OBJECTS_DIR = release/cuda
 
 # CUDA settings <-- may change depending on your system
-CUDA_SOURCES += vectorAddition.cu
+CUDA_SOURCES += vectorAddition.cu src/pt_2d_anisotropic.cu
 CUDA_SDK = "c:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v7.5"
 #CUDA_SDK = "C:/ProgramData/NVIDIA Corporation/NVIDIA GPU Computing SDK 4.2/C"   # Path to cuda SDK install
 CUDA_DIR = "c:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v7.5"
@@ -126,7 +132,7 @@ CONFIG(debug, debug|release){
 	cuda_d.commands = $$CUDA_DIR/bin/nvcc.exe -D_DEBUG $$NVCC_OPTIONS $$CUDA_INC $$CUDA_LIBS \
 					  --machine $$SYSTEM_TYPE -arch=$$CUDA_ARCH \
 					  --compile -cudart static -g -DWIN32 -D_MBCS \
-					  -Xcompiler "/wd4819,/EHsc,/W3,/nologo,/Od,/Zi,/RTC1" \
+					  -Xcompiler "/wd4819,/EHsc,/W3,/nologo,/Od,/Zi,/FS,/RTC1" \
 					  -Xcompiler $$MSVCRT_LINK_FLAG_DEBUG \
 					  -c -o ${QMAKE_FILE_OUT} ${QMAKE_FILE_NAME}
 	cuda_d.dependency_type = TYPE_C
@@ -141,7 +147,7 @@ else {
 	cuda.commands = $$CUDA_DIR/bin/nvcc.exe $$NVCC_OPTIONS $$CUDA_INC $$CUDA_LIBS \
 					--machine $$SYSTEM_TYPE -arch=$$CUDA_ARCH \
 					--compile -cudart static -DWIN32 -D_MBCS \
-					-Xcompiler "/wd4819,/EHsc,/W3,/nologo,/O2,/Zi" \
+					-Xcompiler "/wd4819,/EHsc,/W3,/nologo,/O2,/Zi,/FS" \
 					-Xcompiler $$MSVCRT_LINK_FLAG_RELEASE \
 					-c -o ${QMAKE_FILE_OUT} ${QMAKE_FILE_NAME}
 	cuda.dependency_type = TYPE_C

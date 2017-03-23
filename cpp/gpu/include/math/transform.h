@@ -93,3 +93,90 @@ private:
 typedef Transform<float> Transformf;
 typedef Transform<double>  Transformd;
 
+
+
+
+
+
+template<typename T>
+struct Transform2D
+{
+public:
+
+	typedef Eigen::Matrix<T, 3, 3> M33;
+	typedef TPoint<T, 2> Point;
+	typedef TVector<T, 2> Vector;
+	//typedef TNormal2<T> Normal;
+	typedef TRay<Point, Vector> Ray;
+
+	/// Create the identity transform
+	Transform2D() :
+		m_transform(M33::Identity()),
+		m_inverse(M33::Identity()) { }
+
+	/// Create a new transform instance for the given matrix
+	Transform2D(const Eigen::Transform<T,2,Eigen::Affine> &trafo)
+		: m_transform(trafo.matrix()), m_inverse(trafo.matrix().inverse()) { }
+
+	/// Create a new transform instance for the given matrix
+	Transform2D(const M33 &trafo)
+		: m_transform(trafo), m_inverse(trafo.inverse()) { }
+
+	/// Create a new transform instance for the given matrix and its inverse
+	Transform2D(const M33 &trafo, const M33 &inv)
+		: m_transform(trafo), m_inverse(inv) { }
+
+	/// Return the underlying matrix
+	inline const M33 &getMatrix() const {
+		return m_transform;
+	}
+
+	/// Return the inverse of the underlying matrix
+	inline const M33 &getInverseMatrix() const {
+		return m_inverse;
+	}
+
+	/// Return the inverse transformation
+	Transform<T> inverse() const {
+		return Transform<T>(m_inverse, m_transform);
+	}
+
+	/// Concatenate with another transform
+	Transform<T> operator*(const Transform<T> &t) const;
+
+	/// Apply the homogeneous transformation to a 2D vector
+	inline Vector operator*(const Vector &v) const {
+		return m_transform.template topLeftCorner<2,2>() * v;
+	}
+	/*
+	/// Apply the homogeneous transformation to a 2D normal
+	inline Normal operator*(const Normal &n) const {
+		return m_inverse.template topLeftCorner<2, 2>().transpose() * n;
+	}
+
+
+	/// Transform a point by an arbitrary matrix in homogeneous coordinates
+	inline Point operator*(const Point &p) const {
+		TVector<T, 3> result = m_transform*TVector<T, 3>(p[0], p[1], 1.0);
+		return result.template head<3>() / result.z();
+	}
+
+	/// Apply the homogeneous transformation to a ray
+	inline Ray operator*(const Ray &r) const
+	{
+		return Ray(
+			operator*(r.o),
+			operator*(r.d),
+			r.mint, r.maxt
+		);
+	}
+
+	*/
+private:
+	M33 m_transform;
+	M33 m_inverse;
+};
+
+typedef Transform2D<float> Transform2Df;
+typedef Transform2D<double>  Transform2Dd;
+

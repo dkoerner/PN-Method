@@ -28,8 +28,9 @@ namespace cumath
 		T                             getSquaredLength( void )const; ///< returns the un-square-rooted length of the vector 
 		void                          setLength( const T &fLength ); ///< scales the vector to the specified length
 		*/
-		HOST_DEVICE void                                      normalize( void ); ///< normalizes the vector
-		HOST_DEVICE Vec2<T>                            normalized( void ) const; ///< returnes normalized version if this the vector
+		HOST_DEVICE void           normalize( void ); ///< normalizes the vector
+		HOST_DEVICE Vec2<T>        normalized( void ) const; ///< returnes normalized version if this the vector
+		HOST_DEVICE Vec2<T>        normalized( float& length ) const; ///< returnes normalized version and the length
 		/*
 		void                                         negate( void ); ///< negates the vector
 
@@ -142,13 +143,19 @@ namespace cumath
 	template<typename T>
 	HOST_DEVICE Vec2<T> Vec2<T>::normalized( void ) const
 	{
-		T length = getLength();
+	}
+
+	template<typename T>
+	HOST_DEVICE Vec2<T> Vec2<T>::normalized( float& length ) const
+	{
+		length = getLength();
 
 		if( length != (T)0.0 )
 			return Vec2<T>(x/length, y/length);
 		else
 			return Vec2<T>((T)0.0, (T)0.0);
 	}
+
 	/*
 	template<typename T>
 	void Vec2<T>::negate( void )

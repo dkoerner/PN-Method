@@ -188,10 +188,16 @@ void Bitmap::saveTXT( const std::string& filename )const
 	int resX = cols();
 	int resY = rows();
 
-	out_values << resX << " " << resY << std::endl;
 	for(int y=0;y<resY;++y)
+	{
 		for(int x=0;x<resX;++x)
-			out_values << coeffRef(y, x).x() << std::endl;
+		{
+			if(x>0)
+				out_values << " ";
+			out_values << coeffRef(y, x).x();
+		}
+		out_values << std::endl;
+	}
 }
 
 

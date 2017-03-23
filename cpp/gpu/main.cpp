@@ -1,12 +1,14 @@
 #include <iostream>
 #include <string>
 
+#include <math/frame.h>
 
 #include <util/string.h>
 #include <util/envmap.h>
 #include <util/timer.h>
 #include <util/field.h>
 #include <util/moexp.h>
+#include <util/moexp2d.h>
 
 #include <volume.h>
 #include <shcache.h>
@@ -67,7 +69,12 @@ void generate_fluencefield( const std::string& filename, Transformd volume_local
 	field::write( filename, fluencefield, resolution, volume_localToWorld );
 }
 
+void pathtrace_fluencefield_2d( CudaPtr<CudaPixelBuffer>* fluencegrid, CudaPtr<CudaVolume2D>* volume, int numSamples );
 
+
+void experiment_pt_2d_anisotropic();
+void experiment_nebulae();
+void experiment_moexp2d();
 int main()
 {
 	int deviceCount = 0;
@@ -82,6 +89,379 @@ int main()
 	std::cout << "Device name:" << cudaDeviceName << std::endl;
 
 
+
+
+
+	//experiment_pt_2d_anisotropic();
+	//void experiment_nebulae();
+	experiment_moexp2d();
+
+
+
+
+
+
+	return 0;
+}
+
+
+// ==============================================================
+
+void functionToBgeo( const std::string& filename, moexp::_2d::Function<double>& fun, bool polar = false )
+{
+	houio::Geometry::Ptr geo = houio::Geometry::createLineGeometry();
+	houio::Attribute::Ptr pattr = geo->getAttr("P");
+
+	int numSamples = 1000;
+	double period = 2.0*M_PI;
+
+	double dt = period/double(numSamples);
+	for( int i=0;i<numSamples;++i )
+	{
+		double t = i*dt;
+		double f = fun(t);
+
+		houio::math::V3f p(0.0f, 0.0f, 0.0f);
+		if(polar)
+			p = houio::math::V3f(std::cos(t), std::sin(t), 0.0f)*float(f);
+		else
+			p = houio::math::V3f(t, f, 0.0f);
+
+
+		pattr->appendElement<houio::math::V3f>(p);
+		if(i>0)
+			geo->addLine(i-1, i);
+	}
+
+	houio::HouGeoIO::xport(filename, geo);
+}
+
+M22d build_SGGX2D_matrix( const V2d& w1, double pd_x, double pd_y  );
+
+double sggx3d_sigma(V3d wi, double S_xx, double S_yy, double S_zz, double S_xy, double S_xz, double S_yz)
+{
+	const float sigma_squared = wi.x()*wi.x()*S_xx + wi.y()*wi.y()*S_yy + wi.z()*wi.z()*S_zz + 2.0f * (wi.x()*wi.y()*S_xy + wi.x()*wi.z()*S_xz + wi.y()*wi.z()*S_yz);
+	return (sigma_squared > 0.0f) ? sqrtf(sigma_squared) : 0.0f; // conditional to avoid numerical errors
+}
+
+double interpolate( double val, double y0, double x0, double y1, double x1 ) {
+	return (val-x0)*(y1-y0)/(x1-x0) + y0;
+}
+
+double base( double val ) {
+	if ( val <= -0.75 ) return 0;
+	else if ( val <= -0.25 ) return interpolate( val, 0.0, -0.75, 1.0, -0.25 );
+	else if ( val <= 0.25 ) return 1.0;
+	else if ( val <= 0.75 ) return interpolate( val, 1.0, 0.25, 0.0, 0.75 );
+	else return 0.0;
+}
+
+double red( double gray ) {
+	return base( gray - 0.5 );
+}
+double green( double gray ) {
+	return base( gray );
+}
+double blue( double gray ) {
+	return base( gray + 0.5 );
+}
+
+
+
+struct SGGX3D
+{
+	SGGX3D( Framed frame, V3d projectedAreas )
+	{
+		V3d w1 = frame.s;
+		V3d w2 = frame.t;
+		V3d w3 = frame.n;
+
+		double S_11 = projectedAreas.x()*projectedAreas.x();
+		double S_22 = projectedAreas.y()*projectedAreas.y();
+		double S_33 = projectedAreas.z()*projectedAreas.z();
+
+
+		M33d m;
+		m << w1.x(), w2.x(), w3.x(),
+			 w1.y(), w2.y(), w3.y(),
+			 w1.z(), w2.z(), w3.z();
+
+		M33d s = V3d(S_11, S_22, S_33).asDiagonal();
+
+		m_S = m*s*m.transpose();
+
+
+		// build transform ---
+		Eigen::Affine3d unitSphereToEllipsoid;
+
+		double sx = std::pow(S_22*S_33/S_11, 1.0/4)/std::sqrt(M_PI);
+		double sy = std::pow(S_11*S_33/S_22, 1.0/4)/std::sqrt(M_PI);
+		double sz = std::pow(S_11*S_22/S_33, 1.0/4)/std::sqrt(M_PI);
+		unitSphereToEllipsoid = Eigen::Affine3d(m)*Eigen::Scaling(V3d(sx, sy, sz));
+		m_unitSphereToEllipsoid = Transformd(unitSphereToEllipsoid);
+	}
+
+	double projectedArea(const V3d& d)const
+	{
+		//return std::sqrt( d.dot(m_S*d) );
+		double S_xx = m_S.coeffRef(0,0);
+		double S_xy = m_S.coeffRef(0,1);
+		double S_xz = m_S.coeffRef(0,2);
+		double S_yy = m_S.coeffRef(1,1);
+		double S_yz = m_S.coeffRef(1,2);
+		double S_zz = m_S.coeffRef(2,2);
+		const float sigma_squared = d.x()*d.x()*S_xx + d.y()*d.y()*S_yy + d.z()*d.z()*S_zz + 2.0f * (d.x()*d.y()*S_xy + d.x()*d.z()*S_xz + d.y()*d.z()*S_yz);
+		return (sigma_squared > 0.0f) ? sqrtf(sigma_squared) : 0.0f; // conditional to avoid numerical errors
+	}
+
+
+	M33d m_S;
+	Transformd m_unitSphereToEllipsoid;
+};
+
+
+
+struct SGGX2D
+{
+	SGGX2D( const V2d& frame_s, const V2d& projectedDistances )
+	{
+		V2d w1 = frame_s;
+		V2d w2 = V2d(-frame_s.y(), frame_s.x());
+
+		double S_11 = projectedDistances.x()*projectedDistances.x();
+		double S_22 = projectedDistances.y()*projectedDistances.y();
+
+
+		M22d m;
+		m << w1.x(), w2.x(),
+			 w1.y(), w2.y();
+
+		M22d s = V2d(S_11, S_22).asDiagonal();
+
+		m_S = m*s*m.transpose();
+
+
+		// build transform ---
+		Eigen::Affine2d unitCircleToEllipsoid;
+
+		//double sx = std::pow(S_22*S_33/S_11, 1.0/4)/std::sqrt(M_PI);
+		//double sy = std::pow(S_11*S_33/S_22, 1.0/4)/std::sqrt(M_PI);
+		double sx = S_11;
+		double sy = S_22;
+		unitCircleToEllipsoid = Eigen::Affine2d(m)*Eigen::Scaling(V2d(sx, sy));
+		m_unitCircleToEllipsoid = Transform2Dd(unitCircleToEllipsoid);
+	}
+
+	double projectedDistance(const V2d& d)const
+	{
+		//return std::sqrt(d.dot(m_S*d));
+
+		///*
+		double S_xx = m_S.coeffRef(0,0);
+		double S_xy = m_S.coeffRef(0,1);
+		double S_yy = m_S.coeffRef(1,1);
+		float sigma_squared = S_xx*d.x()*d.x() + S_yy*d.y()*d.y() + 2.0*S_xy*d.x()*d.y();
+		if(sigma_squared>0.0)
+			return sqrt(sigma_squared);
+		// conditional to avoid numerical errors
+		return 0.0;
+		//*/
+	}
+
+
+	M22d m_S;
+	Transform2Dd m_unitCircleToEllipsoid;
+};
+
+
+void experiment_moexp2d()
+{
+
+
+	/*
+	{
+		V3d n = V3d(1.0, 1.0, 1.0).normalized();
+		//V3d n = V3d(0.0, 0.0, 1.0).normalized();
+		V3d projectedArea(1.0, 1.0, 0.001);
+		//V3d projectedArea(0.001, 0.001, 1.0);
+		double vmin = std::min(std::min(projectedArea.x(), projectedArea.y()), projectedArea.z());
+		double vmax = std::max(std::max(projectedArea.x(), projectedArea.y()), projectedArea.z());
+
+		SGGX3D sggx( Framed(n), projectedArea);
+		moexp::SphericalFunction<Color3f> func = [&]( double theta, double phi ) -> Color3f
+		{
+			V3d d  = sphericalDirection(theta, phi);
+			double value = sggx.projectedArea(d);
+			double t = ((value-vmin)/(vmax-vmin))*2.0-1.0;
+			return Color3f(red(t), green(t), blue(t));
+		};
+		moexp::SphericalFunction<double> func_pa = [&]( double theta, double phi ) -> double
+		{
+			V3d d  = sphericalDirection(theta, phi);
+			return sggx.projectedArea(d);
+		};
+
+		std::string filename = "moexp2d/sggx3d.bgeo";
+		//filename = replace(filename, "$0", toString<int>(i));
+		//rasterizeSphericalFunctionSphere( filename, func, sggx.m_unitSphereToEllipsoid);
+		//rasterizeSphericalFunctionSphere( filename, func);
+		displaceSphere( filename, func_pa);
+
+		std::cout << "range=" << vmin << " " << vmax << std::endl;
+
+		return;
+	}
+	*/
+
+
+
+
+
+	int order = 30;
+	bool polar = true;
+
+	//cumath::V2f frame_s = cumath::normalize(cumath::V2f(1.0f, 1.0f));
+
+	V2d frame_s = V2d(1.0, 1.0).normalized();
+	V2d projectedDistances(0.5, 1.0);
+	SGGX2D sggx(frame_s, projectedDistances);
+
+	CudaSGGX2D cusggx2d(cumath::V2f(frame_s.x(), frame_s.y()),
+						cumath::V2f(projectedDistances.x(), projectedDistances.y()));
+
+	moexp::_2d::Function<double> fun = [&]( double t )
+	{
+		// example function from khan academy
+		//if(t<M_PI)
+		//	return 3.0;
+		//return 0.0;
+
+		// 2d sggx
+		cumath::V2f d( std::cos(t), std::sin(t) );
+		return cusggx2d.projectedDistance(d);
+
+		//V2d d( std::cos(t), std::sin(t) );
+		//return sggx.projectedDistance(d);
+	};
+
+	std::unique_ptr<std::vector<double>> coeffs = moexp::_2d::projectFourier(order, fun);
+
+
+	/*
+	(*coeffs)[0] = 3.0/2.0;
+	for( int i=1;i<=order;++i )
+	{
+		(*coeffs)[1 + 2*(i-1) + 0] = 0.0;
+
+		if( i % 2 == 0 )
+			// even
+			(*coeffs)[1 + 2*(i-1) + 1] = 0.0;
+		else
+			// odd
+			(*coeffs)[1 + 2*(i-1) + 1] = 6.0/(i*M_PI);
+	}
+	*/
+
+	for( int i=0;i<=order;++i )
+	{
+		moexp::_2d::Function<double> fun_rec = [&]( double t )
+		{
+			return moexp::_2d::fourierSum(i, (*coeffs).data(), t);
+		};
+		std::string filename = "moexp2d/reconstruction_$0.bgeo";
+		filename = replace(filename, "$0", toString<int>(i));
+		functionToBgeo( filename, fun_rec, polar );
+	}
+
+
+	// write groundtruth function
+	functionToBgeo( "moexp2d/groundtruth.bgeo", fun, polar );
+
+
+	// moments ------
+	std::vector<moexp::_2d::Tensor<double>> moments =  moexp::_2d::convertFourierCoefficientsToMoments((*coeffs).data());
+
+	// validate the moments by comparing against the fourier basis functions
+	for( int i=0;i<3;++i )
+	{
+		moexp::_2d::Function<double> fun_basis = [&]( double t )
+		{
+			return moexp::_2d::fourierBasis(i, (*coeffs).data(), t);
+		};
+		moexp::_2d::Function<double> fun_moments = [&]( double t )
+		{
+			V2d d( std::cos(t), std::sin(t) );
+			return moexp::_2d::contract(moments[i], d );
+		};
+
+		{
+			std::string filename = "moexp2d/basis_fourier_$0.bgeo";
+			filename = replace(filename, "$0", toString<int>(i));
+			functionToBgeo( filename, fun_basis );
+		}
+		{
+			std::string filename = "moexp2d/basis_moments_$0.bgeo";
+			filename = replace(filename, "$0", toString<int>(i));
+			functionToBgeo( filename, fun_moments );
+		}
+
+	}
+}
+
+// ==============================================================
+
+
+void experiment_pt_2d_anisotropic()
+{
+	//std::string basepath = "c:/projects/epfl/experiments/python/anisotropic_absorption_2d";
+	std::string basepath = "c:/projects/epfl/experiments/python/isotropic_absorption_2d";
+	V2i resolution(512, 512);
+	int numSamples = 1000;
+	float density = 5.0;
+
+	Eigen::Affine2d localToWorld;
+	localToWorld = Eigen::Translation2d(V2d(-0.5, -0.5));
+	Transform2Dd volume_localToWorld(localToWorld);
+
+	V2d sggx2d_w1 = V2d(1.0, 0.0).normalized();
+	V2d projectedDistances(1.0, 1.0);
+
+	// resolution
+
+	CudaPixelBuffer cufluencegrid;
+	cufluencegrid.initialize(resolution.x(), resolution.y());
+
+	CudaVolume2D cuvolume;
+	cuvolume.m_density = cumath::V3f(density);
+	cuvolume.m_sigma_t_max = cuvolume.m_density;
+	M33d l2w = volume_localToWorld.getMatrix();
+	M33d l2w_inv = volume_localToWorld.getInverseMatrix();
+	for( int j=0;j<3;++j )
+		for( int i=0;i<3;++i )
+		{
+			// NB: we transpose the matrix here because cumath uses row vectors
+			cuvolume.m_localToWorld.matrix.m[j][i] = float(l2w.coeff(i,j));
+			cuvolume.m_localToWorld.inverse.m[j][i] = float(l2w_inv.coeff(i,j));
+		}
+	cuvolume.m_sggx = CudaSGGX2D( cumath::V2f(sggx2d_w1.x(), sggx2d_w1.y()),
+								  cumath::V2f(projectedDistances.x(), projectedDistances.y()) );
+
+	// kick of render ---
+	CudaPtr<CudaPixelBuffer> fluencegrid_ptr(&cufluencegrid);
+	CudaPtr<CudaVolume2D> volume_ptr(&cuvolume);
+	pathtrace_fluencefield_2d( &fluencegrid_ptr, &volume_ptr, numSamples );
+
+	// write result to disk ---
+	Bitmap map(resolution);
+	cufluencegrid.download((unsigned char*)map.data());
+	//map.saveEXR("pt2da/test.exr");
+	map.saveEXR(basepath+"/test.exr");
+	map.saveTXT(basepath+"/test.txt");
+}
+
+
+void experiment_nebulae()
+{
 
 
 	// setup volume ---------------
@@ -155,19 +535,7 @@ int main()
 
 	generate_fluencefield("nebulae_fluence.bgeo", volume_localToWorld, cuvolume_ptr, culight_ptr);
 	//generate_shcache(volume_localToWorld, cuvolume_ptr, culight_ptr);
-
-
-
-
-
-
-
-	return 0;
 }
-
-
-
-
 
 void generate_shcache( Transformd volume_localToWorld, CudaPtr<CudaVolume> cuvolume_ptr, CudaPtr<CudaLight> culight_ptr )
 {

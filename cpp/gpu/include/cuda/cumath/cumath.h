@@ -2,12 +2,17 @@
 
 
 #include "Vec2.h"
-#include "Ray3.h"
+#include "Vec2Algo.h"
 #include "Vec3.h"
 #include "Vec3Algo.h"
 #include "Vec4.h"
+#include "Matrix22.h"
+#include "Matrix33.h"
+#include "Matrix33Algo.h"
 #include "Matrix44.h"
 #include "Matrix44Algo.h"
+#include "Ray2.h"
+#include "Ray3.h"
 #include "BoundingBox3.h"
 #include "RNG.h"
 

@@ -154,6 +154,9 @@ typedef BoundingBox3f Box3f;
 typedef BoundingBox3d Box3d;
 typedef BoundingBox3i Box3i;
 
+typedef Eigen::Matrix<float, 2, 2> M22f;
+typedef Eigen::Matrix<double, 2, 2> M22d;
+
 typedef Eigen::Matrix<float, 3, 3> M33f;
 typedef Eigen::Matrix<double, 3, 3> M33d;
 

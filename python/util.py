@@ -7,6 +7,80 @@ def pointsource_2d_fluence( pWS, center = np.array([0.0, 0.0]), power = 1.0 ):
 		return power/(2.0*np.pi*max(r, 1.0e-4))
 	return power/(2.0*np.pi*r)
 
+def geometry_term_2d( p0, n0, p1, n1 ):
+    '''Geometry term in 2d'''
+    d = p1-p0
+    dist = np.linalg.norm(d)
+
+    d = d/dist
+
+    g = 0.0
+    g = 1.0/dist
+    if n0 is not None:
+        g*= np.abs(np.dot(n0, d))
+    if n1 is not None:
+        g*= np.abs(np.dot(n1, -d))
+    return g
+
+
+def integrate( func, numSamples ):
+	tmin = 0.0
+	tmax = 2.0*np.pi
+	P = tmax-tmin
+	dt = P/numSamples
+	s = 0.0
+	for i in range(numSamples):
+		t = dt*i
+		s += func(t)*dt
+	return s
+
+
+
+class SGGX2D:
+	#def __init__(self, S_xx = None, S_xy = None, S_yy = None, ):
+	#	self.S_xx = S_xx;
+	#	self.S_xy = S_xy;
+	#	self.S_yy = S_yy;
+
+	def __init__(self, frame_s, projectedDistances ):
+		frame_t = np.array([-frame_s[1], frame_s[0]])
+
+		S_11 = projectedDistances[0]*projectedDistances[0]
+		S_22 = projectedDistances[1]*projectedDistances[1]
+
+		self.S_xx = S_11*frame_s[0]*frame_s[0] + S_22*frame_t[0]*frame_t[0];
+		self.S_xy = S_11*frame_s[0]*frame_s[1] + S_22*frame_t[0]*frame_t[1];
+		self.S_yx = S_xy;
+		self.S_yy = S_11*frame_s[1]*frame_s[1] + S_22*frame_t[1]*frame_t[1];
+
+
+	def projectedDistance( self, d ):
+		sigma_squared = self.S_xx*d[0]*d[0] + self.S_yy*d[1]*d[1] + 2.0*self.S_xy*d[0]*d[1];
+		if sigma_squared>0.0:
+			return np.sqrt(sigma_squared)
+		# conditional to avoid numerical errors
+		return 0.0
+
+	def projectedDistanceAdapter( t ):
+		self.projectedDistance( np.array([np.cos(t), np.sin(p)]) )
+
+	def get_moment_0(self):
+		# compute fourier coefficient a_0
+		a_0 = integrate( self.projectedDistanceAdapter, 10000 )/(2.0*np.pi)
+		return a_0
+
+	def get_moment_2(self):
+		def func_a(t):
+			return self.projectedDistanceAdapter(t)*np.cos(2*t)
+		def func_b(t):
+			return self.projectedDistanceAdapter(t)*np.sin(2*t)
+		# compute fourier coefficients a_2 and b2
+		a_2 = integrate( self.func_a, 10000 )/np.pi
+		b_2 = integrate( self.func_b, 10000 )/np.pi
+		# turn this into moments (see notebook: moment_expansion_2d for details)
+		return np.array([[a_2, b_2], [b_2, -a_2]])
+
+
 class Domain2D:
 	def __init__(self, size, res):
 		self.res = res

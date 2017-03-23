@@ -107,6 +107,99 @@ void iterate_2d(py::array_t<double> phi_array, // phi grid
 		}
 }
 
+
+
+// this function is used to solve isotropic absorption equation for delta radiance distribution
+void iterate_2d_isotropic_absorption(py::array_t<double> phi_array, // phi grid
+	py::array_t<double> D_array, // diffusion coefficient grid
+	py::array_t<double> sigma_t_array, // extinction coefficient grid
+	py::array_t<double> Q_array, // grid of emission values
+	py::array_t<double> phi_boundary_array, // boundary values for phi
+	py::array_t<double> D_boundary_array, // boundary values for D
+	double h, // voxelsize (in x and y)
+	bool debug = false
+)
+{
+	py::buffer_info phi_array_info = phi_array.request();
+	py::buffer_info D_array_info = D_array.request();
+	py::buffer_info sigma_t_array_info = sigma_t_array.request();
+	py::buffer_info Q_array_info = Q_array.request();
+	py::buffer_info phi_boundary_array_info = phi_boundary_array.request();
+	py::buffer_info D_boundary_array_info = D_boundary_array.request();
+
+	auto phi = static_cast<double *>(phi_array_info.ptr);
+	auto D = static_cast<double *>(D_array_info.ptr);
+	auto sigma_t = static_cast<double *>(sigma_t_array_info.ptr);
+	auto Q = static_cast<double *>(Q_array_info.ptr);
+	auto phi_boundary = static_cast<double *>(phi_boundary_array_info.ptr);
+	auto D_boundary = static_cast<double *>(D_boundary_array_info.ptr);
+
+	int res_y = phi_array_info.shape[0];
+	int res_x = phi_array_info.shape[1];
+
+	// update boundary conditions ---
+	// here we copy over just the ghost cell values from the boundary grids
+	for (int i = 0; i < res_y; ++i)
+	{
+		int idx_0 = index_2d(i, 0, res_x);
+		int idx_1 = index_2d(i, res_x - 1, res_x);
+		phi[idx_0] = phi_boundary[idx_0];
+		phi[idx_1] = phi_boundary[idx_1];
+		D[idx_0] = D_boundary[idx_0];
+		D[idx_1] = D_boundary[idx_1];
+	}
+	for (int i = 0; i < res_x; ++i)
+	{
+		int idx_0 = index_2d(0, i, res_x);
+		int idx_1 = index_2d(res_y - 1, i, res_x);
+		phi[idx_0] = phi_boundary[idx_0];
+		phi[idx_1] = phi_boundary[idx_1];
+		D[idx_0] = D_boundary[idx_0];
+		D[idx_1] = D_boundary[idx_1];
+	}
+
+	// now iterate over all inner cells and update phi and D
+	for (int i=1; i < res_y-1; ++i)
+		for (int j=1; j < res_x-1; ++j)
+		{
+			int idx = index_2d(i, j, res_x);
+			int idx_xp = index_2d(i, j+1, res_x);
+			int idx_xm = index_2d(i, j-1, res_x);
+			int idx_yp = index_2d(i-1, j, res_x);
+			int idx_ym = index_2d(i+1, j, res_x);
+
+			// compute phi gradient at cell center-- -
+			V2d grad_phi;
+			grad_phi[0] = (phi[idx_xp] - phi[idx_xm]) / (2.0*h);
+			grad_phi[1] = (phi[idx_yp] - phi[idx_ym]) / (2.0*h);
+
+			// Here is where we need to handle the case where D becomes zero. This would cause a division by zero during update of phi.
+			// NB: the threshold value for phi has an effect on the accuracy of the solution. It has been hand-picked for the pointsource test.
+			double dc = std::max(phi[idx], 0.0004) / std::max(grad_phi.norm(), 1.0e-4);
+
+			// compute diffusion coefficients at cell faces-- -
+			double D_xph = (dc + D[idx_xp])*0.5;
+			double D_xmh = (dc + D[idx_xm])*0.5;
+			double D_yph = (dc + D[idx_yp])*0.5;
+			double D_ymh = (dc + D[idx_ym])*0.5;
+
+			double numerator = 0.0;
+			numerator += D_xph*phi[idx_xp];
+			numerator += D_xmh*phi[idx_xm];
+			numerator += D_yph*phi[idx_yp];
+			numerator += D_ymh*phi[idx_ym];
+			numerator /= h;
+			numerator += h*Q[idx];
+
+			double denominator = h*sigma_t[idx];
+			denominator += (D_xph + D_xmh + D_yph + D_ymh) /h;
+
+			phi[idx] = numerator / denominator;
+			D[idx] = dc;
+		}
+}
+
+
 void iterate_2d_diffusion(py::array_t<double> phi_array, // phi grid
 	py::array_t<double> D_array, // diffusion coefficient grid
 	py::array_t<double> Q_array, // grid of emission values
@@ -278,16 +371,140 @@ void iterate_2d_p1(
 		}
 }
 
-void iterate_2d_anisotropic(py::array_t<double> phi_array, // phi grid
-	py::array_t<double> D_array, // diffusion coefficient grid
+void iterate_2d_anisotropic_absorption(
+	py::array_t<double> phi_array, // phi grid
+	py::array_t<double> mu0_sigma_t_array, // zero moment of the extinction coefficient at cell centers
 	py::array_t<double> Q_array, // grid of emission values
 	py::array_t<double> M_x_array, // grid of 2x2 matrices which represent anisotropy on faces perpendicular to x direction
 	py::array_t<double> M_y_array, // grid of 2x2 matrices which represent anisotropy on faces perpendicular to y direction
 	py::array_t<double> phi_boundary_array, // boundary values for phi
-	py::array_t<double> D_boundary_array, // boundary values for D
 	double h // voxelsize (in x and y)
 )
 {
+	py::buffer_info phi_array_info = phi_array.request();
+	py::buffer_info mu0_sigma_t_array_info = mu0_sigma_t_array.request();
+	py::buffer_info M_x_array_info = M_x_array.request();
+	py::buffer_info M_y_array_info = M_y_array.request();
+	py::buffer_info Q_array_info = Q_array.request();
+	py::buffer_info phi_boundary_array_info = phi_boundary_array.request();
+
+	auto phi = static_cast<double *>(phi_array_info.ptr);
+	auto mu0_sigma_t = static_cast<double *>(mu0_sigma_t_array_info.ptr);
+	auto M_x = static_cast<double *>(M_x_array_info.ptr);
+	auto M_y = static_cast<double *>(M_y_array_info.ptr);
+	auto Q = static_cast<double *>(Q_array_info.ptr);
+	auto phi_boundary = static_cast<double *>(phi_boundary_array_info.ptr);
+
+	int res_y = phi_array_info.shape[0];
+	int res_x = phi_array_info.shape[1];
+
+	double hinv = 1.0/h;
+	double h4inv = 1.0/(4.0*h);
+
+	// update boundary conditions ---
+	// here we copy over just the ghost cell values from the boundary grids
+	for (int i = 0; i < res_y; ++i)
+	{
+		int idx_0 = index_2d(i, 0, res_x);
+		int idx_1 = index_2d(i, res_x - 1, res_x);
+		phi[idx_0] = phi_boundary[idx_0];
+		phi[idx_1] = phi_boundary[idx_1];
+	}
+	for (int i = 0; i < res_x; ++i)
+	{
+		int idx_0 = index_2d(0, i, res_x);
+		int idx_1 = index_2d(res_y - 1, i, res_x);
+		phi[idx_0] = phi_boundary[idx_0];
+		phi[idx_1] = phi_boundary[idx_1];
+	}
+
+	// now iterate over all inner cells and update phi and D
+	for (int i=1; i < res_y-1; ++i)
+		for (int j=1; j < res_x-1; ++j)
+		{
+			int idx = index_2d(i, j, res_x);
+			int idx_xp = index_2d(i, j+1, res_x);
+			int idx_xpyp = index_2d(i-1, j+1, res_x);
+			int idx_xm = index_2d(i, j-1, res_x);
+			int idx_xmyp = index_2d(i-1, j-1, res_x);
+			int idx_yp = index_2d(i-1, j, res_x);
+			int idx_ym = index_2d(i+1, j, res_x);
+			int idx_xpym = index_2d(i+1, j+1, res_x);
+			int idx_xmym = index_2d(i+1, j-1, res_x);
+
+			// compute phi at cell faces ---
+			double phi2[4];
+			phi2[0] = (phi[idx] + phi[idx_xm])/2.0;
+			phi2[1] = (phi[idx_xp] + phi[idx])/2.0;
+			phi2[2] = (phi[idx] + phi[idx_ym])/2.0;
+			phi2[3] = (phi[idx_yp] + phi[idx])/2.0;
+
+			// compute phi gradient at cell faces ---
+			// index 0 == left face (i-1/2)
+			// index 1 == right face (i+1/2)
+			// index 2 == bottom face (j-1/2)
+			// index 3 == top face (j+1/2)
+			V2d grad_phi[4];
+			grad_phi[0].x() = (phi[idx] - phi[idx_xm])/h;
+			grad_phi[0].y() = (phi[idx_xmyp] + phi[idx_yp] - phi[idx_xmym] - phi[idx_ym])/(4.0*h);
+
+			grad_phi[1].x() = (phi[idx_xp] - phi[idx])/h;
+			grad_phi[1].y() = (phi[idx_yp] + phi[idx_xpyp] - phi[idx_ym] - phi[idx_xpym])/(4.0*h);
+
+			grad_phi[2].x() = (phi[idx_xp] + phi[idx_xpym] - phi[idx_xm] - phi[idx_xmym])/(4.0*h);
+			grad_phi[2].y() = (phi[idx] - phi[idx_ym])/h;
+
+			grad_phi[3].x() = (phi[idx_xpyp] + phi[idx_xp] - phi[idx_xmyp] - phi[idx_xm])/(4.0*h);
+			grad_phi[3].y() = (phi[idx_yp] - phi[idx])/h;
+
+			// retrieve M matrices at cell faces ---
+			int idx_M[4];
+			idx_M[0] = index_M_2d(i, j, res_x+1);
+			idx_M[1] = index_M_2d(i, j+1, res_x+1);
+			idx_M[2] = index_M_2d(i+1, j, res_x+1);
+			idx_M[3] = index_M_2d(i, j, res_x+1);
+
+			M22d M[4];
+			M[0] << M_x[idx_M[0]+0], M_x[idx_M[0]+1], M_x[idx_M[0]+2], M_x[idx_M[0]+3];
+			M[1] << M_x[idx_M[1]+0], M_x[idx_M[1]+1], M_x[idx_M[1]+2], M_x[idx_M[1]+3];
+			M[2] << M_y[idx_M[2]+0], M_y[idx_M[2]+1], M_y[idx_M[2]+2], M_y[idx_M[2]+3];
+			M[3] << M_y[idx_M[3]+0], M_y[idx_M[3]+1], M_y[idx_M[3]+2], M_y[idx_M[3]+3];
+
+			// compute D at cell faces ---
+			M22d D[4];
+			for(int k=0;k<4;++k)
+			{
+				double coeff = std::max(phi2[k], 0.0004) / std::max((M[k]*grad_phi[k]).norm(), 1.0e-4);
+				D[k] = M[k]*coeff;
+			}
+
+			double numerator = 0.0;
+			/*
+			numerator += -D[1].coeffRef(0,0)*phi[idx_xp];
+			numerator += -D[0].coeffRef(0,0)*phi[idx_xm];
+			numerator += -D[3].coeffRef(1,1)*phi[idx_yp];
+			numerator += -D[2].coeffRef(1,1)*phi[idx_ym];
+			*/
+			numerator += -0.25*(D[0].coeffRef(0,1)+D[2].coeffRef(1,0))*phi[idx_xmym];
+			numerator += -(D[0].coeffRef(0,0)-0.25*D[3].coeffRef(1,0) + 0.25*D[2].coeffRef(1,0))*phi[idx_xm];
+			numerator += 0.25*(D[0].coeffRef(0,1)+D[3].coeffRef(1,0))*phi[idx_xmyp];
+			numerator += -(-0.25*D[1].coeffRef(0,1)+0.25*D[0].coeffRef(0,1)+D[2].coeffRef(1,1))*phi[idx_ym];
+			numerator += -(0.25*D[1].coeffRef(0,1)-0.25*D[0].coeffRef(0,1)+D[3].coeffRef(1,1))*phi[idx_yp];
+			numerator += 0.25*(D[1].coeffRef(0,1) + D[2].coeffRef(1,0))*phi[idx_xpym];
+			numerator += -(D[1].coeffRef(0,0) + 0.25*D[3].coeffRef(1,0) - 0.25*D[2].coeffRef(1,0))*phi[idx_xp];
+			numerator += -0.25*(D[1].coeffRef(0,1)+D[3].coeffRef(1,0))*phi[idx_xpyp];
+
+
+			numerator /= h;
+			numerator += h*Q[idx];
+
+			double denominator = h*INV_TWOPI*mu0_sigma_t[idx];
+			denominator += -(D[1].coeffRef(0,0) + D[0].coeffRef(0,0) + D[3].coeffRef(1,1) + D[2].coeffRef(1,1))/h;
+
+			phi[idx] = numerator / denominator;
+		}
+
+	/*
 	py::buffer_info phi_array_info = phi_array.request();
 	py::buffer_info D_array_info = D_array.request();
 	py::buffer_info Q_array_info = Q_array.request();
@@ -393,106 +610,8 @@ void iterate_2d_anisotropic(py::array_t<double> phi_array, // phi grid
 			phi[idx] = numerator / denominator;
 			D[idx] = dc;
 		}
+	*/
 }
-
-// p0 and p1 are given in voxelspace
-void rasterize_line( py::array_t<double> pixel_array, Eigen::Vector2d& p0, Eigen::Vector2d& p1)
-{
-	py::buffer_info pixel_array_info = pixel_array.request();
-	auto pixel = static_cast<double *>(pixel_array_info.ptr);
-	V2i res( pixel_array_info.shape[0], pixel_array_info.shape[1] );
-
-	V2i pix0;
-	pix0.x() = std::min(res.x(), std::max(int(p0.x()), 0));
-	pix0.y() = std::min(res.y(), std::max(int(p0.y()), 0));
-	V2i pix1;
-	pix1.x() = std::min(res.x(), std::max(int(p1.x()), 0));
-	pix1.y() = std::min(res.y(), std::max(int(p1.y()), 0));
-
-	DrawPixelFunction dpf = [&](short i, short j, short baseColor)
-	{
-		int pixel_index = index_2d( res.y()-j-1, i, res.x() );
-		pixel[pixel_index]	= 1.0-baseColor/256.0;
-	};
-	short BaseColor = 0;
-	short NumLevels = 256;
-	short IntensityBits = 8;
-	draw_wu_line(pix0.x(), pix0.y(), pix1.x(), pix1.y(), BaseColor, NumLevels, IntensityBits, dpf);
-}
-
-
-
-P2i toVoxelIndex( P2d pWS, const Box2d& bound, const V2i& res )
-{
-	// convert from world to localspace
-	P2d pLS = (pWS-bound.min).cwiseQuotient(bound.getExtents());
-	// convert from local to voxelspace
-	P2d pVS( pLS.x()*res.x(), pLS.y()*res.y() );
-	P2i index;
-	index.x() = std::min(res.x()-1, std::max(int(pVS.x()), 0));
-	index.y() = std::min(res.y()-1, std::max(int(pVS.y()), 0));
-	return index;
-}
-
-P2d voxelToWorld( const P2d& pVS, const Box2d& bound, const V2i& res  )
-{
-	P2d pLS( pVS.x()/res.x(), pVS.y()/res.y() );
-	return pLS.cwiseProduct(bound.getExtents()) + bound.min;
-}
-
-void trace_2d( py::array_t<double> pixel_array, Eigen::Vector2d& o, Eigen::Vector2d& d, Eigen::Vector2d& bound_min, Eigen::Vector2d& bound_max )
-{
-	py::buffer_info pixel_array_info = pixel_array.request();
-	auto pixel = static_cast<double *>(pixel_array_info.ptr);
-	V2i res( pixel_array_info.shape[0], pixel_array_info.shape[1] );
-
-	// this is for line drawing ---
-	//double energy = 0.0;
-	DrawPixelFunction dpf = [&](short i, short j, short baseColor)
-	{
-		int pixel_index = index_2d( res.y()-j-1, i, res.x() );
-		double nrg = 1.0-baseColor/256.0;
-		pixel[pixel_index]	+= nrg;
-		//energy += nrg;
-	};
-
-
-	// now do the tracing ---
-	int depth = 0;
-
-	Box2d bound( bound_min, bound_max );
-	Ray2d ray(o, d);
-
-	while(depth < 2)
-	{
-		double tnear, tfar;
-		if( bound.rayIntersect(ray, tnear, tfar) )
-		{
-			if(tnear > 0)
-				// we are outside the domain-invalid sample
-				break;
-			//std::cout << "tnear=" << tnear << std::endl;
-
-			// now splat the line segment --
-			P2i pix0 = toVoxelIndex(ray.o, bound, res);
-			P2i pix1 = toVoxelIndex(ray(tfar), bound, res);
-			draw_wu_line(pix0.x(), pix0.y(), pix1.x(), pix1.y(), 0, 256, 8, dpf);
-
-			// reflect on the right border
-			if(pix1.x() == res.x()-1)
-			{
-				ray = Ray2d(voxelToWorld( P2d(pix1.x()+0.5, pix1.y()+0.5), bound, res ), V2d(-ray.d.x(), ray.d.y()));
-			}else
-				// we left the domain
-				break;
-		}else
-		{
-			std::cout << "trace_2d: error: no intersection\n";
-		}
-		++depth;
-	}
-}
-
 
 void toSRGB( py::array_t<double> pixel_array )
 {
@@ -523,11 +642,10 @@ PYBIND11_PLUGIN(solver)
 	py::module m("solver", "some inner loops in c++");
 
 	m.def("iterate_2d", &iterate_2d);
-	m.def("iterate_2d_anisotropic", &iterate_2d_anisotropic);
+	m.def("iterate_2d_isotropic_absorption", &iterate_2d_isotropic_absorption);
+	m.def("iterate_2d_anisotropic_absorption", &iterate_2d_anisotropic_absorption);
 	m.def("iterate_2d_diffusion", &iterate_2d_diffusion);
 	m.def("iterate_2d_p1", &iterate_2d_p1);
-	m.def("rasterize_line", &rasterize_line);
-	m.def("trace_2d", &trace_2d);
 	m.def("toSRGB", &toSRGB);
 
 	return m.ptr();

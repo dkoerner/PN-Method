@@ -498,7 +498,7 @@ void iterate_2d_anisotropic_absorption(
 			numerator /= h;
 			numerator += h*Q[idx];
 
-			double denominator = h*INV_TWOPI*mu0_sigma_t[idx];
+			double denominator = h*mu0_sigma_t[idx];
 			denominator += -(D[1].coeffRef(0,0) + D[0].coeffRef(0,0) + D[3].coeffRef(1,1) + D[2].coeffRef(1,1))/h;
 
 			phi[idx] = numerator / denominator;

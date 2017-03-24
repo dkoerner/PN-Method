@@ -92,9 +92,9 @@ int main()
 
 
 
-	//experiment_pt_2d_anisotropic();
+	experiment_pt_2d_anisotropic();
 	//void experiment_nebulae();
-	experiment_moexp2d();
+	//experiment_moexp2d();
 
 
 
@@ -322,7 +322,7 @@ void experiment_moexp2d()
 
 	//cumath::V2f frame_s = cumath::normalize(cumath::V2f(1.0f, 1.0f));
 
-	V2d frame_s = V2d(1.0, 1.0).normalized();
+	V2d frame_s = V2d(1.0, 0.0).normalized();
 	V2d projectedDistances(0.5, 1.0);
 	SGGX2D sggx(frame_s, projectedDistances);
 
@@ -345,6 +345,11 @@ void experiment_moexp2d()
 	};
 
 	std::unique_ptr<std::vector<double>> coeffs = moexp::_2d::projectFourier(order, fun);
+
+	std::cout << "moment 0=" << (*coeffs)[0] << std::endl;
+	std::cout << "moment 2=" << (*coeffs)[3] << " " << (*coeffs)[4] << std::endl;
+	cumath::V2f test = cumath::V2f(0.6, 1.0).normalized();
+	std::cout << "cusggx2d " << cusggx2d.projectedDistance(test) << std::endl;
 
 
 	/*
@@ -413,18 +418,37 @@ void experiment_moexp2d()
 
 void experiment_pt_2d_anisotropic()
 {
-	//std::string basepath = "c:/projects/epfl/experiments/python/anisotropic_absorption_2d";
-	std::string basepath = "c:/projects/epfl/experiments/python/isotropic_absorption_2d";
+
+	std::string basepath = "c:/projects/epfl/experiments/python/anisotropic_absorption_2d";
+	//std::string basepath = "c:/projects/epfl/experiments/python/isotropic_absorption_2d";
+
+	/*
+	{
+		//Bitmap map(basepath + "/test.exr");
+		Bitmap map;
+		map.loadTXT(basepath + "/solver.txt");
+		map.saveEXR(basepath + "/solver.exr");
+	}
+	return;
+	*/
+
+
+
+
 	V2i resolution(512, 512);
 	int numSamples = 1000;
+
+	// the following variables define the anisotropic medium
 	float density = 5.0;
+	V2d frame_s = V2d(1.0, 0.0).normalized();
+	V2d projectedDistances(0.25, 1.0);
+	//V2d projectedDistances(1.0, 1.0);
+
 
 	Eigen::Affine2d localToWorld;
 	localToWorld = Eigen::Translation2d(V2d(-0.5, -0.5));
 	Transform2Dd volume_localToWorld(localToWorld);
 
-	V2d sggx2d_w1 = V2d(1.0, 0.0).normalized();
-	V2d projectedDistances(1.0, 1.0);
 
 	// resolution
 
@@ -443,7 +467,7 @@ void experiment_pt_2d_anisotropic()
 			cuvolume.m_localToWorld.matrix.m[j][i] = float(l2w.coeff(i,j));
 			cuvolume.m_localToWorld.inverse.m[j][i] = float(l2w_inv.coeff(i,j));
 		}
-	cuvolume.m_sggx = CudaSGGX2D( cumath::V2f(sggx2d_w1.x(), sggx2d_w1.y()),
+	cuvolume.m_sggx = CudaSGGX2D( cumath::V2f(frame_s.x(), frame_s.y()),
 								  cumath::V2f(projectedDistances.x(), projectedDistances.y()) );
 
 	// kick of render ---
@@ -455,8 +479,8 @@ void experiment_pt_2d_anisotropic()
 	Bitmap map(resolution);
 	cufluencegrid.download((unsigned char*)map.data());
 	//map.saveEXR("pt2da/test.exr");
-	map.saveEXR(basepath+"/test.exr");
-	map.saveTXT(basepath+"/test.txt");
+	map.saveEXR(basepath+"/mc.exr");
+	map.saveTXT(basepath+"/mc.txt");
 }
 
 

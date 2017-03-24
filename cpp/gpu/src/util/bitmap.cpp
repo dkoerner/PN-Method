@@ -12,6 +12,7 @@
 
 
 #include <util/string.h>
+#include <util/data.h>
 
 Bitmap::Bitmap(const std::string &filename)
 {
@@ -197,6 +198,26 @@ void Bitmap::saveTXT( const std::string& filename )const
 			out_values << coeffRef(y, x).x();
 		}
 		out_values << std::endl;
+	}
+}
+
+void Bitmap::loadTXT( const std::string& filename )
+{
+	//resize(dw.max.y - dw.min.y + 1, dw.max.x - dw.min.x + 1);
+	std::vector<double> values;
+	int resx = 0;
+	int resy = 0;
+	readSamples2<double>(filename, values, resy, resx );
+
+	resize(resy, resx);
+
+	int index = 0;
+	for(int y=0;y<resy;++y)
+	{
+		for(int x=0;x<resx;++x, ++index)
+		{
+			coeffRef(y, x) = Color3f(values[index]);
+		}
 	}
 }
 

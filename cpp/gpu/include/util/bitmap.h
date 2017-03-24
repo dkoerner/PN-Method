@@ -73,6 +73,7 @@ public:
 	double computeMSE( const Bitmap& groundtruth )const; // computes mean square error
 
 	void saveTXT(const std::string &filename) const;
+	void loadTXT( const std::string& filename );
 };
 
 void compositeImages( std::vector<Bitmap::Ptr>& images, const std::string& filename, int maxCols = 6, int spacing = 5 );

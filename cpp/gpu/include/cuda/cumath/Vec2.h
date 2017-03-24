@@ -143,6 +143,12 @@ namespace cumath
 	template<typename T>
 	HOST_DEVICE Vec2<T> Vec2<T>::normalized( void ) const
 	{
+		float length = getLength();
+
+		if( length != (T)0.0 )
+			return Vec2<T>(x/length, y/length);
+		else
+			return Vec2<T>((T)0.0, (T)0.0);
 	}
 
 	template<typename T>

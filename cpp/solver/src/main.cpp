@@ -371,16 +371,18 @@ void iterate_2d_p1(
 		}
 }
 
-void iterate_2d_anisotropic_absorption(
+std::string iterate_2d_anisotropic_absorption(
 	py::array_t<double> phi_array, // phi grid
 	py::array_t<double> mu0_sigma_t_array, // zero moment of the extinction coefficient at cell centers
 	py::array_t<double> Q_array, // grid of emission values
 	py::array_t<double> M_x_array, // grid of 2x2 matrices which represent anisotropy on faces perpendicular to x direction
 	py::array_t<double> M_y_array, // grid of 2x2 matrices which represent anisotropy on faces perpendicular to y direction
 	py::array_t<double> phi_boundary_array, // boundary values for phi
-	double h // voxelsize (in x and y)
+	double h, // voxelsize (in x and y)
+	bool debug_global = false
 )
 {
+	std::ostringstream oss;
 	py::buffer_info phi_array_info = phi_array.request();
 	py::buffer_info mu0_sigma_t_array_info = mu0_sigma_t_array.request();
 	py::buffer_info M_x_array_info = M_x_array.request();
@@ -422,6 +424,16 @@ void iterate_2d_anisotropic_absorption(
 	for (int i=1; i < res_y-1; ++i)
 		for (int j=1; j < res_x-1; ++j)
 		{
+			bool debug = false;
+			//if( (j>=80)&&(j<=81)&&(i==80) )
+			if( (j>=0)&&(j<=81)&&(i==80) && debug_global )
+				debug = true;
+
+			if(debug)
+			{
+				oss << "-------- i=" << i << " j=" << j << std::endl;
+			}
+
 			int idx = index_2d(i, j, res_x);
 			int idx_xp = index_2d(i, j+1, res_x);
 			int idx_xpyp = index_2d(i-1, j+1, res_x);
@@ -475,6 +487,7 @@ void iterate_2d_anisotropic_absorption(
 			for(int k=0;k<4;++k)
 			{
 				double coeff = std::max(phi2[k], 0.0004) / std::max((M[k]*grad_phi[k]).norm(), 1.0e-4);
+				//double coeff = std::max(phi2[k], 0.0004) / std::max((grad_phi[k]).norm(), 1.0e-4);
 				D[k] = M[k]*coeff;
 			}
 
@@ -485,24 +498,92 @@ void iterate_2d_anisotropic_absorption(
 			numerator += -D[3].coeffRef(1,1)*phi[idx_yp];
 			numerator += -D[2].coeffRef(1,1)*phi[idx_ym];
 			*/
-			numerator += -0.25*(D[0].coeffRef(0,1)+D[2].coeffRef(1,0))*phi[idx_xmym];
-			numerator += -(D[0].coeffRef(0,0)-0.25*D[3].coeffRef(1,0) + 0.25*D[2].coeffRef(1,0))*phi[idx_xm];
-			numerator += 0.25*(D[0].coeffRef(0,1)+D[3].coeffRef(1,0))*phi[idx_xmyp];
-			numerator += -(-0.25*D[1].coeffRef(0,1)+0.25*D[0].coeffRef(0,1)+D[2].coeffRef(1,1))*phi[idx_ym];
-			numerator += -(0.25*D[1].coeffRef(0,1)-0.25*D[0].coeffRef(0,1)+D[3].coeffRef(1,1))*phi[idx_yp];
-			numerator += 0.25*(D[1].coeffRef(0,1) + D[2].coeffRef(1,0))*phi[idx_xpym];
-			numerator += -(D[1].coeffRef(0,0) + 0.25*D[3].coeffRef(1,0) - 0.25*D[2].coeffRef(1,0))*phi[idx_xp];
-			numerator += -0.25*(D[1].coeffRef(0,1)+D[3].coeffRef(1,0))*phi[idx_xpyp];
 
+			if(debug)
+			{
+
+
+
+
+
+			}
+
+			numerator += -0.25*(D[0].coeffRef(0,1)+D[2].coeffRef(1,0))*phi[idx_xmym];
+			if(debug)
+			{
+				oss << "\tnumerator=" << numerator << std::endl;
+				oss << "\tphi[idx_xmym]" << phi[idx_xmym] << std::endl;
+			}
+			numerator += -(D[0].coeffRef(0,0)-0.25*D[3].coeffRef(1,0) + 0.25*D[2].coeffRef(1,0))*phi[idx_xm];
+			if(debug)
+			{
+				oss << "\tnumerator=" << numerator << std::endl;
+				oss << "\tphi[idx_xm]" << phi[idx_xm] << std::endl;
+			}
+			numerator += 0.25*(D[0].coeffRef(0,1)+D[3].coeffRef(1,0))*phi[idx_xmyp];
+			if(debug)
+			{
+				oss << "\tnumerator=" << numerator << std::endl;
+				oss << "\tphi[idx_xmyp]" << phi[idx_xmyp] << std::endl;
+			}
+			numerator += -(-0.25*D[1].coeffRef(0,1)+0.25*D[0].coeffRef(0,1)+D[2].coeffRef(1,1))*phi[idx_ym];
+			if(debug)
+			{
+				oss << "\tnumerator=" << numerator << std::endl;
+				oss << "\tphi[idx_ym]" << phi[idx_ym] << std::endl;
+			}
+			numerator += -(0.25*D[1].coeffRef(0,1)-0.25*D[0].coeffRef(0,1)+D[3].coeffRef(1,1))*phi[idx_yp];
+			if(debug)
+			{
+				oss << "\tnumerator=" << numerator << std::endl;
+				oss << "\tphi[idx_yp]" << phi[idx_yp] << std::endl;
+			}
+			numerator += 0.25*(D[1].coeffRef(0,1) + D[2].coeffRef(1,0))*phi[idx_xpym];
+			if(debug)
+			{
+				oss << "\tnumerator=" << numerator << std::endl;
+				oss << "\tphi[idx_xpym]" << phi[idx_xpym] << std::endl;
+			}
+			numerator += -(D[1].coeffRef(0,0) + 0.25*D[3].coeffRef(1,0) - 0.25*D[2].coeffRef(1,0))*phi[idx_xp];
+			if(debug)
+			{
+				oss << "\tnumerator=" << numerator << std::endl;
+				oss << "\tphi[idx_xp]" << phi[idx_xp] << std::endl;
+			}
+			numerator += -0.25*(D[1].coeffRef(0,1)+D[3].coeffRef(1,0))*phi[idx_xpyp];
+			if(debug)
+			{
+				oss << "\tnumerator=" << numerator << std::endl;
+				oss << "\tphi[idx_xpyp]" << phi[idx_xpyp] << std::endl;
+			}
 
 			numerator /= h;
-			numerator += h*Q[idx];
+			if(debug)
+				oss << "\tnumerator=" << numerator << std::endl;
 
-			double denominator = h*mu0_sigma_t[idx];
+			numerator += -h*Q[idx];
+			if(debug)
+				oss << "\tnumerator=" << numerator << std::endl;
+
+			double denominator = -h*mu0_sigma_t[idx];
 			denominator += -(D[1].coeffRef(0,0) + D[0].coeffRef(0,0) + D[3].coeffRef(1,1) + D[2].coeffRef(1,1))/h;
 
 			phi[idx] = numerator / denominator;
+			if(debug)
+			{
+				oss << "\tphi=" << phi[idx] << std::endl;
+				oss << "\tnumerator=" << numerator << std::endl;
+				oss << "\tdenominator=" << denominator << std::endl;
+				for(int k=0;k<4;++k)
+				{
+					double coeff = std::max(phi2[k], 0.0004) / std::max((M[k]*grad_phi[k]).norm(), 1.0e-4);
+					oss << "\tD["<< k << "]=" << D[k].coeffRef(0,0) << " " << D[k].coeffRef(0,1) << " " << D[k].coeffRef(1,0) << " " << D[k].coeffRef(1,1) << std::endl;
+				}
+			}
 		}
+
+
+	return oss.str();
 
 	/*
 	py::buffer_info phi_array_info = phi_array.request();

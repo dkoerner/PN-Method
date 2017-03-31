@@ -34,7 +34,10 @@ def integrate( func, numSamples ):
 		s += func(t)*dt
 	return s
 
-
+def normalize( v ):
+	length = np.linalg.norm(v)
+	if length>0.0:
+		return v/length
 
 class SGGX2D:
 	#def __init__(self, S_xx = None, S_xy = None, S_yy = None, ):
@@ -43,6 +46,7 @@ class SGGX2D:
 	#	self.S_yy = S_yy;
 
 	def __init__(self, frame_s, projectedDistances ):
+
 		frame_t = np.array([-frame_s[1], frame_s[0]])
 
 		S_11 = projectedDistances[0]*projectedDistances[0]
@@ -50,7 +54,7 @@ class SGGX2D:
 
 		self.S_xx = S_11*frame_s[0]*frame_s[0] + S_22*frame_t[0]*frame_t[0];
 		self.S_xy = S_11*frame_s[0]*frame_s[1] + S_22*frame_t[0]*frame_t[1];
-		self.S_yx = S_xy;
+		self.S_yx = self.S_xy
 		self.S_yy = S_11*frame_s[1]*frame_s[1] + S_22*frame_t[1]*frame_t[1];
 
 
@@ -61,8 +65,8 @@ class SGGX2D:
 		# conditional to avoid numerical errors
 		return 0.0
 
-	def projectedDistanceAdapter( t ):
-		self.projectedDistance( np.array([np.cos(t), np.sin(p)]) )
+	def projectedDistanceAdapter( self, t ):
+		return self.projectedDistance( np.array([np.cos(t), np.sin(t)]) )
 
 	def get_moment_0(self):
 		# compute fourier coefficient a_0
@@ -75,8 +79,8 @@ class SGGX2D:
 		def func_b(t):
 			return self.projectedDistanceAdapter(t)*np.sin(2*t)
 		# compute fourier coefficients a_2 and b2
-		a_2 = integrate( self.func_a, 10000 )/np.pi
-		b_2 = integrate( self.func_b, 10000 )/np.pi
+		a_2 = integrate( func_a, 10000 )/np.pi
+		b_2 = integrate( func_b, 10000 )/np.pi
 		# turn this into moments (see notebook: moment_expansion_2d for details)
 		return np.array([[a_2, b_2], [b_2, -a_2]])
 
@@ -111,8 +115,10 @@ class Domain2D:
 	def voxelToIndex(self, pVS):
 		return (int(pVS[1]), int(pVS[0]))
 
-	def rasterize( self, fun ):
-		field = np.zeros((self.res, self.res))
+	def rasterize( self, fun, shape = None ):
+		if shape == None:
+			shape = (self.res, self.res)
+		field = np.zeros(shape)
 		for i in range(0, self.res):
 			for j in range(0, self.res):
 				pVS = np.array([j+0.5, i+0.5])

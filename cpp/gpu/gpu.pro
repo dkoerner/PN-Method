@@ -41,6 +41,7 @@ HEADERS += \
 	include/util/bitmap.h \
 	include/util/envmap.h \
 	include/util/data.h \
+	include/util/wedge.h \
 	include/util/timer.h \
 	include/util/field.h \
 	include/util/voxelgrid.h \

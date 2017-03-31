@@ -208,6 +208,7 @@ void Bitmap::loadTXT( const std::string& filename )
 	int resx = 0;
 	int resy = 0;
 	readSamples2<double>(filename, values, resy, resx );
+	std::cout << "Bitmap::loadTXT res=" << resx << " " << resy << std::endl;
 
 	resize(resy, resx);
 
@@ -217,6 +218,26 @@ void Bitmap::loadTXT( const std::string& filename )
 		for(int x=0;x<resx;++x, ++index)
 		{
 			coeffRef(y, x) = Color3f(values[index]);
+		}
+	}
+}
+
+void Bitmap::loadTXT( const std::string& filename, int component)
+{
+	//resize(dw.max.y - dw.min.y + 1, dw.max.x - dw.min.x + 1);
+	std::vector<double> values;
+	int resx = 0;
+	int resy = 0;
+	readSamples2<double>(filename, values, resy, resx );
+
+	resize(resy, resx);
+
+	int index = 0;
+	for(int y=0;y<resy;++y)
+	{
+		for(int x=0;x<resx;++x, ++index)
+		{
+			coeffRef(y, x)[component] = values[index];
 		}
 	}
 }

@@ -9,6 +9,7 @@
 #include <util/field.h>
 #include <util/moexp.h>
 #include <util/moexp2d.h>
+#include <util/wedge.h>
 
 #include <volume.h>
 #include <shcache.h>
@@ -92,9 +93,9 @@ int main()
 
 
 
-	experiment_pt_2d_anisotropic();
-	//void experiment_nebulae();
-	//experiment_moexp2d();
+	//experiment_pt_2d_anisotropic();
+	//experiment_nebulae();
+	experiment_moexp2d();
 
 
 
@@ -277,6 +278,57 @@ struct SGGX2D
 void experiment_moexp2d()
 {
 
+	{
+		Wedge wedge;
+		wedge.addParm( "d", linearSamples<float>(0.0f, M_PI*2.0f, 20) );
+		wedge.addParm( "pd", linearSamples<float>(0.0f, 1.0f, 10) );
+		std::vector<int> moments;
+		for( int i=0;i<=10;++i )
+		//for( int i=0;i<=4;++i )
+			moments.push_back(i);
+		wedge.addParm( "o", moments);
+
+		for( auto it = wedge.begin(), end = wedge.end(); it!=end;++it )
+		{
+			double d = it.getFloat("d");
+			double pd = it.getFloat("pd");
+			int m = it.getInt("o");
+			//std::cout << "d=" << d << " pd=" << pd << " m=" << m << std::endl;
+			//std::cout << it.expand_index("$0 $1 $2") << std::endl;
+
+			bool polar = true;
+
+			V2d frame_s = V2d(std::cos(d), std::sin(d)).normalized();
+			V2d projectedDistances(pd, 1.0);
+			//SGGX2D sggx(frame_s, projectedDistances);
+
+			CudaSGGX2D cusggx2d(cumath::V2f(frame_s.x(), frame_s.y()),
+								cumath::V2f(projectedDistances.x(), projectedDistances.y()));
+
+			moexp::_2d::Function<double> fun = [&]( double t )
+			{
+				// 2d sggx
+				cumath::V2f d( std::cos(t), std::sin(t) );
+				return cusggx2d.projectedDistance(d);
+
+				//V2d d( std::cos(t), std::sin(t) );
+				//return sggx.projectedDistance(d);
+			};
+
+			std::unique_ptr<std::vector<double>> coeffs = moexp::_2d::projectFourier(m, fun);
+
+			moexp::_2d::Function<double> fun_rec = [&]( double t )
+			{
+				return moexp::_2d::fourierSum(m, (*coeffs).data(), t);
+			};
+
+			// write groundtruth function
+			functionToBgeo( it.expand_index("moexp2d/sggx2d/groundtruth_$0_$1_$2.bgeo"), fun, polar );
+			functionToBgeo( it.expand_index("moexp2d/sggx2d/reconstruction_$0_$1_$2.bgeo"), fun_rec, polar );
+		}
+
+		return;
+	}
 
 	/*
 	{
@@ -314,9 +366,7 @@ void experiment_moexp2d()
 	*/
 
 
-
-
-
+	/*
 	int order = 30;
 	bool polar = true;
 
@@ -331,11 +381,6 @@ void experiment_moexp2d()
 
 	moexp::_2d::Function<double> fun = [&]( double t )
 	{
-		// example function from khan academy
-		//if(t<M_PI)
-		//	return 3.0;
-		//return 0.0;
-
 		// 2d sggx
 		cumath::V2f d( std::cos(t), std::sin(t) );
 		return cusggx2d.projectedDistance(d);
@@ -345,27 +390,6 @@ void experiment_moexp2d()
 	};
 
 	std::unique_ptr<std::vector<double>> coeffs = moexp::_2d::projectFourier(order, fun);
-
-	std::cout << "moment 0=" << (*coeffs)[0] << std::endl;
-	std::cout << "moment 2=" << (*coeffs)[3] << " " << (*coeffs)[4] << std::endl;
-	cumath::V2f test = cumath::V2f(0.6, 1.0).normalized();
-	std::cout << "cusggx2d " << cusggx2d.projectedDistance(test) << std::endl;
-
-
-	/*
-	(*coeffs)[0] = 3.0/2.0;
-	for( int i=1;i<=order;++i )
-	{
-		(*coeffs)[1 + 2*(i-1) + 0] = 0.0;
-
-		if( i % 2 == 0 )
-			// even
-			(*coeffs)[1 + 2*(i-1) + 1] = 0.0;
-		else
-			// odd
-			(*coeffs)[1 + 2*(i-1) + 1] = 6.0/(i*M_PI);
-	}
-	*/
 
 	for( int i=0;i<=order;++i )
 	{
@@ -381,8 +405,9 @@ void experiment_moexp2d()
 
 	// write groundtruth function
 	functionToBgeo( "moexp2d/groundtruth.bgeo", fun, polar );
+	*/
 
-
+	/*
 	// moments ------
 	std::vector<moexp::_2d::Tensor<double>> moments =  moexp::_2d::convertFourierCoefficientsToMoments((*coeffs).data());
 
@@ -409,8 +434,8 @@ void experiment_moexp2d()
 			filename = replace(filename, "$0", toString<int>(i));
 			functionToBgeo( filename, fun_moments );
 		}
-
 	}
+	*/
 }
 
 // ==============================================================
@@ -422,15 +447,38 @@ void experiment_pt_2d_anisotropic()
 	std::string basepath = "c:/projects/epfl/experiments/python/anisotropic_absorption_2d";
 	//std::string basepath = "c:/projects/epfl/experiments/python/isotropic_absorption_2d";
 
-	/*
+	///*
 	{
 		//Bitmap map(basepath + "/test.exr");
 		Bitmap map;
+		/*
 		map.loadTXT(basepath + "/solver.txt");
 		map.saveEXR(basepath + "/solver.exr");
+
+		map.loadTXT(basepath + "/phi_groundtruth.txt");
+		map.saveEXR(basepath + "/phi_groundtruth.exr");
+
+		map.fill(Color3f(0.0f));
+		map.loadTXT(basepath + "/gradphi_x_groundtruth.txt", 0);
+		map.loadTXT(basepath + "/gradphi_y_groundtruth.txt", 1);
+		map.saveEXR(basepath + "/gradphi_groundtruth.exr");
+
+		map.loadTXT(basepath + "/discretization_phi.txt");
+		map.saveEXR(basepath + "/discretization_phi.exr");
+
+		map.fill(Color3f(0.0f));
+		map.loadTXT(basepath + "/discretization_gradphi_x.txt", 0);
+		map.loadTXT(basepath + "/discretization_gradphi_y.txt", 1);
+		map.saveEXR(basepath + "/discretization_gradphi.exr");
+		*/
+
+		map.loadTXT(basepath + "/discretization_residuum.txt");
+		map.saveEXR(basepath + "/discretization_residuum.exr");
+
 	}
+
 	return;
-	*/
+	//*/
 
 
 
@@ -441,7 +489,7 @@ void experiment_pt_2d_anisotropic()
 	// the following variables define the anisotropic medium
 	float density = 5.0;
 	V2d frame_s = V2d(1.0, 0.0).normalized();
-	V2d projectedDistances(0.25, 1.0);
+	V2d projectedDistances(0.5, 1.0);
 	//V2d projectedDistances(1.0, 1.0);
 
 
@@ -486,6 +534,13 @@ void experiment_pt_2d_anisotropic()
 
 void experiment_nebulae()
 {
+	/*
+	{
+		EnvMap map("test_0.exr");
+		rasterizeSphericalFunctionSphere("test");
+		return;
+	}
+	*/
 
 
 	// setup volume ---------------

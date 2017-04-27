@@ -59,6 +59,8 @@ namespace volumes
 	Volume::Ptr C60();
 	Volume::Ptr nebulae();
 
+	PhaseFunction::Ptr hg(double g);
+
 
 	/*
 	Scene C60Detail();

@@ -76,6 +76,7 @@ void pathtrace_fluencefield_2d( CudaPtr<CudaPixelBuffer>* fluencegrid, CudaPtr<C
 void experiment_pt_2d_anisotropic();
 void experiment_nebulae();
 void experiment_moexp2d();
+void experiment_sh_method();
 int main()
 {
 	int deviceCount = 0;
@@ -95,7 +96,8 @@ int main()
 
 	//experiment_pt_2d_anisotropic();
 	//experiment_nebulae();
-	experiment_moexp2d();
+	//experiment_moexp2d();
+	experiment_sh_method();
 
 
 
@@ -106,9 +108,78 @@ int main()
 }
 
 
-// ==============================================================
+// resolution.x -> resolution along theta angle
+// resolution.y -> resolution along phi angle
+template<typename T>
+T integrate_sphere( moexp::SphericalFunction<T> f, V2i resolution )
+{
+	T result = 0.0;
 
-void functionToBgeo( const std::string& filename, moexp::_2d::Function<double>& fun, bool polar = false )
+	double min_theta = 0;
+	double max_theta = M_PI;
+	double min_phi = 0;
+	double max_phi = 2.0*M_PI;
+
+	int resolution_theta=resolution.x(); // resolution along theta angle
+	int resolution_phi=resolution.y(); // resolution along phi angle
+	double dtheta = (max_theta-min_theta)/double(resolution_theta);
+	double dphi = (max_phi-min_phi)/double(resolution_phi);
+
+	double pixel_area = dtheta*dphi;
+
+	for( int t=0;t<resolution_theta;++t )
+		for( int p=0;p<resolution_phi;++p )
+		{
+			double phi = dphi*p;
+			double theta = dtheta*t;
+			result+=f(theta, phi)*pixel_area*std::sin(theta);
+		}
+
+	return result;
+}
+
+
+
+// res gives resolution in theta and phi
+void compute_sh_coeffs( moexp::SphericalFunction<double> f, V2i res, int order, std::vector<moexp::complex>& coeffs )
+{
+	int numCoeffs = moexp::numSHCoefficients(order);
+	coeffs.resize(numCoeffs, 0.0);
+
+	double min_theta = 0;
+	double max_theta = M_PI;
+	double min_phi = 0;
+	double max_phi = 2.0*M_PI;
+
+	//int resolution_theta=map.bitmap().rows(); // resolution along theta angle
+	//int resolution_phi=map.bitmap().cols(); // resolution along phi angle
+	int resolution_theta=res.x(); // resolution along theta angle
+	int resolution_phi=res.y(); // resolution along phi angle
+	double dtheta = (max_theta-min_theta)/double(resolution_theta);
+	double dphi = (max_phi-min_phi)/double(resolution_phi);
+
+
+	// cpu version for computing moments ---
+	double pixel_area = dtheta*dphi;
+
+	for( int t=0;t<resolution_theta;++t )
+		for( int p=0;p<resolution_phi;++p )
+		{
+			double phi = dphi*p;
+			double theta = dtheta*t;
+
+			moexp::complex f_sample = f(theta, phi);
+
+			for( int l=0;l<=order;++l )
+				for( int m=-l;m<=l;++m )
+				{
+					coeffs[moexp::shIndex(l, m)]+=f_sample*moexp::Y(l, m, theta, phi)*pixel_area*std::sin(theta);
+				}
+		}
+}
+
+
+void functionToBgeo( const std::string& filename, moexp::_2d::Function<double> fun, bool polar = false )
 {
 	houio::Geometry::Ptr geo = houio::Geometry::createLineGeometry();
 	houio::Attribute::Ptr pattr = geo->getAttr("P");
@@ -136,6 +207,201 @@ void functionToBgeo( const std::string& filename, moexp::_2d::Function<double>& 
 
 	houio::HouGeoIO::xport(filename, geo);
 }
+
+
+void experiment_sh_method()
+{
+	//double exposure = 0.0;
+	V2i res( 512, 1024 );
+
+
+	// radiance field ---
+	EnvMap L_baked("test_0_filtered.exr");
+	auto L = [&]( double theta, double phi )->Color3f
+	{
+		return L_baked.eval(theta, phi);
+	};
+	rasterizeSphericalFunctionSphere("shm/fun_L.bgeo", L, 8.0);
+
+	// phase function ---
+	PhaseFunction::Ptr f = volumes::hg(0.9);
+	/*
+	functionToBgeo("shm/fun_f.bgeo", [&](double theta)->double
+	{
+		V3d wo = sphericalDirection(0.0, 0.0);
+		V3d wi = sphericalDirection(theta-M_PI, 0.0);
+		return f->eval(wi, wo).r();
+	}, true);
+	*/
+	rasterizeSphericalFunctionSphere("shm/fun_f.bgeo", [&](double theta, double phi)->double
+	{
+		V3d wo(0.0, 0.0, 1.0);
+		V3d wi = sphericalDirection(theta, phi);
+		return f->eval(wi, wo).r();
+	}, 0.0, 20);
+
+
+	// scattering operator as convolution ---
+	auto S = [&]( double theta, double phi )->Color3f
+	{
+		V3d wo = sphericalDirection(theta, phi);
+		auto L_times_phase = [&](double theta, double phi)->Color3f
+		{
+			V3d wi = sphericalDirection(theta, phi);
+			return L( theta, phi )*f->eval(wi, wo);
+		};
+
+		return integrate_sphere<Color3f>(L_times_phase, res);
+	};
+	//rasterizeSphericalFunctionSphere("shm/fun_S.bgeo", S, 8.0, 20);
+
+	// scattering operator as inner product integral of rotated phase function ---
+	auto S_ip = [&]( double theta, double phi )->Color3f
+	{
+		V3d d = sphericalDirection(theta, phi);
+		Eigen::Quaterniond rho = Eigen::Quaterniond::FromTwoVectors( V3d(0.0, 0.0, 1.0), d );
+		//Eigen::Quaterniond rho_inverse = Eigen::Quaterniond::FromTwoVectors( d, V3d(0.0, 0.0, 1.0) );
+		Eigen::Quaterniond rho_inverse = Eigen::Quaterniond::FromTwoVectors( d, d );
+
+		auto ip = [&](double theta, double phi)->Color3f
+		{
+			V3d wi = sphericalDirection(theta, phi);
+			V3d wo = d;
+
+			// apply inverse rotation to both arguments of the phase function
+			// this is identical to forward rotation of the phase function
+			V3d wi_inverse_rotation = rho_inverse*wi;
+			V3d wo_inverse_rotation = rho_inverse*wo;
+			return L( theta, phi )*f->eval(wi_inverse_rotation, wo_inverse_rotation);
+		};
+
+		return integrate_sphere<Color3f>(ip, res);
+	};
+	//rasterizeSphericalFunctionSphere("shm/fun_S_ip.bgeo", S_ip, 8.0, 20);
+
+	// eigenfunctions of scattering operator ---
+	// we want to see that the inner product integral of Ylm with a rotationally symmetric function, rotated to \omega
+	// is identical to a constant factor times Ylm(\omega)
+	for( int l = 2;l<0;++l )
+	{
+		//for( int m = -l;m<=l;++m )
+		for( int m = 0;m<=l;++m )
+		{
+			auto Ylm = [&](double theta, double phi)->Color3f
+			{
+				moexp::complex v = moexp::Y( l, m, theta, phi );
+				return Color3f( std::abs(v.real()), std::abs(v.imag()), 0.0f );
+			};
+
+			auto lambdal_times_Ylm = [&](double theta, double phi)->Color3f
+			{
+				double lambda_l = std::sqrt(4.0*M_PI / (2.0*l+1.0));
+				moexp::complex v = lambda_l*moexp::Y( l, m, theta, phi );
+				return Color3f( std::abs(v.real()), std::abs(v.imag()), 0.0f );
+			};
+
+			auto Cl = [&]( double theta, double phi )->Color3f
+			{
+				V3d d = sphericalDirection(theta, phi);
+
+				// build rotation, which rotates the pole axis of Yl0 (0,0,1) to \omega
+				Eigen::Quaterniond rho = Eigen::Quaterniond::FromTwoVectors( V3d(0.0, 0.0, 1.0), d );
+				Eigen::Quaterniond rho_inverse = Eigen::Quaterniond::FromTwoVectors( d, V3d(0.0, 0.0, 1.0) );
+
+				auto ip_integrand = [&]( double theta, double phi )->moexp::complex
+				{
+					moexp::complex ylm = moexp::Y( l, m, theta, phi );
+
+					V3d d2 = sphericalDirection(theta, phi);
+					V3d d2_inverse_rotation = rho_inverse*d2;
+					P2d coords_rotated_theta_phi = sphericalCoordinates( d2_inverse_rotation );
+
+					// apply rotation
+					moexp::complex yl0 = moexp::Y( l, 0, coords_rotated_theta_phi.x(), coords_rotated_theta_phi.y() );
+
+					return ylm*yl0;
+				};
+
+				moexp::complex v = integrate_sphere<moexp::complex>( ip_integrand, res);
+				return Color3f( std::abs(v.real()), std::abs(v.imag()), 0.0f );
+			};
+			rasterizeSphericalFunctionSphere("shm/fun_Y_" + toString<int>(l) + "_" + toString<int>(m) + ".bgeo", Ylm, 0.0, 120);
+			rasterizeSphericalFunctionSphere("shm/fun_lY_" + toString<int>(l) + "_" + toString<int>(m) + ".bgeo", lambdal_times_Ylm, 0.0, 120);
+			rasterizeSphericalFunctionSphere("shm/fun_Cl_Y_" + toString<int>(l) + "_" + toString<int>(m) + ".bgeo", Cl, 0.0, 20);
+		}//m
+	}//l
+
+	// convolution as product of sh coefficients ---
+	int maxOrder = 10;
+	for( int order = 0;order<=maxOrder;++order )
+	{
+		// we want to see, that the scattering operator can be expressed as a
+		// product of the sh coefficients of radiance field and phase function
+
+		// sh coefficients of the phase function
+		std::vector<moexp::complex> f_lm;
+		auto f_local = [&]( double theta, double phi )->double
+		{
+			V3d wi(0.0, 0.0, 1.0);
+			V3d wo = sphericalDirection(theta, phi);
+			return f->eval(wi, wo).r();
+		};
+		compute_sh_coeffs(f_local, V2i(256, 512), order, f_lm);
+
+		// sh coefficients of the radiance field
+		std::vector<moexp::complex> L_lm;
+		auto L_red = [&]( double theta, double phi )->double
+		{
+			// there is some problem with matching the coordinates between envmap and spherical harmonics projection
+			// the problem seems to something related to a mismatch between the phi coordinates
+			// we fix it by simply flipping the y axis
+			V3d w = sphericalDirection(theta, phi);
+			V3d w2(w.x(), -w.y(), w.z());
+			P2d theta_phi = sphericalCoordinates(w2);
+			return L_baked.eval(theta_phi.x(), theta_phi.y()).r();
+
+			//return L_baked.eval(theta, phi).r();
+		};
+		compute_sh_coeffs(L_red, V2i(256, 512), order, L_lm);
+
+		// coefficient product
+		auto rhs = [&](double theta, double phi)->Color3f
+		{
+			moexp::complex v = 0.0;
+			for( int l=0;l<=order;++l )
+			{
+				for( int m = -l;m<=l;++m )
+				{
+					moexp::complex ylm = moexp::Y(l, m, theta, phi);
+					double lambda_l = std::sqrt(4.0*M_PI / (2.0*l+1.0));
+					v+= f_lm[moexp::shIndex(l, 0)] * L_lm[moexp::shIndex(l, m)] * lambda_l * ylm;
+					//v+= L_lm[moexp::shIndex(l, m)]* ylm;
+					//v+= f_lm[moexp::shIndex(l, m)]* ylm;
+				}
+			}
+
+			//return Color3f( std::abs(v.real()), std::abs(v.imag()), 0.0f );
+			return Color3f( v.real() );
+		};
+		rasterizeSphericalFunctionSphere("shm/fun_rhs_" + toString<int>(order) + ".bgeo", rhs, 8.0, 20);
+	}
+
+
+
+
+
+
+
+
+
+
+
+	return;
+}
+
+// ==============================================================
+
+
 
 M22d build_SGGX2D_matrix( const V2d& w1, double pd_x, double pd_y  );
 

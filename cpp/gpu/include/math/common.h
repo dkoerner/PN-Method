@@ -208,6 +208,12 @@ inline double safe_asin( const T& in )
 }
 
 template<typename T>
+inline double safe_sqrt( const T& in )
+{
+	return std::sqrt( std::max( T(0.0), in) );
+}
+
+template<typename T>
 T mean( const std::vector<T>& samples )
 {
 	T m = 0.0;

@@ -25,14 +25,16 @@ void EnvMap::saveGeo( const std::string& filename, double exposure )
 }
 
 
-void rasterizeSphericalFunctionSphere(const std::string& filename, std::function<Color3f (double, double)> func, double exposure)
+void rasterizeSphericalFunctionSphere(const std::string& filename, std::function<Color3f (double, double)> func, double exposure, int res )
 {
 	double scale = std::pow(2.0, exposure);
-	houio::Geometry::Ptr geo = houio::Geometry::createSphere(120, 120, 1.0);
+	houio::Geometry::Ptr geo = houio::Geometry::createSphere(res, res, 1.0);
 	houio::Attribute::Ptr pAttr = geo->getAttr("P");
 	houio::Attribute::Ptr cdAttr = houio::Attribute::createV3f(pAttr->numElements());
-	for( int i=0;i<pAttr->numElements();++i )
+	int numPoints = pAttr->numElements();
+	for( int i=0;i<numPoints;++i )
 	{
+		std::cout << i << "/" <<numPoints << std::endl;
 		houio::math::V3f& p = pAttr->get<houio::math::V3f>(i);
 		P2d theta_phi = sphericalCoordinates<double>(V3d(p.x, p.y, p.z));
 		double theta = theta_phi.x();
@@ -54,14 +56,16 @@ void rasterizeSphericalFunctionSphere(const std::string& filename, std::function
 
 
 
-void rasterizeSphericalFunctionSphere(const std::string& filename, std::function<Color3f (double, double)> func, Transformd transform, double exposure)
+void rasterizeSphericalFunctionSphere(const std::string& filename, std::function<Color3f (double, double)> func, Transformd transform, double exposure, int res = 120)
 {
 	double scale = std::pow(2.0, exposure);
-	houio::Geometry::Ptr geo = houio::Geometry::createSphere(120, 120, 1.0);
+	houio::Geometry::Ptr geo = houio::Geometry::createSphere(res, res, 1.0);
 	houio::Attribute::Ptr pAttr = geo->getAttr("P");
 	houio::Attribute::Ptr cdAttr = houio::Attribute::createV3f(pAttr->numElements());
-	for( int i=0;i<pAttr->numElements();++i )
+	int numPoints = pAttr->numElements();
+	for( int i=0;i<numPoints;++i )
 	{
+		std::cout << i << "/" <<numPoints << std::endl;
 		houio::math::V3f& p = pAttr->get<houio::math::V3f>(i);
 		V3d d = V3d(p.x, p.y, p.z);
 		P2d theta_phi = sphericalCoordinates<double>(d);
@@ -83,8 +87,10 @@ void displaceSphere(const std::string& filename, std::function<double (double, d
 	houio::Geometry::Ptr geo = houio::Geometry::createSphere(120, 120, 1.0);
 	houio::Attribute::Ptr pAttr = geo->getAttr("P");
 	houio::Attribute::Ptr cdAttr = houio::Attribute::createV3f(pAttr->numElements());
-	for( int i=0;i<pAttr->numElements();++i )
+	int numPoints = pAttr->numElements();
+	for( int i=0;i<numPoints;++i )
 	{
+		std::cout << i << "/" <<numPoints << std::endl;
 		houio::math::V3f& p = pAttr->get<houio::math::V3f>(i);
 		P2d theta_phi = sphericalCoordinates<double>(V3d(p.x, p.y, p.z));
 		double theta = theta_phi.x();

@@ -136,6 +136,6 @@ struct EnvMap
 };
 
 
-void rasterizeSphericalFunctionSphere(const std::string& filename, std::function<Color3f (double, double)> func, double exposure =0.0);
+void rasterizeSphericalFunctionSphere(const std::string& filename, std::function<Color3f (double, double)> func, double exposure =0.0, int res = 120);
 void rasterizeSphericalFunctionSphere(const std::string& filename, std::function<Color3f (double, double)> func, Transformd transform, double exposure=0.0);
 void displaceSphere(const std::string& filename, std::function<double (double, double)> func, double exposure =0.0);

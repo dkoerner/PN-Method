@@ -1,5 +1,7 @@
 #include <volume.h>
 
+#include <math/frame.h>
+
 
 
 
@@ -25,6 +27,54 @@ namespace volumes
 		{
 			return Color3f(INV_FOURPI, INV_FOURPI, INV_FOURPI);
 		}
+	};
+
+
+	struct HenyeyGreenstein : public PhaseFunction
+	{
+		typedef std::shared_ptr<HenyeyGreenstein> Ptr;
+
+		HenyeyGreenstein( double g = 0.0 ) : PhaseFunction(), m_g(g)
+		{
+
+		}
+
+		virtual Color3f sample( const V3d& wi, V3d& wo, double& pdf, RNGd& rng ) const override
+		{
+			P2d sample( rng.next1D(), rng.next1D() );
+
+			double cosTheta;
+			if (std::abs(m_g) < Epsilon)
+			{
+				cosTheta = 1 - 2*sample.x();
+			} else
+			{
+				double sqrTerm = (1 - m_g * m_g) / (1 - m_g + 2 * m_g * sample.x());
+				cosTheta = (1 + m_g * m_g - sqrTerm * sqrTerm) / (2 * m_g);
+			}
+
+			double sinTheta = safe_sqrt(1.0f-cosTheta*cosTheta), sinPhi, cosPhi;
+
+			sincos(2*M_PI*sample.y(), &sinPhi, &cosPhi);
+
+			wo = Framed(-wi).toWorld(V3d(
+				sinTheta * cosPhi,
+				sinTheta * sinPhi,
+				cosTheta
+			));
+
+			pdf = eval(wi, wo).r();
+			return Color3f(1.0); // eval/pdf = 1.0
+		}
+
+		virtual Color3f eval( const V3d& wi, const V3d& wo )const override
+		{
+			double temp = 1.0f + m_g*m_g + 2.0f * m_g * dot(wi, wo);
+			return INV_FOURPI * (1 - m_g*m_g) / (temp * std::sqrt(temp));
+		}
+
+	private:
+		double m_g;
 	};
 
 	struct FieldVolume : public Volume
@@ -212,6 +262,11 @@ namespace volumes
 		volume->setAlbedo( field::constant(V3d(0.8)) );
 
 		return volume;
+	}
+
+	PhaseFunction::Ptr hg(double g)
+	{
+		return std::make_shared<HenyeyGreenstein>(g);
 	}
 
 /*

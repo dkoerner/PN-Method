@@ -25,6 +25,8 @@
 #include <cuda/CudaVolume.h>
 #include <cuda/CudaLight.h>
 
+#include <boost/math/special_functions/spherical_harmonic.hpp>
+
 
 // Forward declare the function in the .cu file
 void vectorAddition(const float* a, const float* b, float* c, int n);
@@ -221,7 +223,7 @@ void experiment_sh_method()
 	{
 		return L_baked.eval(theta, phi);
 	};
-	rasterizeSphericalFunctionSphere("shm/fun_L.bgeo", L, 8.0);
+	//rasterizeSphericalFunctionSphere("shm/fun_L.bgeo", L, 8.0);
 
 	// phase function ---
 	PhaseFunction::Ptr f = volumes::hg(0.9);
@@ -233,12 +235,14 @@ void experiment_sh_method()
 		return f->eval(wi, wo).r();
 	}, true);
 	*/
+	/*
 	rasterizeSphericalFunctionSphere("shm/fun_f.bgeo", [&](double theta, double phi)->double
 	{
 		V3d wo(0.0, 0.0, 1.0);
 		V3d wi = sphericalDirection(theta, phi);
 		return f->eval(wi, wo).r();
 	}, 0.0, 20);
+	*/
 
 
 	// scattering operator as convolution ---
@@ -332,7 +336,7 @@ void experiment_sh_method()
 	}//l
 
 	// convolution as product of sh coefficients ---
-	int maxOrder = 10;
+	int maxOrder = -1;
 	for( int order = 0;order<=maxOrder;++order )
 	{
 		// we want to see, that the scattering operator can be expressed as a
@@ -384,6 +388,67 @@ void experiment_sh_method()
 			return Color3f( v.real() );
 		};
 		rasterizeSphericalFunctionSphere("shm/fun_rhs_" + toString<int>(order) + ".bgeo", rhs, 8.0, 20);
+	}
+
+
+	// sh projection of the scattering operator ---
+	if(1)
+	{
+		int maxOrder = 2;
+		for( int l=0;l<=maxOrder;++l )
+		{
+			for( int m = -l;m<=l;++m )
+			{
+				for( int lp=0;lp<=maxOrder;++lp )
+				{
+					for( int mp = -lp;mp<=lp;++mp )
+					{
+						auto product = [&]( double theta, double phi ) -> moexp::complex
+						{
+							//return moexp::Y_gg(l, m, theta, phi) * moexp::Y_gg(lp, mp, theta, phi);
+							return boost::math::spherical_harmonic(l, m, theta, phi) * boost::math::spherical_harmonic(lp, mp, theta, phi);
+						};
+
+						moexp::complex ip = integrate_sphere<moexp::complex>( product, V2i(256, 512) );
+						if(std::abs(ip) > Epsilon)
+						{
+							std::cout << "l=" << l << " m=" << m << " lp="<< lp << " mp=" << mp << " ip=" << ip << std::endl;
+
+						}
+					}
+				}
+				//moexp::complex ylm = moexp::Y(l, m, theta, phi);
+				//double lambda_l = std::sqrt(4.0*M_PI / (2.0*l+1.0));
+				//v+= f_lm[moexp::shIndex(l, 0)] * L_lm[moexp::shIndex(l, m)] * lambda_l * ylm;
+				//v+= L_lm[moexp::shIndex(l, m)]* ylm;
+				//v+= f_lm[moexp::shIndex(l, m)]* ylm;
+			}
+		}
+	}
+
+	// validating our complex sh implementation against boost ---
+	if(0)
+	{
+		int maxOrder = 20;
+		for( int l=0;l<=maxOrder;++l )
+		{
+			for( int m = -l;m<=l;++m )
+			{
+				auto product = [&]( double theta, double phi ) -> moexp::complex
+				{
+					moexp::complex ours = moexp::Y(l, m, theta, phi);
+					moexp::complex b = boost::math::spherical_harmonic(l, m, theta, phi);
+
+					if( (std::abs(ours.real() - b.real()) > 1.0e-7)||
+						(std::abs(ours.imag() - b.imag()) > 1.0e-7))
+						std::cout << ours.real() << " " << b.real() << "        " << ours.imag() << " " << b.imag() << std::endl;
+					return 0.0;
+				};
+
+				moexp::complex ip = integrate_sphere<moexp::complex>( product, V2i(256, 512) );
+			}
+		}
+
 	}
 
 

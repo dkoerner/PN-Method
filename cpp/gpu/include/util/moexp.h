@@ -216,9 +216,11 @@ namespace moexp
 	int numTensorComponents( int order, int dimension=3 );
 
 	// ...
+	double csp( int m ); // condon-shortley-phase function
 	double C(int l, int m);
 	double a( int l, int m, int j );
 	double P(int l, int m, double x); // associated Legendre polynomial
+	moexp::complex Y_gg( int l, int m, double theta, double phi );
 	complex Y( int l, int m, double theta, double phi ); // complex spherical harmonics
 	double Y_real(int l, int m, double theta, double phi); // real spherical harmonics
 

@@ -100,6 +100,7 @@ INCLUDEPATH += "c:/libs-msvc2013/include"
 INCLUDEPATH += $$PWD/include
 INCLUDEPATH += "c:/libs-msvc2013/include/eigen3"
 INCLUDEPATH += "c:/libs-msvc2013/include/houio"
+INCLUDEPATH += "c:/libs-msvc2013/include/boost-1_61"
 
 
 # library directories

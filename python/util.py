@@ -86,12 +86,19 @@ class SGGX2D:
 
 
 class Domain2D:
-	def __init__(self, size, res):
+	def __init__(self, size, res, center=None):
 		self.res = res
 		self.size = size
 		self.h = size/float(res)
-		self.bound_min = np.array([-size*0.5, -size*0.5])
-		self.bound_max = np.array([size*0.5, size*0.5])
+		if center == 'origin':
+			# center of the bounding box is origin
+			self.bound_min = np.array([-size*0.5, -size*0.5])
+			self.bound_max = np.array([size*0.5, size*0.5])
+		else:
+			# origin is at lower left
+			self.bound_min = np.array([0.0, 0.0])
+			self.bound_max = np.array([size, size])
+
 		#self.voxelToWorldTransform = 
 
 	def voxelToLocal( self, pVS ):

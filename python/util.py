@@ -122,6 +122,10 @@ class Domain2D:
 	def voxelToIndex(self, pVS):
 		return (int(pVS[1]), int(pVS[0]))
 
+	def worldToIndex(self, pWS):
+		pVS = self.worldToVoxel(pWS)
+		return (int(pVS[1]), int(pVS[0]))
+
 	def rasterize( self, fun, shape = None ):
 		if shape == None:
 			shape = (self.res, self.res)

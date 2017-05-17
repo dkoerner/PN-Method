@@ -36,7 +36,10 @@ void compute_sh_coefficients( CudaPtr<CudaPixelBuffer>* coords_ptr,
 							  cumath::V3f* coeffs_host,
 							  int order,
 							  int numCoeffs);
-
+void compute_sh_coefficients_phase( CudaPtr<CudaPhaseFunctionSGGX3D>* cuPhase, // the phase function to be projected
+									CudaPtr<CudaVoxelGrid<cumath::V3f>>* cuYlm, // precomputed sh basis coefficients
+									CudaPtr<CudaPixelBuffer>* cuP // the resulting coefficient matrix
+									);
 
 void getCoordFromIndex( const V3i& resolution, int index, int& x, int& y, int& z )
 {
@@ -79,6 +82,7 @@ void experiment_pt_2d_anisotropic();
 void experiment_nebulae();
 void experiment_moexp2d();
 void experiment_sh_method();
+void experiment_project_phase_function();
 int main()
 {
 	int deviceCount = 0;
@@ -99,7 +103,16 @@ int main()
 	//experiment_pt_2d_anisotropic();
 	//experiment_nebulae();
 	//experiment_moexp2d();
-	experiment_sh_method();
+	//experiment_sh_method();
+	experiment_project_phase_function();
+
+
+	/*
+	{
+		EnvMap L_baked("test_0_filtered.exr");
+		L_baked.bitmap().saveTXT("test_0_filtered.txt");
+	}
+	*/
 
 
 
@@ -521,6 +534,7 @@ struct SGGX3D
 		M33d s = V3d(S_11, S_22, S_33).asDiagonal();
 
 		m_S = m*s*m.transpose();
+		std::cout << "S=" << m_S << std::endl;
 
 
 		// build transform ---
@@ -531,6 +545,13 @@ struct SGGX3D
 		double sz = std::pow(S_11*S_22/S_33, 1.0/4)/std::sqrt(M_PI);
 		unitSphereToEllipsoid = Eigen::Affine3d(m)*Eigen::Scaling(V3d(sx, sy, sz));
 		m_unitSphereToEllipsoid = Transformd(unitSphereToEllipsoid);
+
+		m_S_xx = m_S.coeffRef(0,0);
+		m_S_xy = m_S.coeffRef(0,1);
+		m_S_xz = m_S.coeffRef(0,2);
+		m_S_yy = m_S.coeffRef(1,1);
+		m_S_yz = m_S.coeffRef(1,2);
+		m_S_zz = m_S.coeffRef(2,2);
 	}
 
 	double projectedArea(const V3d& d)const
@@ -548,6 +569,12 @@ struct SGGX3D
 
 
 	M33d m_S;
+	double m_S_xx;
+	double m_S_xy;
+	double m_S_xz;
+	double m_S_yy;
+	double m_S_yz;
+	double m_S_zz;
 	Transformd m_unitSphereToEllipsoid;
 };
 
@@ -608,7 +635,7 @@ struct SGGX2D
 
 void experiment_moexp2d()
 {
-
+/*
 	{
 		Wedge wedge;
 		wedge.addParm( "d", linearSamples<float>(0.0f, M_PI*2.0f, 20) );
@@ -660,8 +687,8 @@ void experiment_moexp2d()
 
 		return;
 	}
-
-	/*
+*/
+	///*
 	{
 		V3d n = V3d(1.0, 1.0, 1.0).normalized();
 		//V3d n = V3d(0.0, 0.0, 1.0).normalized();
@@ -688,13 +715,13 @@ void experiment_moexp2d()
 		//filename = replace(filename, "$0", toString<int>(i));
 		//rasterizeSphericalFunctionSphere( filename, func, sggx.m_unitSphereToEllipsoid);
 		//rasterizeSphericalFunctionSphere( filename, func);
-		displaceSphere( filename, func_pa);
+		//displaceSphere( filename, func_pa);
 
 		std::cout << "range=" << vmin << " " << vmax << std::endl;
 
 		return;
 	}
-	*/
+	//*/
 
 
 	/*
@@ -1121,4 +1148,140 @@ void generate_shcache( Transformd volume_localToWorld, CudaPtr<CudaVolume> cuvol
 	std::cout << "path tracing took " << timer.elapsedSeconds()/double(numVoxels) << "s/voxel in average" << std::endl;
 
 	//shcache.save("nebulae200.shcache");
+}
+
+
+
+
+
+
+
+
+
+void experiment_project_phase_function()
+{
+	int order = 4;
+	int numCoeffs = moexp::numSHCoefficients(order);
+
+	std::map<int, std::pair<int, int>> index_to_lm;
+	for( int l=0;l<=order;++l )
+		for( int m=-l;m<=l;++m )
+			index_to_lm[ moexp::shIndex(l, m) ] = std::make_pair(l, m);
+
+
+	int resolution_theta = 128;
+	int resolution_phi = 256;
+	//int resolution_theta = 2;
+	//int resolution_phi = 2;
+
+	std::cout << "projecting phase function\n";
+	std::cout << "order=" << order << std::endl;
+
+
+	// the phase function to be projected ------
+	V3d sggx_n = sphericalDirection(0.6, 5.89);
+	V3d sggx_sigma(1.0, 0.9, 0.25);
+	SGGX3D sggx( Framed(sggx_n), sggx_sigma );
+	CudaSGGX3D cusggx;
+	cusggx.S_xx = float(sggx.m_S_xx);
+	cusggx.S_xy = float(sggx.m_S_xy);
+	cusggx.S_xz = float(sggx.m_S_xz);
+	cusggx.S_yy = float(sggx.m_S_yy);
+	cusggx.S_yz = float(sggx.m_S_yz);
+	cusggx.S_zz = float(sggx.m_S_zz);
+	CudaPhaseFunctionSGGX3D cuPhase(cusggx);
+	CudaPtr<CudaPhaseFunctionSGGX3D> cuPhase_ptr(&cuPhase);
+
+	// buffer which contains the precomputed Ylm coordinates -----------------
+	std::vector<cumath::V3f> cuYlm_data(resolution_phi*resolution_theta*numCoeffs);
+	double dtheta = M_PI/double(resolution_theta);
+	double dphi = 2.0*M_PI/double(resolution_phi);
+	for( int t=0;t<resolution_theta;++t )
+		for( int p=0;p<resolution_phi;++p )
+		{
+			double phi = dphi*p;
+			double theta = dtheta*t;
+
+			for( int l=0;l<=order;++l )
+				for( int m=-l;m<=l;++m )
+				{
+					std::complex<float> Ylm = std::conj(boost::math::spherical_harmonic(l, m, theta, phi));
+					int index = moexp::shIndex(l,m)*resolution_phi*resolution_theta + t*resolution_phi + p;
+					cuYlm_data[index] = cumath::V3f( Ylm.real(), Ylm.imag(), 0.0f );
+				}
+		}
+
+	CudaVoxelGrid<cumath::V3f> cuYlm;
+	cuYlm.initialize( cumath::V3i( resolution_phi, resolution_theta, numCoeffs ), cuYlm_data.data() );
+	CudaPtr<CudaVoxelGrid<cumath::V3f>> cuYlm_ptr(&cuYlm);
+
+
+	// the resulting coefficient matrix
+	CudaPixelBuffer cuP;
+	cuP.initialize(numCoeffs, numCoeffs);
+	CudaPtr<CudaPixelBuffer> cuP_ptr(&cuP);
+
+	// now compute the phase function coefficient matrix .................
+	compute_sh_coefficients_phase(  &cuPhase_ptr, // the phase function to be projected
+									&cuYlm_ptr, // precomputed sh basis coefficients
+									&cuP_ptr // the resulting coefficient matrix
+										);
+
+	// now retrieve the result into a proper matrix
+	std::vector<cumath::V3f> P_data(numCoeffs*numCoeffs);
+	cuP_ptr.host()->download((unsigned char*)P_data.data());
+
+	/*
+	std::cout << "P="<< std::endl;
+	//Eigen::MatrixXcf P(numCoeffs, numCoeffs);
+	for( int i=0;i<numCoeffs;++i )
+	{
+		for( int j=0;j<numCoeffs;++j )
+		{
+			std::complex<double> c = std::complex<double>(P_data[i*numCoeffs+j].x, P_data[i*numCoeffs+j].y);
+			//P.coeffRef(i, j) = cuP_ptr.host()
+			std::cout << c << " ";
+		}
+		std::cout << std::endl;
+	}
+	*/
+
+	// print to python
+	std::cout << "order=" << order << std::endl;
+	std::cout << "P=np.array([";
+	for( int i=0;i<numCoeffs;++i )
+	{
+		std::cout << "[";
+		for( int j=0;j<numCoeffs;++j )
+		{
+			std::complex<double> c = std::complex<double>(P_data[i*numCoeffs+j].x, P_data[i*numCoeffs+j].y);
+			//P.coeffRef(i, j) = cuP_ptr.host()
+			std::cout << "np.complex(" << c.real() << "," << c.imag() <<  ")" << " ";
+			if( j<numCoeffs-1 )
+				std::cout << ",";
+		}
+		std::cout << "]";
+		if( i<numCoeffs-1 )
+			std::cout << ",";
+	}
+	std::cout << "]);" << std::endl;
+
+	// write to text file for reading in houdini
+	{
+		std::string filename = "experiment_project_phase_function/sggx_phase.sh";
+		std::ofstream file( filename.c_str(), std::ios_base::trunc );
+
+		file << order << std::endl;
+		for( int i=0;i<numCoeffs;++i )
+		{
+			for( int j=0;j<numCoeffs;++j )
+			{
+				std::complex<double> c = std::complex<double>(P_data[i*numCoeffs+j].x, P_data[i*numCoeffs+j].y);
+				file << c.real() << " " << c.imag() << std::endl;
+			}
+		}
+	}
+
+
+
 }

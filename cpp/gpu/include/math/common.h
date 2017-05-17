@@ -338,7 +338,7 @@ void coordinateSystem(const TVector<T, 3> &a, TVector<T, 3> &b, TVector<T, 3> &c
 /// take the absolute of the dot product between two vectors
 extern float absDot( const Vector3f &a, const Vector3f &b );
 
-/// Uniformly sample a vector on the unit sphere with respect to solid angles
+/// Uniformly sample a vector on the unit ie with respect to solid angles
 extern Vector3f squareToUniformSphere(const Point2f &sample);
 
 /// Uniformly sample a vector on the unit hemisphere with respect to solid angles

@@ -130,6 +130,68 @@ struct CudaSGGX2D
 	cumath::M22f S;
 };
 
+struct CudaSGGX3D
+{
+	HOST_DEVICE CudaSGGX3D():
+		S_xx(1.0f),
+		S_xy(0.0f),
+		S_xz(0.0f),
+		S_yy(1.0f),
+		S_yz(0.0f),
+		S_zz(1.0f)
+	{
+	}
+
+	HOST_DEVICE float D( const cumath::V3f& wm )const
+	{
+		const float detS = S_xx*S_yy*S_zz - S_xx*S_yz*S_yz - S_yy*S_xz*S_xz - S_zz*S_xy*S_xy + 2.0f*S_xy*S_xz*S_yz;
+		const float den = wm.x*wm.x*(S_yy*S_zz - S_yz*S_yz) + wm.y*wm.y*(S_xx*S_zz - S_xz*S_xz) + wm.z*wm.z*(S_xx*S_yy - S_xy*S_xy)
+			+ 2.0f*(wm.x*wm.y*(S_xz*S_yz - S_zz*S_xy) + wm.x*wm.z*(S_xy*S_yz - S_yy*S_xz) + wm.y*wm.z*(S_xy*S_xz - S_xx*S_yz));
+		const float D = powf(fabsf(detS), 1.50f) / (MATH_PIf*den*den);
+		return D;
+	}
+
+	HOST_DEVICE float projectedArea(const cumath::V3f& d)const
+	{
+		const float sigma_squared = d.x*d.x*S_xx + d.y*d.y*S_yy + d.z*d.z*S_zz + 2.0f * (d.x*d.y*S_xy + d.x*d.z*S_xz + d.y*d.z*S_yz);
+		return (sigma_squared > 0.0f) ? sqrtf(sigma_squared) : 0.0f; // conditional to avoid numerical errors
+	}
+
+
+	float S_xx;
+	float S_xy;
+	float S_xz;
+	float S_yy;
+	float S_yz;
+	float S_zz;
+};
+
+struct CudaPhaseFunctionSGGX3D
+{
+	HOST CudaPhaseFunctionSGGX3D( CudaSGGX3D _sggx )
+		:sggx(_sggx)
+	{
+
+	}
+
+	HOST_DEVICE float eval( const cumath::V3f& wi, const cumath::V3f& wo )
+	{
+		cumath::V3f wh = wi+wo;
+
+		// normalize wh and detect zero length
+		float length = wh.getLength();
+
+		if( length != (float)0.0 )
+			wh = cumath::V3f(wh.x/length, wh.y/length, wh.z/length);
+		else
+			return 0.0;
+		return 0.25f*sggx.D(wh)/sggx.projectedArea(wi);
+	}
+
+
+	CudaSGGX3D sggx;
+};
+
 struct CudaVolume2D
 {
 

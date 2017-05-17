@@ -90,7 +90,7 @@ void displaceSphere(const std::string& filename, std::function<double (double, d
 	int numPoints = pAttr->numElements();
 	for( int i=0;i<numPoints;++i )
 	{
-		std::cout << i << "/" <<numPoints << std::endl;
+		//std::cout << i << "/" <<numPoints << std::endl;
 		houio::math::V3f& p = pAttr->get<houio::math::V3f>(i);
 		P2d theta_phi = sphericalCoordinates<double>(V3d(p.x, p.y, p.z));
 		double theta = theta_phi.x();

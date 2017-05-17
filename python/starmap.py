@@ -42,6 +42,20 @@ def rasterize_moment( fun, X, Y, m ):
         for j in range(X.shape[1]):
             result[i,j] = fun(m, X[i,j], Y[i,j])
     return result
+
+def interp( grid, axis ):
+    # same as np.diff but interpolates between neighbour gridpoints along given axes
+    # (instead of computing the difference)
+    # there is a more elegent way for this using np.rollaxis (https://goo.gl/XQxRdD)
+    if axis == 0:
+        result = np.zeros((grid.shape[0]-1, grid.shape[1]))
+        for i in range(grid.shape[0]-1):
+            result[i] = (grid[i] + grid[i+1])*0.5
+    elif axis == 1:
+        result = np.zeros((grid.shape[0], grid.shape[1]-1))
+        for j in range(grid.shape[1]-1):
+            result[:, j] = (grid[:,j] + grid[:,j])*0.5
+    return result
     
 
 class StaggeredGridAssignment2D(object):
@@ -101,7 +115,9 @@ class Starmap2D(object):
 	'''
 
 	def __init__(self, order = 3, domain = None):
+		pass
 		'''The init function takes approximation order and domain (including discretization info)'''
+
 		self.N = order
 		self.domain = domain
 
@@ -217,7 +233,10 @@ class Starmap2D(object):
 		# we start propagating all other components
 		todo = [0]
 		done = []
-		while todo:
+		count = 0
+		maxCount = 20
+		while todo:# and count<maxCount:
+			count = count +1
 			row = todo[0]
 			todo.remove(row)
 			done.append(row)
@@ -233,7 +252,7 @@ class Starmap2D(object):
 				self.sga.assign(col, i+1, j)
 				self.sga.assign(col, i-1, j)
 				# do this next
-				if not col in done:
+				if not col in done and not col in todo:
 					todo.append(col)
 
 			# work out which components the component associated with the current row depends on according to My
@@ -244,7 +263,7 @@ class Starmap2D(object):
 				self.sga.assign(col, i, j+1)
 				self.sga.assign(col, i, j-1)
 				# do this next
-				if not col in done:
+				if not col in done and not col in todo:
 					todo.append(col)
 
 		# now compute X, Y: two arrays which hold the x and y locations of all staggered grid points in the domain
@@ -289,6 +308,7 @@ class Starmap2D(object):
 		# sigma_t = sigma_a + sigma_s ---
 		# the extinction coefficient coeffcients are simply the sum of coefficients from scattering and absorption
 		st = [[0 for j in range(2)] for i in range(2)]
+		self.solve = {'st':st}
 
 		# et is the expm1div function applied to all elements of st
 		et = [[0 for j in range(2)] for i in range(2)]
@@ -345,7 +365,11 @@ class Starmap2D(object):
 		dyU = [[] for i in range(self.numCoeffs)]
 
 		# for each time step
+		t = 0.0
 		for tt in range(numTimeSteps):
+			#print('timestep {} t_old={}  dt={}  t_new={}'.format(tt, t, dt, t+dt))
+			t = t+dt
+
 			for step in [1, 2, 1]:
 				if step == 1:
 					# update odd grids using single half-step ---
@@ -450,16 +474,50 @@ class Starmap2D(object):
 								u[c] = u[c] + dt*0.5*np.multiply( W + Q[c] - np.multiply( st[grid_i][grid_j], u[c] ), et[grid_i][grid_j])
 		return u
 
+	def compute_sh_coefficients_at_cell_centers(self, u):
+		'''This method returns the radiance field coefficients L_lm at the cell centers of the discretization grid.
+		The method interpolates the solution u to cell centers and uses the inverse of S to produce the final complex-valued
+		coefficients.'''
+
+		# first we want to evaluate all the moment coefficients at the cell centers
+		# so we unstagger the grids
+		c00 = self.sga.get_grid_components(0,0)
+		c11 = self.sga.get_grid_components(1,1)
+		c01 = self.sga.get_grid_components(0,1)
+		c10 = self.sga.get_grid_components(1,0)
+
+		u_center = np.zeros((self.numCoeffs, self.domain.res, self.domain.res))
+
+		for c in c00:
+			# this is already at the cell centers
+			u_center[c] = u[c]
+
+		for c in c11:
+			u_center[c] = interp(interp(u[c], 0), 1)
+
+		for c in c01:
+			u_center[c] = interp(u[c], 1)
+
+		for c in c10:
+			u_center[c] = interp(u[c], 0)
+
+		# convert from real to complex valued sh coefficients over -m, m
+		L_lm = np.zeros((self.numCoeffs, self.domain.res, self.domain.res), dtype=complex)
+		for i in range(self.domain.res):
+			for j in range(self.domain.res):
+				L_lm[:, i, j] = self.S_inv.dot(u_center[:, i, j])
+
+		return L_lm
+
+
+
+
+
 
 
 
 
 
 if __name__ == "__main__":
-
-	# this is the lattice test from starmap matlab code
-
-	N = 3 # truncation order
-
-
+	pass
 

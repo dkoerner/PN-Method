@@ -464,5 +464,194 @@ void pathtrace_fluencefield( CudaPtr<CudaVoxelGrid<float>>* fluencegrid,
 
 	CudaSafeCall( cudaDeviceSynchronize() );
 }
+// ===================================================================
+
+DEVICE cumath::V3f complex_mul( const cumath::V3f& a, const cumath::V3f& b )
+{
+	return cumath::V3f( a.x*b.x - a.y*b.y, a.x*b.y + a.y*b.x, 0.0f );
+}
+
+
+extern "C"
+__global__ void compute_sh_coefficients_phase_kernel( CudaPhaseFunctionSGGX3D* phase, // phase function to be projected
+													  CudaVoxelGrid<cumath::V3f>* Ylm, // precomputed Ylm
+													  CudaVoxelGrid<cumath::V3f>* result // projected sh coefficients for each wi-pixel
+													  )
+{
+	int phi_index = blockIdx.x * blockDim.x + threadIdx.x;
+	int theta_index = blockIdx.y * blockDim.y + threadIdx.y;
+	int sh_index = blockIdx.z * blockDim.z + threadIdx.z;
+
+	int resolution_phi = Ylm->m_resolution.x;
+	int resolution_theta = Ylm->m_resolution.y;
+	int numCoeffs = Ylm->m_resolution.z;
+
+	float dtheta = MATH_PIf/float(resolution_theta);
+	float dphi = 2.0f*MATH_PIf/float(resolution_phi);
+	if( (phi_index<resolution_phi)&&(theta_index<resolution_theta)&&(sh_index<numCoeffs) )
+	{
+		// compute angle theta_i, phi_i associated with the current pixel position from discretized wi
+		float theta_i = dtheta*theta_index;
+		float phi_i = dphi*phi_index;
+		cumath::V3d wi = cumath::sphericalDirection(theta_i, phi_i);
+
+		// iterate all pixels wich discretize wo
+		cumath::V3f sum(0.0f, 0.0f, 0.0f);
+		for( int i=0;i<resolution_phi;++i )
+			for( int j=0;j<resolution_theta;++j )
+			{
+				// compute theta_o, phi_o for current pixel
+				float theta_o = dtheta*j;
+				float phi_o = dphi*i;
+				cumath::V3d wo = cumath::sphericalDirection(theta_o, phi_o);
+
+				// evaluate phase function at wi, wo
+				cumath::V3f p(phase->eval(wi, wo), 0.0f, 0.0f);
+				//printf("p(%f %f %f,  %f %f %f)=%f %f\n", wi.x, wi.y, wi.z, wo.x, wo.y, wo.z, p.x, p.y );
+
+				// multiply with precomputed Ylm at that position (and jacobian and delta area)
+				// and add to the current sum
+				sum += complex_mul( p, Ylm->sample(i, j, sh_index) )*sin(theta_o)*dtheta*dphi;
+			}
+
+		// store result in buffer
+		result->lvalue(phi_index, theta_index, sh_index) = sum;
+	}
+}
+
+DEVICE void getCoordFromIndex( int index, int resX, int &x, int &y )
+{
+	int numer = index;
+	int denom = resX;
+	int quot = numer / denom;
+	int rem = numer % denom;
+
+
+	if(numer >= 0 && rem < 0)
+	{
+		++quot;
+		rem -= denom;
+	}
+
+	y = quot;
+	x = rem;
+}
+
+extern "C"
+__global__ void compute_sh_coefficients_phase_kernel_final_project(CudaVoxelGrid<cumath::V3f>* Ylm, // precomputed Ylm
+																   CudaVoxelGrid<cumath::V3f>* shCoeffs, // computed sh coefficients for each wi-pixel
+																   CudaPixelBuffer* result )
+{
+	int index = blockDim.x * blockIdx.x + threadIdx.x;
+	int numCoeffs = Ylm->m_resolution.z;
+	if( index < numCoeffs*numCoeffs )
+	{
+		// work out 2d i,j coordinate within matrix from flattened 1d index
+		int i, j;
+		getCoordFromIndex( index, numCoeffs, i, j );
+
+		// we have discretized the sh coefficients of the phase function on a theta-phi grid,
+		// where theta and phi were the wi vectors and wo was used for the projection
+		//
+		// here we now compute the sh projection of the discretized spherical function established
+		// by the i-th coefficient (which varies over theta,phi) onto the sh basis function represented by j
+		cumath::V3f sum(0.0f, 0.0f, 0.0f);
+		int resolution_phi = Ylm->m_resolution.x;
+		int resolution_theta = Ylm->m_resolution.y;
+		float dtheta = MATH_PIf/float(resolution_theta);
+		float dphi = 2.0f*MATH_PIf/float(resolution_phi);
+		for( int phi_index=0;phi_index<resolution_phi;++phi_index )
+			for( int theta_index=0;theta_index<resolution_theta;++theta_index )
+			{
+				// compute theta_i, phi_i for current pixel
+				float theta_i = dtheta*theta_index;
+				//float phi_i = dphi*phi_index;
+
+				// retrieve i-th coefficient (which varies across pixels)
+				cumath::V3f coeff = shCoeffs->sample( phi_index, theta_index, i );
+
+				//cumath::V3f coeff(0.079577, 0.0f, 0.0f);
+				//printf("coeff=%f %f %f\n", coeff.x, coeff.y, coeff.z);
+
+				// multiply with precomputed Y_j at that position (and jacobian and delta area)
+				// and add to the current sum
+				sum += complex_mul(coeff, Ylm->sample(phi_index, theta_index, j) )*sin(theta_i)*dtheta*dphi;
+			}
+
+		result->lvalue(i, j) = sum;
+		//result->lvalue(i, j) = cumath::V3f(1.0f, 2.0f, 3.0f);
+	}
+}
+
+void compute_sh_coefficients_phase( CudaPtr<CudaPhaseFunctionSGGX3D>* cuPhase, // the phase function to be projected
+									CudaPtr<CudaVoxelGrid<cumath::V3f>>* cuYlm, // precomputed sh basis coefficients
+									CudaPtr<CudaPixelBuffer>* cuP // the resulting coefficient matrix
+									)
+{
+	cumath::V3i resolution = cuYlm->host()->m_resolution;
+	int numCoeffs = resolution.z;
+
+	// create temporary datastructure which will hold the sh coefficients of the phase function for all wi
+	// the final result will project each coefficient into sh again (giving rise to a matrix of coefficients)
+	CudaVoxelGrid<cumath::V3f> temp;
+	temp.initialize( cuYlm->host()->m_resolution );
+	CudaPtr<CudaVoxelGrid<cumath::V3f>> temp_ptr(&temp);
+
+
+	// for each wi (given by a pixel coordinate) compute the sh coefficients for the phase function evaluated
+	// at wi and the angle over which the sh projection is carried out
+	// this gives a set of sh coefficients for each theta,phi-pixel
+	{
+		dim3 threadsPerBlock = dim3( 8, 8, 8 );
+		dim3 numBlocks = dim3(  int(ceil(double(resolution.x)/double(threadsPerBlock.x))),
+								int(ceil(double(resolution.y)/double(threadsPerBlock.y))),
+								int(ceil(double(resolution.z)/double(threadsPerBlock.z))));
+
+
+		std::cout << "computing sh coefficients" << std::endl;std::flush(std::cout);
+		compute_sh_coefficients_phase_kernel<<<numBlocks, threadsPerBlock>>>(cuPhase->device(),
+																			 cuYlm->device(),
+																			 temp_ptr.device());
+
+		cudaError_t err = cudaGetLastError();
+		if (err != cudaSuccess)
+			printf("Error: %s\n", cudaGetErrorString(err));
+
+		CudaSafeCall( cudaDeviceSynchronize() );
+	}
+
+	// The n-th coefficient now forms a spherical function over theta-phi. We project this function into
+	// a set of spherical harmonics coefficients. This gives rise to a nxn coefficient matrix where n
+	// is the number of SH coefficients for given order
+	// we launch n x n threads where each thread computes the sh coefficient i of the expanded coefficient
+	// function j
+	{
+		int threadsPerBlock = 256;
+		// NB:launching numCoeffs x numCoeffs threads...a thread or each matrix component
+		int blocksPerGrid  = (numCoeffs*numCoeffs + threadsPerBlock - 1) / threadsPerBlock;
+		std::cout << "computing final coefficient matrix" << std::endl;std::flush(std::cout);
+		compute_sh_coefficients_phase_kernel_final_project<<<blocksPerGrid, threadsPerBlock>>>(cuYlm->device(),
+																							   temp_ptr.device(),
+																							   cuP->device());
+
+		cudaError_t err = cudaGetLastError();
+		if (err != cudaSuccess)
+			printf("Error: %s\n", cudaGetErrorString(err));
+
+		CudaSafeCall( cudaDeviceSynchronize() );
+	}
+
+}
+
+
+
+
+
+
+
+
+
+
+
 
 

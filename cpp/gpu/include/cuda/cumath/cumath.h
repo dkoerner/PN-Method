@@ -87,4 +87,20 @@ namespace cumath
 		return Vec3<T>(s*cos(phi), s*sin(phi), z);
 	}
 
+	template<typename T>
+	HOST_DEVICE Vec3<T> sphericalDirection(T theta, T phi)
+	{
+		T sinTheta=sin(theta), cosTheta=cos(theta), sinPhi=sin(phi), cosPhi=cos(phi);
+
+		//sincos(theta, &sinTheta, &cosTheta);
+		//sincos(phi, &sinPhi, &cosPhi);
+
+		return Vec3<T>(
+		   sinTheta * cosPhi,
+		   sinTheta * sinPhi,
+		   cosTheta
+		);
+	}
+
+
 }

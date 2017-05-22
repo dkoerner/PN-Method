@@ -176,6 +176,15 @@ struct CudaPhaseFunctionSGGX3D
 
 	HOST_DEVICE float eval( const cumath::V3f& wi, const cumath::V3f& wo )
 	{
+		// isotropic phase function
+		//return MATH_INV_FOURPIf;
+
+		// henyey greenstein
+		float m_g = 0.35;
+		float temp = 1.0f + m_g*m_g + 2.0f * m_g * cumath::dot(wi, wo);
+		return MATH_INV_FOURPIf * (1.0f - m_g*m_g) / (temp * sqrt(temp));
+
+		/*
 		cumath::V3f wh = wi+wo;
 
 		// normalize wh and detect zero length
@@ -186,6 +195,7 @@ struct CudaPhaseFunctionSGGX3D
 		else
 			return 0.0;
 		return 0.25f*sggx.D(wh)/sggx.projectedArea(wi);
+		*/
 	}
 
 

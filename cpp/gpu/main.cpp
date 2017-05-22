@@ -1268,7 +1268,7 @@ void experiment_project_phase_function()
 
 	// write to text file for reading in houdini
 	{
-		std::string filename = "experiment_project_phase_function/sggx_phase.sh";
+		std::string filename = "experiment_project_phase_function/phase_hg.sh";
 		std::ofstream file( filename.c_str(), std::ios_base::trunc );
 
 		file << order << std::endl;

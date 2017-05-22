@@ -105,6 +105,14 @@ class StaggeredGridAssignment2D(object):
 		if i == 1:
 			res_x = res_x+1
 		return (res_x, res_y)
+	def is_even( self, c ):
+		if c in self.c[0][0] or c in self.c[1][1]:
+			return True
+		return False
+	def is_odd( self, c ):
+		if self.is_even(c):
+			return False
+		return True
 
 class Starmap2D(object):
 	''' This class implements the starmap matlab code in python.
@@ -115,7 +123,6 @@ class Starmap2D(object):
 	'''
 
 	def __init__(self, order = 3, domain = None):
-		pass
 		'''The init function takes approximation order and domain (including discretization info)'''
 
 		self.N = order
@@ -137,6 +144,9 @@ class Starmap2D(object):
 		self.build_M()
 		self.build_staggered_grid()
 
+	def shIndex(self, l, m):
+		#NB: we dont use l(l+1)+m because in 2d, we skipp odd (l+m) entries, which changes the sequence.
+		return self.lm_to_index[(l,m)]
 
 
 	def build_S(self):
@@ -146,7 +156,7 @@ class Starmap2D(object):
 		self.S = np.zeros((self.numCoeffs, self.numCoeffs),dtype=complex)
 		count = 0
 		for l in range(0, self.N+1):
-			for m in range(l+1, -1, -1):
+			for m in range(l, -1, -1):
 				# in 2D, we skip coefficients for which l+m is odd
 				if (l+m) % 2 != 0:
 					continue
@@ -266,19 +276,20 @@ class Starmap2D(object):
 				if not col in done and not col in todo:
 					todo.append(col)
 
-		# now compute X, Y: two arrays which hold the x and y locations of all staggered grid points in the domain
-		# this is used later for rasterization of sigma_a and sigma_s, etc. into the domain
-		# X and Y hold the grid positions in worldspace ---
-		self.X = [[0 for j in range(2)] for i in range(2)]
-		self.Y = [[0 for j in range(2)] for i in range(2)]
+		if self.domain != None:
+			# now compute X, Y: two arrays which hold the x and y locations of all staggered grid points in the domain
+			# this is used later for rasterization of sigma_a and sigma_s, etc. into the domain
+			# X and Y hold the grid positions in worldspace ---
+			self.X = [[0 for j in range(2)] for i in range(2)]
+			self.Y = [[0 for j in range(2)] for i in range(2)]
 
-		for (grid_i, grid_j) in self.sga.get_grids():
-			(res_x, res_y) = self.sga.get_grid_resolution(grid_i, grid_j, self.domain.res)
+			for (grid_i, grid_j) in self.sga.get_grids():
+				(res_x, res_y) = self.sga.get_grid_resolution(grid_i, grid_j, self.domain.res)
 
-			# compute the spatial coordinates for each staggered grid
-			offset = self.sga.get_offset(grid_i, grid_j)
-			self.X[grid_i][grid_j] = np.array([np.arange(res_x) for y in range(res_y)]).T*self.domain.h + offset[0]*self.domain.h
-			self.Y[grid_i][grid_j] = np.array([np.arange(res_y) for x in range(res_x)])*self.domain.h + offset[1]*self.domain.h
+				# compute the spatial coordinates for each staggered grid
+				offset = self.sga.get_offset(grid_i, grid_j)
+				self.X[grid_i][grid_j] = np.array([np.arange(res_x) for y in range(res_y)]).T*self.domain.h + offset[0]*self.domain.h
+				self.Y[grid_i][grid_j] = np.array([np.arange(res_y) for x in range(res_x)])*self.domain.h + offset[1]*self.domain.h
 
 	def run( self, dt, numTimeSteps = 1, sigma_a = None, sigma_s = None, source = None ):
 		'''The run method takes all problem specific inputs, such as absorption- and scattering coefficient fields and source field.'''
@@ -512,12 +523,310 @@ class Starmap2D(object):
 
 
 
+class StaggeredGridAssignment3D(object):
+	'''This is a helper class for assigning moment coefficients to staggered grid locations (in 2D)'''
+	def __init__(self):
+		# c will hold the list of components for each staggered grid location
+		self.c = [[[[] for k in range(2)] for j in range(2)] for i in range(2)]
+		# a list of (i,j,k) pairs which identify the indiviual grids (used for iterating over all grids)
+		self.grids = []
+		# the grid offset for each grid (in voxelspace)
+		self.offsets = [[[[] for k in range(2)] for j in range(2)] for i in range(2)]
+		for i in range(2):
+			for j in range(2):
+				for k in range(2):
+					self.grids.append((i,j,k))
+					#self.offsets[i][j][k] = ((1-i)*0.5, (1-j)*0.5, (1-k)*0.5)
 
+		# the offsets in 3D (hardcoded)
+		self.offsets[0][0][0] = (0.5,0.5,0.5) # even (voxel center)
+		self.offsets[0][0][1] = (0.5,0.5,0.0) # odd (voxel face)
+		self.offsets[0][1][0] = (0.5,0.0,0.5) # odd (voxel face)
+		self.offsets[0][1][1] = (0.5,0.0,0.0) # even (voxel edge)
+		self.offsets[1][0][0] = (0.0,0.5,0.5) # odd (voxel face)
+		self.offsets[1][0][1] = (0.0,0.5,0.0) # even (voxel edge)
+		self.offsets[1][1][0] = (0.0,0.0,0.5) # even (voxel edge)
+		self.offsets[1][1][1] = (0.0,0.0,0.0) # odd (voxel corner)
+
+        
+    
+	def assign( self, component, i, j, k ):
+		if not component in self.c[i%2][j%2][k%2]:
+			self.c[i%2][j%2][k%2].append(component)
+	def get_grid_index( self, component ):
+		'''returns the grid (identified by (i,j) pair) which is associated with the given coefficient'''
+		for i in range(2):
+			for j in range(2):
+				for k in range(2):
+					if component in self.c[i][j][k]:
+						return (i, j, k)
+		return None
+	def get_grid_components(self, i, j, k):
+		return self.c[i][j][k]
+	def get_grids(self):
+		return self.grids
+	def get_num_grids(self):
+		return len(self.grids)
+	def get_offset(self, i, j, k):
+		return self.offsets[i][j][k]
+	def get_grid_resolution( self, i, j, k, res ):
+		res_x = res
+		res_y = res
+		res_z = res
+		if k == 1:
+			res_z = res_z+1
+		if j == 1:
+			res_y = res_y+1
+		if i == 1:
+			res_x = res_x+1
+		return (res_x, res_y, res_z)
+	def is_assigned(self, c ):
+		for i in range(2):
+			for j in range(2):
+				for k in range(2):
+					if c in self.c[i][j][k]:
+						return True
+		return False
+	def is_even( self, c ):
+		if not self.is_assigned(c):
+			raise ValueError('c is not assigned to any grid')
+		if c in self.c[0][0][0] or c in self.c[0][1][1] or c in self.c[1][0][1] or c in self.c[1][1][0]:
+			return True
+		return False
+	def is_odd( self, c ):
+		if self.is_even(c):
+			return False
+		return True
+
+class Starmap3D(object):
+	''' This class implements the starmap matlab code in python.
+
+	The class is initialized with the approximation order and the discretization domain (including bounding box and gridsize).
+	The run method takes all problem specific input sich as source and absorption/scattering coefficient functions and runs
+	the problem for a given number of time steps.
+	'''
+
+	def __init__(self, order = 3, domain = None):
+		'''The init function takes approximation order and domain (including discretization info)'''
+
+		self.N = order
+		self.domain = domain
+
+		self.index_to_lm = [] # this will map equation index to l,m indices
+		self.lm_to_index = {} # this dict will map l,m indices to the equation index
+		# iterate all sh coefficients for given truncation order
+		for l in range(0, self.N+1):
+			for m in range(-l, l+1):
+				self.index_to_lm.append( (l, m) )
+				self.lm_to_index[(l,m)] = len(self.index_to_lm)-1
+		self.numCoeffs = len(self.index_to_lm)
+
+		self.build_S()
+		self.build_M()
+		self.build_staggered_grid()
+
+
+
+	def build_S(self):
+		'''builds the S matrix, which converts from complex-valued to real valued coefficients'''
+		# build S matrix ( we iterate over l, m to make sure that the order is correct)
+
+		self.S = np.zeros((self.numCoeffs, self.numCoeffs),dtype=complex)
+		count = 0
+		for l in range(0, self.N+1):
+			# note that the starmap code builds the solution vector from reverse order
+			for m in range(l, -1, -1):
+				# build S matrix, which converts solution from complex to real values
+
+				# computes the real part coefficients for a row (defined by l,m) in the S matrix
+				# (see bottom of p.5 in the starmap paper)
+				if m == 0:
+					self.S[count, self.lm_to_index[(l,m)]] = 1.0
+				else:
+					self.S[count, self.lm_to_index[(l,m)]] = np.power(-1.0, m)/np.sqrt(2)
+					if (l,-m) in self.lm_to_index:
+						self.S[count, self.lm_to_index[(l,-m)]] = np.power(-1.0, 2.0*m)/np.sqrt(2)
+				count+=1
+
+				# computes the imaginary part coefficients for a row (defined by l,m) in the S matrix
+				# (see bottom of p.5 in the starmap paper)
+				if m > 0:
+					self.S[count, self.lm_to_index[(l,m)]] = np.power(-1.0, m)/np.sqrt(2)*1j
+					if (l,-m) in self.lm_to_index:
+						self.S[count, self.lm_to_index[(l,-m)]] = -np.power(-1.0, 2*m)/np.sqrt(2)*1j
+					count+=1
+		self.S_inv = np.linalg.inv(self.S)
+
+
+	def build_M(self):
+		'''builds the complex-valued M matrices which model the dependencies between moments.
+		The M matrices encode the dependencies between coefficients. This is the same everywhere in the domain.
+		This dependency has a specific structure, which is exploited in the staggered grid approach used by starmap.
+		Each component of the solution vector is assigned to one of a the four existing staggered grids.
+		This assignment is driven by the dependencies between components and by some initial assignment of the first component.
+		'''
+		self.Mx_complex = np.zeros((self.numCoeffs, self.numCoeffs),dtype=complex)
+		self.My_complex = np.zeros((self.numCoeffs, self.numCoeffs),dtype=complex)
+		self.Mz_complex = np.zeros((self.numCoeffs, self.numCoeffs),dtype=complex)
+
+		# iterate all moment equations and build rows for (complex) Mx and My matrices
+		for i in range(self.numCoeffs):
+			l = self.index_to_lm[i][0]
+			m = self.index_to_lm[i][1]
+
+			# build complex-valued Mx and My and Mz matrices
+			if (l-1,m-1) in self.lm_to_index:
+				self.Mx_complex[i, self.lm_to_index[(l-1,m-1)]] = -0.5*c_lm(l-1, m-1)
+				self.My_complex[i, self.lm_to_index[(l-1,m-1)]] = 0.5*1j*c_lm(l-1, m-1)
+			if (l+1,m-1) in self.lm_to_index:
+				self.Mx_complex[i, self.lm_to_index[(l+1,m-1)]] = 0.5*d_lm(l+1, m-1)   
+				self.My_complex[i, self.lm_to_index[(l+1,m-1)]] = -0.5*1j*d_lm(l+1, m-1)   
+			if (l-1,m+1) in self.lm_to_index:
+				self.Mx_complex[i, self.lm_to_index[(l-1,m+1)]] = 0.5*e_lm(l-1, m+1)
+				self.My_complex[i, self.lm_to_index[(l-1,m+1)]] = 0.5*1j*e_lm(l-1, m+1)
+			if (l+1,m+1) in self.lm_to_index:
+				self.Mx_complex[i, self.lm_to_index[(l+1,m+1)]] = -0.5*f_lm(l+1, m+1)
+				self.My_complex[i, self.lm_to_index[(l+1,m+1)]] = -0.5*1j*f_lm(l+1, m+1)
+			if (l-1,m) in self.lm_to_index:
+				self.Mz_complex[i, self.lm_to_index[(l-1,m)]] = a_lm(l-1, m)
+			if (l+1,m) in self.lm_to_index:
+				self.Mz_complex[i, self.lm_to_index[(l+1,m)]] = b_lm(l+1, m)
+
+		# compute real valued M matrices (see middle of p.6 in starmap paper)
+		self.Mx_real = np.real(self.S.dot(self.Mx_complex.dot(self.S_inv)))
+		self.My_real = np.real(self.S.dot(self.My_complex.dot(self.S_inv)))
+		self.Mz_real = np.real(self.S.dot(self.Mz_complex.dot(self.S_inv)))
+
+		# the Ix/Iy arrays hold the valid indices for each row in Mx/My and are used later for the update step
+		# in other words: Ix/Iy hold for each moment, the indices of moments on which the moment depends
+		self.Ix = [[] for i in range(self.numCoeffs)]
+		self.Iy = [[] for i in range(self.numCoeffs)]
+		self.Iz = [[] for i in range(self.numCoeffs)]
+
+		for row in range(self.numCoeffs):
+			for col in range(self.numCoeffs):
+				if np.abs(self.Mx_real[row, col]) > 0:
+					# keep track of valud indices in Mx for each row
+					if not col in self.Ix[row]:
+						self.Ix[row].append(col)
+				if np.abs(self.My_real[row, col]) > 0:
+					# keep track of valud indices in My for each row
+					if not col in self.Iy[row]:
+						self.Iy[row].append(col)
+				if np.abs(self.Mz_real[row, col]) > 0:
+					# keep track of valud indices in Mz for each row
+					if not col in self.Iz[row]:
+						self.Iz[row].append(col)
+
+	def build_staggered_grid(self):
+		'''assigns components to staggered grid locations and builds some helper structures'''
+		self.sga = StaggeredGridAssignment3D()
+
+		# we place the first component by hand
+		self.sga.assign(0, 0, 0, 0)
+
+		# we start propagating all other components
+		todo = [0]
+		done = []
+		count = 0
+		maxCount = 20
+		while todo:# and count<maxCount:
+			count = count +1
+			row = todo[0]
+			todo.remove(row)
+			done.append(row)
+
+			# get the grid index which is associated with the current component/row
+			(i, j, k) = self.sga.get_grid_index(row)
+
+			#print("assigning row={} i={} j={} k={}".format(row, i, j, k))
+			#if self.sga.is_even(row):
+			#	print("\tis even")
+			#else:
+			#	print("\tis odd")
+
+			# work out which components the component associated with the current row depends on according to Mx
+			# we perform the dot product between valid elements in the row of Mx (stored in Ix) and the solution vector
+			for col in self.Ix[row]:
+				# the component depends on the x-derivative of the component col in the solution vector.
+				# Due to our central differences discretization, we will register col accordingly
+				self.sga.assign(col, i+1, j, k)
+				self.sga.assign(col, i-1, j, k)
+				# do this next
+				if not col in done and not col in todo:
+					todo.append(col)
+
+			# work out which components the component associated with the current row depends on according to My
+			# we perform the dot product between valid elements in the row of My (stored in Iy) and the solution vector
+			for col in self.Iy[row]:
+				# the component depends on the y-derivative of the component col in the solution vector.
+				# Due to our central differences discretization, we will register col accordingly
+				self.sga.assign(col, i, j+1, k)
+				self.sga.assign(col, i, j-1, k)
+				# do this next
+				if not col in done and not col in todo:
+					todo.append(col)
+
+			# work out which components the component associated with the current row depends on according to Mz
+			# we perform the dot product between valid elements in the row of Mz (stored in Iz) and the solution vector
+			for col in self.Iz[row]:
+				# the component depends on the y-derivative of the component col in the solution vector.
+				# Due to our central differences discretization, we will register col accordingly
+				self.sga.assign(col, i, j, k+1)
+				self.sga.assign(col, i, j, k-1)
+				# do this next
+				if not col in done and not col in todo:
+					todo.append(col)
+
+		# as a sanity check: make sure all components are assigned
+		for c in range(self.numCoeffs):
+			if not self.sga.is_assigned(c):
+				raise ValueError("component not assigned to staggered grid c={}".format(c))
+
+		# as a sanity check: verify that even components only depend on odd components and vice versa
+		self.check_coupling(self.Mx_real)
+		self.check_coupling(self.My_real)
+		self.check_coupling(self.Mz_real)
+
+
+		if self.domain != None:
+			# now compute X, Y: two arrays which hold the x and y locations of all staggered grid points in the domain
+			# this is used later for rasterization of sigma_a and sigma_s, etc. into the domain
+			# X and Y hold the grid positions in worldspace ---
+			self.X = [[0 for j in range(2)] for i in range(2)]
+			self.Y = [[0 for j in range(2)] for i in range(2)]
+			#TODO: self.Z
+
+			for (grid_i, grid_j) in self.sga.get_grids():
+				(res_x, res_y) = self.sga.get_grid_resolution(grid_i, grid_j, self.domain.res)
+
+				# compute the spatial coordinates for each staggered grid
+				offset = self.sga.get_offset(grid_i, grid_j)
+				self.X[grid_i][grid_j] = np.array([np.arange(res_x) for y in range(res_y)]).T*self.domain.h + offset[0]*self.domain.h
+				self.Y[grid_i][grid_j] = np.array([np.arange(res_y) for x in range(res_x)])*self.domain.h + offset[1]*self.domain.h
+				#TODO: update z
+
+	def check_coupling(self, M, threshold = 0.0):
+		violations = np.zeros(M.shape)
+		for row in range(self.numCoeffs):
+			for col in range(self.numCoeffs):
+				if np.abs(M[row, col]) > threshold:
+					# row depends on col
+					# check if they are both even or both odd...that would be wrong for the method
+					if self.sga.is_even(row) and self.sga.is_even(col):
+						violations[row, col] = 1.0
+						#print("even/odd dependeny violated row={} col={}".format(row, col))
+					if self.sga.is_odd(row) and self.sga.is_odd(col):
+						violations[row, col] = 1.0
+						#print("odd/even dependeny violated row={} col={}".format(row, col))
+		return violations
 
 
 
 
 
 if __name__ == "__main__":
+	#order = 4
+	#starmap = Starmap3D(order)
 	pass
 

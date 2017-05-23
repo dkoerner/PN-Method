@@ -1,5 +1,8 @@
 import numpy as np
 import util
+import solver
+import time
+
 
 
 
@@ -33,6 +36,17 @@ def rasterize( fun, X, Y ):
         for j in range(X.shape[1]):
             result[i,j] = fun(X[i,j], Y[i,j])
     return result
+
+def rasterize3d( fun, X, Y, Z ):
+	if not X.shape == Y.shape or not X.shape == Z.shape or not Y.shape == Z.shape:
+		print("error, shape needs to match")
+	result = np.zeros( X.shape )
+	for i in range(X.shape[0]):
+		for j in range(X.shape[1]):
+			for k in range(X.shape[2]):
+				result[i,j,k] = fun(X[i,j,k], Y[i,j,k], Z[i,j,k])
+	return result
+
 
 def rasterize_moment( fun, X, Y, m ):
     if not X.shape == Y.shape:
@@ -382,29 +396,44 @@ class Starmap2D(object):
 			t = t+dt
 
 			for step in [1, 2, 1]:
+			#for step in [1]:
 				if step == 1:
 					# update odd grids using single half-step ---
 
-					# compute derivatives...
+					# we compute derivatives of even grids at odd gridpoint positions
 					for c in c00:
+						# u_bc will be the grid for coefficient c _including_ boundaries
+
+						# x-derivative ------------------------------------
+						# setup u_bc and add boundary in x (i index) direction (+2 rows)
 						u_bc = np.zeros( (u[c].shape[0]+2, u[c].shape[1]) )
-						# inner content
+
+						# now copy the content from u to the non-boundary cells of u_bc
 						u_bc[1:u[c].shape[0]+1, :] = u[c]
-						#bottom row
+
+						# duplicate the last inner row onto the boundary row at index i=0
 						u_bc[0, :] = u[c][0, :]
-						#top row
+
+						# duplicate the last inner row onto the boundary row at index i=res_x
 						u_bc[u[c].shape[0]+1, :] = u[c][u[c].shape[0]-1, :]
 
+						# now compute the derivative in x (using central differencing)
 						dxU[c] = np.diff(u_bc, 1, 0)/self.domain.h
 
+						# y-derivative ------------------------------------
+						# setup u_bc and add boundary in y (j index) direction (+2 columns)
 						u_bc = np.zeros( (u[c].shape[0], u[c].shape[1]+2) )
-						# inner content
+
+						# now copy the content from u to the non-boundary cells of u_bc
 						u_bc[:, 1:u[c].shape[1]+1] = u[c]
-						# left column
+
+						# duplicate the last inner column onto the boundary row at index j=0
 						u_bc[:, 0] = u[c][:, 0]
-						# right column
+
+						# duplicate the last inner column onto the boundary row at index j=res_y
 						u_bc[:, u[c].shape[1]+1] = u[c][:, u[c].shape[1]-1]
 
+						# now compute the derivative in y (using central differencing)
 						dyU[c] = np.diff(u_bc, 1, 1)/self.domain.h
 
 					for c in c11:
@@ -629,8 +658,8 @@ class Starmap3D(object):
 
 	def build_S(self):
 		'''builds the S matrix, which converts from complex-valued to real valued coefficients'''
+		print("Starmap3D::build_S")
 		# build S matrix ( we iterate over l, m to make sure that the order is correct)
-
 		self.S = np.zeros((self.numCoeffs, self.numCoeffs),dtype=complex)
 		count = 0
 		for l in range(0, self.N+1):
@@ -665,6 +694,7 @@ class Starmap3D(object):
 		Each component of the solution vector is assigned to one of a the four existing staggered grids.
 		This assignment is driven by the dependencies between components and by some initial assignment of the first component.
 		'''
+		print("Starmap3D::build_M")
 		self.Mx_complex = np.zeros((self.numCoeffs, self.numCoeffs),dtype=complex)
 		self.My_complex = np.zeros((self.numCoeffs, self.numCoeffs),dtype=complex)
 		self.Mz_complex = np.zeros((self.numCoeffs, self.numCoeffs),dtype=complex)
@@ -720,10 +750,13 @@ class Starmap3D(object):
 
 	def build_staggered_grid(self):
 		'''assigns components to staggered grid locations and builds some helper structures'''
+		print("Starmap3D::build_staggered_grid")
+
 		self.sga = StaggeredGridAssignment3D()
 
 		# we place the first component by hand
 		self.sga.assign(0, 0, 0, 0)
+
 
 		# we start propagating all other components
 		todo = [0]
@@ -790,21 +823,33 @@ class Starmap3D(object):
 
 
 		if self.domain != None:
-			# now compute X, Y: two arrays which hold the x and y locations of all staggered grid points in the domain
-			# this is used later for rasterization of sigma_a and sigma_s, etc. into the domain
-			# X and Y hold the grid positions in worldspace ---
-			self.X = [[0 for j in range(2)] for i in range(2)]
-			self.Y = [[0 for j in range(2)] for i in range(2)]
-			#TODO: self.Z
+			print("Starmap3D::build_staggered_grid creating grid position arrays")
 
-			for (grid_i, grid_j) in self.sga.get_grids():
-				(res_x, res_y) = self.sga.get_grid_resolution(grid_i, grid_j, self.domain.res)
+			# now compute X, Y, Z: two arrays which hold the x and y and z locations of all staggered grid points in the domain
+			# this is used later for rasterization of sigma_a and sigma_s, etc. into the domain
+			# X and Y and Z hold the grid positions in worldspace ---
+			self.X = [[[[] for k in range(2)] for j in range(2)] for i in range(2)]
+			self.Y = [[[[] for k in range(2)] for j in range(2)] for i in range(2)]
+			self.Z = [[[[] for k in range(2)] for j in range(2)] for i in range(2)]
+
+			for (grid_i, grid_j, grid_k) in self.sga.get_grids():
+				(res_x, res_y, res_z) = self.sga.get_grid_resolution(grid_i, grid_j, grid_k, self.domain.res)
+				print("\tgrid={} {} {}".format(grid_i, grid_j, grid_k))
 
 				# compute the spatial coordinates for each staggered grid
-				offset = self.sga.get_offset(grid_i, grid_j)
-				self.X[grid_i][grid_j] = np.array([np.arange(res_x) for y in range(res_y)]).T*self.domain.h + offset[0]*self.domain.h
-				self.Y[grid_i][grid_j] = np.array([np.arange(res_y) for x in range(res_x)])*self.domain.h + offset[1]*self.domain.h
-				#TODO: update z
+				offset = self.sga.get_offset(grid_i, grid_j, grid_k)
+
+				#self.X[grid_i][grid_j][grid_k] = [[[ i for k in range(res_z)] for j in range(res_y)] for i in range(res_x)]
+				#self.X[grid_i][grid_j][grid_k] = np.array(self.X[grid_i][grid_j][grid_k])*self.domain.h + offset[0]*self.domain.h
+				self.X[grid_i][grid_j][grid_k] = solver.create_position_array(res_x, res_y, res_z, 0)*self.domain.h  + offset[0]*self.domain.h
+
+				#self.Y[grid_i][grid_j][grid_k] = [[[ j for k in range(res_z)] for j in range(res_y)] for i in range(res_x)]
+				#self.Y[grid_i][grid_j][grid_k] = np.array(self.Y[grid_i][grid_j][grid_k])*self.domain.h + offset[1]*self.domain.h
+				self.Y[grid_i][grid_j][grid_k] = solver.create_position_array(res_x, res_y, res_z, 1)*self.domain.h  + offset[1]*self.domain.h
+
+				#self.Z[grid_i][grid_j][grid_k] = [[[ k for k in range(res_z)] for j in range(res_y)] for i in range(res_x)]
+				#self.Z[grid_i][grid_j][grid_k] = np.array(self.Z[grid_i][grid_j][grid_k])*self.domain.h + offset[2]*self.domain.h
+				self.Z[grid_i][grid_j][grid_k] = solver.create_position_array(res_x, res_y, res_z, 2)*self.domain.h  + offset[2]*self.domain.h
 
 	def check_coupling(self, M, threshold = 0.0):
 		violations = np.zeros(M.shape)
@@ -821,12 +866,483 @@ class Starmap3D(object):
 						#print("odd/even dependeny violated row={} col={}".format(row, col))
 		return violations
 
+	# u_bc will be the grid for coefficient c _including_ boundaries
+	def extend_x(self, u):
+		# setup u_bc and add boundary in x (i index) direction (+2 rows)
+		u_bc = np.zeros( (u.shape[0]+2, u.shape[1], u.shape[2]) )
+		# now copy the content from u to the non-boundary cells of u_bc
+		u_bc[1:u.shape[0]+1, :, :] = u
+		# duplicate the last inner yz-slice onto the boundary sice at index i=0
+		u_bc[0, :, :] = u[0, :, :]
+		# duplicate the last inner yz slice onto the boundary slice at index i=res_x
+		u_bc[u.shape[0]+1, :, :] = u[u.shape[0]-1, :, :]
+		return u_bc
+	def extend_y(self, u):
+		u_bc = np.zeros( (u.shape[0], u.shape[1]+2, u.shape[2]) )
+
+		# now copy the content from u to the non-boundary cells of u_bc
+		u_bc[:, 1:u.shape[1]+1, :] = u
+
+		# duplicate the last inner inner y-z slice onto the boundary row at index j=0
+		u_bc[:, 0,:] = u[:, 0, :]
+
+		# duplicate the last inner inner y-z slice onto the boundary row at index j=res_y
+		u_bc[:, u.shape[1]+1, :] = u[:, u.shape[1]-1, :]
+		return u_bc
+	def extend_z(self, u):
+		# setup u_bc and add boundary in z (k index) direction (+2 columns)
+		u_bc = np.zeros( (u.shape[0], u.shape[1], u.shape[2]+2) )
+
+		# now copy the content from u to the non-boundary cells of u_bc
+		u_bc[:, :, 1:u.shape[2]+1] = u
+
+		# duplicate the last inner inner xy slice onto the boundary row at index j=0
+		u_bc[:, :, 0] = u[:, :, 0]
+
+		# duplicate the last inner inner y-z slice onto the boundary row at index j=res_y
+		u_bc[:, :, u.shape[2]+1] = u[:, :, u.shape[2]-1]
+		return u_bc
+	def run( self, dt, numTimeSteps = 1, sigma_a = None, sigma_s = None, source = None ):
+		'''The run method takes all problem specific inputs, such as absorption- and scattering coefficient fields and source field.'''
+		print("Starmap3D::run")
+
+
+		# solution U ---
+		# u is an array of grids. One for each moment coefficient
+		u = [0 for i in range(self.numCoeffs)]
+
+		# source Q ---
+		# Q is an array of grids. One for each moment coefficient
+		Q = [0 for i in range(self.numCoeffs)]
+
+		# sigma_a ---
+		# the absorption coefficient is isotropic and therefore we only need the zero moment
+		# however, for the update step, we need it at all staggered grid locations
+		# therefore we have the zero moment of sigma_a at each staggered grid
+		# rasterization is done in the loop below
+		sa = [[[[] for k in range(2)] for j in range(2)] for i in range(2)]
+
+		# sigma_s ---
+		# the scattering coefficient is isotropic and therefore we only need the zero moment
+		# however, for the update step, we need it at all staggered grid locations
+		# therefore we have the zero moment of sigma_a at each staggered grid
+		# rasterization is done in the loop below
+		ss = [[[[] for k in range(2)] for j in range(2)] for i in range(2)]
+
+		# sigma_t = sigma_a + sigma_s ---
+		# the extinction coefficient coeffcients are simply the sum of coefficients from scattering and absorption
+		st = [[[[] for k in range(2)] for j in range(2)] for i in range(2)]
+
+		# et is the expm1div function applied to all elements of st
+		et = [[[[] for k in range(2)] for j in range(2)] for i in range(2)]
+
+
+		# phase funtion ---
+		# TODO
+		# currently we assume isotropic phase function and therfore its first moment is 1
+		# and all higher moments are 0
+
+
+		# now setup grid for each component. take staggered discretization into account
+		print("Starmap3D::run setting up grids")
+		for (grid_i, grid_j, grid_k) in self.sga.get_grids():
+			print("\tgrid={} {} {}".format(grid_i, grid_j, grid_k))
+			(res_x, res_y, res_z) = self.sga.get_grid_resolution(grid_i, grid_j, grid_k, self.domain.res)
+			#print("grid={} {} {} res={} {} {}".format(grid_i, grid_j, grid_k, res_x, res_y, res_z ))
+
+			# rasterize zero moment of sigma_a at the different grid locations
+			print("\trasterizing sigma_a")
+			#sa[grid_i][grid_j][grid_k] = rasterize3d(sigma_a, self.X[grid_i][grid_j][grid_k], self.Y[grid_i][grid_j][grid_k], self.Z[grid_i][grid_j][grid_k])
+			sa[grid_i][grid_j][grid_k] = solver.rasterize( "sigma_a", self.X[grid_i][grid_j][grid_k], self.Y[grid_i][grid_j][grid_k], self.Z[grid_i][grid_j][grid_k] )
+			#print(sa[grid_i][grid_j][grid_k].shape)
+
+			# rasterize zero moment of sigma_s at the different grid locations
+			print("\trasterizing sigma_s")
+			#ss[grid_i][grid_j][grid_k] = rasterize3d(sigma_s, self.X[grid_i][grid_j][grid_k], self.Y[grid_i][grid_j][grid_k], self.Z[grid_i][grid_j][grid_k])
+			ss[grid_i][grid_j][grid_k] = solver.rasterize( "sigma_s", self.X[grid_i][grid_j][grid_k], self.Y[grid_i][grid_j][grid_k], self.Z[grid_i][grid_j][grid_k] )
+			#print(ss[grid_i][grid_j][grid_k].shape)
+
+			# compute st by summing absorption and scattering moments
+			st[grid_i][grid_j][grid_k] = sa[grid_i][grid_j][grid_k] + ss[grid_i][grid_j][grid_k]
+
+			# compute the decay terms
+			print("\trasterizing computing decay term")
+			et[grid_i][grid_j][grid_k] = expm1div(-st[grid_i][grid_j][grid_k]*dt*0.5)
+
+			# now iterate over all higher moment coefficients which are associated with the
+			# current staggered grid
+			for g in self.sga.get_grid_components(grid_i, grid_j, grid_k):	
+				print("\tinitializing component c={}".format(g))
+				u[g] = np.zeros( (res_x, res_y, res_z) )
+
+				if g == 0:
+					#Q[g] = rasterize3d(source, self.X[grid_i][grid_j][grid_k], self.Y[grid_i][grid_j][grid_k], self.Z[grid_i][grid_j][grid_k])
+					Q[g] = solver.rasterize( "q", self.X[grid_i][grid_j][grid_k], self.Y[grid_i][grid_j][grid_k], self.Z[grid_i][grid_j][grid_k] )
+				else:
+					# we assume isotropic sources for now...all higher moments are zero
+					Q[g] = np.zeros((res_x, res_y, res_z))
+
+		# just for debugging: write rasterized RTE fields to disk ---
+		solver.write_scalarfield( "io/check_sigma_a.bgeo", sa[0][0][0] )
+		solver.write_scalarfield( "io/check_sigma_s.bgeo", ss[0][0][0] )
+		solver.write_scalarfield( "io/check_q.bgeo", Q[0] )
+
+
+		# ea is the matrix sa (at grid00) at timestep 0 (thats why -dt*0.5)
+		# with exp1mdiv applied to all elements
+		# we use sa[0][0], because we know that G00 is the grid associated with c=0
+		# (and we only use ea with c=0)
+		ea = expm1div(-sa[0][0][0]*dt*0.5)
+
+
+		c000 = self.sga.get_grid_components(0,0,0)
+		c100 = self.sga.get_grid_components(1,0,0)
+		c010 = self.sga.get_grid_components(0,1,0)
+		c110 = self.sga.get_grid_components(1,1,0)
+
+		c001 = self.sga.get_grid_components(0,0,1)
+		c101 = self.sga.get_grid_components(1,0,1)
+		c011 = self.sga.get_grid_components(0,1,1)
+		c111 = self.sga.get_grid_components(1,1,1)
+
+		components_even = c000 + c101 + c011 + c110
+		components_odd = c111 + c100 + c001 + c010
+
+
+		# derivatives for each component of u in x and y and z
+		dxU = [[] for i in range(self.numCoeffs)]
+		dyU = [[] for i in range(self.numCoeffs)]
+		dzU = [[] for i in range(self.numCoeffs)]
+
+		# for each time step
+		t = 0.0
+		for tt in range(numTimeSteps):
+			solver.write_scalarfield( "io/solution_u.{0:03d}.bgeo".format(tt), np.real(u[0]) )
+			start = time.time()
+			print('timestep {} t_old={}  dt={}  t_new={}'.format(tt, t, dt, t+dt))
+			t = t+dt
+
+			for step in [1, 2, 1]:
+			#for step in [2]:
+				#print("step")
+				if step == 1:
+					# update odd grids using single half-step ---
+
+					# we compute derivatives of even grids at odd gridpoint positions
+					for c in c000:
+						dxU[c] = np.diff(self.extend_x(u[c]), 1, 0)/self.domain.h
+						dyU[c] = np.diff(self.extend_y(u[c]), 1, 1)/self.domain.h
+						dzU[c] = np.diff(self.extend_z(u[c]), 1, 2)/self.domain.h
+
+					for c in c110:
+						dxU[c] = np.diff(u[c], 1, 0)/self.domain.h
+						dyU[c] = np.diff(u[c], 1, 1)/self.domain.h
+						dzU[c] = np.diff(self.extend_z(u[c]), 1, 2)/self.domain.h
+
+					for c in c101:
+						dxU[c] = np.diff(u[c], 1, 0)/self.domain.h
+						dyU[c] = np.diff(self.extend_y(u[c]), 1, 1)/self.domain.h
+						dzU[c] = np.diff(u[c], 1, 2)/self.domain.h
+
+					for c in c011:
+						dxU[c] = np.diff(self.extend_x(u[c]), 1, 0)/self.domain.h
+						dyU[c] = np.diff(u[c], 1, 1)/self.domain.h
+						dzU[c] = np.diff(u[c], 1, 2)/self.domain.h
+
+		            # iterate all odd components and do update step...
+					#print(dzU)
+					for c in components_odd:
+						(grid_i, grid_j, grid_k) = self.sga.get_grid_index(c)
+						'''
+						print("updating odd component c={} grid={} {} {} shape={} {} {}".format(c, grid_i, grid_j, grid_k, u[c].shape[0], u[c].shape[1], u[c].shape[2]))
+						print("\tdepends on x-derivatives of components:")
+						for c2 in self.Ix[c]:
+							(grid2_i, grid2_j, grid2_k) = self.sga.get_grid_index(c2)
+							if not dxU[c2].shape == u[c].shape:
+								raise ValueError("update shapes dont match!")
+
+							print("\t\tc2={} grid={} {} {}".format(c2, grid2_i, grid2_j, grid2_k))
+							print("\t\tshape of x-derivative of c2={} {} {}".format(dxU[c2].shape[0], dxU[c2].shape[1], dxU[c2].shape[2]))
+						print("\tdepends on y-derivatives of components:")
+						for c2 in self.Iy[c]:
+							(grid2_i, grid2_j, grid2_k) = self.sga.get_grid_index(c2)
+							if not dyU[c2].shape == u[c].shape:
+								raise ValueError("update shapes dont match!")
+
+							print("\t\tc2={} grid={} {} {}".format(c2, grid2_i, grid2_j, grid2_k))
+							print("\t\tshape of y-derivative of c2={} {} {}".format(dyU[c2].shape[0], dyU[c2].shape[1], dyU[c2].shape[2]))
+						print("\tdepends on z-derivatives of components:")
+						for c2 in self.Iz[c]:
+							(grid2_i, grid2_j, grid2_k) = self.sga.get_grid_index(c2)
+							if not dzU[c2].shape == u[c].shape:
+								raise ValueError("update shapes dont match!")
+
+							print("\t\tc2={} grid={} {} {}".format(c2, grid2_i, grid2_j, grid2_k))
+							print("\t\tshape of z-derivative of c2={} {} {}".format(dzU[c2].shape[0], dzU[c2].shape[1], dzU[c2].shape[2]))
+						'''
+						W = np.zeros( u[c].shape )
+
+						# we now iterate over all valid(>0) elements in Mx
+						# these are the weights with which we will add the
+						# dxU of the moment which is associated with the current index
+						for c2 in self.Ix[c]:
+							W -= self.Mx_real[ c, c2 ]*dxU[c2]
+						for c2 in self.Iy[c]:
+							W -= self.My_real[ c, c2 ]*dyU[c2]
+						for c2 in self.Iz[c]:
+							W -= self.Mz_real[ c, c2 ]*dzU[c2]
+
+						# half step
+						# it is unclear to me, why we use the same st/et for higher moment coefficients
+						# when there is no anisotropic phase function...
+						u[c] = u[c] + dt*0.5*np.multiply( W + Q[c] - np.multiply( st[grid_i][grid_j][grid_k], u[c] ), et[grid_i][grid_j][grid_k])
+
+				elif step == 2:
+					# update even grids using two half-steps ---
+					for c in c100:
+						dxU[c] = np.diff(u[c], 1, 0)/self.domain.h
+						dyU[c] = np.diff(self.extend_y(u[c]), 1, 1)/self.domain.h
+						dzU[c] = np.diff(self.extend_z(u[c]), 1, 2)/self.domain.h
+					for c in c010:
+						dxU[c] = np.diff(self.extend_x(u[c]), 1, 0)/self.domain.h
+						dyU[c] = np.diff(u[c], 1, 1)/self.domain.h
+						dzU[c] = np.diff(self.extend_z(u[c]), 1, 2)/self.domain.h
+
+					for c in c001:
+						dxU[c] = np.diff(self.extend_x(u[c]), 1, 0)/self.domain.h
+						dyU[c] = np.diff(self.extend_y(u[c]), 1, 1)/self.domain.h
+						dzU[c] = np.diff(u[c], 1, 2)/self.domain.h
+
+					for c in c111:
+						dxU[c] = np.diff(u[c], 1, 0)/self.domain.h
+						dyU[c] = np.diff(u[c], 1, 1)/self.domain.h
+						dzU[c] = np.diff(u[c], 1, 2)/self.domain.h
+
+
+					# now iterate all even components and do update step...
+					for c in components_even:
+						(grid_i, grid_j, grid_k) = self.sga.get_grid_index(c)
+
+						'''
+						print("updating even component c={} grid={} {} {} shape={} {} {}".format(c, grid_i, grid_j, grid_k, u[c].shape[0], u[c].shape[1], u[c].shape[2]))
+						print("\tdepends on x-derivatives of components:")
+						for c2 in self.Ix[c]:
+							(grid2_i, grid2_j, grid2_k) = self.sga.get_grid_index(c2)
+							print("\t\tc2={} grid={} {} {}".format(c2, grid2_i, grid2_j, grid2_k))
+							if not dxU[c2].shape == u[c].shape:
+								raise ValueError("update shapes dont match!")
+							print("\t\tshape of x-derivative of c2={} {} {}".format(dxU[c2].shape[0], dxU[c2].shape[1], dxU[c2].shape[2]))
+						print("\tdepends on y-derivatives of components:")
+						for c2 in self.Iy[c]:
+							(grid2_i, grid2_j, grid2_k) = self.sga.get_grid_index(c2)
+							print("\t\tc2={} grid={} {} {}".format(c2, grid2_i, grid2_j, grid2_k))
+							if not dyU[c2].shape == u[c].shape:
+								raise ValueError("update shapes dont match!")
+							print("\t\tshape of y-derivative of c2={} {} {}".format(dyU[c2].shape[0], dyU[c2].shape[1], dyU[c2].shape[2]))
+						print("\tdepends on z-derivatives of components:")
+						for c2 in self.Iz[c]:
+							(grid2_i, grid2_j, grid2_k) = self.sga.get_grid_index(c2)
+							print("\t\tc2={} grid={} {} {}".format(c2, grid2_i, grid2_j, grid2_k))
+							if not dzU[c2].shape == u[c].shape:
+								raise ValueError("update shapes dont match!")
+							print("\t\tshape of z-derivative of c2={} {} {}".format(dzU[c2].shape[0], dzU[c2].shape[1], dzU[c2].shape[2]))
+						'''
+
+						W = np.zeros( u[c].shape )
+						# we now iterate over all valid(>0) elements in Mx
+						# these are the weights with which we will add the
+						# dxU of the moment which is associated with the current index
+						for c2 in self.Ix[c]:
+							W -= self.Mx_real[ c, c2 ]*dxU[c2]
+						for c2 in self.Iy[c]:
+							W -= self.My_real[ c, c2 ]*dyU[c2]
+						for c2 in self.Iz[c]:
+							W -= self.Mz_real[ c, c2 ]*dzU[c2]
+
+						# perform two half-steps
+						for k in range(2):
+							# the zero moment update only depends on absorption
+							# this is because the zero moment of the phase function is 1 and
+							# the scattering coefficient from scattering term cancels out with
+							# the scattering coefficient from sigma_t (see note in the python notebook)
+							if c == 0:
+								# we use sa[0][0] because we know, that G00 is the grid associated with c=0
+								u[c] = u[c] + dt*0.5*np.multiply( W + Q[c] - np.multiply( sa[0][0][0], u[c] ), ea)
+							else:
+								# it is unclear to me, why we use the same st/et for higher moment coefficients
+								# when there is no anisotropic phase function...
+								u[c] = u[c] + dt*0.5*np.multiply( W + Q[c] - np.multiply( st[grid_i][grid_j][grid_k], u[c] ), et[grid_i][grid_j][grid_k])
+			end = time.time()
+			print(end - start)
+
+		return u
+
 
 
 
 
 if __name__ == "__main__":
-	#order = 4
-	#starmap = Starmap3D(order)
 	pass
+	'''
+	order = 4
+	#starmap = Starmap3D(order)
+	#pass
+
+
+	starmap = Starmap2D(order, util.Domain2D(1.0, 2))
+
+	# define problem ---
+	def source( x, y ):
+		if x > 3.0 and x < 4.0 and y > 3.0 and y < 4.0:
+			return 1.0
+		return 0.0
+
+	def sigma_a( x, y ):
+		cx = np.ceil(x)
+		cy = np.ceil(y)
+		g = 0
+		if np.ceil((x+y)/2.0)*2.0 == (cx+cy) and cx > 1.0 and cx < 7.0 and cy > 1.0 and cy-2.0*np.abs(cx-4.0) < 4:
+			g = 1
+		return (1.0-g)*0 + g*10
+
+	def sigma_s( x, y ):
+		cx = np.ceil(x)
+		cy = np.ceil(y)
+		g = 0
+		if np.ceil((x+y)/2.0)*2.0 == (cx+cy) and cx > 1.0 and cx < 7.0 and cy > 1.0 and cy-2.0*np.abs(cx-4.0) < 4:
+			g = 1
+		return (1.0-g)*1 + g*0
+
+	dt = 1.0
+	numTimeSteps = 1
+	#starmap.run( dt, numTimeSteps, sigma_a, sigma_s, source )
+	'''
+
+	'''
+	for (grid_i, grid_j) in starmap.sga.get_grids():
+		(res_x, res_y) = starmap.sga.get_grid_resolution(grid_i, grid_j, starmap.domain.res)
+		numPoints = res_x*res_y
+		X = starmap.X[grid_i][grid_j]
+		Y = starmap.Y[grid_i][grid_j]
+
+		print("res={} {}".format(res_x, res_y))
+		print(X.shape)
+		print(Y.shape)
+
+		file = open("io/starmap2d_grid_{}_{}".format(grid_i, grid_j), "w")
+		file.write("{}\n".format(numPoints))
+
+		for j in range(res_y):
+			for i in range(res_x):
+				print("i={} j={} p={} {}".format(i, j, X[i, j], Y[i, j]))
+				file.write("{} {}\n".format(X[i, j], Y[i, j]))
+
+		file.close()
+	'''
+
+
+	# define problem ---
+	def source3d( x, y, z ):
+		if x > 3.0 and x < 4.0 and y > 3.0 and y < 4.0 and z > 3.0 and z < 4.0:
+			return 1.0
+		return 0.0
+
+	def sigma_a3d( x, y, z ):
+		cx = np.ceil(x)
+		cy = np.ceil(y)
+		cz = np.ceil(z)
+		g = 0
+		if (np.ceil((x+y)/2.0)*2.0 == (cx+cy) and 
+			np.ceil((z+y)/2.0)*2.0 == (cz+cy) and
+			cx > 1.0 and cx < 7.0 and
+			cz > 1.0 and cz < 7.0 and
+			cy > 1.0 and 
+			cy-2.0*np.abs(cx-4.0) < 4 and
+			cy-2.0*np.abs(cz-4.0) < 4):
+			g = 1
+		return (1.0-g)*0 + g*10
+
+	def sigma_s3d( x, y, z ):
+		cx = np.ceil(x)
+		cy = np.ceil(y)
+		cz = np.ceil(z)
+		g = 0
+		if (np.ceil((x+y)/2.0)*2.0 == (cx+cy) and 
+			np.ceil((z+y)/2.0)*2.0 == (cz+cy) and
+			cx > 1.0 and cx < 7.0 and
+			cz > 1.0 and cz < 7.0 and
+			cy > 1.0 and 
+			cy-2.0*np.abs(cx-4.0) < 4 and
+			cy-2.0*np.abs(cz-4.0) < 4):
+			g = 1
+		return (1.0-g)*1 + g*0
+
+	order = 4
+	starmap = Starmap3D(order, util.Domain3D(7.0, 100))
+	dt = 0.01609501
+	#numTimeSteps = 500
+	numTimeSteps = 2
+	u = starmap.run( dt, numTimeSteps, sigma_a3d, sigma_s3d, source3d )
+
+
+	'''
+	#grids = [(1,1,1)]
+	for (grid_i, grid_j, grid_k) in starmap.sga.get_grids():
+	#for (grid_i, grid_j, grid_k) in grids:
+		(res_x, res_y, res_z) = starmap.sga.get_grid_resolution(grid_i, grid_j, grid_k, starmap.domain.res)
+		numPoints = res_x*res_y*res_z
+		X = starmap.X[grid_i][grid_j][grid_k]
+		Y = starmap.Y[grid_i][grid_j][grid_k]
+		Z = starmap.Z[grid_i][grid_j][grid_k]
+
+		file = open("io/starmap3d_grid_{}_{}_{}".format(grid_i, grid_j, grid_k), "w")
+		file.write("{}\n".format(numPoints))
+
+		for k in range(res_z):
+			for j in range(res_y):
+				for i in range(res_x):
+					file.write("{} {} {}\n".format(X[i, j, k], Y[i, j, k], Z[i, j, k]))
+
+		file.close()
+	'''
+
+	'''
+	f = open("C:/projects/epfl/experiments/cpp/build-gpu-Desktop_Qt_5_5_0_MSVC2013_64bit-Release/experiment_starmap_fields/voxelpos.txt")
+	f_out = open("C:/projects/epfl/experiments/cpp/build-gpu-Desktop_Qt_5_5_0_MSVC2013_64bit-Release/experiment_starmap_fields/check", "w")
+	res = 100
+	for i in range(res):
+		for j in range(res):
+			for k in range(res):
+				p = [float(v) for v in f.readline().rstrip().split()]
+				x = p[0]
+				y = p[1]
+				z = p[2]
+				sa = sigma_a3d(x, y, z)
+				ss = sigma_s3d(x, y, z)
+				q = source3d(x, y, z)
+				f_out.write("{} {} {}\n".format(sa, ss, q))
+
+
+	f.close()
+	f_out.close()
+	'''
+	#res_z = 250
+	#res_y = 250
+	#res_x = 250
+	#t = [[[ k for k in range(res_z)] for j in range(res_y)] for i in range(res_x)]
+	#t = np.array(t)
+	#print(t.shape)
+	#print(solver.create_position_array(res_x, res_y, res_z, 2).shape)
+
+	'''
+	t = solver.rasterize( "sigma_a", starmap.X[0][0][0], starmap.Y[0][0][0], starmap.Z[0][0][0] )
+	solver.write_scalarfield( "io/check_sigma_a.bgeo", t )
+
+	t = solver.rasterize( "sigma_s", starmap.X[0][0][0], starmap.Y[0][0][0], starmap.Z[0][0][0] )
+	solver.write_scalarfield( "io/check_sigma_s.bgeo", t )
+
+	t = solver.rasterize( "q", starmap.X[0][0][0], starmap.Y[0][0][0], starmap.Z[0][0][0] )
+	solver.write_scalarfield( "io/check_q.bgeo", t )
+	'''
+
 

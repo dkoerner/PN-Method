@@ -83,6 +83,7 @@ void experiment_nebulae();
 void experiment_moexp2d();
 void experiment_sh_method();
 void experiment_project_phase_function();
+void experiment_starmap_fields();
 int main()
 {
 	int deviceCount = 0;
@@ -104,7 +105,8 @@ int main()
 	//experiment_nebulae();
 	//experiment_moexp2d();
 	//experiment_sh_method();
-	experiment_project_phase_function();
+	//experiment_project_phase_function();
+	experiment_starmap_fields();
 
 
 	/*
@@ -120,6 +122,126 @@ int main()
 
 
 	return 0;
+}
+
+
+void experiment_starmap_fields()
+{
+	houio::math::V3i res(100, 100, 100);
+	houio::Fieldf::Ptr source = houio::Fieldf::create(res);
+	houio::Fieldf::Ptr sigma_a = houio::Fieldf::create(res);
+	houio::Fieldf::Ptr sigma_s = houio::Fieldf::create(res);
+
+	/*
+	// file for sanity check, that we compute the right fields in python
+	//std::ofstream f_out("experiment_starmap_fields/voxelpos.txt");
+
+	for( int i=0;i<res.x;++i )
+		for( int j=0;j<res.y;++j )
+			for( int k=0;k<res.z;++k )
+			{
+				houio::math::V3f pVS(i+0.5f, j+0.5f, k+0.5f);
+				houio::math::V3f pWS = sigma_a->voxelToWorld(pVS);
+
+				float x = pWS.x*7.0;
+				float y = pWS.y*7.0;
+				float z = pWS.z*7.0;
+
+				//f_out << x << " " << y << " " << z << std::endl;
+
+//				// 2d version used in starmap
+//				float g = 0.0;
+//				float cx = std::ceil(x);
+//				float cy = std::ceil(y);
+//				if( (std::ceil( (x+y)/2.0 )*2.0 == (cx+cy))&&
+//					(cx>1.0f)&&(cx<7.0f)&&
+//					(cy>1.0)&&(cy-2.0f*std::abs(cx-4.0)<4.0)
+//					)
+//					g = 1.0;
+
+//				// source
+//				if( (x>3.0f)&&(x<4.0f)&&
+//					(y>3.0f)&&(y<4.0f))
+//					source->lvalue(i,j,0) = 1.0;
+//				// sigma_a
+//				{
+//					sigma_a->lvalue(i, j, 0) = g*10.0f;
+//				}
+//				// sigma_s
+//				{
+//					sigma_s->lvalue(i, j, 0) = 1.0f-g;
+//				}
+
+
+
+				float g = 0.0;
+				float cx = std::ceil(x);
+				float cy = std::ceil(y);
+				float cz = std::ceil(z);
+				if( (std::ceil( (x+y)/2.0 )*2.0 == (cx+cy))&&
+					(std::ceil( (z+y)/2.0 )*2.0 == (cz+cy))&&
+					(cx>1.0f)&&(cx<7.0f)&&
+					(cz>1.0f)&&(cz<7.0f)&&
+					(cy>1.0)&&
+					(cy-2.0f*std::abs(cx-4.0)<4.0)&&
+					(cy-2.0f*std::abs(cz-4.0)<4.0)
+					)
+					g = 1.0;
+
+
+
+				// sigma_a
+				{
+					sigma_a->lvalue(i, j, k) = g*10.0f;
+				}
+				// sigma_s
+				{
+					sigma_s->lvalue(i, j, k) = 1.0f-g;
+				}
+				// source
+				if( (x>3.0f)&&(x<4.0f)&&
+					(y>3.0f)&&(y<4.0f)&&
+					(z>3.0f)&&(z<4.0f))
+					source->lvalue(i,j,k) = 1.0;
+
+			}
+	*/
+
+
+	///*
+	// read voxel values from files...
+	int nRows, nCols;
+	std::vector<double> values;
+	readSamples2("experiment_starmap_fields/check", values, nRows, nCols);
+	std::cout << "got samples: nRows=" << nRows << " nCols=" << nCols << std::endl;
+	double* ptr = values.data();
+	for( int i=0;i<res.x;++i )
+		for( int j=0;j<res.y;++j )
+			for( int k=0;k<res.z;++k )
+			{
+				houio::math::V3f pVS(i+0.5f, j+0.5f, k+0.5f);
+				houio::math::V3f pWS = sigma_a->voxelToWorld(pVS);
+
+				float x = pWS.x*7.0;
+				float y = pWS.y*7.0;
+				float z = pWS.z*7.0;
+
+				double sa = *ptr++;
+				double ss = *ptr++;
+				double q = *ptr++;
+
+				sigma_a->lvalue(i, j, k) = sa;
+				sigma_s->lvalue(i, j, k) = ss;
+				source->lvalue(i,j,k) = q;
+			}
+	//*/
+
+
+
+	houio::HouGeoIO::xport("experiment_starmap_fields/source_check.bgeo", source);
+	houio::HouGeoIO::xport("experiment_starmap_fields/sigma_a_check.bgeo", sigma_a);
+	houio::HouGeoIO::xport("experiment_starmap_fields/sigma_s_check.bgeo", sigma_s);
+
 }
 
 

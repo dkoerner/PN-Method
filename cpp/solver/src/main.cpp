@@ -1,11 +1,16 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/numpy.h>
 #include <pybind11/eigen.h>
+#include <pybind11/functional.h>
 #include <iostream>
 #include <math/common.h>
 #include <math/vector.h>
 #include <math/ray.h>
 #include <util\dda2d.h>
+#include <houio/houio/HouGeoIO.h>
+#include <houio/houio/Field.h>
+
+
 
 
 namespace py = pybind11;
@@ -718,6 +723,191 @@ void toSRGB( py::array_t<double> pixel_array )
 
 }
 
+void write_scalarfield(
+	std::string filename,
+	py::array_t<double> phi_array
+)
+{
+	std::ostringstream oss;
+	py::buffer_info phi_array_info = phi_array.request();
+
+	auto phi = static_cast<double *>(phi_array_info.ptr);
+
+	int res_x = phi_array_info.shape[0];
+	int res_y = phi_array_info.shape[1];
+	int res_z = phi_array_info.shape[2];
+
+	houio::math::V3i res(res_x, res_y, res_z);
+	houio::Fieldf::Ptr field = houio::Fieldf::create(res, houio::math::Box3f(houio::math::V3f(0.0f, 0.0f, 0.0f), houio::math::V3f(7.0f, 7.0f, 7.0f)));
+
+	for( int k=0;k<res_z;++k )
+		for( int j=0;j<res_y;++j )
+			for( int i=0;i<res_x;++i )
+			{
+				int index = k*res_x*res_y + i*res_x + j;
+				field->lvalue(i, j, k) = float(phi[index]);
+			}
+
+	std::cout << "writing bgeo to " << filename << std::endl;
+	std::cout << "res=" << res_x << " " << res_y << " " << res_z << std::endl;
+	houio::HouGeoIO::xport(filename, field);
+}
+
+
+
+double sigma_a3d( double x, double y, double z )
+{
+	double cx = std::ceil(x);
+	double cy = std::ceil(y);
+	double cz = std::ceil(z);
+	double g = 0.0;
+	if (std::ceil((x+y)/2.0)*2.0 == (cx+cy) &&
+		std::ceil((z+y)/2.0)*2.0 == (cz+cy) &&
+		cx > 1.0 &&  cx < 7.0 &&
+		cz > 1.0 && cz < 7.0 &&
+		cy > 1.0 && 
+		cy-2.0*std::abs(cx-4.0) < 4 &&
+		cy-2.0*std::abs(cz-4.0) < 4)
+		g = 1.0;
+	return (1.0-g)*0 + g*10.0;
+}
+
+double sigma_s3d( double x, double y, double z )
+{
+	double cx = std::ceil(x);
+	double cy = std::ceil(y);
+	double cz = std::ceil(z);
+	double g = 0.0;
+	if (std::ceil((x+y)/2.0)*2.0 == (cx+cy) &&
+		std::ceil((z+y)/2.0)*2.0 == (cz+cy) &&
+		cx > 1.0 &&  cx < 7.0 &&
+		cz > 1.0 && cz < 7.0 &&
+		cy > 1.0 && 
+		cy-2.0*std::abs(cx-4.0) < 4 &&
+		cy-2.0*std::abs(cz-4.0) < 4)
+		g = 1.0;
+	return (1.0-g)*1 + g*0.0;
+}
+
+double source3d( double x, double y, double z )
+{
+	if( (x > 3.0) && (x < 4.0) && (y > 3.0) && (y < 4.0) && (z > 3.0) && (z < 4.0))
+		return 1.0;
+	return 0.0;
+}
+
+
+py::array_t<double> rasterize(
+	const std::string& variable,
+	py::array_t<double> X_array,
+	py::array_t<double> Y_array,
+	py::array_t<double> Z_array
+)
+{
+	py::buffer_info X_array_info = X_array.request();
+	py::buffer_info Y_array_info = Y_array.request();
+	py::buffer_info Z_array_info = Z_array.request();
+
+	// create result array ---
+	auto result = py::array_t<double>(X_array_info.shape);
+	auto result_buffer = result.request();
+
+
+	int size = X_array_info.shape[0]*X_array_info.shape[1]*X_array_info.shape[2];
+	double* X_ptr = static_cast<double *>(X_array_info.ptr);
+	double* Y_ptr = static_cast<double *>(Y_array_info.ptr);
+	double* Z_ptr = static_cast<double *>(Z_array_info.ptr);
+	double *result_ptr = static_cast<double *>(result_buffer.ptr);
+	if( variable=="sigma_a" )
+	{
+		for( int i=0;i<size;++i )
+		{
+			double x = *X_ptr++;
+			double y = *Y_ptr++;
+			double z = *Z_ptr++;
+			*result_ptr++ = sigma_a3d(x, y, z);
+		}
+	}else
+	if( variable=="sigma_s" )
+	{
+		for( int i=0;i<size;++i )
+		{
+			double x = *X_ptr++;
+			double y = *Y_ptr++;
+			double z = *Z_ptr++;
+			*result_ptr++ = sigma_s3d(x, y, z);
+		}
+	}else
+	if( variable=="q" )
+	{
+		for( int i=0;i<size;++i )
+		{
+			double x = *X_ptr++;
+			double y = *Y_ptr++;
+			double z = *Z_ptr++;
+			*result_ptr++ = source3d(x, y, z);
+		}
+	}
+
+	return result;
+
+
+	
+
+
+	/*
+	std::ostringstream oss;
+	py::buffer_info phi_array_info = phi_array.request();
+
+	auto phi = static_cast<double *>(phi_array_info.ptr);
+
+	int res_x = phi_array_info.shape[0];
+	int res_y = phi_array_info.shape[1];
+	int res_z = phi_array_info.shape[2];
+
+	houio::math::V3i res(res_x, res_y, res_z);
+	houio::Fieldf::Ptr field = houio::Fieldf::create(res, houio::math::Box3f(houio::math::V3f(0.0f, 0.0f, 0.0f), houio::math::V3f(7.0f, 7.0f, 7.0f)));
+
+	for( int k=0;k<res_z;++k )
+		for( int j=0;j<res_y;++j )
+			for( int i=0;i<res_x;++i )
+			{
+				int index = k*res_x*res_y + i*res_x + j;
+				field->lvalue(i, j, k) = float(phi[index]);
+			}
+
+	std::cout << "writing bgeo to " << filename << std::endl;
+	std::cout << "res=" << res_x << " " << res_y << " " << res_z << std::endl;
+	houio::HouGeoIO::xport(filename, field);
+	*/
+}
+
+
+py::array_t<double> create_position_array( int res_x, int res_y, int res_z, int component )
+{
+	//int size = res_x*res_y*res_z;
+	std::vector<size_t> shape;
+	shape.push_back(res_x);
+	shape.push_back(res_y);
+	shape.push_back(res_z);
+	auto result = py::array_t<double>(shape);
+	auto buffer = result.request();
+
+	double *ptr = (double*)buffer.ptr;
+
+	
+	for( int i=0;i<res_x;++i )
+		for( int j=0;j<res_y;++j )
+			for( int k=0;k<res_z;++k )
+			{
+				int ijk[3] = {i, j, k};
+				*ptr++ = ijk[component];
+			}
+
+
+	return result;
+}
+
 PYBIND11_PLUGIN(solver)
 {
 	py::module m("solver", "some inner loops in c++");
@@ -728,6 +918,9 @@ PYBIND11_PLUGIN(solver)
 	m.def("iterate_2d_diffusion", &iterate_2d_diffusion);
 	m.def("iterate_2d_p1", &iterate_2d_p1);
 	m.def("toSRGB", &toSRGB);
+	m.def("write_scalarfield", &write_scalarfield);
+	m.def("rasterize", &rasterize);
+	m.def("create_position_array", &create_position_array);
 
 	return m.ptr();
 }

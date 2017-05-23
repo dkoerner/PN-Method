@@ -11,5 +11,10 @@ endif ()
 # required since eigen has eigen3 intermediate directory in include
 include_directories( ${CMAKE_INSTALL_PREFIX}/include/eigen3 )
 
+# houio
+include_directories( ${CMAKE_INSTALL_PREFIX}/include/houio )
+
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/include )
 pybind11_add_module(solver src/main.cpp src/util/string.cpp src/util/dda2d.cpp)
+
+target_link_libraries( solver ${CMAKE_INSTALL_PREFIX}/lib/houio.lib )

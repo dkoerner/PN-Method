@@ -1053,33 +1053,7 @@ class Starmap3D(object):
 					#print(dzU)
 					for c in components_odd:
 						(grid_i, grid_j, grid_k) = self.sga.get_grid_index(c)
-						'''
-						print("updating odd component c={} grid={} {} {} shape={} {} {}".format(c, grid_i, grid_j, grid_k, u[c].shape[0], u[c].shape[1], u[c].shape[2]))
-						print("\tdepends on x-derivatives of components:")
-						for c2 in self.Ix[c]:
-							(grid2_i, grid2_j, grid2_k) = self.sga.get_grid_index(c2)
-							if not dxU[c2].shape == u[c].shape:
-								raise ValueError("update shapes dont match!")
 
-							print("\t\tc2={} grid={} {} {}".format(c2, grid2_i, grid2_j, grid2_k))
-							print("\t\tshape of x-derivative of c2={} {} {}".format(dxU[c2].shape[0], dxU[c2].shape[1], dxU[c2].shape[2]))
-						print("\tdepends on y-derivatives of components:")
-						for c2 in self.Iy[c]:
-							(grid2_i, grid2_j, grid2_k) = self.sga.get_grid_index(c2)
-							if not dyU[c2].shape == u[c].shape:
-								raise ValueError("update shapes dont match!")
-
-							print("\t\tc2={} grid={} {} {}".format(c2, grid2_i, grid2_j, grid2_k))
-							print("\t\tshape of y-derivative of c2={} {} {}".format(dyU[c2].shape[0], dyU[c2].shape[1], dyU[c2].shape[2]))
-						print("\tdepends on z-derivatives of components:")
-						for c2 in self.Iz[c]:
-							(grid2_i, grid2_j, grid2_k) = self.sga.get_grid_index(c2)
-							if not dzU[c2].shape == u[c].shape:
-								raise ValueError("update shapes dont match!")
-
-							print("\t\tc2={} grid={} {} {}".format(c2, grid2_i, grid2_j, grid2_k))
-							print("\t\tshape of z-derivative of c2={} {} {}".format(dzU[c2].shape[0], dzU[c2].shape[1], dzU[c2].shape[2]))
-						'''
 						W = np.zeros( u[c].shape )
 
 						# we now iterate over all valid(>0) elements in Mx
@@ -1123,31 +1097,6 @@ class Starmap3D(object):
 					for c in components_even:
 						(grid_i, grid_j, grid_k) = self.sga.get_grid_index(c)
 
-						'''
-						print("updating even component c={} grid={} {} {} shape={} {} {}".format(c, grid_i, grid_j, grid_k, u[c].shape[0], u[c].shape[1], u[c].shape[2]))
-						print("\tdepends on x-derivatives of components:")
-						for c2 in self.Ix[c]:
-							(grid2_i, grid2_j, grid2_k) = self.sga.get_grid_index(c2)
-							print("\t\tc2={} grid={} {} {}".format(c2, grid2_i, grid2_j, grid2_k))
-							if not dxU[c2].shape == u[c].shape:
-								raise ValueError("update shapes dont match!")
-							print("\t\tshape of x-derivative of c2={} {} {}".format(dxU[c2].shape[0], dxU[c2].shape[1], dxU[c2].shape[2]))
-						print("\tdepends on y-derivatives of components:")
-						for c2 in self.Iy[c]:
-							(grid2_i, grid2_j, grid2_k) = self.sga.get_grid_index(c2)
-							print("\t\tc2={} grid={} {} {}".format(c2, grid2_i, grid2_j, grid2_k))
-							if not dyU[c2].shape == u[c].shape:
-								raise ValueError("update shapes dont match!")
-							print("\t\tshape of y-derivative of c2={} {} {}".format(dyU[c2].shape[0], dyU[c2].shape[1], dyU[c2].shape[2]))
-						print("\tdepends on z-derivatives of components:")
-						for c2 in self.Iz[c]:
-							(grid2_i, grid2_j, grid2_k) = self.sga.get_grid_index(c2)
-							print("\t\tc2={} grid={} {} {}".format(c2, grid2_i, grid2_j, grid2_k))
-							if not dzU[c2].shape == u[c].shape:
-								raise ValueError("update shapes dont match!")
-							print("\t\tshape of z-derivative of c2={} {} {}".format(dzU[c2].shape[0], dzU[c2].shape[1], dzU[c2].shape[2]))
-						'''
-
 						W = np.zeros( u[c].shape )
 						# we now iterate over all valid(>0) elements in Mx
 						# these are the weights with which we will add the
@@ -1182,167 +1131,12 @@ class Starmap3D(object):
 
 
 if __name__ == "__main__":
-	pass
-	'''
-	order = 4
-	#starmap = Starmap3D(order)
-	#pass
-
-
-	starmap = Starmap2D(order, util.Domain2D(1.0, 2))
-
-	# define problem ---
-	def source( x, y ):
-		if x > 3.0 and x < 4.0 and y > 3.0 and y < 4.0:
-			return 1.0
-		return 0.0
-
-	def sigma_a( x, y ):
-		cx = np.ceil(x)
-		cy = np.ceil(y)
-		g = 0
-		if np.ceil((x+y)/2.0)*2.0 == (cx+cy) and cx > 1.0 and cx < 7.0 and cy > 1.0 and cy-2.0*np.abs(cx-4.0) < 4:
-			g = 1
-		return (1.0-g)*0 + g*10
-
-	def sigma_s( x, y ):
-		cx = np.ceil(x)
-		cy = np.ceil(y)
-		g = 0
-		if np.ceil((x+y)/2.0)*2.0 == (cx+cy) and cx > 1.0 and cx < 7.0 and cy > 1.0 and cy-2.0*np.abs(cx-4.0) < 4:
-			g = 1
-		return (1.0-g)*1 + g*0
-
-	dt = 1.0
-	numTimeSteps = 1
-	#starmap.run( dt, numTimeSteps, sigma_a, sigma_s, source )
-	'''
-
-	'''
-	for (grid_i, grid_j) in starmap.sga.get_grids():
-		(res_x, res_y) = starmap.sga.get_grid_resolution(grid_i, grid_j, starmap.domain.res)
-		numPoints = res_x*res_y
-		X = starmap.X[grid_i][grid_j]
-		Y = starmap.Y[grid_i][grid_j]
-
-		print("res={} {}".format(res_x, res_y))
-		print(X.shape)
-		print(Y.shape)
-
-		file = open("io/starmap2d_grid_{}_{}".format(grid_i, grid_j), "w")
-		file.write("{}\n".format(numPoints))
-
-		for j in range(res_y):
-			for i in range(res_x):
-				print("i={} j={} p={} {}".format(i, j, X[i, j], Y[i, j]))
-				file.write("{} {}\n".format(X[i, j], Y[i, j]))
-
-		file.close()
-	'''
-
-
-	# define problem ---
-	def source3d( x, y, z ):
-		if x > 3.0 and x < 4.0 and y > 3.0 and y < 4.0 and z > 3.0 and z < 4.0:
-			return 1.0
-		return 0.0
-
-	def sigma_a3d( x, y, z ):
-		cx = np.ceil(x)
-		cy = np.ceil(y)
-		cz = np.ceil(z)
-		g = 0
-		if (np.ceil((x+y)/2.0)*2.0 == (cx+cy) and 
-			np.ceil((z+y)/2.0)*2.0 == (cz+cy) and
-			cx > 1.0 and cx < 7.0 and
-			cz > 1.0 and cz < 7.0 and
-			cy > 1.0 and 
-			cy-2.0*np.abs(cx-4.0) < 4 and
-			cy-2.0*np.abs(cz-4.0) < 4):
-			g = 1
-		return (1.0-g)*0 + g*10
-
-	def sigma_s3d( x, y, z ):
-		cx = np.ceil(x)
-		cy = np.ceil(y)
-		cz = np.ceil(z)
-		g = 0
-		if (np.ceil((x+y)/2.0)*2.0 == (cx+cy) and 
-			np.ceil((z+y)/2.0)*2.0 == (cz+cy) and
-			cx > 1.0 and cx < 7.0 and
-			cz > 1.0 and cz < 7.0 and
-			cy > 1.0 and 
-			cy-2.0*np.abs(cx-4.0) < 4 and
-			cy-2.0*np.abs(cz-4.0) < 4):
-			g = 1
-		return (1.0-g)*1 + g*0
 
 	order = 4
 	starmap = Starmap3D(order, util.Domain3D(7.0, 100))
 	dt = 0.01609501
 	#numTimeSteps = 500
 	numTimeSteps = 2
-	u = starmap.run( dt, numTimeSteps, sigma_a3d, sigma_s3d, source3d )
-
-
-	'''
-	#grids = [(1,1,1)]
-	for (grid_i, grid_j, grid_k) in starmap.sga.get_grids():
-	#for (grid_i, grid_j, grid_k) in grids:
-		(res_x, res_y, res_z) = starmap.sga.get_grid_resolution(grid_i, grid_j, grid_k, starmap.domain.res)
-		numPoints = res_x*res_y*res_z
-		X = starmap.X[grid_i][grid_j][grid_k]
-		Y = starmap.Y[grid_i][grid_j][grid_k]
-		Z = starmap.Z[grid_i][grid_j][grid_k]
-
-		file = open("io/starmap3d_grid_{}_{}_{}".format(grid_i, grid_j, grid_k), "w")
-		file.write("{}\n".format(numPoints))
-
-		for k in range(res_z):
-			for j in range(res_y):
-				for i in range(res_x):
-					file.write("{} {} {}\n".format(X[i, j, k], Y[i, j, k], Z[i, j, k]))
-
-		file.close()
-	'''
-
-	'''
-	f = open("C:/projects/epfl/experiments/cpp/build-gpu-Desktop_Qt_5_5_0_MSVC2013_64bit-Release/experiment_starmap_fields/voxelpos.txt")
-	f_out = open("C:/projects/epfl/experiments/cpp/build-gpu-Desktop_Qt_5_5_0_MSVC2013_64bit-Release/experiment_starmap_fields/check", "w")
-	res = 100
-	for i in range(res):
-		for j in range(res):
-			for k in range(res):
-				p = [float(v) for v in f.readline().rstrip().split()]
-				x = p[0]
-				y = p[1]
-				z = p[2]
-				sa = sigma_a3d(x, y, z)
-				ss = sigma_s3d(x, y, z)
-				q = source3d(x, y, z)
-				f_out.write("{} {} {}\n".format(sa, ss, q))
-
-
-	f.close()
-	f_out.close()
-	'''
-	#res_z = 250
-	#res_y = 250
-	#res_x = 250
-	#t = [[[ k for k in range(res_z)] for j in range(res_y)] for i in range(res_x)]
-	#t = np.array(t)
-	#print(t.shape)
-	#print(solver.create_position_array(res_x, res_y, res_z, 2).shape)
-
-	'''
-	t = solver.rasterize( "sigma_a", starmap.X[0][0][0], starmap.Y[0][0][0], starmap.Z[0][0][0] )
-	solver.write_scalarfield( "io/check_sigma_a.bgeo", t )
-
-	t = solver.rasterize( "sigma_s", starmap.X[0][0][0], starmap.Y[0][0][0], starmap.Z[0][0][0] )
-	solver.write_scalarfield( "io/check_sigma_s.bgeo", t )
-
-	t = solver.rasterize( "q", starmap.X[0][0][0], starmap.Y[0][0][0], starmap.Z[0][0][0] )
-	solver.write_scalarfield( "io/check_q.bgeo", t )
-	'''
+	u = starmap.run( dt, numTimeSteps )
 
 

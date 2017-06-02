@@ -2,6 +2,7 @@ import numpy as np
 import util
 import solver
 import time
+import shtools
 
 
 
@@ -1132,11 +1133,13 @@ class Starmap3D(object):
 
 if __name__ == "__main__":
 
-	order = 4
-	starmap = Starmap3D(order, util.Domain3D(7.0, 100))
-	dt = 0.01609501
+	#order = 4
+	#starmap = Starmap3D(order, util.Domain3D(7.0, 100))
+	#dt = 0.01609501
 	#numTimeSteps = 500
-	numTimeSteps = 2
-	u = starmap.run( dt, numTimeSteps )
+	#numTimeSteps = 2
+	#u = starmap.run( dt, numTimeSteps )
+
+	print(shtools.numSHCoeffs(4))
 
 

@@ -57,6 +57,7 @@ namespace volumes
 	Volume::Ptr C60();
 	Volume::Ptr nebulae();
 
+	PhaseFunction::Ptr phase_isotropic();
 
 	/*
 	Scene C60Detail();

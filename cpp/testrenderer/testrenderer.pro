@@ -10,17 +10,21 @@ SOURCES += \
     src/util/string.cpp \
     src/util/threadpool.cpp \
     src/util/voxelgrid.cpp \
-    src/Camera.cpp \
-    src/volume.cpp \
     src/main.cpp \
     src/util/dda3d.cpp \
-    src/light.cpp \
     src/scene.cpp \
-    src/integrator.cpp \
-    src/wedge.cpp \
     src/util/cas.cpp \
     src/util/moexp.cpp \
-    src/shcache.cpp
+    src/integrators/volpt.cpp \
+    src/lights/directional.cpp \
+    src/lights/point.cpp \
+    src/util/wedge.cpp \
+    src/volumes/fieldvolume.cpp \
+    src/volumes/phase_hg.cpp \
+    src/volumes/phase_iso.cpp \
+    src/volumes/phase_sggx.cpp \
+    src/integrators/shcache.cpp \
+    src/camera.cpp
 
 
 include(deployment.pri)
@@ -123,5 +127,4 @@ HEADERS += \
     include/cache.h \
     include/util/wedge.h \
     include/util/cas.h \
-    include/util/moexp.h \
-    include/shcache.h
+    include/util/moexp.h

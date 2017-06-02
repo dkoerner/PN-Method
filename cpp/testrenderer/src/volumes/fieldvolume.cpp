@@ -2,30 +2,9 @@
 
 
 
-
-
-
-
-
-
 namespace volumes
 {
-	struct Isotropic : public PhaseFunction
-	{
-		typedef std::shared_ptr<Isotropic> Ptr;
 
-		virtual Color3f sample( const V3d& wi, V3d& wo, double& pdf, RNGd& rng ) const override
-		{
-			wo = sampleSphere<double>(rng);
-			pdf = INV_FOURPI;
-			return Color3f(1.0); // eval/pdf = 1.0
-		}
-
-		virtual Color3f eval( const V3d& wi, const V3d& wo )const override
-		{
-			return Color3f(INV_FOURPI, INV_FOURPI, INV_FOURPI);
-		}
-	};
 
 	struct FieldVolume : public Volume
 	{
@@ -43,7 +22,7 @@ namespace volumes
 
 			albedo_field = albedo_transformed = std::make_shared<field::TransformField<V3d>>( Field<V3d>::Ptr(), Transformd() );
 			extinction_field = extinction_transformed = std::make_shared<field::TransformField<V3d>>( Field<V3d>::Ptr(), Transformd() );
-			phase_function = std::make_shared<Isotropic>();
+			phase_function = phase_isotropic();
 		}
 
 		// Volume overrides ----
@@ -214,129 +193,7 @@ namespace volumes
 		return volume;
 	}
 
-/*
-	Scene rbf()
-	{
-		Scene ds;
-		ds.id = "rbf";
-
-		RBFSField::Ptr field_rbf = std::make_shared<RBFSField>();
-		// add rbf
-		P3d center(0.5, 0.5, 0.5);
-		V3d scale(0.15, 0.15, 0.03);
-		V3d rotation(0.989496, 0.52273, 1.1019); // angle axis
-		double weight = 1.0;
-		field_rbf->m_rbfs.push_back( RBFSField::RBF( center, scale, rotation, weight ) );
-
-		ds.volume = std::make_shared<Volume>();
-		ds.volume->setAlbedo( field::constant(V3d(1.0, 1.0, 1.0)) );
-		ds.volume->setExtinction( field::scalar_to_vector<double, double>(field_rbf) );
-
-		ds.bound = ds.volume->bboxWS;
-
-		return ds;
-	}
-
-
-	Scene engine()
-	{
-		Scene ds;
-
-		ds.id = "engine";
-		std::string basePath = "c:/projects/visus/data";
-
-		ds.volume = std::make_shared<Volume>();
-		double stepSize;
-		Transformd localToWorld;
-		Fieldf::Ptr density = field::bgeo<float>(basePath + "/datasets/engine.bgeo", &localToWorld, &stepSize);
-		ds.volume->setLocalToWorld(localToWorld);
-		ds.volume->setStepsize(stepSize);
-
-		// setup transfer function from Steffens tfa files ----
-		field::TransferFunctionField3<double, float>::Ptr tf;
-		//tf = field::transferFunction<double, float>( density, basePath + "/datasets/engine.tf.extinction", 1.0);
-
-		//
-		{
-			double scale = 1.0;
-			tf = std::make_shared<field::TransferFunctionField3<double, float>>(density);
-
-			// load samples
-			std::vector<double> samples;
-			int numRows, numCols;
-			readSamples2<double>( basePath + "/datasets/engine.tfa", samples, numRows, numCols );
-			//std::cout << "transferFunction: numRows=" << numRows << " numCols=" << numCols << std::endl;
-
-			float min, max;
-			density->getValueRange(min, max);
-
-			// add mapping
-			tf->m_mapping.clear();
-			for( int j=0;j<numRows;++j )
-			{
-				double t = double(j)/double(numRows-1);
-				double in =(max-min)*t + min;
-				//double r = samples[j*numCols+0];
-				//double g = samples[j*numCols+1];
-				//double b = samples[j*numCols+2];
-				double a = samples[j*numCols+3]/255.0;
-				TVector<double, 3>  temp(a*scale,
-									a*scale,
-									a*scale);
-				//std::cout << "transferFunction: in=" << in << "temp=" << temp.toString() << std::endl;
-
-				//std::cout << "tf: " << in << " " << temp.toString() << std::endl;
-
-				tf->m_mapping.addSample(in, temp);
-			}
-		}
-
-		// use pure density
-		//ds.volume->setExtinction( field::scalar_to_vector<double, float>( density ) );
-		// use transfer function
-		ds.volume->setExtinction( tf );
-		// fixed albedo
-		//volume.setAlbedo( field::constant(V3d(0.8)) );
-		// derive albedo from transferfunction on extinction
-		ds.volume->setAlbedo( field::transferFunction<double, float>( density, basePath + "/datasets/chameleon.tf.albedo") );
-
-		//ds.bound = ds.volume->bboxWS;
-		ds.bound = Box3d( P3d(14.5, 14.5, -9), P3d(227.5, 227.5, 119) );
-
-		return ds;
-	}
 
 
 
-	Scene chameleon()
-	{
-		Scene ds;
-		ds.id = "chameleon";
-		std::string basePath = "c:/projects/visus/data";
-		ds.volume = std::make_shared<Volume>();
-		double stepSize;
-		Transformd localToWorld;
-		Fieldf::Ptr density = field::bgeo<float>(basePath + "/datasets/chameleon_rotated.bgeo", &localToWorld, &stepSize);
-		ds.volume->setLocalToWorld(localToWorld);
-		ds.volume->setStepsize(stepSize);
-
-		// setup transfer function from Steffens tfa files ----
-		field::TransferFunctionField3<double, float>::Ptr tf;
-		//tf = field::transferFunction<double, float>( density, basePath + "/datasets/chameleon.tf.extinction", 100.0);
-
-
-		// use pure density
-		//volume.setExtinction( field::scalarToVector<double, float>( density ) );
-		// use transfer function
-		ds.volume->setExtinction( tf );
-		// fixed albedo
-		//volume.setAlbedo( field::constant(V3d(0.8)) );
-		// derive albedo from transferfunction on extinction
-		ds.volume->setAlbedo( field::transferFunction<double, float>( density, basePath + "/datasets/chameleon.tf.albedo") );
-
-		ds.bound = ds.volume->bboxWS;
-
-		return ds;
-	}
-	*/
-}
+} // namespace volumes

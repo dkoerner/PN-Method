@@ -193,40 +193,43 @@ struct MonteCarloTaskInfo
 };
 
 
-template<typename TaskInfo>
+template<typename TaskInfo, typename GlobalInfo>
 struct GenericTask : Task
 {
-	typedef std::function<void(TaskInfo&)> RunMethod;
+	typedef std::function<void(TaskInfo&, const GlobalInfo*)> RunMethod;
 
-	GenericTask( const TaskInfo& info, RunMethod _run )
+	GenericTask( const TaskInfo& ti, const GlobalInfo* gi, RunMethod _run )
 		: Task(),
-		  m_info(info),
+		  m_ti(ti),
+		  m_gi(gi),
 		  m_run(_run)
 	{
 	}
+
 	virtual ~GenericTask()
 	{
 	}
 
 	virtual void run()
 	{
-		m_run( m_info );
+		m_run( m_ti, m_gi );
 	}
 
 
-	TaskInfo m_info;
+	TaskInfo m_ti;
+	const GlobalInfo* m_gi;
 	RunMethod m_run;
 };
 
-template<typename TaskInfo>
-void runGenericTasks( typename GenericTask<TaskInfo>::RunMethod run, Terminator& term, int numThreads)
+template<typename TaskInfo, typename GlobalInfo>
+void runGenericTasks( typename GenericTask<TaskInfo, GlobalInfo>::RunMethod run, const GlobalInfo* gi, Terminator& term, int numThreads)
 {
 	std::cout << "runTasks" << std::endl;
 	//int numThreads = ThreadPool::getNumSystemCores();
 
-	std::vector<GenericTask<TaskInfo>*> tasks;
+	std::vector<GenericTask<TaskInfo, GlobalInfo>*> tasks;
 	for (int i = 0; i < numThreads; i++)
-		tasks.push_back(new GenericTask<TaskInfo>(TaskInfo::create(i, numThreads), run));
+		tasks.push_back(new GenericTask<TaskInfo, GlobalInfo>(TaskInfo::create(i, numThreads), gi, run));
 
 	for( term.reset();term.keepRunning();term.advance() )
 	{

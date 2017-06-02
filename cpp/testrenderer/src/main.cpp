@@ -11,26 +11,43 @@
 
 
 
-#include <shcache.h>
-
-
-
-
-
-void render_volume( RenderTaskInfo& ti )
+struct GlobalRenderInfo
 {
-	int width = ti.g.scene->camera->getResolutionX();
-	int height = ti.g.scene->camera->getResolutionY();
+	GlobalRenderInfo():
+		debug_pixel(-1, -1)
+	{
 
+	}
+
+	// always used ---
+	const Scene* scene;
+
+	// used for image rendering ---
+	Bitmap* image;
+	Bitmap* image_transmittance;
+	P2i debug_pixel;
+	Box2i crop_window;
+
+	// used for fluence rendering ---
+	field::VoxelGridField<double>::Ptr fluence_grid;
+	Transformd localToWorld;
+};
+
+
+
+void render_volume( MonteCarloTaskInfo& ti, const GlobalRenderInfo* gi )
+{
+	int width = gi->scene->camera->getResolutionX();
+	int height = gi->scene->camera->getResolutionY();
 
 	// note that y goes from bottom=0 to top=max
 
-	for (int scanline = ti.taskid; scanline < ti.g.crop_window.max.y(); scanline += ti.numTasks)
+	for (int scanline = ti.taskid; scanline < gi->crop_window.max.y(); scanline += ti.numTasks)
 	{
-		if( scanline < ti.g.crop_window.min.y() )
+		if( scanline < gi->crop_window.min.y() )
 			continue;
 
-		for (int x = ti.g.crop_window.min.x(); x < ti.g.crop_window.max.x(); ++x)
+		for (int x = gi->crop_window.min.x(); x < gi->crop_window.max.x(); ++x)
 		{
 			int y = height-1-scanline;
 			int index = y*width + x;
@@ -40,17 +57,17 @@ void render_volume( RenderTaskInfo& ti )
 
 			bool debug = false;
 
-			if( ti.g.debug_pixel.x()>0 )
+			if( gi->debug_pixel.x()>0 )
 			{
-				debug = (x == ti.g.debug_pixel.x()) &&
-						(y == ti.g.debug_pixel.y());
+				debug = (x == gi->debug_pixel.x()) &&
+						(y == gi->debug_pixel.y());
 
 				if(!debug)
 					continue;
 			}
 
 			Ray3d rayWS;
-			ti.g.scene->camera->sampleRay( P2d(x+0.5, y+0.5), rayWS, debug );
+			gi->scene->camera->sampleRay( P2d(x+0.5, y+0.5), rayWS, debug );
 			//ti.g.scene->camera->sampleRay( P2d(x+ti.rng.next1D(), y+ti.rng.next1D()), rayWS );
 
 			// do raycast ---
@@ -60,7 +77,8 @@ void render_volume( RenderTaskInfo& ti )
 				rq.ray = rayWS;
 				rq.pixel = V2i(x, y);
 				rq.debug = debug;
-				f = ti.g.scene->integrator->Li(ti.g.scene, rq, ti.rng);
+				f = gi->scene->integrator->Li(gi->scene, rq, ti.rng);
+
 				T = rq.transmittance;
 			}
 			catch (std::exception& e)
@@ -76,11 +94,11 @@ void render_volume( RenderTaskInfo& ti )
 				std::cout << "PathTracingTask::run: got NaN value @ index=" << index << " sample=" << ti.samples << std::endl;
 
 			// update pixel color
-			Color3f& c = ti.g.image->coeffRef(index);
+			Color3f& c = gi->image->coeffRef(index);
 			c += (f - c)/float(ti.samples+1);
 
 			// update transmittance
-			Color3f& c_transmittance = ti.g.image_transmittance->coeffRef(index);
+			Color3f& c_transmittance = gi->image_transmittance->coeffRef(index);
 			c_transmittance += (T - c_transmittance)/float(ti.samples+1);
 
 			if(debug)
@@ -188,7 +206,7 @@ int main()
 
 
 	// load sh cache -----------------------
-	SHCache::Ptr shcache = std::make_shared<SHCache>("nebulae200.shcache");
+	//SHCache::Ptr shcache = std::make_shared<SHCache>("nebulae200.shcache");
 
 	// verification
 	/*
@@ -269,15 +287,15 @@ int main()
 
 
 	// RENDERING -----------------------------------
-	for( int i=0;i<=30;++i )
+	//for( int i=0;i<=30;++i )
 	{
 		image_color.fill(Color3f(0.0f, 0.0f, 0.0f));
 		image_transmittance.fill(Color3f(0.0f, 0.0f, 0.0f));
-		shcache->m_evaluationOrder = i;
+		//shcache->m_evaluationOrder = i;
 
 		//Integrator::Ptr integrator = integrators::raymarcher(0.005);
-		//Integrator::Ptr integrator = integrators::volume_path_tracer(100, false);
-		Integrator::Ptr integrator = integrators::volume_path_tracer_cached(shcache);
+		Integrator::Ptr integrator = integrators::volume_path_tracer(100);
+		//Integrator::Ptr integrator = integrators::volume_path_tracer_cached(shcache);
 		//Integrator::Ptr integrator = integrators::cache_raymarcher(0.05, fluencecache_gpu);
 		//Bitmap::Ptr pixel_estimates = readImage(outpath + "/nebulae_pixel_estimate.exr");
 		//Integrator::Ptr integrator = integrators::adrrs_volume_path_tracer(pixel_estimates, fluence_field);
@@ -286,10 +304,11 @@ int main()
 		int numSamples = 10;
 
 		// prepare render info ---
-		RenderTaskInfo::g.scene = &scene;
-		RenderTaskInfo::g.image = &image_color;
-		RenderTaskInfo::g.image_transmittance = &image_transmittance;
-		RenderTaskInfo::g.crop_window = Box2i( V2i(0,0), res );
+		GlobalRenderInfo gi;
+		gi.scene = &scene;
+		gi.image = &image_color;
+		gi.image_transmittance = &image_transmittance;
+		gi.crop_window = Box2i( V2i(0,0), res );
 		//RenderTaskInfo::g.debug_pixel = P2i(318, 209);
 		//RenderTaskInfo::g.debug_pixel = P2i(256, 256);
 		//RenderTaskInfo::g.debug_pixel = P2i(340, 340);
@@ -299,7 +318,7 @@ int main()
 		// execute multithreaded render ---
 		Terminator terminator(numSamples);
 		std::cout << "rendering image..."<< std::endl;std::flush(std::cout);
-		runGenericTasks<RenderTaskInfo>( render_volume, terminator, ThreadPool::getNumSystemCores() );
+		runGenericTasks<MonteCarloTaskInfo, GlobalRenderInfo>( render_volume, &gi, terminator, ThreadPool::getNumSystemCores() );
 
 
 		// save results ---

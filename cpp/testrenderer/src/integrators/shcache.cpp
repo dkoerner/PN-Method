@@ -314,3 +314,81 @@ Color3f SHCache::eval(const P3d& pWS, const V3d &d, bool debug)const
 	return gg;
 
 }
+
+
+
+
+
+
+
+
+
+
+// load sh cache -----------------------
+//SHCache::Ptr shcache = std::make_shared<SHCache>("nebulae200.shcache");
+
+// verification
+/*
+for( int l=0;l<=shcache.m_order;++l )
+{
+	std::string filename = "sh_reconstruction_alt_$0.bgeo";
+	filename = replace(filename, "$0", toString(l));
+
+	Color3f* coeffs = shcache.getCoefficients(0);
+	rasterizeSphericalFunctionSphere(filename, [&](double theta, double phi)->Color3f
+	{
+		return moexp::Y_real_sum<Color3f>(l, coeffs, theta, phi);
+	}, 8.0);
+}
+*/
+
+
+// pn analysis and debugging ---
+/*
+{
+	Integrator::Ptr integrator = integrators::dummy();
+	scene.integrator = integrator.get();
+
+	PNCache cache;
+	cache.m_override = true;
+	cache.m_doZeroScattering = false;
+	int numMoments = 4;
+	int numSamples = 1000000;
+	int res = 1;
+	cache.generate( outpath + "/analysis", &scene, numMoments, numSamples, res );
+
+
+	Wedge wedge;
+	std::vector<int> moment_values = {0, 1, 2, 3, 4};
+	wedge.addParm("moment", moment_values);
+	wedge.build();
+
+	std::cout << "4pi=" << 4.0*M_PI << std::endl;
+	std::cout << "4pi/3=" << 4.0*M_PI/3.0 << std::endl;
+
+	std::vector<Wedge::Iteration> iterations = wedge.iterations();
+	for( auto it : iterations )
+	{
+		int moment_index = it.getInt("moment");
+		std::cout << "moment=" << moment_index << std::endl;
+
+		tensor::Tensor<double> moment_tensor = cache.getMoment( 0, 0, 0, moment_index );
+
+		for(auto component = moment_tensor.begin(), end=moment_tensor.end(); component!=end;++component)
+		{
+			std::cout << "\t" << component.index_str() << "=" << component.value() << std::endl;
+
+//				houio::Geometry::Ptr geo = houio::Geometry::createSphere(50, 50, 1.0);
+//				houio::Attribute::Ptr pattr = geo->getAttr("P");
+//				int numPoints = pattr->numElements();
+//				for(int i=0;i<numPoints;++i)
+//				{
+//					houio::math::V3f d = pattr->get<houio::math::V3f>(i).normalized();
+//					d *= std::abs(component.weight(V3d(d.x, d.y, d.z)));
+//					pattr->set<houio::math::V3f>(i, d);
+//				}
+//				houio::HouGeoIO::xport(it.expand_value( outpath+"/analysis_$0_" + component.index_str() + ".bgeo"), geo);
+		}
+	}
+}
+*/

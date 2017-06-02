@@ -22,7 +22,8 @@ namespace volumes
 
 			albedo_field = albedo_transformed = std::make_shared<field::TransformField<V3d>>( Field<V3d>::Ptr(), Transformd() );
 			extinction_field = extinction_transformed = std::make_shared<field::TransformField<V3d>>( Field<V3d>::Ptr(), Transformd() );
-			phase_function = phase_isotropic();
+			//phase_function = phase_isotropic();
+			phase_function = phase_sggx_specular();
 		}
 
 		// Volume overrides ----
@@ -38,9 +39,14 @@ namespace volumes
 			return Color3f( value.x(), value.y(), value.z() );
 		}
 
-		virtual const PhaseFunction* getPhaseFunction()const
+		virtual double evalPhase( const P3d& pWS, const V3d& wi, const V3d& wo )const override
 		{
-			return phase_function.get();
+			return phase_function->eval(wi, wo);
+		}
+
+		virtual double samplePhase( const P3d& pWS, const V3d& wi, V3d& wo, double& pdf, RNGd& rng )const override
+		{
+			return phase_function->sample(wi, wo, pdf, rng);
 		}
 
 		virtual Box3d getBound()const override

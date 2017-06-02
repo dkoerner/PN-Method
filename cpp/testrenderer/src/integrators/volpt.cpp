@@ -143,8 +143,8 @@ namespace integrators
 			{
 				V3d wi = current_direction;
 				double pdf;
-				Color3f phase_over_pdf = scene->volume->getPhaseFunction()->sample(wi, current_direction, pdf, rng);
-				throughput_over_pdf = throughput_over_pdf.cwiseProduct(phase_over_pdf).cwiseProduct(current_vertex.m_sigma_s);
+				double phase_over_pdf = scene->volume->samplePhase(current_vertex.getPosition(), wi, current_direction, pdf, rng);
+				throughput_over_pdf = phase_over_pdf*throughput_over_pdf.cwiseProduct(current_vertex.m_sigma_s);
 				return true;
 			}else
 			{
@@ -163,7 +163,7 @@ namespace integrators
 			Color3f attenuated_light_over_pdf = scene->sample_attenuated_directlight( ls, rng );
 
 			// apply scattering ---
-			Color3f phase = scene->volume->getPhaseFunction()->eval( -ls.d, -current_direction ).cwiseProduct(current_vertex.m_sigma_s);
+			Color3f phase = scene->volume->evalPhase( current_vertex.getPosition(), -ls.d, -current_direction )*current_vertex.m_sigma_s;
 
 			return attenuated_light_over_pdf.cwiseProduct(phase).cwiseProduct(throughput_over_pdf);
 		}

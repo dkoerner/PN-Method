@@ -59,6 +59,7 @@ struct OrthographicCamera : public Camera
 		// build transform from camera to raster space
 		Eigen::Affine3d cameraToRaster = Eigen::Affine3d::Identity();
 
+
 		// move negative near distance (bring points on the near plane into the xy plane)
 		cameraToRaster = Eigen::Translation3d(V3d(0.0, 0.0, -near)) * cameraToRaster;
 		// scale near-far range into 0-1 range
@@ -99,31 +100,38 @@ struct OrthographicCamera : public Camera
 
 struct PerspectiveCamera : public Camera
 {
+	typedef std::shared_ptr<PerspectiveCamera> Ptr;
+
 	PerspectiveCamera( int xres=1, int yres=1, double hfov=30.0, double near=1e-4f, double far=1000.0):
 		Camera(xres, yres, near, far),
-		m_hfov(hfov)
+		m_hfov(hfov),
+		m_z_direction(-1.0)
 	{
 		double aspect = double(xres)/double(yres);
 		m_apertureRadius = 0.0;
 
-		// Project vectors in camera space onto a plane at z=1:
-		//
-		//  xProj = cot * x / z
-		//  yProj = cot * y / z
-		//  zProj = (far * (z - near)) / (z * (far-near))
-		//  The cotangent factor ensures that the field of view is
-		//  mapped to the interval [-1, 1].
-		//
-		double recip = 1.0f / (m_farClip - m_nearClip),
-			  cot = 1.0f / std::tan(degToRad(m_hfov / 2.0f));
-		Eigen::Matrix4d perspective;
-		perspective <<
+		// this matrix transforms a homogeneous point p=[x, y, z, 1] from camera space
+		// into clip space, such that points in range [nearClip, farClip] are mapped to [-1, 1]
+		// (after normalization of homogeneous coordinates)
+		// in eigen this is done by: P3d p_clip = (m_clipToCamera * p_camera.colwise().homogeneous()).colwise().hnormalized();
+		// NB: that in camera space near->far is in -z direction while in clipspace near->far is in +z direction
+		// I found this video helpfull: https://www.youtube.com/watch?v=dul0mui292Q ()
+		double cot =  1.0f / std::tan(degToRad(m_hfov / 2.0f));
+		Eigen::Matrix4d cameraToClip;
+		cameraToClip <<
 			cot, 0,   0,   0,
-			0, -cot,   0,   0, // the minus sign is because image plane is flipped vertically
-			0,   0,   m_farClip * recip, -m_nearClip * m_farClip * recip,
-			0,   0,   1,   0;
-		m_rasterToCamera = Transformd( Eigen::DiagonalMatrix<double, 3>(Vector3d(-0.5, -0.5 * aspect, 1.0))*
-							Eigen::Translation<double, 3>(-1.0, -1.0/aspect, 0.0)*perspective ).inverse();
+			0, cot,   0,   0,
+			0,   0,   m_z_direction*-(m_nearClip+m_farClip)/(m_nearClip-m_farClip), m_z_direction*-2.0*m_nearClip*m_farClip/(m_nearClip-m_farClip),
+			0,   0,   m_z_direction*1,   0;
+
+
+		Transformd cameraToRaster = Transformd(
+					Eigen::DiagonalMatrix<double, 3>(Vector3d(xres*0.5, yres*0.5 * aspect, 1.0))* // 3. scale clipspace, such that x and y coordinates range [0, 1] and further [0, xres/yres]
+					Eigen::Translation<double, 3>(1.0, 1.0/aspect, 0.0)*                          // 2. move clipspace (where x and y coordinates go from [-1, 1]), such that x and y coordinates range [0, 2]
+					cameraToClip                                                                // 1. project from camera space into clip-space (see above)
+					);
+
+		m_rasterToCamera = cameraToRaster.inverse();
 	}
 
 
@@ -136,14 +144,13 @@ struct PerspectiveCamera : public Camera
 
 		/* Compute the corresponding position on the
 		   near plane (in local camera space) */
-		P3d nearP = m_rasterToCamera * P3d(
-			rasterP.x() * m_invResolution.x(),
-			rasterP.y() * m_invResolution.y(), 0.0f);
+		P3d nearP = m_rasterToCamera * P3d( rasterP.x(), rasterP.y(), 0.0f);
+
 
 		P3d apertureP(tmp.x(), tmp.y(), 0.0f);
 
 		/* Sampled position on the focal plane */
-		P3d focusP = nearP * (m_focusDistance / nearP.z());
+		P3d focusP = nearP * (m_z_direction*m_focusDistance / nearP.z());
 
 		/* Aperture position */
 		/* Turn these into a normalized ray direction, and
@@ -153,14 +160,15 @@ struct PerspectiveCamera : public Camera
 
 		ray.o = m_cameraToWorld * apertureP;
 		ray.d = m_cameraToWorld * d;
-		ray.mint = m_nearClip * invZ;
-		ray.maxt = m_farClip * invZ;
+		ray.mint = m_z_direction*m_nearClip * invZ;
+		ray.maxt = m_z_direction*m_farClip * invZ;
 		ray.update();
 	}
 
 
 	double m_hfov;
 	double m_apertureRadius;
+	double m_z_direction; // this is -1 if camera points into negative z, or 1 if camera points into positive z direction
 
 };
 

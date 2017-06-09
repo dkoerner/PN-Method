@@ -7,7 +7,7 @@
 namespace integrators
 {
 	// returns sigma_t at sampled position (is invalid when we exceeded maxt)
-	double delta_tracking( const Scene* scene, const Ray3d& ray, double maxt, int component, RNGd& rng, Color3f& sigma_t )
+	double delta_tracking( const RenderScene* scene, const Ray3d& ray, double maxt, int component, RNGd& rng, Color3f& sigma_t, bool debug = false )
 	{
 		double sigma_t_max = scene->volume->getMaxExtinction()[component];
 
@@ -20,7 +20,7 @@ namespace integrators
 			if(t>= maxt)
 				break;
 
-			sigma_t = scene->volume->evalExtinction(ray(t));
+			sigma_t = scene->volume->evalExtinction(ray(t), debug);
 
 			// russian roulette
 			if(rng.next1D()<sigma_t[component]/sigma_t_max)
@@ -81,7 +81,7 @@ namespace integrators
 		Color3f throughput_over_pdf;
 		Intersection its;
 		int depth;
-		const Scene* scene;
+		const RenderScene* scene;
 		bool debug;
 
 		TraceInfo():
@@ -103,7 +103,8 @@ namespace integrators
 		{
 			Ray3d ray( current_vertex.getPosition(), current_direction );
 			Color3f sigma_t;
-			double distance = delta_tracking( scene, ray, its.t, 0, rng, sigma_t);
+			double distance = delta_tracking( scene, ray, its.t, 0, rng, sigma_t, debug);
+
 			if( distance < its.t )
 			{
 				// volume scattering event ---
@@ -117,7 +118,7 @@ namespace integrators
 
 				if( debug )
 				{
-					std::cout << "got scattering event!\n";
+					std::cout << "TraceInfo::propagate: got scattering event!\n";
 				}
 			}else
 			{
@@ -148,6 +149,10 @@ namespace integrators
 				return true;
 			}else
 			{
+				if( debug )
+				{
+					std::cout << "TraceInfo::scatter: surface sampling not implemented!\n";
+				}
 				throw std::runtime_error("surface sampling not implemented");
 			}
 			return false;
@@ -160,7 +165,7 @@ namespace integrators
 			// sample light source and transmittance ---
 			LightSample ls;
 			ls.refP = current_vertex.getPosition();
-			Color3f attenuated_light_over_pdf = scene->sample_attenuated_directlight( ls, rng );
+			Color3f attenuated_light_over_pdf = scene->sample_attenuated_directlight( ls, rng, debug );
 
 			// apply scattering ---
 			Color3f phase = scene->volume->evalPhase( current_vertex.getPosition(), -ls.d, -current_direction )*current_vertex.m_sigma_s;
@@ -192,6 +197,9 @@ namespace integrators
 
 			while( ti.depth < m_maxDepth )
 			{
+				if(ti.debug)
+					std::cout <<"VolumePathTracer::trace depth=" << ti.depth << std::endl;
+
 				// get next intersection ---
 				if( !ti.intersect() )
 					// intersection test failed
@@ -221,7 +229,7 @@ namespace integrators
 			return L;
 		}
 
-		virtual Color3f Li( const Scene* scene, RadianceQuery& rq, RNGd& rng )const override
+		virtual Color3f Li( const RenderScene* scene, RadianceQuery& rq, RNGd& rng )const override
 		{
 			rq.transmittance = Color3f(1.0f, 1.0f, 1.0f);
 
@@ -253,7 +261,7 @@ namespace integrators
 			return Color3f(0.0, 0.0, 0.0);
 		}
 
-		virtual Color3f sample_transmittance( const Scene* scene, const Ray3d& ray, double maxt, RNGd& rng )const override
+		virtual Color3f sample_transmittance( const RenderScene* scene, const Ray3d& ray, double maxt, RNGd& rng )const override
 		{
 			Color3f sigma_t;
 			double distance = delta_tracking( scene, ray, maxt, 0, rng, sigma_t );

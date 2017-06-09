@@ -2,6 +2,7 @@
 
 #include <math/common.h>
 #include <math/ray.h>
+#include <math/bbox.h>
 
 
 /**
@@ -83,6 +84,19 @@ public:
 			r.mint, r.maxt
 		);
 	}
+
+	static Transform<T> from_aabb( const TBoundingBox<Point>& bound_dest, const TBoundingBox<Point>& bound_src = TBoundingBox<Point>(Point(0.0), Point(1.0)) )
+	{
+		V3d extent_src = bound_src.getExtents();
+		V3d extent_dest = bound_dest.getExtents();
+
+		Eigen::Transform<T,3,Eigen::Affine> test =
+				Eigen::Translation<double, 3>(bound_dest.min-bound_src.min)*
+				Eigen::DiagonalMatrix<double, 3>(extent_dest.cwiseQuotient(extent_src));
+
+		return Transformd(test);
+	}
+
 
 
 private:

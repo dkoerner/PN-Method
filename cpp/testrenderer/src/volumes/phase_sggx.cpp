@@ -4,11 +4,7 @@
 namespace volumes
 {
 
-	struct SGGXGrid
-	{
-		// store internally using 6 bytes (as explained in the papeer)
-		// sample(i,j,k) -> gives 6 S_xx, parameters...
-	};
+
 
 	struct SGGX3D
 	{
@@ -52,6 +48,16 @@ namespace volumes
 			unitSphereToEllipsoid = Eigen::Affine3d(m)*Eigen::Scaling(V3d(sx, sy, sz));
 			m_unitSphereToEllipsoid = Transformd(unitSphereToEllipsoid);
 			*/
+		}
+
+		SGGX3D( double S_xx, double S_xy, double S_xz, double S_yy, double S_yz, double S_zz ):
+			S_xx(S_xx),
+			S_xy(S_xy),
+			S_xz(S_xz),
+			S_yy(S_yy),
+			S_yz(S_yz),
+			S_zz(S_zz)
+		{
 		}
 
 		double D( const V3d& wm )const
@@ -125,6 +131,45 @@ namespace volumes
 			return wm_kji.x() * wk + wm_kji.y() * wj + wm_kji.z() * wi;
 		}
 
+		double sample_spec( const V3d& wi, V3d& wo, double& pdf, RNGd& rng ) const
+		{
+			// sample VNDF
+			const V3d wm = sample_VNDF(wi, rng.next1D(), rng.next1D());
+			// specular reflection
+			wo = -wi + 2.0f * wm * dot(wm, wi);
+			pdf = eval_spec(wi, wo);
+			return 1.0; // eval==pdf
+		}
+
+		double eval_spec( const V3d& wi, const V3d& wo )const
+		{
+			V3d wh = wi+wo;
+
+			// normalize wh and detect zero length
+			double length = wh.norm();
+
+			if( length != 0.0 )
+				wh = V3d(wh.x()/length, wh.y()/length, wh.z()/length);
+			else
+				return 0.0;
+			return 0.25*D(wh)/sigma(wi);
+		}
+
+		SGGX3D operator*( const double & scalar )const
+		{
+			return SGGX3D(S_xx*scalar, S_xy*scalar, S_xz*scalar, S_yy*scalar, S_yz*scalar, S_zz*scalar );
+		}
+
+		SGGX3D operator+( const SGGX3D& other)const
+		{
+			return SGGX3D(S_xx+other.S_xx,
+						  S_xy+other.S_xy,
+						  S_xz+other.S_xz,
+						  S_yy+other.S_yy,
+						  S_yz+other.S_yz,
+						  S_zz+other.S_zz );
+		}
+
 
 		double S_xx;
 		double S_xy;
@@ -173,10 +218,223 @@ namespace volumes
 	};
 
 
+
+	struct SGGXGrid : public PhaseFunctionField
+	{
+		typedef std::shared_ptr<SGGXGrid> Ptr;
+
+		// store internally using 6 bytes (as explained in the papeer)
+		struct PackedSGGXParms
+		{
+			PackedSGGXParms()
+			{
+				setSGGX(SGGX3D( Framed(V3d(0.0, 0.0, 1.0)), V3d(1.0, 1.0, 1.0) ));
+			}
+
+
+			void setSGGX( const SGGX3D& sggx )
+			{
+				// see paper Eq.19
+				quantized_sigma_x = clamp<unsigned char>(unsigned char(std::sqrt(sggx.S_xx)*255.0), 0, 255);
+				quantized_sigma_y = clamp<unsigned char>(unsigned char(std::sqrt(sggx.S_yy)*255.0), 0, 255);
+				quantized_sigma_z = clamp<unsigned char>(unsigned char(std::sqrt(sggx.S_zz)*255.0), 0, 255);
+
+				quantized_r_xy = clamp<unsigned char>(unsigned char(((sggx.S_xy/std::sqrt(sggx.S_xx*sggx.S_yy)+1.0)*0.5)*255.0), 0, 255);
+				quantized_r_xz = clamp<unsigned char>(unsigned char(((sggx.S_xz/std::sqrt(sggx.S_xx*sggx.S_zz)+1.0)*0.5)*255.0), 0, 255);
+				quantized_r_yz = clamp<unsigned char>(unsigned char(((sggx.S_yz/std::sqrt(sggx.S_yy*sggx.S_zz)+1.0)*0.5)*255.0), 0, 255);
+			}
+
+			SGGX3D getSGGX()const
+			{
+				// see paper Eq.20
+				double sigma_x = quantized_sigma_x/255.0;
+				double sigma_y = quantized_sigma_y/255.0;
+				double sigma_z = quantized_sigma_z/255.0;
+				double r_xy = quantized_r_xy/255.0*2.0-1.0;
+				double r_xz = quantized_r_xz/255.0*2.0-1.0;
+				double r_yz = quantized_r_yz/255.0*2.0-1.0;
+
+				return SGGX3D(sigma_x*sigma_x,      // S_xx
+							  r_xy*sigma_x*sigma_y, // S_xy
+							  r_xz*sigma_x*sigma_z, // S_xz
+							  sigma_y*sigma_y,      // S_yy
+							  r_yz*sigma_y*sigma_z, // S_yz
+							  sigma_z*sigma_z       // S_zz
+							  );
+			}
+
+			unsigned char quantized_sigma_x;
+			unsigned char quantized_sigma_y;
+			unsigned char quantized_sigma_z;
+			unsigned char quantized_r_xy;
+			unsigned char quantized_r_xz;
+			unsigned char quantized_r_yz;
+		};
+
+		SGGXGrid():
+			PhaseFunctionField(),
+			m_localToWorld()
+		{
+			V3i resolution = V3i(32, 32, 32);
+			resize(resolution);
+
+			SGGX3D sggx_iso(Framed(V3d(0.0, 0.0, 1.0)), V3d(1.0, 1.0, 1.0));
+			SGGX3D sggx_dir(Framed(V3d(0.0, 0.0, 1.0)), V3d(1.0, 1.0, 0.1));
+
+			RNGd rng(123);
+			for( int k=0;k<resolution.z();++k )
+				for( int j=0;j<resolution.y();++j )
+					for( int i=0;i<resolution.x();++i )
+					{
+						P3d pVS(i+0.5, j+0.5, k+0.5);
+						P3d pLS = voxelToLocal(pVS);
+
+						// distance from center axis
+						Ray3d center_axisLS( P3d(0.5, 1.0, 0.1), V3d(0.0, -1.0, 0.0) );
+						double distance = (closestPoint(center_axisLS, pLS)-pLS).norm();
+						if(distance < 0.1)
+						{
+							//Framed frame = Framed(V3d(0.0, 0.0, 1.0));
+							//V3d projectedAreas=V3d(0.1, 0.1, 1.0);
+							//Framed frame = Framed(sampleSphere(rng));
+							//V3d projectedAreas=V3d(rng.next1D(), rng.next1D(), rng.next1D());
+							//SGGX3D sggx = sggx_dir;
+							SGGX3D sggx = lerp(sggx_iso, sggx_dir, 1.0);
+
+							lvalue(i, j, k).setSGGX(sggx);
+						}
+					}
+
+
+
+
+			// temp ----
+			//Framed frame = Framed(V3d(0.0, 0.0, 1.0));
+			//V3d projectedAreas=V3d(1.0, 1.0, 1.0);
+		}
+
+		// pWS is the world position at which the phase function is to be evaluated
+		// wi is the incident light direction (pointing from the scattering point towards the light)
+		// wo is the outgoing light direction (pointing from the scattering point towards the camera)
+		virtual double eval( const P3d& pWS, const V3d& wi, const V3d& wo )const override
+		{
+			SGGX3D sggx = evaluate(worldToVoxel(pWS));
+			return sggx.eval_spec(wi, wo);
+		}
+
+
+		// pWS is the world position at which the phase function is to be sampled
+		// wi point outwards, away from the scattering event
+		// wo points outwards, away from the scattering event
+		// this is inline with the convention for bsdfs and mitsuba
+		// pdf is given in solid angle measure
+		virtual double sample( const P3d& pWS, const V3d& wi, V3d& wo, double& pdf, RNGd& rng )const override
+		{
+			SGGX3D sggx = evaluate(worldToVoxel(pWS));
+			return sggx.sample_spec(wi, wo, pdf, rng);
+		}
+
+		virtual void setLocalToWorld( const Transformd& localToWorld ) override
+		{
+			m_localToWorld = localToWorld;
+		}
+
+	private:
+
+		const PackedSGGXParms& sample( int i, int j, int k )const
+		{
+			return m_data[k*m_resolution.x()*m_resolution.y() + j*m_resolution.x() + i];
+		}
+
+		PackedSGGXParms& lvalue( int i, int j, int k )
+		{
+			return m_data[k*m_resolution.x()*m_resolution.y() + j*m_resolution.x() + i];
+		}
+
+		SGGX3D evaluate( const P3d& pVS )const
+		{
+			// take sample location within voxel into account
+			V3d vs = pVS - V3d(0.5, 0.5, 0.5);
+			double tx = vs.x() - floor(vs.x());
+			double ty = vs.y() - floor(vs.y());
+			double tz = vs.z() - floor(vs.z());
+
+			// lower left corner
+			V3i c1;
+			c1[0] = (int)floor(vs.x());
+			c1[1] = (int)floor(vs.y());
+			c1[2] = (int)floor(vs.z());
+
+			// upper right corner
+			V3i c2 = c1+V3i(1);
+			V3i res = m_resolution;
+
+			// clamp the indexing coordinates
+			c1[0] = std::max(0, std::min(c1.x(), res.x()-1));
+			c2[0] = std::max(0, std::min(c2.x(), res.x()-1));
+			c1[1] = std::max(0, std::min(c1.y(), res.y()-1));
+			c2[1] = std::max(0, std::min(c2.y(), res.y()-1));
+			c1[2] = std::max(0, std::min(c1.z(), res.z()-1));
+			c2[2] = std::max(0, std::min(c2.z(), res.z()-1));
+
+			//return sample( c1.x(), c1.y(), c1.z() ).getSGGX();
+			return lerp( lerp( lerp( sample( c1.x(), c1.y(), c1.z() ).getSGGX(),
+									 sample( c2.x(), c1.y(), c1.z() ).getSGGX(), (double)tx ),
+							   lerp( sample( c1.x(), c2.y(), c1.z() ).getSGGX(),
+									 sample( c2.x(), c2.y(), c1.z() ).getSGGX(), (double)tx ), (double)ty ),
+						 lerp( lerp( sample( c1.x(), c1.y(), c2.z() ).getSGGX(),
+									 sample( c2.x(), c1.y(), c2.z() ).getSGGX(), (double)tx ),
+							   lerp( sample( c1.x(), c2.y(), c2.z() ).getSGGX(),
+									 sample( c2.x(), c2.y(), c2.z() ).getSGGX(), (double)tx ), (double)ty ), (double)tz );
+		}
+
+		void resize( const V3i& resolution )
+		{
+			m_resolution = resolution;
+			m_data.resize(m_resolution.x()*m_resolution.y()*m_resolution.z());
+		}
+
+		P3d localToVoxel( const P3d& pLS )const
+		{
+			return P3d( pLS.x()*m_resolution.x(),
+						pLS.y()*m_resolution.y(),
+						pLS.z()*m_resolution.z());
+		}
+
+		P3d voxelToLocal( const P3d& pVS )const
+		{
+			return P3d( pVS.x()/m_resolution.x(),
+						pVS.y()/m_resolution.y(),
+						pVS.z()/m_resolution.z());
+		}
+
+		P3d worldToLocal( const P3d& pWS )const
+		{
+			return m_localToWorld.inverse()*pWS;
+		}
+
+		P3d worldToVoxel( const P3d& pWS )const
+		{
+			return localToVoxel( worldToLocal(pWS) );
+		}
+
+		V3i                          m_resolution;
+		std::vector<PackedSGGXParms> m_data;
+		Transformd                   m_localToWorld;
+	};
+
 	PhaseFunction::Ptr phase_sggx_specular( Framed frame, V3d projectedAreas )
 	{
 		SGGX3D sggx(frame, projectedAreas);
 		return std::make_shared<SGGXSpecular>(sggx);
+	}
+
+	PhaseFunctionField::Ptr phasefield_sggx()
+	{
+		SGGXGrid::Ptr sggxfield = std::make_shared<SGGXGrid>();
+
+
+		return sggxfield;
 	}
 
 

@@ -15,6 +15,10 @@ struct Field
 {
 	typedef std::shared_ptr<Field> Ptr;
 
+	virtual ~Field()
+	{
+	}
+
 	// p is given in local space
 	virtual T eval( const P3d& p, bool debug = false )const=0;
 	virtual void getValueRange( T& min, T& max )const = 0;
@@ -95,7 +99,7 @@ struct ScalarToVectorField : public Field<TVector<T, 3>>
 
 	virtual TVector<T, 3> eval( const P3d& p, bool debug = false )const override
 	{
-		return TVector<T, 3>(T(m_scalarField->eval(p)));
+		return TVector<T, 3>(T(m_scalarField->eval(p, debug)));
 	}
 
 	virtual void getValueRange( TVector<T, 3>& min, TVector<T, 3>& max )const override
@@ -539,6 +543,16 @@ HeterogeneousMedium::Ptr HeterogeneousMedium::load(const std::string &path)
 
 
 	// bgeo import ======================================
+	inline BoundingBox3d voxelBound( V3i voxel, V3i resolution )
+	{
+		return BoundingBox3d( P3d( double(voxel.x())/resolution.x(),
+								   double(voxel.y())/resolution.y(),
+								   double(voxel.z())/resolution.z()),
+							  P3d( double(voxel.x()+1)/resolution.x(),
+								   double(voxel.y()+1)/resolution.y(),
+								   double(voxel.z()+1)/resolution.z()));
+	}
+
 	template<typename T>
 	typename VoxelGridField<T, float>::Ptr bgeo(const std::string &path, Transformd* localToWorld=0, double* voxelSize=0 )
 	{
@@ -602,10 +616,8 @@ HeterogeneousMedium::Ptr HeterogeneousMedium::load(const std::string &path)
 	}
 
 	// export
-	//void write(const std::string& filename, Field<double>::Ptr field, const Box3d &bound, const V3i& res);
-	//void write(const std::string& filename, const Transformd& localToWorld, const V3i& res, const Box3d &bound_ls=Box3d(P3d(0.0, 0.0, 0.0), P3d(1.0, 1.0, 1.0)) );
-	void write(const std::string& filename, Field<double>::Ptr field, const V3i& res, const Transformd& localToWorld = Transformd(), const Box3d &bound_ls=Box3d(P3d(0.0, 0.0, 0.0), P3d(1.0, 1.0, 1.0)));
-	void write(const std::string& filename, Field<float>::Ptr field, const V3i& res, const Transformd& localToWorld = Transformd(), const Box3d &bound_ls=Box3d(P3d(0.0, 0.0, 0.0), P3d(1.0, 1.0, 1.0)));
+	void write(const std::string& filename, Field<double>* field, const V3i& res, const Transformd& localToWorld = Transformd(), const Box3d &bound_ls=Box3d(P3d(0.0, 0.0, 0.0), P3d(1.0, 1.0, 1.0)));
+	void write(const std::string& filename, Field<float>* field, const V3i& res, const Transformd& localToWorld = Transformd(), const Box3d &bound_ls=Box3d(P3d(0.0, 0.0, 0.0), P3d(1.0, 1.0, 1.0)));
 
 
 	// =============================================
@@ -650,6 +662,8 @@ HeterogeneousMedium::Ptr HeterogeneousMedium::load(const std::string &path)
 	{
 		return std::make_shared<TransformField<T>>( input, localToWorld );
 	}
+
+
 
 	// transforms the input field such that the local space will be mapped to the given aa-bound
 	template<typename T>

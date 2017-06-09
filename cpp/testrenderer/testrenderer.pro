@@ -24,7 +24,8 @@ SOURCES += \
     src/volumes/phase_iso.cpp \
     src/volumes/phase_sggx.cpp \
     src/integrators/shcache.cpp \
-    src/camera.cpp
+    src/camera.cpp \
+    src/volumes/hgridfield.cpp
 
 
 include(deployment.pri)
@@ -127,4 +128,5 @@ HEADERS += \
     include/cache.h \
     include/util/wedge.h \
     include/util/cas.h \
-    include/util/moexp.h
+    include/util/moexp.h \
+    include/volumes/hgridfield.h

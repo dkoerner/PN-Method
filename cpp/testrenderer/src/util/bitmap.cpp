@@ -156,7 +156,12 @@ void Bitmap::saveEXR(const std::string &filename)
 	       pixelStride = 3 * compStride,
 	       rowStride = pixelStride * cols();
 
-	char *ptr = reinterpret_cast<char *>(data());
+	// exr coordinate system has its origin at the top-left corner of the image,
+	// while we have the origin at the bottom left of the image
+	// therefore we need to flip the image data vertically
+	Eigen::Array<Color3f, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> img_flipped_vertically = colwise().reverse();
+
+	char *ptr = reinterpret_cast<char *>(img_flipped_vertically.data());
 
 	frameBuffer.insert("R", Imf::Slice(Imf::FLOAT, ptr, pixelStride, rowStride)); ptr += compStride;
 	frameBuffer.insert("G", Imf::Slice(Imf::FLOAT, ptr, pixelStride, rowStride)); ptr += compStride;

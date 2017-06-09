@@ -142,6 +142,7 @@ typedef Vector4i V4i;
 
 typedef Point3f P3f;
 typedef Point3d P3d;
+typedef Point3i P3i;
 
 typedef Point4d P4d;
 
@@ -409,4 +410,5 @@ extern void freeAligned(void *ptr);
 
 /// Return the number of cores (real and virtual)
 extern int getCoreCount();
+
 

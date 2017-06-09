@@ -233,7 +233,7 @@ void runGenericTasks( typename GenericTask<TaskInfo, GlobalInfo>::RunMethod run,
 
 	for( term.reset();term.keepRunning();term.advance() )
 	{
-		//std::cout << term.m_sample <<" " << term.m_numSamples <<  std::endl;
+		std::cout << term.m_sample <<" " << term.m_numSamples <<  std::endl;
 		if(numThreads>1)
 			ThreadPool::instance()->enqueueAndWait(tasks);
 		else

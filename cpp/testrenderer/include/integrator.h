@@ -14,7 +14,7 @@
 
 
 
-struct Scene;
+struct RenderScene;
 
 
 
@@ -38,8 +38,8 @@ struct Integrator
 {
 	typedef std::shared_ptr<Integrator> Ptr;
 
-	virtual Color3f Li( const Scene* scene, RadianceQuery& rq, RNGd& rng )const=0;
-	virtual Color3f sample_transmittance( const Scene* scene, const Ray3d& ray, double maxt, RNGd& rng )const=0;
+	virtual Color3f Li( const RenderScene* scene, RadianceQuery& rq, RNGd& rng )const=0;
+	virtual Color3f sample_transmittance( const RenderScene* scene, const Ray3d& ray, double maxt, RNGd& rng )const=0;
 	virtual std::string getId()const=0;
 };
 
@@ -47,12 +47,12 @@ struct Integrator
 /*
 	struct Dummy :public Integrator
 	{
-		virtual Color3f Li( const Scene* scene, RadianceQuery& rq, RNGd& rng )const override
+		virtual Color3f Li( const RenderScene* scene, RadianceQuery& rq, RNGd& rng )const override
 		{
 			return Color3f(1.0);
 		}
 
-		virtual Color3f sample_transmittance( const Scene* scene, const Ray3d& ray, double maxt, RNGd& rng )const override
+		virtual Color3f sample_transmittance( const RenderScene* scene, const Ray3d& ray, double maxt, RNGd& rng )const override
 		{
 			return Color3f(1.0);
 		}

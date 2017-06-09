@@ -2,7 +2,7 @@
 #include <volume.h>
 #include <integrator.h>
 
-bool Scene::intersect( const Ray3d& ray, Intersection& its )const
+bool RenderScene::intersect( const Ray3d& ray, Intersection& its )const
 {
 	its.reset();
 
@@ -22,7 +22,7 @@ bool Scene::intersect( const Ray3d& ray, Intersection& its )const
 
 
 // includes emission, geometry term and transmittance
-Color3f Scene::sample_attenuated_directlight(LightSample& ls, RNGd& rng , bool debug)const
+Color3f RenderScene::sample_attenuated_directlight(LightSample& ls, RNGd& rng , bool debug)const
 {
 	// sample lightsource (including geometry term)
 	Color3f light_over_pdf = light->sample(ls);

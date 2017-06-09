@@ -1,6 +1,7 @@
 #include <volume.h>
 
 
+#include <volumes/hgridfield.h>
 
 namespace volumes
 {
@@ -13,40 +14,41 @@ namespace volumes
 		FieldVolume():
 			Volume(),
 			extinction_min(std::numeric_limits<double>::max()),
-			extinction_max(-std::numeric_limits<double>::max()),
-			stepSize(0.1)
+			extinction_max(-std::numeric_limits<double>::max())
 		{
 			bboxLS.reset();
 			bboxLS.min = P3d(0.0f,0.0f,0.0f);
 			bboxLS.max = P3d(1.0f,1.0f,1.0f);
 
-			albedo_field = albedo_transformed = std::make_shared<field::TransformField<V3d>>( Field<V3d>::Ptr(), Transformd() );
-			extinction_field = extinction_transformed = std::make_shared<field::TransformField<V3d>>( Field<V3d>::Ptr(), Transformd() );
-			//phase_function = phase_isotropic();
-			phase_function = phase_sggx_specular();
+			phase_field = phasefield_sggx();
 		}
 
 		// Volume overrides ----
 		virtual Color3f evalExtinction( const P3d& pWS, bool debug = false )const override
 		{
-			V3d value = extinction_field->eval(pWS);
+
+			P3d pLS = worldToLocal*pWS;
+			V3d value = extinction_field->eval(pLS, debug);
 			return Color3f( value.x(), value.y(), value.z() );
 		}
 
 		virtual Color3f evalAlbedo( const P3d& pWS, bool debug = false )const override
 		{
-			V3d value = albedo_field->eval(pWS);
+			P3d pLS = worldToLocal*pWS;
+			V3d value = albedo_field->eval(pLS);
 			return Color3f( value.x(), value.y(), value.z() );
 		}
 
 		virtual double evalPhase( const P3d& pWS, const V3d& wi, const V3d& wo )const override
 		{
-			return phase_function->eval(wi, wo);
+			P3d pLS = worldToLocal*pLS;
+			return phase_field->eval(pWS, wi, wo);
 		}
 
 		virtual double samplePhase( const P3d& pWS, const V3d& wi, V3d& wo, double& pdf, RNGd& rng )const override
 		{
-			return phase_function->sample(wi, wo, pdf, rng);
+			P3d pLS = worldToLocal*pLS;
+			return phase_field->sample(pLS, wi, wo, pdf, rng);
 		}
 
 		virtual Box3d getBound()const override
@@ -57,7 +59,7 @@ namespace volumes
 		virtual bool intersectBound(const Ray3d& rayWS, double& mint, double& maxt, bool debug = false)const override
 		{
 			// intersect ray in local space to allow rotations etc.
-			Ray3d rayLS = localToWorld.inverse() * rayWS;
+			Ray3d rayLS = worldToLocal * rayWS;
 
 			if(debug)
 			{
@@ -96,24 +98,23 @@ namespace volumes
 		// FieldVolume methods ----
 		void setExtinction( Field3d::Ptr _extinction )
 		{
+			extinction_field = _extinction;
 			_extinction->getValueRange(extinction_min, extinction_max);
-
-			extinction_transformed->m_input = _extinction;
 		}
 
 		void setAlbedo( Field3d::Ptr _albedo )
 		{
 			//_albedo->getValueRange(extinction_min, extinction_max);
-			albedo_transformed->m_input = _albedo;
+			albedo_field = _albedo;
 		}
 
 
 		void setLocalToWorld( const Transformd& _localToWorld )
 		{
 			localToWorld = _localToWorld;
+			worldToLocal = localToWorld.inverse();
 
-			albedo_transformed->m_xform = _localToWorld;
-			extinction_transformed->m_xform = _localToWorld;
+			phase_field->setLocalToWorld(_localToWorld);
 
 			// compute worldspace boundingbox
 			bboxWS.reset();
@@ -121,31 +122,28 @@ namespace volumes
 				bboxWS.expandBy( localToWorld*bboxLS.getCorner(i) );
 		}
 
+		void setBound( Box3d boundWS )
+		{
+			setLocalToWorld( Transformd::from_aabb(boundWS) );
+		}
+
 		virtual Transformd getLocalToWorld()const override
 		{
 			return localToWorld;
-		}
-
-		void setStepsize( double _stepSize )
-		{
-			stepSize = _stepSize;
 		}
 
 
 		// rgb dependent albedo and extinction values
 		Field3d::Ptr extinction_field;
 		Field3d::Ptr albedo_field;
-		PhaseFunction::Ptr phase_function;
-
-		field::TransformField<V3d>::Ptr albedo_transformed;
-		field::TransformField<V3d>::Ptr extinction_transformed;
+		PhaseFunctionField::Ptr phase_field;
 
 		V3d           extinction_min; // used for residual ratio tracking
 		V3d           extinction_max; // used for distance sampling
 		Transformd    localToWorld; // transform
+		Transformd    worldToLocal; // transform
 		BoundingBox3d bboxLS; // bounding box in local space
 		BoundingBox3d bboxWS; // bounding box in world space
-		double        stepSize; // raymarching stepsize
 	};
 
 
@@ -161,7 +159,7 @@ namespace volumes
 		Transformd localToWorld;
 		Fieldf::Ptr density = field::bgeo<float>(basePath + "/datasets/C60Large.vol.bgeo", &localToWorld, &stepSize);
 		volume->setLocalToWorld(localToWorld);
-		volume->setStepsize(stepSize);
+		//volume->setStepsize(stepSize);
 
 		// use pure density
 		//volume.setExtinction( field::scalarToVector<double, float>( density ) );
@@ -185,10 +183,8 @@ namespace volumes
 		double stepSize;
 		Transformd localToWorld;
 		Fieldf::Ptr density = field::bgeo<float>(basePath + "/datasets/nebulae200.bgeo", &localToWorld, &stepSize);
-		//Fieldf::Ptr density = field::bgeo<float>("C:/projects/epfl/temp/grid.bgeo", &localToWorld, &stepSize);
 
 		volume->setLocalToWorld(localToWorld);
-		volume->setStepsize(stepSize);
 
 		// use pure density
 		volume->setExtinction( field::scalar_to_vector<double, float>( density ) );
@@ -199,6 +195,58 @@ namespace volumes
 		return volume;
 	}
 
+	Volume::Ptr homogeneous( const V3d& extinction, const V3d& albedo, Transformd localToWorld )
+	{
+		// volume ----
+		FieldVolume::Ptr volume = std::make_shared<FieldVolume>();
+
+		//volume->setLocalToWorld(localToWorld);
+		volume->setBound( Box3d(P3d(-0.5), P3d(0.5)) );
+
+		// use pure density
+		volume->setExtinction(field::constant<V3d>(extinction));
+
+		// fixed albedo
+		volume->setAlbedo(field::constant(albedo));
+
+		return volume;
+	}
+
+	Volume::Ptr scarf()
+	{
+		double scale = 100.0;
+		///*
+		FieldVolume::Ptr volume = std::make_shared<FieldVolume>();
+
+		field::HGridField<double>::Ptr density = field::hgrid<double>( "c:/projects/epfl/data/scarf/data/volume_description.vol",
+																	   "c:/projects/epfl/data/scarf/data/volume_$BX_$BY_$BZ-density.vol" );
+		volume->setLocalToWorld(density->getLocalToWorld());
+		volume->setExtinction( field::scalar_to_vector<double, double>( field::multiply_const<double, double>(density, scale) ) );
+		//volume->setExtinction( field::scalar_to_vector<double, double>( density ) );
+		volume->setAlbedo( field::constant(V3d(0.8)) );
+
+		return volume;
+		//*/
+
+/*
+		std::string basePath = ".";
+
+		// volume ----
+		FieldVolume::Ptr volume = std::make_shared<FieldVolume>();
+		double stepSize;
+		Transformd localToWorld;
+		Fieldf::Ptr density = field::bgeo<float>(basePath + "/scarf.bgeo", &localToWorld, &stepSize);
+
+		volume->setLocalToWorld(localToWorld);
+
+		// use pure density
+		volume->setExtinction( field::scalar_to_vector<double, float>( field::multiply_const<float>(density, 100.0f) ) );
+
+		// fixed albedo
+		volume->setAlbedo( field::constant(V3d(0.8)) );
+*/
+		return volume;
+	}
 
 
 

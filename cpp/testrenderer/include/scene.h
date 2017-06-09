@@ -22,7 +22,7 @@ struct Intersection
 struct Camera;
 struct Volume;
 struct Integrator;
-struct Scene
+struct RenderScene
 {
 	// scene info
 	std::string id;

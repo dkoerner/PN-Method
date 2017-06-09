@@ -48,8 +48,7 @@ namespace field
 	}
 	*/
 
-	//void write( const std::string& filename, Field<double>::Ptr field, const Transformd& localToWorld, const V3i& res, const Box3d& bound_ls )
-	void write(const std::string& filename, Field<double>::Ptr field, const V3i& res, const Transformd &localToWorld, const Box3d &bound_ls)
+	void write(const std::string& filename, Field<double>* field, const V3i& res, const Transformd &localToWorld, const Box3d &bound_ls)
 	{
 		houio::math::V3i hres( res.x(), res.y(), res.z() );
 
@@ -79,18 +78,20 @@ namespace field
 				{
 					// we create voxel centers in local space (0-1)
 					houio::math::V3f pLS = bound_ls_min +houio::math::V3f((x+0.5)*voxelSize.x, (y+0.5)*voxelSize.y, (z+0.5)*voxelSize.z );
+
 					// here we apply the transform to transform the evaluation positions into worldspace
-					hfield->lvalue( x, y, z ) = float(field->eval( localToWorld*P3d( pLS.x, pLS.y, pLS.z ) ));
+					//hfield->lvalue( x, y, z ) = float(field->eval( localToWorld*P3d( pLS.x, pLS.y, pLS.z ) ));
+					hfield->lvalue( x, y, z ) = float(field->eval( P3d( pLS.x, pLS.y, pLS.z ) ));
 				}
 
 		float min, max;
 		houio::field_range( *hfield, min, max );
-		std::cout << "writing field to " << filename << " min="  << min << " max=" << max << std::endl;
+		std::cout << "writing field to " << filename << " min="  << min << " max=" << max << " res=" << res.toString() << std::endl;
 
 		houio::HouGeoIO::xport( filename, hfield );
 	}
 
-	void write(const std::string& filename, Field<float>::Ptr field, const V3i& res, const Transformd &localToWorld, const Box3d &bound_ls)
+	void write(const std::string& filename, Field<float>* field, const V3i& res, const Transformd &localToWorld, const Box3d &bound_ls)
 	{
 		houio::math::V3i hres( res.x(), res.y(), res.z() );
 

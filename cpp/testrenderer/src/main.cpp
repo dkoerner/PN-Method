@@ -25,7 +25,6 @@ struct GlobalRenderInfo
 	// used for image rendering ---
 	Bitmap* image;
 	Bitmap* image_transmittance;
-	Bitmap* image_transmittance2;
 	P2i debug_pixel;
 	Box2i crop_window;
 
@@ -47,20 +46,11 @@ void render_volume( MonteCarloTaskInfo& ti, const GlobalRenderInfo* gi )
 		if( y < gi->crop_window.min.y() )
 			continue;
 
-		//if( !(y==109))
-		//	continue;
-
 		for (int x = gi->crop_window.min.x(); x < gi->crop_window.max.x(); ++x)
 		{
 			int index = y*width + x;
 			Color3f f(0.0f);
 			Color3f T(1.0f);
-
-			//if(!(y==109 && x == 128))
-			//	continue;
-
-			//std::cout << "x=" << x << " y=" << y << std::endl;
-
 
 			bool debug = false;
 
@@ -75,12 +65,6 @@ void render_volume( MonteCarloTaskInfo& ti, const GlobalRenderInfo* gi )
 
 			Ray3d rayWS;
 			gi->scene->camera->sampleRay( P2d(x+0.5, y+0.5), rayWS, debug );
-
-			Color3f& c_transmittance = gi->image_transmittance->coeffRef(index);
-			c_transmittance = Color3f(rayWS.o.x(), rayWS.o.y(), rayWS.o.z());
-			Color3f& c_transmittance2 = gi->image_transmittance2->coeffRef(index);
-			c_transmittance2 = Color3f(rayWS.d.x(), rayWS.d.y(), rayWS.d.z());
-
 			//ti.g.scene->camera->sampleRay( P2d(x+ti.rng.next1D(), y+ti.rng.next1D()), rayWS );
 
 			// do raycast ---
@@ -111,13 +95,13 @@ void render_volume( MonteCarloTaskInfo& ti, const GlobalRenderInfo* gi )
 			c += (f - c)/float(ti.samples+1);
 
 			// update transmittance
-			//Color3f& c_transmittance = gi->image_transmittance->coeffRef(index);
-			//c_transmittance += (T - c_transmittance)/float(ti.samples+1);
+			Color3f& c_transmittance = gi->image_transmittance->coeffRef(index);
+			c_transmittance += (T - c_transmittance)/float(ti.samples+1);
 
 			if(debug)
 			{
-				//c = Color3f(1.0f, 0.0f, 0.0f);
-				//c_transmittance = Color3f(1.0f, 0.0f, 0.0f);
+				c = Color3f(1.0f, 0.0f, 0.0f);
+				c_transmittance = Color3f(1.0f, 0.0f, 0.0f);
 			}
 		} // pixel x
 	} // pixel y
@@ -383,7 +367,6 @@ int main()
 	//V2i res = V2i(2048, 2048);
 	Bitmap image_color(res);
 	Bitmap image_transmittance(res);
-	Bitmap image_transmittance2(res);
 
 
 	// scene elements ---
@@ -408,7 +391,6 @@ int main()
 	{
 		image_color.fill(Color3f(0.0f, 0.0f, 0.0f));
 		image_transmittance.fill(Color3f(0.0f, 0.0f, 0.0f));
-		image_transmittance2.fill(Color3f(0.0f, 0.0f, 0.0f));
 		//shcache->m_evaluationOrder = i;
 
 		//Integrator::Ptr integrator = integrators::raymarcher(0.005);
@@ -426,7 +408,6 @@ int main()
 		gi.scene = &renderscene;
 		gi.image = &image_color;
 		gi.image_transmittance = &image_transmittance;
-		gi.image_transmittance2 = &image_transmittance2;
 		gi.crop_window = Box2i( V2i(0,0), res );
 		//RenderTaskInfo::g.debug_pixel = P2i(318, 209);
 		//gi.debug_pixel = P2i(256, 256);
@@ -443,27 +424,6 @@ int main()
 
 		// save results ---
 		image_color.saveEXR( outpath + "/" + renderscene.id + "_" + integrator->getId() + "_color.exr" );
-		/*
-		flip(image_color);
-		flip(image_transmittance);
-
-		std::string transmittance_exr = outpath + "/" + renderscene.id + "_" + integrator->getId() + "_transmittance.exr";
-		image_transmittance.saveEXR(transmittance_exr);
-		*/
-
-		{
-			std::vector<houio::Geometry::Ptr> lines;
-			for( int i=0;i<512;i+=8 )
-				for( int j=0;j<512;j+=8 )
-				{
-					Color3f o = image_transmittance.coeffRef(i, j);
-					Color3f d = image_transmittance2.coeffRef(i, j);
-					lines.push_back( houio::Geometry::createLine( houio::math::V3f(o.x(), o.y(), o.z()), houio::math::V3f(o.x()+d.x(), o.y()+d.y(), o.z()+d.z()) ) );
-				}
-
-			houio::HouGeoIO::xport( "cam_rays.bgeo", houio::Geometry::merge(lines) );
-		}
-
 	}
 
 

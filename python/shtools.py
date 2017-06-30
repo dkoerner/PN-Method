@@ -34,6 +34,24 @@ def project_sh( fun, order ):
             coeffs[shIndex(l,m)] = integrate_sphere( lambda theta, phi: fun(theta, phi)*np.conj(sph_harm(m, l, phi, theta)) )
     return coeffs            
 
+
+
+# these functions are the coefficients for the recursive relation of the sh basis function
+# (see p. 4 in the starmap paper)
+def a_lm( l, m ):
+    return np.sqrt((l-m+1)*(l+m+1)/((2*l+3)*(2*l+1)))
+def b_lm( l, m ):
+    return np.sqrt((l-m)*(l+m)/((2*l+1)*(2*l-1)))
+def c_lm( l, m ):
+    return np.sqrt((l+m+1)*(l+m+2)/((2*l+3)*(2*l+1)))
+def d_lm( l, m ):
+    return np.sqrt((l-m)*(l-m-1)/((2*l+1)*(2*l-1)))
+def e_lm( l, m ):
+    return np.sqrt((l-m+1)*(l-m+2)/((2*l+3)*(2*l+1)))
+def f_lm( l, m ):
+    return np.sqrt((l+m)*(l+m-1)/((2*l+1)*(2*l-1)))
+
+    
 def integrate_sphere( fun ):
     result = 0.0
 

@@ -62,8 +62,8 @@ class Number(Expression):
 		return Number(self.getValue())
 
 class Variable(Expression):
-	def __init__( self, symbol ):
-		super().__init__()
+	def __init__( self, symbol, children = [] ):
+		super().__init__(children)
 		self.symbol = symbol
 
 	def getSymbol(self):
@@ -82,10 +82,106 @@ class Variable(Expression):
 		return Variable(self.getSymbol())
 
 	def toLatex(self):
-		return str(self.symbol)
+		return str(self.getSymbol())
 
 	def toHierarchy( self, indent = 0 ):
 		return self.indent_string(indent) + "Variable {}\n".format(self.symbol)
+
+class ImaginaryUnit(Variable):
+	def __init__(self):
+		super().__init__("i")
+	def depends_on(self, variable):
+		return False
+	def deep_copy(self):
+		return ImaginaryUnit()
+
+
+
+class Tensor(Variable):
+	def __init__( self, symbol, rank, dimension ):
+		self.dimension = dimension
+		self.rank = rank
+		self.has_components = False
+		self.collapsed = True # causes just to print the symbol in latex
+
+		dimension_symbols=['x','y','z']
+		self.component_symbol_to_index = {}
+		for s in range(len(dimension_symbols)):
+			self.component_symbol_to_index[dimension_symbols[s]] = s
+
+		numComponents = dimension**rank
+		components = []
+		indices = [0 for i in range(rank)]
+		for c in range(numComponents):
+			components.append(TensorComponent(symbol, "".join([ dimension_symbols[k] for k in indices ])))
+
+			for i in range(rank):
+				indices[i] += 1
+				if indices[i] < dimension:
+					break
+				indices[i] = 0
+
+		super().__init__(symbol, components)
+
+	def getChildIndex(self, indices):
+		child_index = 0
+		for i in range(self.rank):
+			if isinstance(indices[i], str):
+				index = self.component_symbol_to_index[indices[i]]
+			else:
+				index = indices[i]
+			child_index += index*(self.dimension**i)
+		return child_index
+
+	def setComponent( self, indices, expr ):
+		 # now since we have some content, this tensor is not collapsed during latex rendering
+		self.collapsed = False
+		return self.setChildren(self.getChildIndex(indices), expr)
+
+	def getComponent(self, indices = []):
+		return self.getChildren(self.getChildIndex(indices))
+
+
+	def deep_copy(self):
+		cpy = Tensor(self.getSymbol(), self.rank, self.dimension)
+		for i in range(self.numChilds()):
+			cpy.setChildren(self.getChildren(i))
+		cpy.collapsed = self.collapsed
+		return cpy
+
+	def toLatex(self):
+		if self.collapsed:
+			return self.getSymbol()
+
+		if self.rank == 0:
+			return self.getComponent().toLatex()
+		elif self.rank == 1:
+			result = ""
+			result += "\\left["
+			result += "\\begin{array}"
+			result += "\\ " # this is due to a bug with latex rendering in jupyer
+			for i in range(self.dimension):
+				result += self.getComponent([i]).toLatex() + "\\\\"
+			result += "\\end{array}"
+			result += "\\right]"		
+			return result
+		elif self.rank == 2:
+			result = ""
+			result += "\\left["
+			result += "\\begin{array}"
+			result += "\\ " # this is due to a bug with latex rendering in jupyer
+			for i in range(self.dimension):
+				for j in range(self.dimension):
+					result += self.getComponent([i, j]).toLatex()
+					if j < self.dimension-1:
+						result += " & "
+				#result + "\\\\"
+				result += "\\\\"
+			result += "\\end{array}"
+			result += "\\right]"		
+			return result
+		return self.getSymbol()
+
 
 
 class TensorComponent(Variable):
@@ -284,7 +380,15 @@ class Negate( Operator ):
 	def deep_copy(self):
 		return Negate(self.getOperand(0).deep_copy())
 	def toLatex(self):
-		return "-" + self.getOperand(0).toLatex()
+		parentheses = False
+
+		if self.getOperand(0).__class__ == Addition:
+			parentheses = True
+
+		if not parentheses:
+			return "-" + self.getOperand(0).toLatex()
+		else:
+			return "-\\left(" + self.getOperand(0).toLatex() + "\\right)"
 
 
 
@@ -328,6 +432,9 @@ class Multiplication( Operator ):
 					flattened.append(op.getOperand(i))
 			else:
 				flattened.append(op)
+
+		if len(flattened)==0:
+			raise ValueError()
 
 		super().__init__(flattened)
 	def deep_copy(self):
@@ -410,9 +517,18 @@ def num( value ):
 		return neg(num(-value))
 	return Number(value)
 
+# imaginary number
+def imag( value ):
+	if value == 1:
+		return ImaginaryUnit()
+	return mul(num(value), ImaginaryUnit())
+
 
 def var( symbol ):
 	return Variable(symbol)
+
+def tensor( symbol, rank, dimension ):
+	return Tensor(symbol, rank, dimension)
 
 def tensor_component( tensor_symbol, component_symbol ):
 	return TensorComponent(tensor_symbol, component_symbol)
@@ -461,6 +577,9 @@ def hierarchy( expr ):
 
 
 class FoldConstants(object):
+	def __init__(self, debug = False):
+		self.debug = debug
+
 	def visit_Addition(self, expr):
 		sum = None
 		other_childs = []
@@ -493,11 +612,7 @@ class FoldConstants(object):
 			if len(other_childs) == 1:
 				return other_childs[0]
 			return Addition( other_childs  )
-				
 
-
-
-	'''
 	def visit_Multiplication(self, expr):
 		number_childs = []
 		other_childs = []
@@ -524,24 +639,33 @@ class FoldConstants(object):
 
 		folded_result = None
 
-		if not other_childs:
-			if not folded_number:
-				raise ValueError
+		if other_childs and folded_number != None:
+			if folded_number == 0:
+				return num(0)
+			elif folded_number == 1:
+				if len(other_childs)==1:
+					folded_result = other_childs[0]
+				else:
+					folded_result = Multiplication( other_childs )
+			else:
+				# there are some expression childs and a folded number
+				folded_result = Multiplication( [num(folded_number)] + other_childs )
+		elif other_childs:
+			# there are only other childs, no folded number
+			if len(other_childs) == 1:
+				folded_result = other_childs
+			else:
+				folded_result = Multiplication( other_childs )
+		elif folded_number:
 			# all childs are numbers, we can return a pure number
 			folded_result = num(folded_number)
-		elif folded_number:
-			# there are some expression childs and a folded number
-			folded_result = Multiplication( [folded_number] + other_childs )
-		else:
-			# there are only other childs, no folded number
-			folded_result = Multiplication(other_childs)
 
 
 		if numNegates % 2 == 0:
 			return folded_result
 		else:
 			return neg(folded_result)
-	'''
+
 
 	def visit_Number(self, expr):
 		# turn negative numbers into negates
@@ -557,6 +681,39 @@ class FoldConstants(object):
 			# double negation
 			return arg.getOperand(0)
 		return expr
+
+class ImaginaryUnitProperty(object):
+	def visit_Multiplication(self, expr):
+		# we count the number of imaginary units
+		numImaginaryUnits = 0
+		numOperands = expr.numOperands()
+		others = []
+		for i in range(numOperands):
+			child = expr.getOperand(i)
+			if child.__class__ == ImaginaryUnit:
+				numImaginaryUnits += 1
+				continue
+			others.append(child)
+
+		if numImaginaryUnits < 2:
+			return expr
+
+		if numImaginaryUnits % 2 == 0:
+			if len(others) == 0:
+				return neg(num(1))
+			elif len(others) == 1:
+				return neg(others[0])
+			else:
+				return neg(Multiplication(others))
+		else:
+			if len(others) == 0:
+				return imag(1)
+			else:
+				return Multiplication([imag(1)] + others)
+
+
+
+
 
 class SHRecursiveRelation(object):
 	def visit_Multiplication(self, expr):
@@ -623,7 +780,7 @@ class SHRecursiveRelation(object):
 						term1 = neg( mul( d, d_basis ) )
 						term2 = mul( e, e_basis )
 						term3 = neg( mul( f, f_basis ) )
-						children[pair[0]] = mul( div(var('i'), num(2)), add( term0, term1, term2, term3 ) )
+						children[pair[0]] = mul( div(imag(1), num(2)), add( term0, term1, term2, term3 ) )
 					elif omega.component_symbol == 'z':
 						term0 = mul( a, a_basis )
 						term1 = mul( b, b_basis )
@@ -728,6 +885,18 @@ class CleanupSigns(object):
 		else:
 			return expr
 
+	def visit_Quotient(self, expr):
+		num = expr.getNumerator()
+		denom = expr.getDenominator()
+		if num.__class__ == Negate and denom.__class__ == Negate:
+			return div(num.getOperand(0), denom.getOperand(0))
+		elif num.__class__ == Negate:
+			return neg(div(num.getOperand(0), denom))
+		elif denom.__class__ == Negate:
+			return neg(div(num, denom.getOperand(0)))
+		else:
+			return expr
+
 
 	def visit_Multiplication(self, expr):
 		numNegates = 0
@@ -744,6 +913,30 @@ class CleanupSigns(object):
 			return Multiplication(factors)
 		else:
 			return neg(Multiplication(factors))
+	def visit_Addition(self, expr):
+		terms = []
+		# find negations 
+		for i in range(expr.numOperands()):
+			op = expr.getOperand(i)
+			if op.__class__ == Negate:
+				if op.getOperand(0).__class__ == Addition:
+					nested_addition = op.getOperand(0)
+					# we have a negate term, which holds an addition
+					## flatten the addition by negating each term of
+					# the nested addition
+					for j in range(nested_addition.numOperands()):
+						terms.append( neg(nested_addition.getOperand(j)) )
+					continue
+			terms.append(op)
+		return Addition(terms)
+	def visit_Negate(self, expr):
+		arg = expr.getOperand(0)
+		if isinstance(arg, Negate):
+			# double negation
+			return arg.getOperand(0)
+		return expr
+
+
 
 class SplitIntegrals(object):
 	def visit_Integration(self, expr):
@@ -855,6 +1048,35 @@ class Factorize(object):
 		# do nothing
 		return expr
 
+class MergeQuotients(object):
+	def visit_Multiplication(self, expr):
+		numQuotients = 0
+		quotients_numerators = []
+		quotients_denominators = []
+		others = []
+		for i in range(expr.numOperands()):
+			op = expr.getOperand(i)
+			if op.__class__ == Quotient:
+				quotients_numerators.append(op.getNumerator())
+				quotients_denominators.append(op.getDenominator())
+				numQuotients += 1
+				continue
+			others.append(op)
+
+		if numQuotients == 0:
+			return expr
+
+		if len(quotients_numerators) == 1:
+			num = quotients_numerators[0]
+		else:
+			num = Multiplication(quotients_numerators)
+
+		if len(quotients_denominators) == 1:
+			denom = quotients_denominators[0]
+		else:
+			denom = Multiplication(quotients_denominators)
+
+		return Multiplication( [div(num,denom)] + others )
 
 
 class SummationOverKronecker(object):
@@ -937,6 +1159,7 @@ if __name__ == "__main__":
 
 	# setup equation
 
+	#omega = Tensor("\\omega", rank=1, dimension=3)
 	omega = var("\\omega")
 	omega_x = tensor_component("\\omega", "x")
 	omega_y = tensor_component("\\omega", "y")
@@ -945,26 +1168,33 @@ if __name__ == "__main__":
 	dy = var("\\partial_y")
 	dz = var("\\partial_z")
 	L = fun( "L", var("\\vec{x}"), omega)
-	Ylm = SHBasis(sub(var("l'"), num(1)), var("m'"), omega, conjugate_complex=True)
-
-	a = fun("a", sub(var("l'"), num(1)), var("m'"))
-	a.setAllSuperScripts()
-	b = fun("b", add(var("l'"), num(1)), var("m'"))
-	b.setAllSuperScripts()
-
 	# expression for the expanded radiance field
 	L_expanded = sum( sum( mul( SHCoefficient( "L", var("l"), var("m"), var("\\vec{x}") ), SHBasis(var("l"), var("m"), omega, conjugate_complex=False) ), var('m'), neg(var('l')), var('l') ), var('l'), num(0), infty() )
 
-	#expr = mul( a, var("\\partial_x"), integrate( mul(omega_x, Ylm, L), omega ) )
-	expr_a = add( mul(a, SHBasis(sub(var("l'"), num(1)), var("m'"), omega, conjugate_complex=True)), mul(b, SHBasis(add(var("l'"), num(1)), var("m'"), omega, conjugate_complex=True)) )
-	expr_b = add( mul(omega_x, dx, L), mul(omega_y, dy, L), mul(omega_z, dz, L))
-	expr = integrate( mul(expr_a, expr_b), omega )
+	Ylm = SHBasis(var("l'"), var("m'"), omega, conjugate_complex=True)
 
-	#'''
-	#print("$$\n" + latex(expr) + "\n$$")
+	omega_gradient_L = add( mul(omega_x, dx, L), mul(omega_y, dy, L), mul(omega_z, dz, L))
+	#expr = mul(dx, integrate( mul(mul( omega_x, Ylm ), omega_gradient_L), omega ))
+
+	expr_x = mul(neg(dx), integrate( mul(mul( omega_x, Ylm ), omega_gradient_L), omega ))
+	expr_y = mul(neg(dy), integrate( mul(mul( omega_y, Ylm ), omega_gradient_L), omega ))
+	expr_z = mul(neg(dz), integrate( mul(mul( omega_z, Ylm ), omega_gradient_L), omega ))
+	expr = add(expr_x, expr_y, expr_z)
+
+
+
+	#expr = tensor("\\omega", rank=2, dimension=3)
+	#expr.setComponent("xz", L)
+
+
+	print("\n----------------------------\n")
+	print("$$\n" + latex(expr) + "\n$$")
+
+	expr = apply_recursive(expr, SHRecursiveRelation())
 	expr = apply_recursive(expr, DistributiveLaw())
 	expr = apply_recursive(expr, DistributiveLaw())
 	expr = apply_recursive(expr, SplitIntegrals())
+	expr = apply_recursive(expr, CleanupSigns())
 	expr = apply_recursive(expr, Factorize())
 	expr = apply_recursive(expr, SHRecursiveRelation())
 	expr = apply_recursive(expr, FoldConstants())
@@ -973,72 +1203,45 @@ if __name__ == "__main__":
 	expr = apply_recursive(expr, SplitIntegrals())
 	expr = apply_recursive(expr, CleanupSigns())
 	expr = apply_recursive(expr, Factorize())
-	expr = apply_recursive(expr, DistributiveLaw(True))
+	expr = apply_recursive(expr, DistributiveLaw())
 	expr = apply_recursive(expr, CleanupSigns())
 	expr = apply_recursive(expr, Substitute(L, L_expanded))
 	expr = apply_recursive(expr, SwitchDomains())
 	expr = apply_recursive(expr, SwitchDomains())
 	expr = apply_recursive(expr, Factorize())
 	expr = apply_recursive(expr, SHOrthogonalityProperty())
+	expr = apply_recursive(expr, SummationOverKronecker())
+	expr = apply_recursive(expr, CleanupSigns())
+	expr = apply_recursive(expr, MergeQuotients())
+	expr = apply_recursive(expr, FoldConstants())
+	expr = apply_recursive(expr, ImaginaryUnitProperty())
+	expr = apply_recursive(expr, CleanupSigns())
+	
+
+	print("\n----------------------------\n")
+	print("$$\n" + latex(expr) + "\n$$")
+
+
+	#expr = expr.getOperand(8)
+
+	'''
+	#for i in range(expr.numOperands()):
+	for i in range(1):
+		op = expr.getOperand(i)
+		print("\n----------------------------\n")
+		print(op)
+		#print("$$\n" + latex(op) + "\n$$")
+		#print(hierarchy(op))
+
+
+
 	#expr = expr.getOperand(0)
 	#print(hierarchy(expr))
-	print("\n----------------------------\n")
-	print("$$\n" + latex(expr) + "\n$$")
-	expr = apply_recursive(expr, SummationOverKronecker())
-	print("\n----------------------------\n")
-	print("$$\n" + latex(expr) + "\n$$")
+	#print("\n----------------------------\n")
+	#print("$$\n" + latex(expr) + "\n$$")
+	#
 
 
 	#expr = add( expr.getOperand(0), expr.getOperand(1) )
-	#'''
-
-
-
-	'''
-	expr = integrate( mul(var('a'), sum(mul(var('b'), var('c')), var('i'), num(0), infty())), var('\\omega') )
-	print("\n----------------------------\n")
-	print("$$\n" + latex(expr) + "\n$$")
-	expr = apply_recursive(expr, SwitchDomains())
-
-	print("\n----------------------------\n")
-	print("$$\n" + latex(expr) + "\n$$")
-	'''
-
-
-	#expr = apply_recursive(expr, MoveFactors())
-	#print("\n----------------------------\n")
-	#print("$$\n" + latex(expr) + "\n$$")
-
-	'''
-	# run manipulations
-	print("$$\n" + latex(expr) + "\n$$")
-	expr = apply_recursive(expr, SplitIntegrals())
-	expr = apply_recursive(expr, CleanupSigns())
-	
-	expr = apply_recursive(expr, MoveFactors())
-	expr = apply_recursive(expr, MoveFactors())
-	expr = apply_recursive(expr, MoveFactors())
-	expr = apply_recursive(expr, FoldConstants())
-	expr = apply_recursive(expr, DistributiveLaw())
-	expr = apply_recursive(expr, CleanupSigns())
-	print("$$\n" + latex(expr) + "\n$$")
-	'''
-
-
-
-
-	#print(hierarchy(expr))
-
-	#print("$$\n" + latex(expr) + "\n$$")
-	#print("$$\n" + latex(expr) + "\n$$")
-	'''
-	#
-
-	#expr = kronecker(var('i'), var('j'))
-	#print("$$\n" + latex(expr) + "\n$$")
-
-	# output result
-	#print(hierarchy(expr))
-	#print(latex(expr))
 	'''
 

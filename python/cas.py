@@ -1,4 +1,10 @@
 import traceback
+import math
+import shtools
+
+# only needed for exporting
+import numpy as np
+import scipy.io
 
 class Expression(object):
 	def __init__(self, children = []):
@@ -10,6 +16,7 @@ class Expression(object):
 
 	def toLatex(self):
 		return 
+
 
 	def indent_string( self, indent ):
 		return ''.join( ['\t' for i in range(indent)] )
@@ -33,9 +40,9 @@ class Expression(object):
 	def setChildren(self, index, new_child):
 		self.children[index] = new_child
 
-	def depends_on(self, variable):
+	def depends_on(self, variable, debug = False):
 		for i in range(self.numChildren()):
-			if self.getChildren(i).depends_on(variable):
+			if self.getChildren(i).depends_on(variable, debug):
 				return True
 		return False
 
@@ -69,8 +76,16 @@ class Variable(Expression):
 	def getSymbol(self):
 		return self.symbol
 
-	def depends_on(self, variable):
-		return self.symbol == variable.symbol
+	def depends_on(self, variable, debug = False):
+		for i in range(self.numChildren()):
+			if self.getChildren(i).depends_on(variable, debug):
+				return True
+
+		result = self.symbol == variable.symbol
+		#if debug:
+		#	print("Variable depends_on: self.symbol={} variable.symbol={} result={}".format(self.symbol, variable.symbol, result))
+		return result
+		
 
 	def __eq__(self, other):
 		if other.__class__ == Variable:
@@ -90,12 +105,10 @@ class Variable(Expression):
 class ImaginaryUnit(Variable):
 	def __init__(self):
 		super().__init__("i")
-	def depends_on(self, variable):
+	def depends_on(self, variable, debug = False):
 		return False
 	def deep_copy(self):
 		return ImaginaryUnit()
-
-
 
 class Tensor(Variable):
 	def __init__( self, symbol, rank, dimension ):
@@ -126,10 +139,16 @@ class Tensor(Variable):
 	def getChildIndex(self, indices):
 		child_index = 0
 		for i in range(self.rank):
-			if isinstance(indices[i], str):
-				index = self.component_symbol_to_index[indices[i]]
+			if type(indices) is list:
+				if isinstance(indices[i], str):
+					index = self.component_symbol_to_index[indices[i]]
+				else:
+					index = indices[i]
 			else:
-				index = indices[i]
+				if isinstance(indices, str):
+					index = self.component_symbol_to_index[indices]
+				else:
+					index = indices
 			child_index += index*(self.dimension**i)
 		return child_index
 
@@ -141,17 +160,20 @@ class Tensor(Variable):
 	def getComponent(self, indices = []):
 		return self.getChildren(self.getChildIndex(indices))
 
+	def numComponents(self):
+		return self.numChildren()
+
 
 	def deep_copy(self):
 		cpy = Tensor(self.getSymbol(), self.rank, self.dimension)
-		for i in range(self.numChilds()):
-			cpy.setChildren(self.getChildren(i))
+		for i in range(self.numChildren()):
+			cpy.setChildren(i, self.getChildren(i))
 		cpy.collapsed = self.collapsed
 		return cpy
 
 	def toLatex(self):
 		if self.collapsed:
-			return self.getSymbol()
+			return self.getSymbol() + " "
 
 		if self.rank == 0:
 			return self.getComponent().toLatex()
@@ -192,13 +214,22 @@ class TensorComponent(Variable):
 		return TensorComponent(self.getSymbol(), self.component_symbol)
 	def toLatex(self):
 		return "{}_{{{}}}".format(self.getSymbol(), self.component_symbol)
+	def toHierarchy( self, indent = 0 ):
+		return self.indent_string(indent) + "TensorComponent {} {}\n".format(self.getSymbol(), self.component_symbol)
 
 
 		
 class Function( Expression ):
-	def __init__( self, symbol, arguments ):
+	def __init__( self, symbol, arguments, arg_symbols = None, body_expr = None ):
+		# arg_symbols     : is list of variable symbols, which relate the function arguments
+		# 					to variables in the expression for the function body
+		#					this is only reqiuired, when this function should have a body for eval
+		# body_expr       : an expression which expresses what the function is doing
+		#					this is only reqiuired, when this function should be able to evaluate
 		super().__init__(arguments)
 		self.symbol = symbol
+		self.arg_symbols = arg_symbols # 
+		self.body_expr = body_expr # the function body expressed as expression
 		self.latexArgumentPositions = [0 for arg in arguments]
 
 		for arg in arguments:
@@ -209,11 +240,23 @@ class Function( Expression ):
 	def getSymbol(self):
 		return self.symbol
 
+	def getFunctionBody(self):
+		return self.body_expr
+
+	def setFunctionBody( self, body_expr, *arg_symbols ):
+		if len(arg_symbols) != self.numChildren():
+			raise ValueError("number of argument symbols must match number of argument expressions")
+		self.arg_symbols = arg_symbols
+		self.body_expr = body_expr # the function body expressed as expression
+
 	def numArguments(self):
 		return self.numChildren()
 
 	def getArgument(self, index):
 		return self.getChildren(index)
+
+	def getArgumentSymbol(self, index):
+		return self.arg_symbols[index]
 
 	def getArguments(self):
 		return self.getAllChildren()
@@ -230,8 +273,14 @@ class Function( Expression ):
 	def setAllSuperScripts(self):
 		self.latexArgumentPositions = [1 for arg in self.getArguments()]
 
+	def setAllSubScripts(self):
+		self.latexArgumentPositions = [-1 for arg in self.getArguments()]
+
 	def deep_copy(self):
-		cp = Function(self.getSymbol(), [arg.deep_copy() for arg in self.getArguments()])
+		body_expr_cp = None
+		if self.body_expr:
+			body_expr_cp = self.body_expr.deep_copy()
+		cp = Function(self.getSymbol(), [arg.deep_copy() for arg in self.getArguments()], self.arg_symbols, body_expr_cp)
 		cp.latexArgumentPositions = [level for level in self.latexArgumentPositions]
 		return cp
 
@@ -325,10 +374,6 @@ class SHBasis(Function):
 		l = self.get_l()
 		m = self.get_m()
 		omega = self.get_direction_argument()
-
-		if isinstance(l, str):
-			print("YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY")
-
 		return SHBasis( self.get_l().deep_copy(), self.get_m().deep_copy(), self.get_direction_argument().deep_copy(), self.is_conjugate_complex() )
 
 	def toLatex(self):
@@ -345,10 +390,6 @@ class SHBasis(Function):
 class SHCoefficient(Function):
 	def __init__(self, symbol, l, m, x):
 		super().__init__( symbol, [l, m, x])
-
-		if isinstance(l, str):
-			raise ValueError()
-
 		self.setLatexArgumentPosition(0, 1)
 		self.setLatexArgumentPosition(1, 1)
 	def get_l(self):
@@ -377,6 +418,10 @@ class Operator( Expression ):
 class Negate( Operator ):
 	def __init__(self, operand):
 		super().__init__([operand])
+	def getExpr(self):
+		return self.getOperand(0)
+	def setExpr(self, expr):
+		self.setOperand(0, expr)
 	def deep_copy(self):
 		return Negate(self.getOperand(0).deep_copy())
 	def toLatex(self):
@@ -391,7 +436,14 @@ class Negate( Operator ):
 			return "-\\left(" + self.getOperand(0).toLatex() + "\\right)"
 
 
+class Sqrt(Operator):
+	def __init__(self, operand):
+		super().__init__([operand])
 
+	def deep_copy(self):
+		return Sqrt(self.getOperand(0).deep_copy())
+	def toLatex(self):
+		return "\\sqrt{{{}}}".format(self.getOperand(0).toLatex())
 
 class Addition( Operator ):
 	def __init__(self, operands):
@@ -436,6 +488,9 @@ class Multiplication( Operator ):
 		if len(flattened)==0:
 			raise ValueError()
 
+		if len(flattened)==1:
+			raise ValueError("Multiplication requires more than one item")
+
 		super().__init__(flattened)
 	def deep_copy(self):
 		return Multiplication( [op.deep_copy() for op in self.getOperands()] )
@@ -446,6 +501,9 @@ class Multiplication( Operator ):
 			parentheses = False
 
 			if op.__class__ == Addition or op.__class__ == Negate:
+				parentheses = True
+
+			if op.__class__ == Summation:
 				parentheses = True
 
 			if parentheses:
@@ -466,13 +524,6 @@ class Quotient(Operator):
 	def toLatex(self):
 		return "\\frac{{{}}}{{{}}}".format(self.getNumerator().toLatex(),self.getDenominator().toLatex())
 
-class ScopedOperator( Operator ):
-	# this is an operator which establishes a scope for a specific variable within the whole expression
-	# an example would be integration, where the variable would be the integration variable. all child
-	# expressions of the integration, which contain the integration variable, must not leave the scope
-	def __init__(self, expr, variable, other_operands):
-		pass
-
 class Integration( Operator ):
 	def __init__( self, integrand, variable ):
 		super().__init__([integrand, variable])
@@ -492,25 +543,75 @@ class Integration( Operator ):
 
 		return "\int{" + integrand_latex + "\\mathbf{d}" + self.getVariable().getSymbol() + "}"
 
+class Derivation( Operator ):
+	def __init__( self, expr, variable, is_partial = False):
+		super().__init__([expr, variable])
+		self.is_partial = is_partial
+	def getExpr(self):
+		return self.getChildren(0)
+	def setExpr(self, expr):
+		return self.setChildren(0, expr)
+	def getVariable(self):
+		return self.getChildren(1)
+	def toLatex(self):
+		result = ""
+		if self.is_partial:
+			result += "\\partial_{}".format(self.getVariable().toLatex())
+
+		if self.getExpr() != None:
+			expr = self.getExpr()
+			if isinstance(expr, Variable) or isinstance(expr, Function):
+				result += "{}".format(expr.toLatex())
+			else:
+				result += "\\left({}\\right)".format(expr.toLatex())
+		else:
+			result += "\\left(\\bullet\\right)"
+		return result
+	def deep_copy(self):
+		return Derivation(self.getExpr().deep_copy(), self.getVariable().deep_copy(), self.is_partial)
+
+
 class Summation( Operator ):
 	def __init__(self, expr, index, start, end):
 		self.index = index
 		super().__init__([expr, start, end])
-	def getIndex(self):
+	def getVariable(self):
 		return self.index
 	def getExpr(self):
 		return self.getOperand(0)
+	def setExpr(self, expr):
+		self.setChildren(0, expr)
 	def getStart(self):
 		return self.getOperand(1)
 	def getEnd(self):
 		return self.getOperand(2)
 	def deep_copy(self):
-		return Summation( self.getExpr().deep_copy(), self.getIndex().deep_copy(), self.getStart().deep_copy(), self.getEnd().deep_copy() )
-	def toLatex(self):
-		result = "\\sum_{{{}={}}}^{{{}}}{{{}}}".format(self.index.toLatex(), self.getStart().toLatex(), self.getEnd().toLatex(), self.getExpr().toLatex())
+		return Summation( self.getExpr().deep_copy(), self.getVariable().deep_copy(), self.getStart().deep_copy(), self.getEnd().deep_copy() )
+	def toLatex(self, parent=None):
+
+		parentheses = False
+
+		if parent != None and parent.__class__ == Multiplication:
+			parentheses = True
+
+		if parentheses == True:
+			result = "\\sum_{{{}={}}}^{{{}}}{{\\left({}\\right)}}".format(self.index.toLatex(), self.getStart().toLatex(), self.getEnd().toLatex(), self.getExpr().toLatex())
+		else:
+			result = "\\sum_{{{}={}}}^{{{}}}{{{}}}".format(self.index.toLatex(), self.getStart().toLatex(), self.getEnd().toLatex(), self.getExpr().toLatex())
+		 
 		return result
 
-
+class DotProduct(Operator):
+	def __init__(self, left, right):
+		super().__init__([left, right])
+	def getLeft(self):
+		return self.getOperand(0)
+	def getRight(self):
+		return self.getOperand(1)
+	def deep_copy(self):
+		return DotProduct(self.getLeft().deep_copy(), self.getRight().deep_copy())
+	def toLatex(self):
+		return "{}\\cdot{}".format(self.getLeft().toLatex(), self.getRight().toLatex())
 
 def num( value ):
 	if value < 0:
@@ -533,8 +634,13 @@ def tensor( symbol, rank, dimension ):
 def tensor_component( tensor_symbol, component_symbol ):
 	return TensorComponent(tensor_symbol, component_symbol)
 
-def fun( symbol, *args ):
-	return Function(symbol, list(args))
+def fun( symbol, *args, **kwargs ):
+	f = Function(symbol, list(args))
+
+	if 'arglevel' in kwargs:
+		if kwargs['arglevel'] == -1:
+			f.setAllSubScripts()
+	return f
 
 def add( *args ):
 	return Addition(list(args))
@@ -548,6 +654,9 @@ def mul( *args ):
 def div( numerator, denominator ):
 	return Quotient(numerator, denominator)
 
+def sqrt( expr ):
+	return Sqrt(expr)
+
 def pow( value ):
 	pass
 
@@ -556,6 +665,9 @@ def neg( expr ):
 
 def integrate( integrand, variable ):
 	return Integration( integrand, variable )
+
+def deriv( expr, variable, is_partial = False ):
+	return Derivation(expr, variable, is_partial)
 
 def sum( expr, index, start, end ):
 	return Summation(expr, index, start, end)
@@ -566,13 +678,39 @@ def infty():
 def kronecker( index_i, index_j ):
 	return Kronecker(index_i, index_j)
 
+def nabla():
+	n = Tensor( "\\nabla", rank=1, dimension=3 )
+	n.setComponent(0, var("\\partial_x"))
+	n.setComponent(1, var("\\partial_y"))
+	n.setComponent(2, var("\\partial_z"))
+	n.collapsed = True
+	return n
 
+def nabla_new( expr = None ):
+	n = Tensor( "\\nabla", rank=1, dimension=3 )
+	n.setComponent(0, deriv(expr, var("x"), is_partial = True))
+	n.setComponent(1, deriv(expr, var("y"), is_partial = True))
+	n.setComponent(2, deriv(expr, var("z"), is_partial = True))
+	#n.collapsed = True
+	return n
 
+def dot(left, right):
+	return DotProduct(left, right)
+
+def sh_expansion( fun, positional_variable, directional_variable ):
+	return sum( sum( mul( SHCoefficient( fun.getSymbol(), var("l"), var("m"), positional_variable ), SHBasis(var("l"), var("m"), directional_variable, conjugate_complex=False) ), var('m'), neg(var('l')), var('l') ), var('l'), num(0), infty() )
+ 
 def latex( expr ):
 	return expr.toLatex()
 
 def hierarchy( expr ):
 	return expr.toHierarchy()
+
+def eval(expr, **kwargs):
+	result = apply_recursive(expr.deep_copy(), Evaluate(kwargs))
+	if result != None and result.__class__ == Number:
+		return result.getValue()
+	return None
 
 
 
@@ -731,7 +869,7 @@ class SHRecursiveRelation(object):
 				if child.getSymbol() == "\\omega":
 					omega_index = i
 			if not shbasis_index and child.__class__ == SHBasis:
-				if child.getArgument(2).__class__ == Variable:
+				if isinstance(child.getArgument(2), Variable):
 					if child.getArgument(2).getSymbol() == "\\omega":
 						shbasis_index = i
 			if omega_index != None and shbasis_index != None:
@@ -747,23 +885,71 @@ class SHRecursiveRelation(object):
 				m = shbasis.get_m()
 				sharg = shbasis.get_direction_argument()
 
+				# a
+				expr0 = add(var('l'), neg(var('m')), num(1))
+				expr1 = add(var('l'), var('m'), num(1))
+				expr2 = add(mul(num(2), var('l')), num(3))
+				expr3 = add(mul(num(2), var('l')), num(1))
+				a_body = sqrt(div(mul(expr0, expr1), mul(expr2, expr3)))
+
+				# b
+				expr0 = add(var('l'), neg(var('m')))
+				expr1 = add(var('l'), var('m'))
+				expr2 = add(mul(num(2), var('l')), num(1))
+				expr3 = add(mul(num(2), var('l')), neg(num(1)))
+				b_body = sqrt(div(mul(expr0, expr1), mul(expr2, expr3)))
+
+				# c
+				expr0 = add(var('l'), var('m'), num(1))
+				expr1 = add(var('l'), var('m'), num(2))
+				expr2 = add(mul(num(2), var('l')), num(3))
+				expr3 = add(mul(num(2), var('l')), num(1))
+				c_body = sqrt(div(mul(expr0, expr1), mul(expr2, expr3)))
+
+				# d
+				expr0 = add(var('l'), neg(var('m')))
+				expr1 = add(var('l'), neg(var('m')), neg(num(1)))
+				expr2 = add(mul(num(2), var('l')), num(1))
+				expr3 = add(mul(num(2), var('l')), neg(num(1)))
+				d_body = sqrt(div(mul(expr0, expr1), mul(expr2, expr3)))
+
+				# e
+				expr0 = add(var('l'), neg(var('m')), num(1))
+				expr1 = add(var('l'), neg(var('m')), num(2))
+				expr2 = add(mul(num(2), var('l')), num(3))
+				expr3 = add(mul(num(2), var('l')), num(1))
+				e_body = sqrt(div(mul(expr0, expr1), mul(expr2, expr3)))
+
+				# f
+				expr0 = add(var('l'), var('m'))
+				expr1 = add(var('l'), var('m'), neg(num(1)))
+				expr2 = add(mul(num(2), var('l')), num(1))
+				expr3 = add(mul(num(2), var('l')), neg(num(1)))
+				f_body = sqrt(div(mul(expr0, expr1), mul(expr2, expr3)))
+
 				a = fun( "a", sub(l, num(1)), m )
 				a.setAllSuperScripts()
+				a.setFunctionBody( a_body, 'l', 'm' )
 				a_basis = SHBasis(sub(l, num(1)), m, sharg, conjugate_complex = True)
 				b = fun( "b", add(l, num(1)), m )
 				b.setAllSuperScripts()
+				b.setFunctionBody( b_body, 'l', 'm' )
 				b_basis = SHBasis(add(l, num(1)), m, sharg, conjugate_complex = True)
 				c = fun( "c", sub(l, num(1)), sub(m, num(1)) )
 				c.setAllSuperScripts()
+				c.setFunctionBody( c_body, 'l', 'm' )
 				c_basis = SHBasis(sub(l, num(1)), sub(m, num(1)), sharg, conjugate_complex = True)
 				d = fun("d", add(l, num(1)), sub(m, num(1)))
 				d.setAllSuperScripts()
+				d.setFunctionBody( d_body, 'l', 'm' )
 				d_basis = SHBasis(add(l, num(1)), sub(m, num(1)), sharg, conjugate_complex = True)
 				e = fun("e", sub(l, num(1)), add(m, num(1)))
 				e.setAllSuperScripts()
+				e.setFunctionBody( e_body, 'l', 'm' )
 				e_basis = SHBasis(sub(l, num(1)), add(m, num(1)), sharg, conjugate_complex = True)
 				f = fun("f", add(l, num(1)), add(m, num(1)))
 				f.setAllSuperScripts()
+				f.setFunctionBody( f_body, 'l', 'm' )
 				f_basis = SHBasis(add(l, num(1)), add(m, num(1)), sharg, conjugate_complex = True)
 
 				if omega.__class__ == TensorComponent:
@@ -833,36 +1019,53 @@ class DistributiveLaw(object):
 	def __init__(self, debug = False):
 		self.debug = debug
 	def visit_Multiplication(self, expr):
-		add = None
+		add_or_sum = None
 		others = []
 		factors_before = 0
 		factors_after = 0
 		# find addition and the rest
 		for i in range(expr.numOperands()):
 			op = expr.getOperand(i)
-			if add == None and op.__class__ == Addition:
-				add = op
+			if add_or_sum == None and (op.__class__ == Addition or op.__class__ == Summation):
+				add_or_sum = op
 			else:
-				if not add:
+				if not add_or_sum:
 					factors_before += 1
 				else:
 					factors_after += 1
 				others.append(op)
 
 		#	print(others)
-		if add == None:
-			# no addition term...do nothing
+		if add_or_sum == None:
+			# got nothing...return
 			return expr
 
-		terms = []
-		for i in range(add.numOperands()):
-			others_copies = [ op.deep_copy() for op in others]
+		if add_or_sum.__class__ == Addition:
+			# we got an addition term
+			add = add_or_sum
+			terms = []
+			for i in range(add.numOperands()):
+				others_copies = [ op.deep_copy() for op in others]
+				if factors_before >= factors_after:
+					terms.append( Multiplication( others_copies + [add.getOperand(i)]) )
+				else:
+					terms.append( Multiplication([add.getOperand(i)] + others_copies) )
+					
+			return Addition(terms)
+		elif add_or_sum.__class__ == Summation:
+			sum = add_or_sum
+			# we got an sum term
+			# simply put all the other factors inside
+			current = sum.getExpr()
 			if factors_before >= factors_after:
-				terms.append( Multiplication( others_copies + [add.getOperand(i)]) )
+				sum.setExpr(Multiplication( others+[current] ))
 			else:
-				terms.append( Multiplication([add.getOperand(i)] + others_copies) )
-				
-		return Addition(terms)
+				sum.setExpr(Multiplication( [current]+others ))
+			return sum
+		else:
+			raise ValueError("unexpected classtype")
+
+
 	def visit_Addition(self, expr):
 		# flatten nested additions
 		factors = []
@@ -915,7 +1118,7 @@ class CleanupSigns(object):
 			return neg(Multiplication(factors))
 	def visit_Addition(self, expr):
 		terms = []
-		# find negations 
+			# find negations 
 		for i in range(expr.numOperands()):
 			op = expr.getOperand(i)
 			if op.__class__ == Negate:
@@ -934,6 +1137,44 @@ class CleanupSigns(object):
 		if isinstance(arg, Negate):
 			# double negation
 			return arg.getOperand(0)
+		elif arg.__class__ == Addition:
+			# split negated addition by negating all its terms
+			terms = []
+			for i in range(arg.numOperands()):
+				op = arg.getOperand(i)
+				if op.__class__ == Negate:
+					# double negation
+					terms.append(op.getOperand(0))
+				else:
+					terms.append(neg(op))
+			return Addition(terms)
+
+
+		return expr
+	def visit_DotProduct(self, expr):
+		if expr.getLeft().__class__ == Negate and expr.getLeft().__class__ == Negate:
+			# double negation
+			return DotProduct(expr.getLeft().getOperand(0), expr.getRight().getOperand(0))
+		elif expr.getLeft().__class__ == Negate:
+			return neg(DotProduct(expr.getLeft().getOperand(0), expr.getRight()))
+		elif expr.getRight().__class__ == Negate:
+			return neg(DotProduct(expr.getLeft(), expr.getRight().getOperand(0)))
+		else:
+			return expr
+	def visit_Summation(self, expr):
+		if expr.getExpr().__class__ == Negate:
+			# summation holds a negate
+			neg_expr = expr.getExpr()
+			# set the child of the negate to the child of the summation
+			expr.setExpr( neg_expr.getExpr() )
+			# and wrap the negate around the summation
+			return neg(expr)
+		return expr
+	def visit_Derivation(self, expr):
+		if expr.getExpr().__class__ == Negate:
+			neg_expr = expr.getExpr()
+			expr.setExpr(neg_expr.getExpr())
+			return neg(expr)
 		return expr
 
 
@@ -949,6 +1190,29 @@ class SplitIntegrals(object):
 			return Addition(terms)
 		return expr
 		
+class SplitDerivatives(object):
+	def visit_Derivation(self, expr):
+		nested_expr = expr.getExpr()
+		variable = expr.getVariable()
+		terms = []
+
+		if nested_expr.__class__ == Addition:
+			for i in range(nested_expr.numOperands()):
+				terms.append( Derivation(nested_expr.getOperand(i), variable, expr.is_partial) )
+			return Addition(terms)
+		return expr
+
+class SplitSums(object):
+	def visit_Summation(self, expr):
+		nested_expr = expr.getOperand(0)
+		variable = expr.getVariable()
+		terms = []
+		if nested_expr.__class__ == Addition:
+			for i in range(nested_expr.numOperands()):
+				terms.append( Summation(nested_expr.getOperand(i), variable, expr.getStart().deep_copy(), expr.getEnd().deep_copy()) )
+			return Addition(terms)
+		return expr
+
 class Substitute(object):
 	def __init__(self, expr, replacement):
 		self.expr = expr
@@ -957,30 +1221,7 @@ class Substitute(object):
 	def visit_Expression(self, expr):
 		if self.expr == expr:
 			return self.replacement.deep_copy()
-		return expr
-'''
-	def visit_Multiplication(self, expr):
-		# if one of the terms is an integrand or summation
-		# we will move all other terms into the integral/summation
 
-		# TODO: now it becomes tricky in terms of domain dependencies
-		# moving factors like this can cause invalid manipulations,
-		# when the other factors are domain holders as well
-		# currently we blindly assume that one can move all factors
-		summation_or_integral = None
-		other_factors = []
-		for i in range(expr.numOperands()):
-			factor = expr.getOperand(i)
-			if summation_or_integral == None and (factor.__class__ == Summation or factor.__class__ == Integration):
-				summation_or_integral = factor.deep_copy()
-				continue
-			other_factors.append(factor.deep_copy())
-		if summation_or_integral != None and len(other_factors) > 0:
-			current = summation_or_integral.getOperand(0)
-			summation_or_integral.setChildren( 0, Multiplication( other_factors + [current] ) )
-			return summation_or_integral
-		return expr
-'''
 
 class SwitchDomains(object):
 	def visit_Integration(self, expr):
@@ -1001,22 +1242,22 @@ class SwitchDomains(object):
 		elif expr.getOperand(0).__class__ == Multiplication:
 			m = expr.getOperand(0)
 			outside_factors = []
-			summation = None
+			nested_domain = None
 			for i in range(m.numOperands()):
 				op = m.getOperand(i)
-				if not summation and op.__class__ == Summation:
-					summation = op
+				if not nested_domain and (op.__class__ == Summation or op.__class__ == Derivation):
+					nested_domain = op
 				else:
 					outside_factors.append(op)
-			if summation:
-				summation_child = summation.getOperand(0)
-				# now we set the child of the integration to the child of the summation
+			if nested_domain:
+				nested_domain_child = nested_domain.getOperand(0)
+				# now we set the child of the parent domain as child of the nested domain
 				# multiplied by the outside factors
-				expr.setChildren(0, Multiplication(outside_factors + [summation_child]))
+				expr.setChildren(0, Multiplication(outside_factors + [nested_domain_child]))
 				# and we set the integration to the child of the summation
-				summation.setChildren(0, expr)
-				# the summation is now the head
-				return summation
+				nested_domain.setChildren(0, expr)
+				# the nested domain is now the head
+				return nested_domain
 		return expr
 
 class Factorize(object):
@@ -1035,6 +1276,11 @@ class Factorize(object):
 					non_dependent_factors.append(op)
 				else:
 					dependent_factors.append(op)
+
+			if not non_dependent_factors:
+				# nothing can be extracted...keep everything as is
+				return expr
+
 			# now we extract all non dependent factors and set only the remaining factors
 			if len(dependent_factors) ==0:
 				expr.setChildren(0, num(1))
@@ -1043,6 +1289,86 @@ class Factorize(object):
 			else:
 				expr.setChildren(0, Multiplication(dependent_factors))
 
+			return Multiplication( non_dependent_factors + [expr] )
+
+		# do nothing
+		return expr
+	def visit_Derivation(self, expr):
+		# if the derivation holds a multiplication operator,
+		# then we will try to pull out all factors which
+		# do not depend on the domain variable
+		if expr.getOperand(0).__class__ == Multiplication:
+			#print("!!!!!!!!!!!!!!!!!!!")
+			multiplication = expr.getOperand(0)
+			# iterate all factors 
+			non_dependent_factors = []
+			dependent_factors = []
+			for i in range(multiplication.numOperands()):
+				op = multiplication.getOperand(i)
+				if not op.depends_on( expr.getVariable(), True ):
+					'''
+					print("{} ({}) does NOT depend on {}".format(op.toLatex(), op.__class__.__name__, expr.getVariable().toLatex()))
+					if op.__class__ == SHCoefficient:
+						print("numChilds={}".format(op.numChildren()))
+						for j in range(op.numChildren()):
+							c = op.getChildren(j)
+							print("\t{}  {}".format(c.toLatex(), c.__class__.__name__))
+							if c.__class__ == Tensor:
+								for k in range(c.numChildren()):
+									c2 = c.getChildren(k)
+									print("\t\t{}  {}".format(c2.toLatex(), c2.__class__.__name__))
+					'''					
+					non_dependent_factors.append(op)
+				else:
+					dependent_factors.append(op)
+
+			if not non_dependent_factors:
+				# nothing can be extracted...keep everything as is
+				return expr
+
+			# now we extract all non dependent factors and set only the remaining factors
+			if len(dependent_factors) ==0:
+				expr.setChildren(0, num(1))
+			elif len(dependent_factors) ==1:
+				expr.setChildren(0, dependent_factors[0])
+			else:
+				expr.setChildren(0, Multiplication(dependent_factors))
+
+			return Multiplication( non_dependent_factors + [expr] )
+
+		# do nothing
+		return expr
+	def visit_Summation(self, expr):
+		# if the interal holds a multiplication operator,
+		# then we will try to pull out all factors which
+		# do not depend on the domain variable
+		if expr.getOperand(0).__class__ == Multiplication:
+			multiplication = expr.getOperand(0)
+			# iterate all factors 
+			non_dependent_factors = []
+			dependent_factors = []
+			for i in range(multiplication.numOperands()):
+				op = multiplication.getOperand(i)
+				if not op.depends_on( expr.getVariable() ):
+					non_dependent_factors.append(op)
+				else:
+					dependent_factors.append(op)
+
+			if not non_dependent_factors:
+				# nothing can be extracted...keep everything as is
+				return expr
+
+			# now we extract all non dependent factors and set only the remaining factors
+			if len(dependent_factors) ==0:
+				expr.setChildren(0, num(1))
+			elif len(dependent_factors) ==1:
+				expr.setChildren(0, dependent_factors[0])
+			else:
+				expr.setChildren(0, Multiplication(dependent_factors))
+
+			#print("-------")
+			#print(non_dependent_factors)
+			#print(expr)
 			return Multiplication( non_dependent_factors + [expr] )
 
 		# do nothing
@@ -1081,8 +1407,8 @@ class MergeQuotients(object):
 
 class SummationOverKronecker(object):
 	def visit_Summation(self, expr):
-		var = expr.getIndex()
-		#print(expr.getExpr().__class__.__name__)
+		var = expr.getVariable()
+		#print(expr.getVariable().__class__.__name__)
 		if expr.getExpr().__class__ == Multiplication:
 			m = expr.getExpr()
 			factors = []
@@ -1115,21 +1441,112 @@ class SummationOverKronecker(object):
 				return Addition(terms)
 		return expr
 
+class Evaluate(object):
+	def __init__(self, variables):
+		self.vars = variables
+
+	def visit_Number(self, expr):
+		return expr
+	def visit_Variable(self, expr):
+		if expr.getSymbol() in self.vars:
+			return Number(self.vars[expr.getSymbol()])
+		else:
+			raise ValueError("not a number")
+	def visit_Negate(self, expr):
+		if expr.getOperand(0).__class__ == Number:
+			return Number(-expr.getOperand(0).getValue())
+		raise ValueError("not a number")
+	def visit_Addition(self, expr):
+		sum = 0
+		for i in range(expr.numOperands()):
+			op = expr.getOperand(i)
+			if op.__class__ == Number:
+				sum += op.getValue()
+			else:
+				raise ValueError("not a number")
+		return Number(sum)
+	def visit_Multiplication(self, expr):
+		prod = 1
+		for i in range(expr.numOperands()):
+			op = expr.getOperand(i)
+			if op.__class__ == Number:
+				prod *= op.getValue()
+			else:
+				raise ValueError("not a number")
+		return Number(prod)
+	def visit_Quotient(self, expr):
+		num = expr.getNumerator()
+		denom = expr.getDenominator()
+		if num.__class__ == Number and denom.__class__ == Number:
+			return Number( num.getValue()/denom.getValue() )
+		else:
+			raise ValueError("not a number")
+	def visit_ImaginaryUnit(self, expr):
+		return Number(complex(0,1))
+	def visit_Sqrt(self, expr):
+		if expr.getOperand(0).__class__ == Number:
+			return Number(math.sqrt(expr.getOperand(0).getValue()))
+		raise ValueError("not a number")
+	def visit_Function(self, expr):
+
+		# check if function has a function body which enables evaluation
+		if expr.getFunctionBody() == None:
+			raise ValueError("can not evaluate function without body")
+		body_expr = expr.getFunctionBody().deep_copy()
+
+		# check that all argument expressions are numbers
+		numArgs = expr.numArguments()
+		for i in range(numArgs):
+			if not expr.getArgument(i).__class__ == Number:
+				raise ValueError()
+
+		# all function args are numbers
+		# we now take the function body and replace the argument symbols
+		# with their evaluated numbers
+		for i in range(numArgs):
+			body_expr = apply_recursive(body_expr, Substitute(var(expr.getArgumentSymbol(i)), expr.getArgument(i)))
+
+		# now all the variables within the function body have been replaced by the numbers from
+		# the argument expressions. Lets evaluate the body
+		result = eval( body_expr )
+
+		if result == None:
+			raise ValueError("unable to evaluate function body")
+
+		#print("function {} returned value:{}".format(expr.getSymbol(), result))
+
+		return Number(result)
+
+
+class ExpandDotProduct(object):
+	# todo: generalize this to all kinds of tensors
+	def visit_DotProduct(self, expr):
+		l = expr.getLeft()
+		r = expr.getRight()
+		nc = l.numComponents()
+
+		if l.numComponents() != r.numComponents():
+			raise ValueError("number components has to match")
+		terms = []
+		for i in range(nc):
+			terms.append(mul(l.getComponent(i).deep_copy(), r.getComponent(i).deep_copy()))
+
+		return Addition( terms )
+
 
 
 
 def apply( expr, cls, visitor ):
-	#indent_str = expr.indent_string(indent)
-	#print("{}{}".format(indent_str, cls.__name__))
+	visitor_function = None
 	try:
-		#print("{}trying {}".format(indent_str, cls.__name__))
+		#print("asdasd {}".format(visitor.__class__.__name__))
 		visitor_function = getattr(visitor.__class__, "visit_{}".format(cls.__name__))
-		#print("{}yepp!".format(indent_str))
-		# there is a visitor function:call it
-		return visitor_function(visitor, expr)
 	except AttributeError:
 		pass
-		#print("{}nope".format(indent_str))
+
+	if visitor_function:
+		# there is a visitor function:call it
+		return visitor_function(visitor, expr)
 
 	# Iterates the class hierarchy of the Expression class (and its subclasses).
 	# Tries to call visitor function for each subclass name (starting from the leave).
@@ -1156,6 +1573,9 @@ def apply_recursive( expr, visitor ):
 
 
 if __name__ == "__main__":
+
+
+
 
 	# setup equation
 
@@ -1187,8 +1607,8 @@ if __name__ == "__main__":
 	#expr.setComponent("xz", L)
 
 
-	print("\n----------------------------\n")
-	print("$$\n" + latex(expr) + "\n$$")
+	#print("\n----------------------------\n")
+	#print("$$\n" + latex(expr) + "\n$$")
 
 	expr = apply_recursive(expr, SHRecursiveRelation())
 	expr = apply_recursive(expr, DistributiveLaw())
@@ -1220,28 +1640,190 @@ if __name__ == "__main__":
 
 	print("\n----------------------------\n")
 	print("$$\n" + latex(expr) + "\n$$")
+	exit(0)
+
+	# factorize final expression according to unknowns
+	numTerms = expr.numOperands()
+	print( "numTerms={}".format(numTerms) )
+	L_coefficients = {}
+	for i in range(numTerms):
+		term = expr.getOperand(i)
+		is_negative = False
+
+		if term.__class__ == Negate:
+			is_negative = True
+			term = term.getOperand(0)
+
+		if term.__class__ != Multiplication:
+			raise ValueError
+		#print("achtung!> negative werte muessen beruecksichtigt werden!!!")
+		#print("----------- term={} {}".format(i, hierarchy(term)))
+
+		# find sh coefficient L^lm and its coefficients
+		Llm = None
+		coefficients = []
+		partials = []
+
+		for j in range(term.numOperands()):
+			f = term.getOperand(j)
+			if f.__class__ == SHCoefficient:
+				if Llm != None:
+					raise ValueError
+				Llm = f
+				continue
+			elif f.__class__ == Variable and f.getSymbol().startswith("\\partial"):
+				if f.getSymbol() == "\\partial_x":
+					partials.append("dx")
+				elif f.getSymbol() == "\\partial_y":
+					partials.append("dy")
+				elif f.getSymbol() == "\\partial_z":
+					partials.append("dz")
+				else:
+					raise ValueError
+				continue
+			coefficients.append(f)
+
+		# sanity check
+		if Llm == None:
+			raise ValueError
+		if len(coefficients) == 0:
+			raise ValueError
+		if len(partials) != 2:
+			raise ValueError
+
+		# find the l,m arguments
+		# this is tricky as we need to inspect the expressions
+		# alternatively we could use the latex code as hash, but
+		# I somehow didn't like it really
+		l = Llm.getArgument(0)
+		l_offset = 0
+		m = Llm.getArgument(1)
+		m_offset = 0
+
+		if l.__class__ == Variable:
+			pass
+		elif l.__class__ == Addition and l.getOperand(1).__class__ == Number:
+			l_offset = l.getOperand(1).getValue()
+		elif l.__class__ == Addition and l.getOperand(1).__class__ == Negate and l.getOperand(1).getOperand(0).__class__ == Number:
+			l_offset = -l.getOperand(1).getOperand(0).getValue()
+		else:
+			raise ValueError
 
 
-	#expr = expr.getOperand(8)
+		if m.__class__ == Variable:
+			pass
+		elif m.__class__ == Addition and m.getOperand(1).__class__ == Number:
+			m_offset = m.getOperand(1).getValue()
+		elif m.__class__ == Addition and m.getOperand(1).__class__ == Negate and m.getOperand(1).getOperand(0).__class__ == Number:
+			m_offset = -m.getOperand(1).getOperand(0).getValue()
+		else:
+			raise ValueError
+
+		key = (partials[0], partials[1], l_offset, m_offset)
+		if not key in L_coefficients:
+			L_coefficients[key] = []
+
+		if is_negative:
+			L_coefficients[key].append( neg(Multiplication(coefficients)) )
+		else:
+			L_coefficients[key].append( Multiplication(coefficients) )
+		#L_coefficients[key] += 1
+
+	#'''
+	#print(L_coefficients)
+
+	# ====================================================================
+	# here we build the M matrices representing the second order transport operator ---------------
+	partials = ["dx", "dy", "dz"]
+
+	# this is the truncation level of the SH expansion
+	order = 2
+	# the number of SH coefficients per voxel
+	numSHCoefficients = (order + 1) * (order + 1)
+
+	# here we setup the M matrices for each second order derivative
+	M_matrices = {}
+	for d0 in partials:
+		for d1 in partials:
+			key = (d0, d1)
+			M = [[None for j in range(numSHCoefficients)] for i in range(numSHCoefficients)]
+			#M_matrices[key] = M
+			M_matrices[key] = np.zeros((numSHCoefficients, numSHCoefficients), dtype = complex)
+	
+	
+	# now we fill all M matrices with the coefficient expressions
+	for d0 in partials:
+		for d1 in partials:
+			#print( "{} {} ---------------------------".format(d0,d1) )
+			M = M_matrices[(d0, d1)]
+			# now we iterate over all rows of M
+			for i in range(numSHCoefficients):
+				# find the l,m SH indices associated with the current row
+				l,m = shtools.lmIndex(i)
+				#print( "i={} l={} m={}".format(i,l,m) )
+
+				# now we iterate all offsets
+				for l_offset in [-2,0,2]:
+					for m_offset in [-2,-1,0,1,2]:
+						#the offset to l,m defines the column
+						# offset 0,0 means: we want the main diagonal entry L_lm
+						j = shtools.shIndex( l+l_offset, m+m_offset )
+						# check bounds
+						if j == None or j >=numSHCoefficients:
+							continue
+
+						#print( "j={} l_offset={} m_offset={}".format(j, l_offset, m_offset) )
+						
+						# now we evaluate the associated coefficient from the equation
+						variables = {"l'":l, "m'":m}
+						key = (d0, d1, l_offset, m_offset)
+						if key in L_coefficients:
+							coeff_list = L_coefficients[key]
+							expr = None
+							if len(coeff_list) > 1:
+								expr = Addition(coeff_list)
+							else:
+								expr = coeff_list[0]
+							#M[i][j] = eval(expr, **variables)
+							M[i, j] = eval(expr, **variables)
+
+
+
+	data = {}
+	for d0 in partials:
+		for d1 in partials:
+			#print( "{} {} ---------------------------".format(d0,d1) )
+			M = M_matrices[(d0, d1)]
+			data['M_{}{}'.format(d0[1], d1[1])] = M
+	scipy.io.savemat("C:/projects/epfl/epfl17/python/sopn/data.mat", data)
+
+
+
+
+	
+
 
 	'''
-	#for i in range(expr.numOperands()):
-	for i in range(1):
-		op = expr.getOperand(i)
-		print("\n----------------------------\n")
-		print(op)
-		#print("$$\n" + latex(op) + "\n$$")
-		#print(hierarchy(op))
-
-
-
-	#expr = expr.getOperand(0)
-	#print(hierarchy(expr))
-	#print("\n----------------------------\n")
-	#print("$$\n" + latex(expr) + "\n$$")
-	#
-
-
-	#expr = add( expr.getOperand(0), expr.getOperand(1) )
+	for d0 in partials:
+		for d1 in partials:
+			#print("{}{} ----".format(d0, d1))
+			for l_offset in [-2,0,2]:
+				for m_offset in [-2,-1,0,1,2]:
+					key = (d0, d1, l_offset, m_offset)
+					if key in L_coefficients:
+						#count = L_coefficients[key]
+						#print( "L {} {} count={}".format(l_offset, m_offset, count) )
+						coeffs = L_coefficients[key]
+						print( "\n{}{}L {} {} ----------".format(d0, d1, l_offset, m_offset) )
+						for coeff in coeffs:
+							print(latex(coeff))
+						#
+						#print( "{} {} L {} {} {}".format(d0, d1, l_offset, m_offset, count) )
+					else:
+						pass
+						#print( "{} {} L {} {} -----".format(d0, d1, l_offset, m_offset) )
+			#print("")
+						
 	'''
+
 

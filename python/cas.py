@@ -203,6 +203,8 @@ class Tensor(Variable):
 			result += "\\right]"		
 			return result
 		return self.getSymbol()
+	def toHierarchy( self, indent = 0 ):
+		return self.indent_string(indent) + "Tensor {}\n".format(self.getSymbol())
 
 
 
@@ -560,7 +562,7 @@ class Derivation( Operator ):
 
 		if self.getExpr() != None:
 			expr = self.getExpr()
-			if isinstance(expr, Variable) or isinstance(expr, Function):
+			if isinstance(expr, Variable) or isinstance(expr, Function) or expr.__class__ == Derivation:
 				result += "{}".format(expr.toLatex())
 			else:
 				result += "\\left({}\\right)".format(expr.toLatex())
@@ -685,7 +687,7 @@ def nabla():
 	n.setComponent(2, var("\\partial_z"))
 	n.collapsed = True
 	return n
-
+'''
 def nabla_new( expr = None ):
 	n = Tensor( "\\nabla", rank=1, dimension=3 )
 	n.setComponent(0, deriv(expr, var("x"), is_partial = True))
@@ -693,7 +695,7 @@ def nabla_new( expr = None ):
 	n.setComponent(2, deriv(expr, var("z"), is_partial = True))
 	#n.collapsed = True
 	return n
-
+'''
 def dot(left, right):
 	return DotProduct(left, right)
 

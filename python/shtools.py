@@ -11,12 +11,25 @@ def numSHCoeffs(order):
     return (order + 1) * (order + 1)
 
 def shIndex( l, m):
-    return l * (l + 1) + m
+	if l<0 or m < -l or m > l:
+		return None
+	return l * (l + 1) + m
 
 lm_index_table = None
+lm_index_table_order = 7
 def lmIndex(i):
 	global lm_index_table
+
+	if lm_index_table == None:
+		global lm_index_table_order
+		lm_index_table = [0 for i in range(numSHCoeffs(lm_index_table_order+1))]
+		for l in range(lm_index_table_order+1):
+			for m in range(-l, l+1):
+				lm_index_table[shIndex(l, m)] = (l,m)
+
+
 	return lm_index_table[i]
+
 
 def sh_sum( order, coeffs, theta, phi ):
     result = 0.0
@@ -256,11 +269,7 @@ def init_shtools( max_order=7, build_CG_table = False ):
 								CG_table[shIndex(l, m), shIndex(l1, m1), shIndex(l2, m2)] = CG(l, m, l1, m1, l2, m2).doit().evalf()
 
 
-	global lm_index_table
-	lm_index_table = [0 for i in range(numSHCoeffs(max_order+1))]
-	for l in range(max_order+1):
-		for m in range(-l, l+1):
-			lm_index_table[shIndex(l, m)] = (l,m)
+
 
 
 

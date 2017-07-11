@@ -327,3 +327,78 @@ class Domain1D:
 					# central differences for x
 					grad_field[i] = (field[i+1]-field[i-1])/(self.h*2.0)
 		return grad_field
+
+
+
+class StencilPoint(object):
+	def __init__(self, coord, weight):
+		self.coord = coord
+		self.weight = weight
+
+
+class Stencil(object):
+	def getPoints(self, *coord):
+		center = np.array(coord, dtype=int)
+		return [StencilPoint(center+offset, weight) for (offset, weight) in self.points]
+	def __mul__( self, other ):
+		stencil = Stencil()
+
+		stencil.points = []
+		for (this_offset, this_weight) in self.points:
+			for (other_offset, other_weight) in other.points:
+				print("{} {}".format(this_weight, other_weight))
+				stencil.points.append( (this_offset + other_offset, this_weight*other_weight) )
+
+		return stencil
+
+class Identity(Stencil):
+	def __init__(self, max_dim = 3):
+		center = np.array([0 for i in range(max_dim)], dtype=int)
+		self.points = []
+		self.points.append( (center, 1.0) )
+
+class CentralDifference(Stencil):
+	def __init__(self, h, dimension, max_dim = 3):
+		center = np.array([0 for i in range(max_dim)], dtype=int)
+		step = np.array([0 for i in range(max_dim)], dtype=int)
+		step[dimension] = 1
+
+		self.points = []
+		self.points.append( (center + step, 1.0/(2.0*h)) )
+		self.points.append( (center - step, -1.0/(2.0*h)) )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+if __name__ == "__main__":
+
+	h = 0.5
+	i = 0
+	j = 0
+	k = 0
+
+	# ---------------
+	stencil_dx = CentralDifference(h, 0)
+	stencil_dy = CentralDifference(h, 1)
+	stencil_dz = CentralDifference(h, 2)
+
+	stencil_dxdx = CentralDifference(h, 0)*CentralDifference(h, 0)
+	stencil_dxdy = CentralDifference(h, 0)*CentralDifference(h, 1)
+	#stencil_dy = CentralDifference(h, 1)
+	#stencil_dz = CentralDifference(h, 2)
+
+
+	stencil_points = stencil_dxdy.getPoints(i, j, k)
+	for p in stencil_points:
+		print( "stencilpoint {} {} {} {}".format(p.coord[0], p.coord[1], p.coord[2], p.weight) )

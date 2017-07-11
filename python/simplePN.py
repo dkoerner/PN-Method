@@ -12,7 +12,7 @@ class SimplePN2D(object):
 
 	The class is initialized with the approximation order and the discretization domain (including bounding box and gridsize).
 	The run method takes all problem specific input sich as source and absorption/scattering coefficient functions and runs
-	the problem for a given number of time steps.
+	the problem.
 	'''
 
 

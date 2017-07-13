@@ -191,6 +191,8 @@ class Domain2D:
 		self.size_y = size
 		self.h_x = size/float(self.res_x)
 		self.h_y = size/float(self.res_y)
+		self.voxelsize = np.array([self.h_x, self.h_y])
+		self.numVoxels = self.res_x*self.res_y
 		if center == 'origin':
 			# center of the bounding box is origin
 			self.bound_min = np.array([-self.size_x*0.5, -self.size_y*0.5])
@@ -327,46 +329,6 @@ class Domain1D:
 					# central differences for x
 					grad_field[i] = (field[i+1]-field[i-1])/(self.h*2.0)
 		return grad_field
-
-
-
-class StencilPoint(object):
-	def __init__(self, coord, weight):
-		self.coord = coord
-		self.weight = weight
-
-
-class Stencil(object):
-	def getPoints(self, *coord):
-		center = np.array(coord, dtype=int)
-		return [StencilPoint(center+offset, weight) for (offset, weight) in self.points]
-	def __mul__( self, other ):
-		stencil = Stencil()
-
-		stencil.points = []
-		for (this_offset, this_weight) in self.points:
-			for (other_offset, other_weight) in other.points:
-				print("{} {}".format(this_weight, other_weight))
-				stencil.points.append( (this_offset + other_offset, this_weight*other_weight) )
-
-		return stencil
-
-class Identity(Stencil):
-	def __init__(self, max_dim = 3):
-		center = np.array([0 for i in range(max_dim)], dtype=int)
-		self.points = []
-		self.points.append( (center, 1.0) )
-
-class CentralDifference(Stencil):
-	def __init__(self, h, dimension, max_dim = 3):
-		center = np.array([0 for i in range(max_dim)], dtype=int)
-		step = np.array([0 for i in range(max_dim)], dtype=int)
-		step[dimension] = 1
-
-		self.points = []
-		self.points.append( (center + step, 1.0/(2.0*h)) )
-		self.points.append( (center - step, -1.0/(2.0*h)) )
-
 
 
 

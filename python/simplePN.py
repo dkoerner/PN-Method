@@ -198,11 +198,11 @@ class SimplePN2D(object):
 					# set the RHS in the global system
 					b[i] = q_lm
 
-
 					# now we execute the dot product between the current row in M (coeff)
 					# and the solution vector u
 					# k runs over the (non-zero) columns in M (identified by Ix/Iy) and the rows in u
 
+					'''
 					# Mx
 					for k in self.Ix[coeff]:
 						M_ij = self.Mx_real[coeff, k]
@@ -222,6 +222,7 @@ class SimplePN2D(object):
 							A[i, k_jm1] = -1.0/(2.0*self.domain.h_y)*M_ij
 						if voxel_j < self.domain.res_y-1:
 							A[i, k_jp1] = 1.0/(2.0*self.domain.h_y)*M_ij
+					'''
 
 					# C (is assumed to be diagonal, which implies isotropic medium and 1d phase function)
 					# NB: this here is the problem why this method doesnt work in voids
@@ -229,12 +230,15 @@ class SimplePN2D(object):
 					# which requires multiplying by the inverse of its coefficient, which in case
 					# of vacuum would be a division by zero
 					A[i, i] = st-ss*f_lm
+					#A[i, i] = st
+					#A[i, i] = -ss*f_lm
 
 		data = {}
 		data["A"] = A
 		data["b"] = b.reshape((numVoxels*self.numCoeffs, 1))
 		#data["b"] = b
-		scipy.io.savemat("C:/projects/epfl/epfl17/python/simplepn/data.mat", data)
+		#scipy.io.savemat("C:/projects/epfl/epfl17/python/simplepn/data.mat", data)
+		scipy.io.savemat("C:/projects/epfl/epfl17/python/sopn/data.mat", data)
 		#alpha = 1.0
 		#R = np.identity(numVoxels*self.numCoeffs) - alpha*A
 		#ev = np.linalg.eigvals(R)

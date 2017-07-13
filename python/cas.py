@@ -402,7 +402,8 @@ class SHCoefficient(Function):
 		return self.getChildren(2)
 	def deep_copy(self):
 		return SHCoefficient( self.getSymbol(), self.get_l().deep_copy(), self.get_m().deep_copy(), self.get_position_argument().deep_copy() )
-
+	def toHierarchy( self, indent = 0 ):
+		return self.indent_string(indent) + "SHCoefficient {}\n".format(self.getSymbol())
 
 
 class Operator( Expression ):
@@ -503,6 +504,9 @@ class Multiplication( Operator ):
 			parentheses = False
 
 			if op.__class__ == Addition or op.__class__ == Negate:
+				parentheses = True
+
+			if op.__class__ == Number and op.getValue() < 0:
 				parentheses = True
 
 			if op.__class__ == Summation:
@@ -708,10 +712,10 @@ def latex( expr ):
 def hierarchy( expr ):
 	return expr.toHierarchy()
 
-def eval(expr, **kwargs):
-	result = apply_recursive(expr.deep_copy(), Evaluate(kwargs))
-	if result != None and result.__class__ == Number:
-		return result.getValue()
+def eval(expr, variables, functions):
+	result = apply_recursive(expr.deep_copy(), Evaluate(variables, functions))
+	if result != None:
+		return result
 	return None
 
 
@@ -1444,53 +1448,59 @@ class SummationOverKronecker(object):
 		return expr
 
 class Evaluate(object):
-	def __init__(self, variables):
+	def __init__(self, variables, functions):
 		self.vars = variables
+		self.funcs = functions
 
 	def visit_Number(self, expr):
-		return expr
+		return expr.getValue()
 	def visit_Variable(self, expr):
+		#print(expr.toLatex())
 		if expr.getSymbol() in self.vars:
-			return Number(self.vars[expr.getSymbol()])
+			return self.vars[expr.getSymbol()]
 		else:
 			raise ValueError("not a number")
 	def visit_Negate(self, expr):
-		if expr.getOperand(0).__class__ == Number:
-			return Number(-expr.getOperand(0).getValue())
-		raise ValueError("not a number")
+		#if expr.getOperand(0).__class__ == Number:
+		return -expr.getOperand(0)
+		#raise ValueError("not a number")
 	def visit_Addition(self, expr):
 		sum = 0
 		for i in range(expr.numOperands()):
 			op = expr.getOperand(i)
-			if op.__class__ == Number:
-				sum += op.getValue()
-			else:
-				raise ValueError("not a number")
-		return Number(sum)
+			#if op.__class__ == Number:
+			sum += op
+			#else:
+			#	raise ValueError("not a number")
+		return sum
 	def visit_Multiplication(self, expr):
 		prod = 1
 		for i in range(expr.numOperands()):
 			op = expr.getOperand(i)
-			if op.__class__ == Number:
-				prod *= op.getValue()
-			else:
-				raise ValueError("not a number")
-		return Number(prod)
+			#if op.__class__ == Number:
+			prod *= op
+			#else:
+			#	raise ValueError("not a number")
+		return prod
 	def visit_Quotient(self, expr):
 		num = expr.getNumerator()
 		denom = expr.getDenominator()
-		if num.__class__ == Number and denom.__class__ == Number:
-			return Number( num.getValue()/denom.getValue() )
-		else:
-			raise ValueError("not a number")
+		#if num.__class__ == Number and denom.__class__ == Number:
+		return num/denom
+		#else:
+		#	raise ValueError("not a number")
 	def visit_ImaginaryUnit(self, expr):
-		return Number(complex(0,1))
+		return complex(0,1)
 	def visit_Sqrt(self, expr):
-		if expr.getOperand(0).__class__ == Number:
-			return Number(math.sqrt(expr.getOperand(0).getValue()))
-		raise ValueError("not a number")
+		#if expr.getOperand(0).__class__ == Number:
+		return math.sqrt(expr.getOperand(0))
+		#raise ValueError("not a number")
 	def visit_Function(self, expr):
 
+		if expr.getSymbol() in self.funcs:
+			return self.funcs[expr.getSymbol()]( *expr.getArguments() )
+		raise ValueError("function {} not defined for evaluation".format(expr.getSymbol()))
+		'''
 		# check if function has a function body which enables evaluation
 		if expr.getFunctionBody() == None:
 			raise ValueError("can not evaluate function without body")
@@ -1498,9 +1508,9 @@ class Evaluate(object):
 
 		# check that all argument expressions are numbers
 		numArgs = expr.numArguments()
-		for i in range(numArgs):
-			if not expr.getArgument(i).__class__ == Number:
-				raise ValueError()
+		#for i in range(numArgs):
+		#	if not expr.getArgument(i).__class__ == Number:
+		#		raise ValueError()
 
 		# all function args are numbers
 		# we now take the function body and replace the argument symbols
@@ -1510,14 +1520,16 @@ class Evaluate(object):
 
 		# now all the variables within the function body have been replaced by the numbers from
 		# the argument expressions. Lets evaluate the body
-		result = eval( body_expr )
+		#result = eval( body_expr )
 
 		if result == None:
 			raise ValueError("unable to evaluate function body")
 
 		#print("function {} returned value:{}".format(expr.getSymbol(), result))
 
-		return Number(result)
+		return result
+		'''
+		return None
 
 
 class ExpandDotProduct(object):
@@ -1559,7 +1571,7 @@ def apply( expr, cls, visitor ):
 		# recursve up within the class hierarchy
 		result = apply( expr, basecls, visitor )
 		# we are done as soon as this function returns something valid
-		if result != None:
+		if result is None:
 			return result
 
 	# our visitor didnt have a visit function for the given expression type

@@ -329,8 +329,14 @@ class Function( Expression ):
 						string+=","
 				string += "\\right )"
 			return string
+	def toHierarchy( self, indent = 0 ):
+		result = self.indent_string(indent) + "{} {}\n".format(self.__class__.__name__, self.getSymbol())
+		for child in self.children:
+			result += child.toHierarchy(indent+1)
+		return result
 
 	def __eq__(self, other):
+		#print(other.__class__.__name__)
 		# two functions are considered the same, if they have the
 		# same symbol and the same number of arguments
 		# later we might take physical dimension into account
@@ -958,6 +964,32 @@ class SHRecursiveRelation(object):
 				f.setFunctionBody( f_body, 'l', 'm' )
 				f_basis = SHBasis(add(l, num(1)), add(m, num(1)), sharg, conjugate_complex = True)
 
+				# these functions are the coefficients for the recursive relation of the sh basis function
+				# (see p. 4 in the starmap paper)
+
+				'''
+				def a_lm( l, m ):
+				    return np.sqrt((l-m+1)*(l+m+1)/((2*l+3)*(2*l+1)))
+				def b_lm( l, m ):
+				    return np.sqrt((l-m)*(l+m)/((2*l+1)*(2*l-1)))
+				def c_lm( l, m ):
+				    return np.sqrt((l+m+1)*(l+m+2)/((2*l+3)*(2*l+1)))
+				def d_lm( l, m ):
+				    return np.sqrt((l-m)*(l-m-1)/((2*l+1)*(2*l-1)))
+				def e_lm( l, m ):
+				    return np.sqrt((l-m+1)*(l-m+2)/((2*l+3)*(2*l+1)))
+				def f_lm( l, m ):
+				    return np.sqrt((l+m)*(l+m-1)/((2*l+1)*(2*l-1)))
+				'''
+				a.body2 = lambda l,m: np.sqrt((l-m+1)*(l+m+1)/((2*l+3)*(2*l+1)))
+				b.body2 = lambda l,m: np.sqrt((l-m)*(l+m)/((2*l+1)*(2*l-1)))
+				c.body2 = lambda l,m: np.sqrt((l+m+1)*(l+m+2)/((2*l+3)*(2*l+1)))
+				d.body2 = lambda l,m: np.sqrt((l-m)*(l-m-1)/((2*l+1)*(2*l-1)))
+				e.body2 = lambda l,m: np.sqrt((l-m+1)*(l-m+2)/((2*l+3)*(2*l+1)))
+				f.body2 = lambda l,m: np.sqrt((l+m)*(l+m-1)/((2*l+1)*(2*l-1)))
+
+
+
 				if omega.__class__ == TensorComponent:
 					if omega.component_symbol == 'x':
 						# recurrence relation for w_xYlm
@@ -1219,14 +1251,7 @@ class SplitSums(object):
 			return Addition(terms)
 		return expr
 
-class Substitute(object):
-	def __init__(self, expr, replacement):
-		self.expr = expr
-		self.replacement = replacement
 
-	def visit_Expression(self, expr):
-		if self.expr == expr:
-			return self.replacement.deep_copy()
 
 
 class SwitchDomains(object):
@@ -1571,7 +1596,7 @@ def apply( expr, cls, visitor ):
 		# recursve up within the class hierarchy
 		result = apply( expr, basecls, visitor )
 		# we are done as soon as this function returns something valid
-		if result is None:
+		if not result is None:
 			return result
 
 	# our visitor didnt have a visit function for the given expression type
@@ -1579,11 +1604,21 @@ def apply( expr, cls, visitor ):
 	return expr
 
 
+class Substitute(object):
+	def __init__(self, expr, replacement):
+		self.expr = expr
+		self.replacement = replacement
+
+	def visit_Expression(self, expr):
+		if self.expr == expr:
+			return self.replacement.deep_copy()
+		return expr
 
 def apply_recursive( expr, visitor ):
 	for i in range(expr.numChildren()):
 		expr.setChildren(i, apply_recursive(expr.getChildren(i), visitor))
 	return apply(expr, expr.__class__, visitor)
+
 
 
 if __name__ == "__main__":

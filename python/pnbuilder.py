@@ -8,173 +8,6 @@ import cas
 
 
 
-
-'''
-def find_lm_offset(Llm):
-	# find the l,m arguments
-	# this is tricky as we need to inspect the expressions
-	# alternatively we could use the latex code as hash, but
-	# I somehow didn't like it really
-	l = Llm.getArgument(0)
-	l_offset = 0
-	m = Llm.getArgument(1)
-	m_offset = 0
-
-	if l.__class__ == cas.Variable:
-		pass
-	elif l.__class__ == cas.Addition and l.getOperand(1).__class__ == cas.Number:
-		l_offset = l.getOperand(1).getValue()
-	elif l.__class__ == cas.Addition and l.getOperand(1).__class__ == cas.Negate and l.getOperand(1).getOperand(0).__class__ == cas.Number:
-		l_offset = -l.getOperand(1).getOperand(0).getValue()
-	else:
-		raise ValueError
-
-
-	if m.__class__ == cas.Variable:
-		pass
-	elif m.__class__ == cas.Addition and m.getOperand(1).__class__ == cas.Number:
-		m_offset = m.getOperand(1).getValue()
-	elif m.__class__ == cas.Addition and m.getOperand(1).__class__ == cas.Negate and m.getOperand(1).getOperand(0).__class__ == cas.Number:
-		m_offset = -m.getOperand(1).getOperand(0).getValue()
-	else:
-		raise ValueError
-
-	return (l_offset, m_offset)
-
-class Unknown(object):
-	def __init__(self, l_offset, m_offset):
-		self.l_offset = l_offset
-		self.m_offset = m_offset
-	def getId(self):
-		return "u"
-	def __str__(self):
-		return "L l_offset={} m_offset={}\n".format(self.l_offset, self.m_offset)
-	def __eq__(self, other):
-		if other.__class__ == Unknown and self.l_offset == other.l_offset and self.m_offset == other.m_offset:
-			return True
-		return False
-	def __ne__(self, other):
-			return not self == other
-
-class Coefficients(object):
-	def __init__(self, *args):
-		self.coeffs = list(args)
-	def getId(self):
-		return "c"
-	def append_coefficient(self, expr):
-		self.coeffs.append(expr)
-	def __str__(self):
-		result = "coefficients:\n"
-		for c in self.coeffs:
-			result += "\t" + str(c) + "\n"
-		return result
-	def __ne__(self, other):
-		return not self == other
-	def __eq__(self, other):
-		if other.__class__ == Coefficients:
-			return True
-
-
-class Derivation(object):
-	def __init__(self, var):
-		self.var = var
-	def getId(self):
-		return "d{}".format(self.var)
-	def __str__(self):
-		return "Derivation in {}\n".format(self.var)
-	def __ne__(self, other):
-		return not self == other
-	def __eq__(self, other):
-		if other.__class__ == Derivation and self.var == other.var:
-			return True
-
-
-class CoefficientChain(object):
-	def __init__(self, l_offset, m_offset):
-		self.chain = [Unknown(l_offset, m_offset)]
-	def numElements(self):
-		return len(self.chain)
-	def getElements(self):
-		return self.chain
-	def append_coefficient(self, expr):
-		if self.chain[-1].__class__ != Coefficients:
-			self.chain.append(Coefficients())
-		self.chain[-1].append_coefficient(expr)
-	def derive(self, var):
-		self.chain.append(Derivation(var))
-
-	def getId(self):
-		result = ""
-		for c in reversed(self.chain):
-			result += c.getId()
-		return result
-	def __str__(self):
-		result = ""
-		for e in self.chain:
-			result += str(e)
-		return result
-	def __getitem__(self, index):
-		return self.chain[index]
-
-class ChainElementData(object):
-	def __init__(self, id):
-		self.coefficients = {}
-		self.id = id
-	def getId(self):
-		return self.id
-	def append_coefficients(self, l_offset, m_offset, coeffs):
-		key = (l_offset, m_offset)
-		if not key in self.coefficients:
-			self.coefficients[key] = []
-		self.coefficients[key].append(coeffs)
-
-
-
-
-def extract_coefficients( parent, unknown_symbol = "L" ):
-	coeff_chain = None
-	others = []
-	for i in range(parent.numChildren()):
-		child = parent.getChildren(i)
-		result = extract_coefficients(child, unknown_symbol)
-
-		if result == None:
-			others.append(child)
-		else:
-			coeff_chain = result
-
-	# now handle the coefficients to the unknown ---
-
-	# no coefficient found yet in any of our childs?
-	if coeff_chain == None:
-		#print("{} {}".format(unknown_symbol,parent.getSymbol() ))
-		# check if parent is the unkown we are looking for
-		if parent.__class__ == cas.SHCoefficient and parent.getSymbol() == unknown_symbol:
-			(l_offset, m_offset) = find_lm_offset(parent)
-			coeff_chain = CoefficientChain( l_offset, m_offset )
-			return coeff_chain
-		else:
-			# non of our childs found Llm nor is it the parent
-			# so we are looking in the wrong branch of the expression tree
-			return None
-	else:
-		# one of our children contained the unkown
-		# we now analyse its siblings in the expression tree
-		# to find the coefficients
-		if parent.__class__ == cas.Negate:
-			coeff_chain.append_coefficient(cas.Number(-1))
-			return coeff_chain
-		elif parent.__class__ == cas.Multiplication:
-			for op in others:
-				coeff_chain.append_coefficient(op)
-			return coeff_chain
-		elif parent.__class__ == cas.Derivation:
-			coeff_chain.derive(parent.getVariable().getSymbol())
-			return coeff_chain
-'''
-
-
-
 class EvalInfo(object):
 	pass
 
@@ -214,10 +47,20 @@ def eval_term_recursive( expr, info ):
 		return expr.getValue()
 	elif expr.__class__ == cas.Negate:
 		return -eval_term_recursive(expr.getOperand(0), info)
+	elif expr.__class__ == cas.Quotient:
+		return eval_term_recursive(expr.getNumerator(), info)/eval_term_recursive(expr.getDenominator(), info)
+	elif expr.__class__ == cas.Addition:
+		numOperands = expr.numOperands()
+		sum = 0.0
+		for i in range(numOperands):
+			sum += eval_term_recursive(expr.getOperand(i), info)
+		return sum
 	#elif expr.__class__ == cas.Variable:
 	elif isinstance(expr, cas.Variable):
 		# TODO: if we come across the unknown, then return a stencil point
-		if expr.getSymbol() in info.vars:
+		if expr.__class__ == cas.ImaginaryUnit:
+			return complex(0.0, 1.0)
+		elif expr.getSymbol() in info.vars:
 			return info.vars[expr.getSymbol()]
 		else:
 			raise ValueError("unable to resolve variable {}".format(expr.getSymbol()))
@@ -241,6 +84,8 @@ def eval_term_recursive( expr, info ):
 		elif expr.getSymbol() in info.functions:
 			# evaluate function
 			return info.functions[expr.getSymbol()]( *args )
+		elif not expr.body2 is None:
+			return expr.body2(*args)
 		raise ValueError("function {} not defined for evaluation".format(expr.getSymbol()))
 	# derivation...
 	elif expr.__class__ == cas.Derivation:
@@ -255,6 +100,11 @@ def eval_term_recursive( expr, info ):
 			dimension = 2
 		else:
 			raise ValueError("unable to identify derivation variable")
+
+		if dimension >= info.voxelsize.shape[0]:
+			# we have a derivative in z although we only work in 2d domain
+			return 0.0
+
 		step[dimension] = 1
 		stepWS = step*info.voxelsize
 		central_difference_weight = 1.0/(2.0*info.voxelsize[dimension])
@@ -329,9 +179,6 @@ class PNBuilder(object):
 
 
 		# extract the coefficients to the SH coefficients Llm
-		self.lhs_term_table = {}
-		self.lhs_terms = []
-		self.rhs_terms = []
 		self.terms = []
 
 
@@ -377,6 +224,7 @@ class PNBuilder(object):
 		self.S_inv = np.linalg.inv(self.S)
 
 
+
 	def add_terms(self, expr):
 		if expr.__class__ == cas.Multiplication or expr.__class__ == cas.Negate or isinstance(expr, cas.Function):
 			self.terms.append(expr)
@@ -387,59 +235,6 @@ class PNBuilder(object):
 		else:
 			ValueError("expected expression to be addition or multiplication")
 
-
-	def add_lhs(self, expr):
-		unknown_symbol = "L"
-
-
-		terms = []
-		if expr.__class__ == cas.Multiplication or expr.__class__ == cas.Negate:
-			terms.append(expr)
-		elif expr.__class__ == cas.Addition:
-			numTerms = expr.numOperands()
-			for i in range(numTerms):
-				terms.append(expr.getOperand(i))
-		else:
-			ValueError("expected expression to be addition or multiplication")
-
-
-		# we iterate over all operands of the outer sum
-		for m in terms:
-			# extract coefficients and their structure
-			term_chain = extract_coefficients(m, unknown_symbol = unknown_symbol)
-
-			term_elements = reversed(term_chain.getElements())
-			for e in term_elements:
-				if e.getId() == "u":
-					# todo: mark as lhs term
-					pass
-				elif e.getId() == "c":
-					# finalize all coefficients
-					if len(e.coeffs) == 0:
-						raise ValueError("expected at least one coefficient expression")
-					elif len(e.coeffs) == 1:
-						e.coeff_expr = e.coeffs[0]
-					else:
-						e.coeff_expr = cas.Multiplication(e.coeffs)
-
-			self.lhs_terms.append(term_chain)
-
-	def add_rhs(self, expr):
-
-		terms = []
-		if expr.__class__ == cas.Multiplication or expr.__class__ == cas.Negate:
-			terms.append(expr)
-		elif expr.__class__ == cas.Addition:
-			numTerms = expr.numOperands()
-			for i in range(numTerms):
-				terms.append(expr.getOperand(i))
-		else:
-			ValueError("expected expression to be addition or multiplication")
-
-
-		# we iterate over all operands of the outer sum
-		for m in terms:
-			self.rhs_terms.append(m)
 
 
 	#def assemble_global_matrix(self):
@@ -461,8 +256,10 @@ class PNBuilder(object):
 		numVoxels = self.domain.res_x*self.domain.res_y
 
 		# coefficient matrix A and rhs b of our global problem
-		A = np.zeros( (numVoxels*self.numCoeffs, numVoxels*self.numCoeffs) )
-		b = np.zeros( (numVoxels*self.numCoeffs) )
+		A_complex = np.zeros( (numVoxels*self.numCoeffs, numVoxels*self.numCoeffs), dtype = complex )
+		b_complex = np.zeros( (numVoxels*self.numCoeffs), dtype=complex )
+		A_real = np.zeros( (numVoxels*self.numCoeffs, numVoxels*self.numCoeffs) )
+		b_real = np.zeros( (numVoxels*self.numCoeffs) )
 
 		# Now we build the global coefficient matrix A and rhs b by iterating over all elements (voxels)
 		# and within each voxel, we iterate over all sh coefficients. Each row within the global system
@@ -526,70 +323,29 @@ class PNBuilder(object):
 								# of the global matrix A
 								global_j = self.get_global_index(u.coord[0], u.coord[1], local_j)
 
-								A[global_i, global_j] += u.weight
+								A_complex[global_i, global_j] += u.weight
 						else:
 							# this is a rhs term (because it has no unknowns and evaluated to a number)
 							#this goes straight into b
-							b[global_i] += result
+							b_complex[global_i] += result
+
+				# now transform all blocks of the current block-row into real variables
+				# TODO: this can be optimized by analysing which blocks are zero
+				for voxel_x2 in range(self.domain.res_x):
+					for voxel_y2 in range(self.domain.res_y):
+						block_i = self.get_global_index(voxel_x, voxel_y, 0)
+						block_j = self.get_global_index(voxel_x2, voxel_y2, 0)
+						M_complex = A_complex[block_i:block_i + self.numCoeffs, block_j:block_j + self.numCoeffs]
+
+						A_real[block_i:block_i + self.numCoeffs, block_j:block_j + self.numCoeffs] = np.real(self.S.dot(M_complex.dot(self.S_inv)))
+						b_real[block_i:block_i + self.numCoeffs] = np.real(self.S.dot(b_complex[block_i:block_i + self.numCoeffs]))
 
 
 
-						'''
-						# find which coefficient the current term is dealing with
-						# for that we know that the first term element contains information
-						# about the unknown, such as the l,m offset
-						local_j = self.shIndex( l+term[0].l_offset, m+term[0].m_offset )
-
-						# check bounds
-						if local_j == None or local_j >=self.numCoeffs:
-							continue
 
 
-						stencil = util.stencil2d(voxel_x, voxel_y)
-
-						term_elements = reversed(term.getElements())
-						for e in term_elements:
-							if e.getId() == "u":
-								# we reached the unknown and are done
-								# now accumulate the coefficients
-								for p in stencil.getPoints():
-									# position and shcoeff-index define the final column within the current row
-									# of the global matrix A
-
-									# TODO: think about how to handle boundaries
-									if p.coord[0] < 0 or p.coord[0] >= self.domain.res_x or p.coord[1] < 0 or p.coord[1] >= self.domain.res_y:
-										continue
-
-									global_j = self.get_global_index(p.coord[0], p.coord[1], local_j)
-
-									A[global_i, global_j] += p.weight
-							elif e.getId() == "c":
-								# a coefficient expression which we want to evalute to a weight for our
-								# stencil points
-								for p in stencil.getPoints():
-									# get world position of current stencil point
-									pWS = np.array([self.X[p.coord[0], p.coord[1]], self.Y[p.coord[0], p.coord[1]]])
-									# here we evaluate the expression to arrive at a concrete number
-									variables = {"l'":l, "m'":m, "x":pWS[0], "y":pWS[1], "z":0.0, "\\vec{x}":pWS}
-									functions = {"\\sigma_t":lambda pWS: sigma_a(pWS) + sigma_s(pWS), "\\sigma_s":sigma_s, "f_p":phase_shcoeffs}
-									p.weight *= cas.eval(e.coeff_expr, variables, functions)
-							elif e.getId() == "dx":
-								# discretize derivative in x
-								stencil.dx(domain.h_x)
-							elif e.getId() == "dy":
-								# discretize derivative in y
-								stencil.dy(domain.h_y)
-							elif e.getId() == "dz":
-								# discretize derivative in z
-								stencil.dz(domain.h_z)
-							else:
-								raise ValueError("unknown term element")
-						'''
-					## evaluate rhs terms -------
-					#for term in self.rhs_terms:
-					#	pass
-
-		return (A,b)
+		# todo: transform this into a system of real variables
+		return (A_real,b_real)
 
 
 

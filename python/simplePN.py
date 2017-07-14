@@ -82,6 +82,16 @@ class SimplePN2D(object):
 					count+=1
 		self.S_inv = np.linalg.inv(self.S)
 
+	def matrix_prod(self, A, B):
+		C = np.zeros( (A.shape[1], B.shape[0]), dtype=complex )
+		for i in range(C.shape[0]):
+			# for each column in the destination matrix
+			for j in range(C.shape[1]):
+				C[i,j] = complex(0.0)
+				# compute dot product
+				for k in range(A.shape[1]):
+					C[i,j] += A[i,k]*B[k,j]
+		return C
 	def build_M(self):
 		'''The M matrices encode the dependencies between coefficients.
 		This is the same everywhere in the domain and therfore is build once.
@@ -112,6 +122,52 @@ class SimplePN2D(object):
 		# compute real valued M matrices (see middle of p.6 in starmap paper)
 		self.Mx_real = np.real(self.S.dot(self.Mx_complex.dot(self.S_inv)))
 		self.My_real = np.real(self.S.dot(self.My_complex.dot(self.S_inv)))
+
+
+		# ----------------------------------------
+
+		# compute matrix product by hand
+		D = np.zeros(self.Mx_complex.shape, dtype=complex)
+		E = np.zeros(self.Mx_complex.shape)
+		A = self.S
+		B = self.Mx_complex
+		C = self.S_inv
+		# for each row in the destination matrix
+		for i in range(D.shape[0]):
+			# for each column in the destination matrix
+			for j in range(D.shape[1]):
+				D[i,j] = complex(0.0)
+				# compute dot product
+				for k in range(B.shape[0]):
+					D[i,j] += B[i,k]*C[k,j]
+
+		# for each row in the destination matrix
+		for i in range(E.shape[0]):
+			# for each column in the destination matrix
+			for j in range(E.shape[1]):
+				sum = complex(0.0, 0.0)
+				for k in range(E.shape[0]):
+					for l in range(E.shape[0]):
+						sum += A[i,k]*B[k,l]*C[l,j]
+				E[i,j] = np.real(sum)
+
+		D = self.matrix_prod(B, C)
+		#E = self.matrix_prod(A, D)
+
+		data = {}
+		data["S_inv"] = self.S_inv
+		data["S"] = self.S
+		data["Mx_complex"] = self.Mx_complex
+		data["Mx_real"] = self.Mx_real
+		data["Mx_complex_dot_S_inv"] = self.Mx_complex.dot(self.S_inv)
+		data["D"] = D
+		data["E"] = np.real(E)
+		#data["b"] = b.reshape((numVoxels*self.numCoeffs, 1))
+		#data["b"] = b
+		#scipy.io.savemat("C:/projects/epfl/epfl17/python/simplepn/data.mat", data)
+		scipy.io.savemat("C:/projects/epfl/epfl17/python/sopn/data_test.mat", data)
+
+		# ----------------------------------------
 
 		# the Ix/Iy arrays hold the valid indices for each row in Mx/My and are used later for the update step
 		# in other words: Ix/Iy hold for each moment, the indices of moments on which the moment depends
@@ -196,6 +252,9 @@ class SimplePN2D(object):
 					i = self.get_global_index(voxel_i, voxel_j, coeff)
 
 					# set the RHS in the global system
+					# TODO: apply to real transformation, once we use non-isotropic sources
+					# in the isotropic source case, the zero moment is real and is not touched
+					# by the transformation in S. Therefore S has no effect when source is isotropic.
 					b[i] = q_lm
 
 					# now we execute the dot product between the current row in M (coeff)
@@ -281,4 +340,4 @@ if __name__ == "__main__":
 	order = 1
 	#solver = SimplePN2D(order, util.Domain2D(7.0, 50))
 	solver = SimplePN2D(order, util.Domain2D(7.0, 70))
-	u = solver.run(sigma_a, sigma_s, source)
+	#u = solver.run(sigma_a, sigma_s, source)

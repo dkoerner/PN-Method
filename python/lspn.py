@@ -140,6 +140,8 @@ def fo_transport_term():
 
 
 	expr = omega_dot_nablaL
+
+
 	expr = cas.integrate(cas.mul( cas.SHBasis(cas.var("l'"), cas.var("m'"), omega, conjugate_complex=True), expr), omega) 
 	expr = cas.apply_recursive(expr, cas.DistributiveLaw())
 	expr = cas.apply_recursive(expr, cas.SHRecursiveRelation())
@@ -243,9 +245,10 @@ if __name__ == "__main__":
 
 	pnb = pnbuilder.PNBuilder(order, domain)
 	#pnb.add_lhs(lspn_sotransport_term()) 
+	pnb.add_terms(fo_transport_term()) 
 	pnb.add_terms(fo_collision_term()) 
 	pnb.add_terms(fo_scattering_term()) 
-	#pnb.add_terms(fo_source_term())
+	pnb.add_terms(fo_source_term())
 	#exit(1)
 	(A,b) = pnb.build_global( sigma_a, sigma_s, phase_shcoeffs, source_shcoeffs )
 

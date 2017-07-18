@@ -40,23 +40,28 @@ class UnknownInfo(object):
 
 
 
-def eval_term_recursive( expr, info ):
+def eval_term_recursive( expr, info, level=0 ):
 
 	# in case of a simple number
 	if expr.__class__ == cas.Number:
+		#print("{}eval_term_recursive::Number".format(cas.indent_string(level)))
 		return expr.getValue()
 	elif expr.__class__ == cas.Negate:
-		return -eval_term_recursive(expr.getOperand(0), info)
+		#print("{}eval_term_recursive::Negate".format(cas.indent_string(level)))
+		return -eval_term_recursive(expr.getOperand(0), info, level+1)
 	elif expr.__class__ == cas.Quotient:
-		return eval_term_recursive(expr.getNumerator(), info)/eval_term_recursive(expr.getDenominator(), info)
+		#print("{}eval_term_recursive::Quotient".format(cas.indent_string(level)))
+		return eval_term_recursive(expr.getNumerator(), info, level+1)/eval_term_recursive(expr.getDenominator(), info, level+1)
 	elif expr.__class__ == cas.Addition:
+		#print("{}eval_term_recursive::Addition".format(cas.indent_string(level)))
 		numOperands = expr.numOperands()
 		sum = 0.0
 		for i in range(numOperands):
-			sum += eval_term_recursive(expr.getOperand(i), info)
+			sum += eval_term_recursive(expr.getOperand(i), info, level+1)
 		return sum
 	#elif expr.__class__ == cas.Variable:
 	elif isinstance(expr, cas.Variable):
+		#print("{}eval_term_recursive::Variable".format(cas.indent_string(level)))
 		# TODO: if we come across the unknown, then return a stencil point
 		if expr.__class__ == cas.ImaginaryUnit:
 			return complex(0.0, 1.0)
@@ -66,11 +71,12 @@ def eval_term_recursive( expr, info ):
 			raise ValueError("unable to resolve variable {}".format(expr.getSymbol()))
 	# in case of a function
 	elif isinstance(expr, cas.Function):
+		#print("{}eval_term_recursive::Function".format(cas.indent_string(level)))
 		numArgs = expr.numArguments()
 		# evaluate all arguments
 		args = []
 		for i in range(numArgs):
-			args.append( eval_term_recursive(expr.getArgument(i), info) )
+			args.append( eval_term_recursive(expr.getArgument(i), info, level+1) )
 		if expr.getSymbol() == info.unknown_symbol:
 			u = Unknown()
 			# currently, we assume that:
@@ -89,6 +95,7 @@ def eval_term_recursive( expr, info ):
 		raise ValueError("function {} not defined for evaluation".format(expr.getSymbol()))
 	# derivation...
 	elif expr.__class__ == cas.Derivation:
+		#print("{}eval_term_recursive::Derivation".format(cas.indent_string(level)))
 		step = np.zeros(info.voxelsize.shape[0], dtype=int)
 		pWS = info.vars['\\vec{x}']
 		coord = info.coord
@@ -103,6 +110,7 @@ def eval_term_recursive( expr, info ):
 
 		if dimension >= info.voxelsize.shape[0]:
 			# we have a derivative in z although we only work in 2d domain
+			info.term_vanishes = True
 			return 0.0
 
 		step[dimension] = 1
@@ -110,25 +118,30 @@ def eval_term_recursive( expr, info ):
 		central_difference_weight = 1.0/(2.0*info.voxelsize[dimension])
 
 		nested_expr = expr.getExpr()
+		#print("{} class={}".format(cas.indent_string(level+1), nested_expr.__class__))
 
 		# idea behind this is to evaluate the child expression for the different positions
 		# of the discretization stencils
 		info.vars['\\vec{x}'] = pWS - stepWS
 		info.coord = coord - step
-		a = eval_term_recursive(nested_expr, info)
+		a = eval_term_recursive(nested_expr, info, level+1)
 
 		info.vars['\\vec{x}'] = pWS + stepWS
 		info.coord = coord + step
-		b = eval_term_recursive(nested_expr, info)
+		b = eval_term_recursive(nested_expr, info, level+1)
 
 		info.vars['\\vec{x}'] = pWS
 		return central_difference_weight*(b - a)
 	elif expr.__class__ == cas.Multiplication:
+		#print("{}eval_term_recursive::Multiplication".format(cas.indent_string(level)))
 		numOperands = expr.numOperands()
 		result = 1.0
 		for i in range(numOperands):
-			result = result * eval_term_recursive(expr.getOperand(i), info)
+			result = result * eval_term_recursive(expr.getOperand(i), info, level+1)
 		return result
+	elif expr.__class__ == cas.Power:
+		#print("{}eval_term_recursive::Power".format(cas.indent_string(level)))
+		return eval_term_recursive(expr.getBase(), info)**eval_term_recursive(expr.getExponent(), info, level+1)
 	else:
 		raise ValueError("unable to handle expression of type {}".format(expr.__class__.__name__))
 
@@ -140,7 +153,13 @@ def eval_term(expr, unknown_symbol, vars, funs, coord, voxelsize):
 	info.functions = funs
 	info.voxelsize = voxelsize
 	info.coord = coord
-	return eval_term_recursive(expr, info)
+	info.term_vanishes = False
+	result = eval_term_recursive(expr, info)
+
+	if info.term_vanishes == True:
+		return None
+
+	return result
 	
 
 
@@ -266,6 +285,11 @@ class PNBuilder(object):
 		# is associated with a specific sh coefficient of a specific voxel.
 		# Then, for each row, we evaluate all terms and accumulate the results into A and b.
 		for voxel_x in range(self.domain.res_x):
+			print("voxel_x={}".format(voxel_x))
+
+			if voxel_x > 10:
+				break
+
 			for voxel_y in range(self.domain.res_y):
 
 				# get location of voxel center
@@ -292,7 +316,11 @@ class PNBuilder(object):
 					# the tricky part is to take derivatives into account, which is done by using stencils
 					# in a generalized way
 					#for term in self.lhs_terms:
+					ii = 0
+					#print("numTerms={}".format(len(self.terms)))
 					for term in self.terms:
+						#print("term={}".format(term.toLatex()))
+						#print(cas.hierarchy(term))
 						vars = {}
 						vars["\\vec{x}"] = pWS
 						vars["l'"] = l
@@ -305,11 +333,17 @@ class PNBuilder(object):
 						functions["q"] = source_shcoeffs
 						coord = np.array([voxel_x, voxel_y], dtype=int)
 						result = eval_term( term, "L", vars, functions, coord, self.domain.voxelsize )
-
-						if result.__class__ == UnknownInfo:
+						if result is None:
+							# term vanishes
+							# happens for example if it involves a derivative in z in 2d
+							pass
+						elif result.__class__ == UnknownInfo:
 							# this is a lhs term
 							# weights are going into A
 							for u in result.unknowns:
+								if u.l < 0 or u.l > self.N:
+									continue
+
 								local_j = self.shIndex( u.l, u.m )
 								# check bounds
 								if local_j == None or local_j >=self.numCoeffs:
@@ -325,9 +359,15 @@ class PNBuilder(object):
 
 								A_complex[global_i, global_j] += u.weight
 						else:
+							#print("no unknown!")
+							#if np.isnan(result):
+							#	print("term index: {}".format(ii))
+							#	print("l={} m={}".format(l,m))
+							#	raise ValueError()
 							# this is a rhs term (because it has no unknowns and evaluated to a number)
 							#this goes straight into b
 							b_complex[global_i] += result
+						ii += 1
 
 				# now transform all blocks of the current block-row into real variables
 				# TODO: this can be optimized by analysing which blocks are zero

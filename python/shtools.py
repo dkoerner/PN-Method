@@ -52,17 +52,35 @@ def project_sh( fun, order ):
 # these functions are the coefficients for the recursive relation of the sh basis function
 # (see p. 4 in the starmap paper)
 def a_lm( l, m ):
-    return np.sqrt((l-m+1)*(l+m+1)/((2*l+3)*(2*l+1)))
+	base = (l-m+1)*(l+m+1)/((2*l+3)*(2*l+1))
+	if base < 0.0:
+		return np.nan
+	return np.sqrt(base)
 def b_lm( l, m ):
-    return np.sqrt((l-m)*(l+m)/((2*l+1)*(2*l-1)))
+	base = (l-m)*(l+m)/((2*l+1)*(2*l-1))
+	if base < 0.0:
+		return np.nan
+	return np.sqrt(base)
 def c_lm( l, m ):
-    return np.sqrt((l+m+1)*(l+m+2)/((2*l+3)*(2*l+1)))
+	base = (l+m+1)*(l+m+2)/((2*l+3)*(2*l+1))
+	if base < 0.0:
+		return np.nan
+	return np.sqrt(base)
 def d_lm( l, m ):
-    return np.sqrt((l-m)*(l-m-1)/((2*l+1)*(2*l-1)))
+	base = (l-m)*(l-m-1)/((2*l+1)*(2*l-1))
+	if base < 0.0:
+		return np.nan
+	return np.sqrt(base)
 def e_lm( l, m ):
-    return np.sqrt((l-m+1)*(l-m+2)/((2*l+3)*(2*l+1)))
+	base = (l-m+1)*(l-m+2)/((2*l+3)*(2*l+1))
+	if base < 0.0:
+		return np.nan
+	return np.sqrt(base)
 def f_lm( l, m ):
-    return np.sqrt((l+m)*(l+m-1)/((2*l+1)*(2*l-1)))
+	base = (l+m)*(l+m-1)/((2*l+1)*(2*l-1))
+	if base < 0.0:
+		return np.nan
+	return np.sqrt(base)
 
     
 def integrate_sphere( fun ):

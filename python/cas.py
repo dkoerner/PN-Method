@@ -6,6 +6,10 @@ import shtools
 import numpy as np
 import scipy.io
 
+
+def indent_string( indent ):
+		return ''.join( ['\t' for i in range(indent)] )
+
 class Expression(object):
 	def __init__(self, children = []):
 		if isinstance(children, tuple):
@@ -232,6 +236,7 @@ class Function( Expression ):
 		self.symbol = symbol
 		self.arg_symbols = arg_symbols # 
 		self.body_expr = body_expr # the function body expressed as expression
+		self.body2 = None
 		self.latexArgumentPositions = [0 for arg in arguments]
 
 		for arg in arguments:
@@ -284,6 +289,7 @@ class Function( Expression ):
 			body_expr_cp = self.body_expr.deep_copy()
 		cp = Function(self.getSymbol(), [arg.deep_copy() for arg in self.getArguments()], self.arg_symbols, body_expr_cp)
 		cp.latexArgumentPositions = [level for level in self.latexArgumentPositions]
+		cp.body2 = self.body2
 		return cp
 
 	def toLatex(self):
@@ -454,6 +460,18 @@ class Sqrt(Operator):
 	def toLatex(self):
 		return "\\sqrt{{{}}}".format(self.getOperand(0).toLatex())
 
+class Power(Operator):
+	def __init__(self, base, exp):
+		super().__init__([base, exp])
+	def getBase(self):
+		return self.getOperand(0)
+	def getExponent(self):
+		return self.getOperand(1)
+	def deep_copy(self):
+		return Power(self.getBase().deep_copy(), self.getExponent().deep_copy())
+	def toLatex(self):
+		return "{{{}}}^{{{}}}".format(self.getBase().toLatex(), self.getExponent().toLatex())
+
 class Addition( Operator ):
 	def __init__(self, operands):
 		flattened = []
@@ -472,7 +490,13 @@ class Addition( Operator ):
 		for i in range(self.numOperands()):
 			expr = self.getOperand(i)
 			if isinstance(expr,Negate):
-				result+="-" + expr.getOperand(0).toLatex()
+				parentheses = False
+				if expr.getOperand(0).__class__ == Addition:
+							parentheses = True
+				if not parentheses:
+					result+="-" + expr.getOperand(0).toLatex()
+				else:
+					result+="-\\left(" + expr.getOperand(0).toLatex() + "\\right)"
 			else:
 				if i> 0:
 					result+="+" + expr.toLatex()
@@ -669,8 +693,8 @@ def div( numerator, denominator ):
 def sqrt( expr ):
 	return Sqrt(expr)
 
-def pow( value ):
-	pass
+def pow( base, exp ):
+	return Power(base, exp)
 
 def neg( expr ):
 	return Negate(expr)
@@ -724,6 +748,9 @@ def eval(expr, variables, functions):
 		return result
 	return None
 
+def print_expr(expr):
+	print("\n----------------------------\n")
+	print("$$\n" + latex(expr) + "\n$$")
 
 
 class FoldConstants(object):
@@ -981,12 +1008,18 @@ class SHRecursiveRelation(object):
 				def f_lm( l, m ):
 				    return np.sqrt((l+m)*(l+m-1)/((2*l+1)*(2*l-1)))
 				'''
-				a.body2 = lambda l,m: np.sqrt((l-m+1)*(l+m+1)/((2*l+3)*(2*l+1)))
-				b.body2 = lambda l,m: np.sqrt((l-m)*(l+m)/((2*l+1)*(2*l-1)))
-				c.body2 = lambda l,m: np.sqrt((l+m+1)*(l+m+2)/((2*l+3)*(2*l+1)))
-				d.body2 = lambda l,m: np.sqrt((l-m)*(l-m-1)/((2*l+1)*(2*l-1)))
-				e.body2 = lambda l,m: np.sqrt((l-m+1)*(l-m+2)/((2*l+3)*(2*l+1)))
-				f.body2 = lambda l,m: np.sqrt((l+m)*(l+m-1)/((2*l+1)*(2*l-1)))
+				#a.body2 = lambda l,m: np.sqrt((l-m+1)*(l+m+1)/((2*l+3)*(2*l+1)))
+				a.body2 = shtools.a_lm
+				#b.body2 = lambda l,m: np.sqrt((l-m)*(l+m)/((2*l+1)*(2*l-1)))
+				b.body2 = shtools.b_lm
+				#c.body2 = lambda l,m: np.sqrt((l+m+1)*(l+m+2)/((2*l+3)*(2*l+1)))
+				c.body2 = shtools.c_lm
+				#d.body2 = lambda l,m: np.sqrt((l-m)*(l-m-1)/((2*l+1)*(2*l-1)))
+				d.body2 = shtools.d_lm
+				#e.body2 = lambda l,m: np.sqrt((l-m+1)*(l-m+2)/((2*l+3)*(2*l+1)))
+				e.body2 = shtools.e_lm
+				#f.body2 = lambda l,m: np.sqrt((l+m)*(l+m-1)/((2*l+1)*(2*l-1)))
+				f.body2 = shtools.f_lm
 
 
 
@@ -1471,91 +1504,17 @@ class SummationOverKronecker(object):
 			elif len(terms) > 1:
 				return Addition(terms)
 		return expr
-
-class Evaluate(object):
-	def __init__(self, variables, functions):
-		self.vars = variables
-		self.funcs = functions
-
-	def visit_Number(self, expr):
-		return expr.getValue()
-	def visit_Variable(self, expr):
-		#print(expr.toLatex())
-		if expr.getSymbol() in self.vars:
-			return self.vars[expr.getSymbol()]
-		else:
-			raise ValueError("not a number")
-	def visit_Negate(self, expr):
-		#if expr.getOperand(0).__class__ == Number:
-		return -expr.getOperand(0)
-		#raise ValueError("not a number")
-	def visit_Addition(self, expr):
-		sum = 0
-		for i in range(expr.numOperands()):
-			op = expr.getOperand(i)
-			#if op.__class__ == Number:
-			sum += op
-			#else:
-			#	raise ValueError("not a number")
-		return sum
 	def visit_Multiplication(self, expr):
-		prod = 1
+		# flatten nested multiplications
+		factors = []
 		for i in range(expr.numOperands()):
-			op = expr.getOperand(i)
-			#if op.__class__ == Number:
-			prod *= op
-			#else:
-			#	raise ValueError("not a number")
-		return prod
-	def visit_Quotient(self, expr):
-		num = expr.getNumerator()
-		denom = expr.getDenominator()
-		#if num.__class__ == Number and denom.__class__ == Number:
-		return num/denom
-		#else:
-		#	raise ValueError("not a number")
-	def visit_ImaginaryUnit(self, expr):
-		return complex(0,1)
-	def visit_Sqrt(self, expr):
-		#if expr.getOperand(0).__class__ == Number:
-		return math.sqrt(expr.getOperand(0))
-		#raise ValueError("not a number")
-	def visit_Function(self, expr):
-
-		if expr.getSymbol() in self.funcs:
-			return self.funcs[expr.getSymbol()]( *expr.getArguments() )
-		raise ValueError("function {} not defined for evaluation".format(expr.getSymbol()))
-		'''
-		# check if function has a function body which enables evaluation
-		if expr.getFunctionBody() == None:
-			raise ValueError("can not evaluate function without body")
-		body_expr = expr.getFunctionBody().deep_copy()
-
-		# check that all argument expressions are numbers
-		numArgs = expr.numArguments()
-		#for i in range(numArgs):
-		#	if not expr.getArgument(i).__class__ == Number:
-		#		raise ValueError()
-
-		# all function args are numbers
-		# we now take the function body and replace the argument symbols
-		# with their evaluated numbers
-		for i in range(numArgs):
-			body_expr = apply_recursive(body_expr, Substitute(var(expr.getArgumentSymbol(i)), expr.getArgument(i)))
-
-		# now all the variables within the function body have been replaced by the numbers from
-		# the argument expressions. Lets evaluate the body
-		#result = eval( body_expr )
-
-		if result == None:
-			raise ValueError("unable to evaluate function body")
-
-		#print("function {} returned value:{}".format(expr.getSymbol(), result))
-
-		return result
-		'''
-		return None
-
+			f = expr.getOperand(i)
+			if f.__class__ == Multiplication:
+				for j in range(f.numOperands()):
+					factors.append(f.getOperand(j))
+			else:
+				factors.append(f)
+		return Multiplication(factors)
 
 class ExpandDotProduct(object):
 	# todo: generalize this to all kinds of tensors
@@ -1572,6 +1531,38 @@ class ExpandDotProduct(object):
 
 		return Addition( terms )
 
+class ProductRule(object):
+
+	def visit_Derivation(self, expr):
+		term = expr.getExpr()
+		var = expr.getVariable()
+		if term.__class__ == Multiplication:
+			numOperands = term.numOperands()
+			# first, extract all factors which do not depend on the derivation variable
+			non_dependent = []
+			dependent = []
+			for i in range(numOperands):
+				op = term.getOperand(i)
+				if op.depends_on(var):
+					dependent.append(op)
+				else:
+					non_dependent.append(op)
+			#print("#dependent={}  #non_dependent={}".format(len(dependent), len(non_dependent)))
+
+			# now apply product rule
+			terms = []
+			for i in range(numOperands):
+				factors = []
+				for j in range(numOperands):
+					f = term.getOperand(j).deep_copy()
+					if i==j:
+						f = deriv(f, var, expr.is_partial)
+					factors.append(f)
+				terms.append( Multiplication(factors) )
+
+			return Addition(terms)
+
+		return expr
 
 
 

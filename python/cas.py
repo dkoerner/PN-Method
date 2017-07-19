@@ -649,6 +649,36 @@ class DotProduct(Operator):
 	def toLatex(self):
 		return "{}\\cdot{}".format(self.getLeft().toLatex(), self.getRight().toLatex())
 
+class Gradient(Operator):
+	def __init__(self, operand):
+		super().__init__([operand])
+	def getExpr(self):
+		return self.getOperand(0)
+	def deep_copy(self):
+		return Gradient(self.getExpr().deep_copy())
+	def toLatex(self):
+		return "\\nabla{{{}}}".format(self.getExpr().toLatex())
+
+
+class Divergence(Operator):
+	def __init__(self, operand):
+		super().__init__([operand])
+	def getExpr(self):
+		return self.getOperand(0)
+	def deep_copy(self):
+		return Divergence(self.getExpr().deep_copy())
+	def toLatex(self):
+		parentheses = False
+		expr = self.getExpr()
+
+		if expr.__class__ == Multiplication or expr.__class__ == Addition:
+			parentheses = True
+
+		if parentheses == True:
+			return "\\nabla\\cdot\\left( {{{}}} \\right)".format(expr.toLatex())
+		else:
+			return "\\nabla\\cdot{{{}}}".format(expr.toLatex())
+
 def num( value ):
 	if value < 0:
 		return neg(num(-value))
@@ -687,7 +717,7 @@ def sub( a, b ):
 def mul( *args ):
 	return Multiplication(list(args))
 
-def div( numerator, denominator ):
+def frac( numerator, denominator ):
 	return Quotient(numerator, denominator)
 
 def sqrt( expr ):
@@ -721,6 +751,13 @@ def nabla():
 	n.setComponent(2, var("\\partial_z"))
 	n.collapsed = True
 	return n
+
+
+def grad( expr ):
+	return Gradient(expr)
+
+def div( expr ):
+	return Divergence(expr)
 '''
 def nabla_new( expr = None ):
 	n = Tensor( "\\nabla", rank=1, dimension=3 )
@@ -924,48 +961,6 @@ class SHRecursiveRelation(object):
 				m = shbasis.get_m()
 				sharg = shbasis.get_direction_argument()
 
-				# a
-				expr0 = add(var('l'), neg(var('m')), num(1))
-				expr1 = add(var('l'), var('m'), num(1))
-				expr2 = add(mul(num(2), var('l')), num(3))
-				expr3 = add(mul(num(2), var('l')), num(1))
-				a_body = sqrt(div(mul(expr0, expr1), mul(expr2, expr3)))
-
-				# b
-				expr0 = add(var('l'), neg(var('m')))
-				expr1 = add(var('l'), var('m'))
-				expr2 = add(mul(num(2), var('l')), num(1))
-				expr3 = add(mul(num(2), var('l')), neg(num(1)))
-				b_body = sqrt(div(mul(expr0, expr1), mul(expr2, expr3)))
-
-				# c
-				expr0 = add(var('l'), var('m'), num(1))
-				expr1 = add(var('l'), var('m'), num(2))
-				expr2 = add(mul(num(2), var('l')), num(3))
-				expr3 = add(mul(num(2), var('l')), num(1))
-				c_body = sqrt(div(mul(expr0, expr1), mul(expr2, expr3)))
-
-				# d
-				expr0 = add(var('l'), neg(var('m')))
-				expr1 = add(var('l'), neg(var('m')), neg(num(1)))
-				expr2 = add(mul(num(2), var('l')), num(1))
-				expr3 = add(mul(num(2), var('l')), neg(num(1)))
-				d_body = sqrt(div(mul(expr0, expr1), mul(expr2, expr3)))
-
-				# e
-				expr0 = add(var('l'), neg(var('m')), num(1))
-				expr1 = add(var('l'), neg(var('m')), num(2))
-				expr2 = add(mul(num(2), var('l')), num(3))
-				expr3 = add(mul(num(2), var('l')), num(1))
-				e_body = sqrt(div(mul(expr0, expr1), mul(expr2, expr3)))
-
-				# f
-				expr0 = add(var('l'), var('m'))
-				expr1 = add(var('l'), var('m'), neg(num(1)))
-				expr2 = add(mul(num(2), var('l')), num(1))
-				expr3 = add(mul(num(2), var('l')), neg(num(1)))
-				f_body = sqrt(div(mul(expr0, expr1), mul(expr2, expr3)))
-
 				a = fun( "a", sub(l, num(1)), m )
 				a.setAllSuperScripts()
 				a.setFunctionBody( a_body, 'l', 'm' )
@@ -1030,14 +1025,14 @@ class SHRecursiveRelation(object):
 						term1 = mul( d, d_basis )
 						term2 = mul( e, e_basis )
 						term3 = neg( mul( f, f_basis ) )
-						children[pair[0]] = mul( div(num(1), num(2)), add( term0, term1, term2, term3 ) )
+						children[pair[0]] = mul( frac(num(1), num(2)), add( term0, term1, term2, term3 ) )
 					elif omega.component_symbol == 'y':
 						# recurrence relation for w_yYlm
 						term0 = mul( c, c_basis )
 						term1 = neg( mul( d, d_basis ) )
 						term2 = mul( e, e_basis )
 						term3 = neg( mul( f, f_basis ) )
-						children[pair[0]] = mul( div(imag(1), num(2)), add( term0, term1, term2, term3 ) )
+						children[pair[0]] = mul( frac(imag(1), num(2)), add( term0, term1, term2, term3 ) )
 					elif omega.component_symbol == 'z':
 						term0 = mul( a, a_basis )
 						term1 = mul( b, b_basis )
@@ -1163,11 +1158,11 @@ class CleanupSigns(object):
 		num = expr.getNumerator()
 		denom = expr.getDenominator()
 		if num.__class__ == Negate and denom.__class__ == Negate:
-			return div(num.getOperand(0), denom.getOperand(0))
+			return frac(num.getOperand(0), denom.getOperand(0))
 		elif num.__class__ == Negate:
-			return neg(div(num.getOperand(0), denom))
+			return neg(frac(num.getOperand(0), denom))
 		elif denom.__class__ == Negate:
-			return neg(div(num, denom.getOperand(0)))
+			return neg(frac(num, denom.getOperand(0)))
 		else:
 			return expr
 
@@ -1466,7 +1461,7 @@ class MergeQuotients(object):
 		else:
 			denom = Multiplication(quotients_denominators)
 
-		return Multiplication( [div(num,denom)] + others )
+		return Multiplication( [frac(num,denom)] + others )
 
 
 class SummationOverKronecker(object):
@@ -1565,6 +1560,72 @@ class ProductRule(object):
 		return expr
 
 
+class Substitute(object):
+	def __init__(self, expr, replacement):
+		self.expr = expr
+		self.replacement = replacement
+
+	def visit_Expression(self, expr):
+		if self.expr == expr:
+			return self.replacement.deep_copy()
+		return expr
+
+class ExpandGradient(object):
+	def visit_Gradient(self, expr):
+		nested = expr.getExpr()
+		grad_nested = tensor("", rank=1, dimension=3)
+		grad_nested.setComponent(0, deriv(nested.deep_copy(), var("x"), is_partial = True))
+		grad_nested.setComponent(1, deriv(nested.deep_copy(), var("y"), is_partial = True))
+		grad_nested.setComponent(2, deriv(nested.deep_copy(), var("z"), is_partial = True))
+		return grad_nested
+
+class ExpandDivergence(object):
+	def visit_Divergence(self, expr):
+		nested = expr.getExpr()
+		tensor_x = None
+		tensor_y = None
+		tensor_z = None
+
+		if nested.__class__ == Multiplication:
+			# look for tensor
+			numOps = nested.numOperands()
+			others = []
+			tensor = None
+			for i in range(numOps):
+				op = nested.getOperand(i)
+				if op.__class__ == Tensor:
+					tensor = op
+				else:
+					others.append(op)
+			if tensor is None:
+				raise ValueError("ExpandDivergence: unable to expand non-tensor expression")
+			if len(others) == 0:
+				raise ValueError("expected at least one non-tensor factor")
+			else:
+				tensor_x  = Multiplication( others+[tensor.getComponent(0)] )
+				tensor_y  = Multiplication( others+[tensor.getComponent(1)] )
+				tensor_z  = Multiplication( others+[tensor.getComponent(2)] )
+
+		elif nested.__class__ == Tensor:
+			tensor_x  = nested.getComponent(0)
+			tensor_y  = nested.getComponent(1)
+			tensor_z  = nested.getComponent(2)
+
+		if tensor is None:
+			raise ValueError("ExpandDivergence: unable to expand non-tensor expression")
+
+		return add( deriv(tensor_x, var("x"), is_partial = True), deriv(tensor_y, var("y"), is_partial = True), deriv(tensor_z, var("z"), is_partial = True))
+	def visit_Addition(self, expr):
+		# flatten nested additions
+		factors = []
+		for i in range(expr.numOperands()):
+			f = expr.getOperand(i)
+			if f.__class__ == Addition:
+				for j in range(f.numOperands()):
+					factors.append(f.getOperand(j))
+			else:
+				factors.append(f)
+		return Addition(factors)
 
 def apply( expr, cls, visitor ):
 	visitor_function = None
@@ -1594,16 +1655,6 @@ def apply( expr, cls, visitor ):
 	# or any of its base functions
 	return expr
 
-
-class Substitute(object):
-	def __init__(self, expr, replacement):
-		self.expr = expr
-		self.replacement = replacement
-
-	def visit_Expression(self, expr):
-		if self.expr == expr:
-			return self.replacement.deep_copy()
-		return expr
 
 def apply_recursive( expr, visitor ):
 	for i in range(expr.numChildren()):

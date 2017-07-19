@@ -44,16 +44,20 @@ def eval_term_recursive( expr, info, level=0 ):
 
 	# in case of a simple number
 	if expr.__class__ == cas.Number:
-		#print("{}eval_term_recursive::Number".format(cas.indent_string(level)))
+		if info.debug == True:
+			print("{}eval_term_recursive::Number".format(cas.indent_string(level)))
 		return expr.getValue()
 	elif expr.__class__ == cas.Negate:
-		#print("{}eval_term_recursive::Negate".format(cas.indent_string(level)))
+		if info.debug == True:
+			print("{}eval_term_recursive::Negate".format(cas.indent_string(level)))
 		return -eval_term_recursive(expr.getOperand(0), info, level+1)
 	elif expr.__class__ == cas.Quotient:
-		#print("{}eval_term_recursive::Quotient".format(cas.indent_string(level)))
+		if info.debug == True:
+			print("{}eval_term_recursive::Quotient".format(cas.indent_string(level)))
 		return eval_term_recursive(expr.getNumerator(), info, level+1)/eval_term_recursive(expr.getDenominator(), info, level+1)
 	elif expr.__class__ == cas.Addition:
-		#print("{}eval_term_recursive::Addition".format(cas.indent_string(level)))
+		if info.debug == True:
+			print("{}eval_term_recursive::Addition".format(cas.indent_string(level)))
 		numOperands = expr.numOperands()
 		sum = 0.0
 		for i in range(numOperands):
@@ -61,7 +65,8 @@ def eval_term_recursive( expr, info, level=0 ):
 		return sum
 	#elif expr.__class__ == cas.Variable:
 	elif isinstance(expr, cas.Variable):
-		#print("{}eval_term_recursive::Variable".format(cas.indent_string(level)))
+		if info.debug == True:
+			print("{}eval_term_recursive::Variable".format(cas.indent_string(level)))
 		# TODO: if we come across the unknown, then return a stencil point
 		if expr.__class__ == cas.ImaginaryUnit:
 			return complex(0.0, 1.0)
@@ -71,7 +76,8 @@ def eval_term_recursive( expr, info, level=0 ):
 			raise ValueError("unable to resolve variable {}".format(expr.getSymbol()))
 	# in case of a function
 	elif isinstance(expr, cas.Function):
-		#print("{}eval_term_recursive::Function".format(cas.indent_string(level)))
+		if info.debug == True:
+			print("{}eval_term_recursive::Function".format(cas.indent_string(level)))
 		numArgs = expr.numArguments()
 		# evaluate all arguments
 		args = []
@@ -95,7 +101,8 @@ def eval_term_recursive( expr, info, level=0 ):
 		raise ValueError("function {} not defined for evaluation".format(expr.getSymbol()))
 	# derivation...
 	elif expr.__class__ == cas.Derivation:
-		#print("{}eval_term_recursive::Derivation".format(cas.indent_string(level)))
+		if info.debug == True:
+			print("{}eval_term_recursive::Derivation".format(cas.indent_string(level)))
 		step = np.zeros(info.voxelsize.shape[0], dtype=int)
 		pWS = info.vars['\\vec{x}']
 		coord = info.coord
@@ -133,14 +140,16 @@ def eval_term_recursive( expr, info, level=0 ):
 		info.vars['\\vec{x}'] = pWS
 		return central_difference_weight*(b - a)
 	elif expr.__class__ == cas.Multiplication:
-		#print("{}eval_term_recursive::Multiplication".format(cas.indent_string(level)))
+		if info.debug == True:
+			print("{}eval_term_recursive::Multiplication".format(cas.indent_string(level)))
 		numOperands = expr.numOperands()
 		result = 1.0
 		for i in range(numOperands):
 			result = result * eval_term_recursive(expr.getOperand(i), info, level+1)
 		return result
 	elif expr.__class__ == cas.Power:
-		#print("{}eval_term_recursive::Power".format(cas.indent_string(level)))
+		if info.debug == True:
+			print("{}eval_term_recursive::Power".format(cas.indent_string(level)))
 		return eval_term_recursive(expr.getBase(), info)**eval_term_recursive(expr.getExponent(), info, level+1)
 	else:
 		raise ValueError("unable to handle expression of type {}".format(expr.__class__.__name__))
@@ -154,6 +163,7 @@ def eval_term(expr, unknown_symbol, vars, funs, coord, voxelsize):
 	info.voxelsize = voxelsize
 	info.coord = coord
 	info.term_vanishes = False
+	info.debug = False
 	result = eval_term_recursive(expr, info)
 
 	if info.term_vanishes == True:
@@ -266,7 +276,7 @@ class PNBuilder(object):
 		return voxel*self.numCoeffs + coeff
 
 
-	def build_global( self, sigma_a = None, sigma_s = None, phase_shcoeffs = None, source_shcoeffs = None ):
+	def build_global( self, functions ):
 		'''The run method takes all problem specific inputs, such as absorption-
 		and scattering coefficient fields and source field and assembles a global
 		matrix which is used to solve for all sh coefficients of all voxels.'''
@@ -325,12 +335,6 @@ class PNBuilder(object):
 						vars["\\vec{x}"] = pWS
 						vars["l'"] = l
 						vars["m'"] = m
-						functions = {}
-						functions["\\sigma_t"] = lambda pWS: sigma_a(pWS) + sigma_s(pWS)
-						functions["\\sigma_a"] = sigma_a
-						functions["\\sigma_s"] = sigma_s
-						functions["f_p"] = phase_shcoeffs
-						functions["q"] = source_shcoeffs
 						coord = np.array([voxel_x, voxel_y], dtype=int)
 						result = eval_term( term, "L", vars, functions, coord, self.domain.voxelsize )
 						if result is None:

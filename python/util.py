@@ -201,6 +201,7 @@ class Domain2D:
 			# origin is at lower left
 			self.bound_min = np.array([0.0, 0.0])
 			self.bound_max = np.array([self.size_x, self.size_y])
+		self.center = (self.bound_min + self.bound_max)*0.5
 
 		#self.voxelToWorldTransform = 
 

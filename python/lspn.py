@@ -703,49 +703,102 @@ def lspn_extinction_source_term():
 
 	return expr
 
+def diffusion_terms():
+	x = cas.tensor("\\vec{x}", rank=1, dimension=3)
+	x.setComponent(0, cas.var("x"))
+	x.setComponent(1, cas.var("y"))
+	x.setComponent(2, cas.var("z"))
+	x.collapsed = True
+
+	sigma_t = cas.fun("\\sigma_t", x)
+
+	phi = cas.SHCoefficient("L", cas.num(0), cas.num(0), x )
+
+	D = cas.frac(cas.num(1), cas.mul(cas.num(3), sigma_t))
+
+	Q = cas.fun( "q", x)
+
+	expr = cas.add( cas.div(cas.mul( D, cas.grad(phi) )), cas.neg(Q) )
+	cas.print_expr(expr)
+	expr = cas.apply_recursive(expr, cas.ExpandGradient())
+	cas.print_expr(expr)
+	expr = cas.apply_recursive(expr, cas.ExpandDivergence())
+	#print(cas.hierarchy(expr))
+	#expr = expr.getOperand(3)
+
+	cas.print_expr(expr)
+	return  expr
+
+def point_source(pWS):
+	if np.linalg.norm(pWS - np.array([3.5, 3.5])) < 0.2:
+		return 1.0
+	return 0.0
+
+
+
+def build_diffusion():
+	order = 0
+	domain = util.Domain2D(7.0, 70)
+
+	pnb = pnbuilder.PNBuilder(order, domain)
+
+	pnb.add_terms(diffusion_terms())
+
+	functions = {}
+	functions["\\sigma_t"] = lambda pWS: 10.0
+	functions["q"] = point_source
+
+	(A,b) = pnb.build_global( functions )
+
+	data = {}
+	data['A'] = A
+	data['b'] = b.reshape((domain.numVoxels*pnb.numCoeffs, 1))
+	filename = "C:/projects/epfl/epfl17/python/sopn/data_diffusion.mat"
+	scipy.io.savemat(filename, data)
+
+
 
 if __name__ == "__main__":
+	# simple diffusion
+	build_diffusion()
+	exit(0)
+
 
 	order = 1
 	domain = util.Domain2D(7.0, 70)
-	#solver = SimplePN2D(order, )
-	#solver = LSPN2D(order, util.Domain2D(7.0, 50))
-	#u = solver.run(sigma_a, sigma_s, source)
 
+	functions = {}
+	functions["\\sigma_t"] = lambda pWS: sigma_a(pWS) + sigma_s(pWS)
+	functions["\\sigma_a"] = sigma_a
+	functions["\\sigma_s"] = sigma_s
+	functions["f_p"] = phase_shcoeffs
+	functions["q"] = source_shcoeffs
 
 	pnb = pnbuilder.PNBuilder(order, domain)
-	# second order form ---
-	t0 = lspn_sotransport_term()
-	t1 = lspn_extinction_directional_derivative_term()
-	t2 = lspn_squared_extinction_term()
-	t3 = lspn_directional_derivative_scattering_term()
-	t4 = lspn_extinction_scattering_term()
-	t5 = lspn_directional_derivative_source_term()
-	t6 = lspn_extinction_source_term()
-	pnb.add_terms(t0)
-	pnb.add_terms(t1)
-	pnb.add_terms(t2)
-	pnb.add_terms(t3)
-	pnb.add_terms(t4)
-	pnb.add_terms(t5)
-	pnb.add_terms(t6)
 
-	# simple first order approach ---
+
+	# first order form ---
 	#pnb.add_terms(fo_transport_term()) 
 	#pnb.add_terms(fo_collision_term()) 
 	#pnb.add_terms(fo_scattering_term()) 
 	#pnb.add_terms(fo_source_term())
 
-	(A,b) = pnb.build_global( sigma_a, sigma_s, phase_shcoeffs, source_shcoeffs )
+	# second order form ---
+	#pnb.add_terms(lspn_sotransport_term())
+	#pnb.add_terms(lspn_extinction_directional_derivative_term())
+	#pnb.add_terms(lspn_squared_extinction_term())
+	#pnb.add_terms(lspn_directional_derivative_scattering_term())
+	#pnb.add_terms(lspn_extinction_scattering_term())
+	#pnb.add_terms(lspn_directional_derivative_source_term())
+	#pnb.add_terms(lspn_extinction_source_term())
 
+
+	(A,b) = pnb.build_global( functions )
 
 	data = {}
-	data['A_new'] = A
-	data['b_new'] = b.reshape((domain.numVoxels*pnb.numCoeffs, 1))
-	scipy.io.savemat("C:/projects/epfl/epfl17/python/sopn/data_new2.mat", data)
+	data['A'] = A
+	data['b'] = b.reshape((domain.numVoxels*pnb.numCoeffs, 1))
+	filename = "C:/projects/epfl/epfl17/python/sopn/data_lpsn.mat"
+	scipy.io.savemat(filename, data)
 
-
-	#check in matlab
-	#result = (abs((A == A_new)-1));
-	#max(result(:)) <- should be zero
 

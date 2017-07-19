@@ -287,8 +287,8 @@ class PNBuilder(object):
 		for voxel_x in range(self.domain.res_x):
 			print("voxel_x={}".format(voxel_x))
 
-			if voxel_x > 10:
-				break
+			#if voxel_x > 10:
+			#	break
 
 			for voxel_y in range(self.domain.res_y):
 

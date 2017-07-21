@@ -759,9 +759,9 @@ def build_diffusion():
 
 
 if __name__ == "__main__":
-	# simple diffusion
-	build_diffusion()
-	exit(0)
+	## simple diffusion
+	#build_diffusion()
+	#exit(0)
 
 
 	order = 1
@@ -778,10 +778,10 @@ if __name__ == "__main__":
 
 
 	# first order form ---
-	#pnb.add_terms(fo_transport_term()) 
-	#pnb.add_terms(fo_collision_term()) 
-	#pnb.add_terms(fo_scattering_term()) 
-	#pnb.add_terms(fo_source_term())
+	pnb.add_terms(fo_transport_term()) 
+	pnb.add_terms(fo_collision_term()) 
+	pnb.add_terms(fo_scattering_term()) 
+	pnb.add_terms(fo_source_term())
 
 	# second order form ---
 	#pnb.add_terms(lspn_sotransport_term())
@@ -798,7 +798,8 @@ if __name__ == "__main__":
 	data = {}
 	data['A'] = A
 	data['b'] = b.reshape((domain.numVoxels*pnb.numCoeffs, 1))
-	filename = "C:/projects/epfl/epfl17/python/sopn/data_lpsn.mat"
+	filename = "C:/projects/epfl/epfl17/python/sopn/data_firstorder.mat"
+	#filename = "C:/projects/epfl/epfl17/python/sopn/data_lpsn.mat"
 	scipy.io.savemat(filename, data)
 
 

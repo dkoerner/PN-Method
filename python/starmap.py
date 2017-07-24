@@ -1,6 +1,6 @@
 import numpy as np
 import util
-import solver
+#import solver
 import time
 import shtools
 
@@ -217,7 +217,10 @@ class Starmap2D(object):
 				self.Mx_complex[i, self.lm_to_index[(l-1,m-1)]] = -0.5*c_lm(l-1, m-1)
 				self.My_complex[i, self.lm_to_index[(l-1,m-1)]] = 0.5*1j*c_lm(l-1, m-1)
 			if (l+1,m-1) in self.lm_to_index:
-				self.Mx_complex[i, self.lm_to_index[(l+1,m-1)]] = 0.5*d_lm(l+1, m-1)   
+				if i == 0:
+					tt = 0.5*d_lm(l+1, m-1)
+					print("test={}".format(tt))
+				self.Mx_complex[i, self.lm_to_index[(l+1,m-1)]] = 0.5*d_lm(l+1, m-1)
 				self.My_complex[i, self.lm_to_index[(l+1,m-1)]] = -0.5*1j*d_lm(l+1, m-1)   
 			if (l-1,m+1) in self.lm_to_index:
 				self.Mx_complex[i, self.lm_to_index[(l-1,m+1)]] = 0.5*e_lm(l-1, m+1)
@@ -276,6 +279,10 @@ class Starmap2D(object):
 				# Due to our central differences discretization, we will register col accordingly
 				self.sga.assign(col, i+1, j)
 				self.sga.assign(col, i-1, j)
+
+				if row == 0:
+					print("coefficient {} depends on coefficient {} {}".format(row, " dx ", col) )
+
 				# do this next
 				if not col in done and not col in todo:
 					todo.append(col)
@@ -287,6 +294,10 @@ class Starmap2D(object):
 				# Due to our central differences discretization, we will register col accordingly
 				self.sga.assign(col, i, j+1)
 				self.sga.assign(col, i, j-1)
+
+				if row == 0:
+					print("coefficient {} depends on coefficient {} {}".format(row, " dy ", col) )
+
 				# do this next
 				if not col in done and not col in todo:
 					todo.append(col)
@@ -1140,6 +1151,20 @@ if __name__ == "__main__":
 	#numTimeSteps = 2
 	#u = starmap.run( dt, numTimeSteps )
 
-	print(shtools.numSHCoeffs(4))
+	#print(shtools.numSHCoeffs(4))
+
+	sm = Starmap2D(1)
+
+	## the offsets in 2D (hardcoded)
+	#self.offsets[0][0] = (0.5,0.5)
+	#self.offsets[0][1] = (0.5,0.0)
+	#self.offsets[1][0] = (0.0,0.5)
+	#self.offsets[1][1] = (0.0,0.0)
+
+	for i in range(2):
+		for j in range(2):
+			print("i={} j={}".format(i, j))
+			print(sm.sga.get_grid_components(i, j))
+
 
 

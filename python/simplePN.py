@@ -261,7 +261,7 @@ class SimplePN2D(object):
 					# and the solution vector u
 					# k runs over the (non-zero) columns in M (identified by Ix/Iy) and the rows in u
 
-					'''
+					#'''
 					# Mx
 					for k in self.Ix[coeff]:
 						M_ij = self.Mx_real[coeff, k]
@@ -281,7 +281,7 @@ class SimplePN2D(object):
 							A[i, k_jm1] = -1.0/(2.0*self.domain.h_y)*M_ij
 						if voxel_j < self.domain.res_y-1:
 							A[i, k_jp1] = 1.0/(2.0*self.domain.h_y)*M_ij
-					'''
+					#'''
 
 					# C (is assumed to be diagonal, which implies isotropic medium and 1d phase function)
 					# NB: this here is the problem why this method doesnt work in voids
@@ -295,9 +295,10 @@ class SimplePN2D(object):
 		data = {}
 		data["A"] = A
 		data["b"] = b.reshape((numVoxels*self.numCoeffs, 1))
+		data["numCoeffs"] = self.numCoeffs
 		#data["b"] = b
 		#scipy.io.savemat("C:/projects/epfl/epfl17/python/simplepn/data.mat", data)
-		scipy.io.savemat("C:/projects/epfl/epfl17/python/sopn/data.mat", data)
+		scipy.io.savemat("C:/projects/epfl/epfl17/python/sopn/data_simplepn.mat", data)
 		#alpha = 1.0
 		#R = np.identity(numVoxels*self.numCoeffs) - alpha*A
 		#ev = np.linalg.eigvals(R)
@@ -340,4 +341,4 @@ if __name__ == "__main__":
 	order = 1
 	#solver = SimplePN2D(order, util.Domain2D(7.0, 50))
 	solver = SimplePN2D(order, util.Domain2D(7.0, 70))
-	#u = solver.run(sigma_a, sigma_s, source)
+	u = solver.run(sigma_a, sigma_s, source)

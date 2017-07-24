@@ -5,14 +5,53 @@ import time
 import shtools
 import scipy.io
 import cas
+import itertools
+
+
+class GridLocation2D(object):
+	def __init__(self, domain, voxel_i , voxel_j, offset):
+		self.domain = domain
+
+		(voxel_offset_i, offset_i) = divmod( offset[0], 2 )
+		(voxel_offset_j, offset_j) = divmod( offset[1], 2 )
+
+		self.voxel_i = voxel_i + voxel_offset_i
+		self.voxel_j = voxel_j + voxel_offset_j
+		self.voxel = np.array([voxel_i + voxel_offset_i,voxel_j + voxel_offset_j])
+		self.offset = np.array([offset_i,offset_j])
+		#self.pWS = self.domain.bound_min + np.multiply(np.array([self.voxel_i+self.offset[0]*0.5, self.voxel_j+self.offset[1]*0.5]), self.domain.voxelsize)
+		#self.pWS = self.domain.bound_min + np.multiply(self.voxel+self.offset*0.5, self.domain.voxelsize)
+		y = (self.voxel[0]+self.offset[0]*0.5)*self.domain.voxelsize[0]
+		x = (self.voxel[1]+self.offset[1]*0.5)*self.domain.voxelsize[1]
+		self.pWS = np.array([x, y])
+	def getPWS(self):
+		# get world space position
+		return self.pWS
+	def getOffset(self):
+		return self.offset
+	def getVoxel(self):
+		return self.voxel
+	def getShiftedLocation(self, offset):
+		return GridLocation2D(self.domain, self.voxel_i, self.voxel_j, self.offset+offset)
+	def __str__(self):
+		return "voxel={} {} offset={} {}".format(self.voxel[0], self.voxel[1], self.offset[0], self.offset[1])
+
+
 
 
 
 class EvalInfo(object):
-	pass
+	def __init__(self):
+		self.term_vanishes = False
+		self.debug = False
 
 class Unknown(object):
-	pass
+	def __init__(self, l, m, voxel, weight):
+		self.l = l
+		self.m = m
+		self.voxel = voxel
+		self.weight = weight
+
 
 
 class UnknownInfo(object):
@@ -84,17 +123,67 @@ def eval_term_recursive( expr, info, level=0 ):
 		for i in range(numArgs):
 			args.append( eval_term_recursive(expr.getArgument(i), info, level+1) )
 		if expr.getSymbol() == info.unknown_symbol:
-			u = Unknown()
 			# currently, we assume that:
 			# args[0] -> l;args[1] -> m;args[2] -> x
-			u.l = args[0]
-			u.m = args[1]
-			u.x = args[2]
-			u.coord = info.coord
-			u.weight = 1.0
-			return UnknownInfo([u])
+			l = args[0]
+			m = args[1]
+
+			if l < 0 or l > info.builder.N:
+				info.term_vanishes = True
+				return 0.0
+
+			coeff_index = info.builder.shIndex(l, m)
+			# check bounds
+			if coeff_index == None or coeff_index >=info.builder.numCoeffs:
+				info.term_vanishes = True
+				return 0.0
+
+			numDimensions = 2
+
+			# check if the location, at which to evaluate the unknown,
+			# matches the actual grid location of the unknown
+			# this is true for first order equation with non-anisotropic media
+			location_offset = info.location.getOffset()
+			unknown_offset = info.builder.unknown_info[coeff_index]['offset']
+			if (location_offset == unknown_offset).all():
+				# unknown location and eval location are the same spot
+				# no interpolation needed
+				u = Unknown(l, m, info.location.getVoxel(), 1.0)
+				return UnknownInfo([u])
+			elif location_offset[0] == unknown_offset[0]:
+				# in the previous if-clause, we checked for location and unknown to be exactly equal
+				# now if their offset matches only in one dimension, then we can simply interpolate
+				# between the two neighbouring datapoints in that dimension
+
+				# TODO: generalize to 3D
+
+				u0 = Unknown(l, m, info.location.getShiftedLocation(np.array([0, 1])).getVoxel(), 0.5)
+				u1 = Unknown(l, m, info.location.getShiftedLocation(np.array([0, -1])).getVoxel(), 0.5)
+				return UnknownInfo([u0,u1])
+			elif location_offset[1] == unknown_offset[1]:
+				u0 = Unknown(l, m, info.location.getShiftedLocation(np.array([1, 0])).getVoxel(), 0.5)
+				u1 = Unknown(l, m, info.location.getShiftedLocation(np.array([-1, 0])).getVoxel(), 0.5)
+				return UnknownInfo([u0,u1])
+			#elif (location_offset[0]+1)%2 == unknown_offset[0] and (location_offset[1]+1)%2 == unknown_offset[1]:
+			else:
+				# the offsets of evaluation and unknown do not match in any dimension, therefore 
+				# we can conclude that the location of the unknown is on the diagonals to the eval location
+
+				# the unknown is located diagonal to the position at which we want to evaluate it
+				# therefore we will do an equal weighted sum of all for surrounding unknowns
+				offset_combinations = itertools.product(*[[-1, 1] for d in range(numDimensions)])
+				num_offset_combinations = 2**numDimensions
+				weight =  1.0/num_offset_combinations
+				unknowns = []
+				for o in offset_combinations:
+					u = Unknown(l, m, info.location.getShiftedLocation(np.array(o)).getVoxel(), weight)
+					unknowns.append(u)
+				return UnknownInfo(unknowns)
+
+			raise ValueError("unexpected unknown location")
 		elif expr.getSymbol() in info.functions:
 			# evaluate function
+			info.vars["\\vec{x}"] = info.location.getPWS()
 			return info.functions[expr.getSymbol()]( *args )
 		elif not expr.body2 is None:
 			return expr.body2(*args)
@@ -103,10 +192,8 @@ def eval_term_recursive( expr, info, level=0 ):
 	elif expr.__class__ == cas.Derivation:
 		if info.debug == True:
 			print("{}eval_term_recursive::Derivation".format(cas.indent_string(level)))
-		step = np.zeros(info.voxelsize.shape[0], dtype=int)
-		pWS = info.vars['\\vec{x}']
-		coord = info.coord
 		if expr.getVariable().getSymbol() == "x":
+			# NB: grid has x-dimension along columns (therefore dim=1)
 			dimension = 0
 		elif expr.getVariable().getSymbol() == "y":
 			dimension = 1
@@ -120,24 +207,39 @@ def eval_term_recursive( expr, info, level=0 ):
 			info.term_vanishes = True
 			return 0.0
 
-		step[dimension] = 1
-		stepWS = step*info.voxelsize
-		central_difference_weight = 1.0/(2.0*info.voxelsize[dimension])
+
+		stepsize = 2
+
+		step = np.zeros(info.voxelsize.shape[0], dtype=int)
+		step[dimension] = stepsize
+
+		if info.debug == True:
+		#if True:
+			print("{}--".format(cas.indent_string(level)))
+			print("dimension={}".format(dimension))
+			print("step=")
+			print(step)
+			print("info.location={}".format(info.location))
+
+
+
+		location = info.location
+
+		central_difference_weight = 1.0/(stepsize*info.voxelsize[dimension])
 
 		nested_expr = expr.getExpr()
 		#print("{} class={}".format(cas.indent_string(level+1), nested_expr.__class__))
 
 		# idea behind this is to evaluate the child expression for the different positions
 		# of the discretization stencils
-		info.vars['\\vec{x}'] = pWS - stepWS
-		info.coord = coord - step
+		info.location = location.getShiftedLocation(-step)
+		#info.prefix += "d" + expr.getVariable().getSymbol()
 		a = eval_term_recursive(nested_expr, info, level+1)
 
-		info.vars['\\vec{x}'] = pWS + stepWS
-		info.coord = coord + step
+		info.location = location.getShiftedLocation(step)
 		b = eval_term_recursive(nested_expr, info, level+1)
 
-		info.vars['\\vec{x}'] = pWS
+		info.location = location
 		return central_difference_weight*(b - a)
 	elif expr.__class__ == cas.Multiplication:
 		if info.debug == True:
@@ -153,24 +255,6 @@ def eval_term_recursive( expr, info, level=0 ):
 		return eval_term_recursive(expr.getBase(), info)**eval_term_recursive(expr.getExponent(), info, level+1)
 	else:
 		raise ValueError("unable to handle expression of type {}".format(expr.__class__.__name__))
-
-
-def eval_term(expr, unknown_symbol, vars, funs, coord, voxelsize):
-	info = EvalInfo()
-	info.unknown_symbol = unknown_symbol
-	info.vars = vars
-	info.functions = funs
-	info.voxelsize = voxelsize
-	info.coord = coord
-	info.term_vanishes = False
-	info.debug = False
-	result = eval_term_recursive(expr, info)
-
-	if info.term_vanishes == True:
-		return None
-
-	return result
-	
 
 
 
@@ -209,6 +293,8 @@ class PNBuilder(object):
 
 		# extract the coefficients to the SH coefficients Llm
 		self.terms = []
+
+		self.unknown_info = [ {} for i in range(self.numCoeffs)]
 
 
 
@@ -252,6 +338,9 @@ class PNBuilder(object):
 					count+=1
 		self.S_inv = np.linalg.inv(self.S)
 
+	def place_unknown( self, coeff_index, grid_id ):
+		self.unknown_info[coeff_index]['grid_id'] = grid_id
+		self.unknown_info[coeff_index]['offset'] = np.array( [grid_id[0], grid_id[1]] , dtype=int)
 
 
 	def add_terms(self, expr):
@@ -297,14 +386,16 @@ class PNBuilder(object):
 		for voxel_x in range(self.domain.res_x):
 			print("voxel_x={}".format(voxel_x))
 
+			#if voxel_x > 0:
+			#	continue
+
 			#if voxel_x > 10:
 			#	break
 
 			for voxel_y in range(self.domain.res_y):
 
-				# get location of voxel center
-				pWS = np.array([self.X[voxel_x, voxel_y], self.Y[voxel_x, voxel_y]])
-				#print("voxel={} {} center={} {}".format(voxel_i, voxel_j, pWS[0], pWS[1]))
+				#if voxel_y > 0:
+				#	continue
 
 				# here we iterate the local matrix vector product between some matrix and u
 				# M represents the coupling between coefficients at the same location
@@ -313,8 +404,19 @@ class PNBuilder(object):
 				# which we can express easily because we have a global system
 				for local_i in range(self.numCoeffs):
 
+					#if local_i > 0:
+					#	continue
+
 					# find the equation index within our global system
 					global_i = self.get_global_index(voxel_x, voxel_y, local_i)
+
+					# get (grid)location of the unknown which is associated with the current row
+					location = GridLocation2D(self.domain, voxel_x, voxel_y, self.unknown_info[local_i]['offset'])
+					pWS = np.array([self.X[voxel_x, voxel_y], self.Y[voxel_x, voxel_y]])
+					pWS2 = location.getPWS()
+					#print("voxel={} {} center={} {}".format(voxel_i, voxel_j, pWS[0], pWS[1]))
+					#print("pWS={} {} check={} {}".format(pWS[0], pWS[1], pWS2[0], pWS2[1]))
+					#continue
 
 
 					l = self.index_to_lm[local_i][0]#-> use this for 3d: l,m = shtools.lmIndex(i)
@@ -329,37 +431,57 @@ class PNBuilder(object):
 					ii = 0
 					#print("numTerms={}".format(len(self.terms)))
 					for term in self.terms:
+
+						
+
 						#print("term={}".format(term.toLatex()))
 						#print(cas.hierarchy(term))
-						vars = {}
-						vars["\\vec{x}"] = pWS
-						vars["l'"] = l
-						vars["m'"] = m
-						coord = np.array([voxel_x, voxel_y], dtype=int)
-						result = eval_term( term, "L", vars, functions, coord, self.domain.voxelsize )
-						if result is None:
+
+						info = EvalInfo()
+						info.unknown_symbol = "L"
+
+						info.vars = {}
+						info.vars["\\vec{x}"] = pWS
+						info.vars["l'"] = l
+						info.vars["m'"] = m
+						info.coeff_equ = local_i
+						info.prefix = ""
+
+						info.functions = functions
+						info.voxelsize = self.domain.voxelsize
+						# location at which to evaluate the current term
+						# this is driven by the unknown which is associated with the current row
+						info.location = location
+						info.builder = self
+						#info.debug = True
+
+						if info.debug == True:
+							cas.print_expr(term)
+							print("location={}".format(info.location))
+						result = eval_term_recursive( term, info )
+
+						if info.term_vanishes:
 							# term vanishes
-							# happens for example if it involves a derivative in z in 2d
+							# happens for example if it involves z-derivative in 2d
 							pass
 						elif result.__class__ == UnknownInfo:
 							# this is a lhs term
 							# weights are going into A
 							for u in result.unknowns:
-								if u.l < 0 or u.l > self.N:
+								if u.l < 0 or u.l > self.N or u.weight == 0.0:
 									continue
 
 								local_j = self.shIndex( u.l, u.m )
-								# check bounds
-								if local_j == None or local_j >=self.numCoeffs:
-									continue
+								#print("coefficient {} depends on coefficient {} with weight={}".format(local_i, local_j, u.weight) )
 
 								# TODO: think about how to handle boundaries
-								if u.coord[0] < 0 or u.coord[0] >= self.domain.res_x or u.coord[1] < 0 or u.coord[1] >= self.domain.res_y:
+								# TODO: probably we will have that weight=0.0 for out of bound locations
+								if u.voxel[0] < 0 or u.voxel[0] >= self.domain.res_x or u.voxel[1] < 0 or u.voxel[1] >= self.domain.res_y:
 									continue
 
-								# position and shcoeff-index define the final column within the current row
+								# voxel and shcoeff-index define the final column within the current row
 								# of the global matrix A
-								global_j = self.get_global_index(u.coord[0], u.coord[1], local_j)
+								global_j = self.get_global_index(u.voxel[0], u.voxel[1], local_j)
 
 								A_complex[global_i, global_j] += u.weight
 						else:
@@ -370,7 +492,8 @@ class PNBuilder(object):
 							#	raise ValueError()
 							# this is a rhs term (because it has no unknowns and evaluated to a number)
 							#this goes straight into b
-							b_complex[global_i] += result
+							#b_complex[global_i] += result
+							pass
 						ii += 1
 
 				# now transform all blocks of the current block-row into real variables

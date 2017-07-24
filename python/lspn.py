@@ -53,9 +53,9 @@ def source_shcoeffs( l, m, pWS ):
 
 
 def print_expr(expr):
-	pass
-	#print("\n----------------------------\n")
-	#print("$$\n" + cas.latex(expr) + "\n$$")
+	#pass
+	print("\n----------------------------\n")
+	print("$$\n" + cas.latex(expr) + "\n$$")
 
 
 
@@ -189,9 +189,7 @@ def fo_transport_term():
 	expr = cas.apply_recursive(expr, cas.SHOrthogonalityProperty())
 	expr = cas.apply_recursive(expr, cas.SummationOverKronecker())
 
-	#print("\n----------------------------\n")
-	#print("$$\n" + cas.latex(expr) + "\n$$")
-	#print(cas.hierarchy(expr))
+	print_expr(expr)
 	return expr
 
 
@@ -776,6 +774,13 @@ if __name__ == "__main__":
 
 	pnb = pnbuilder.PNBuilder(order, domain)
 
+	#pnb.place_unknown( 0, (1,1) )
+	#pnb.place_unknown( 1, (1,0) )
+	#pnb.place_unknown( 2, (0,1) )
+
+	pnb.place_unknown( 0, (1,1) )
+	pnb.place_unknown( 1, (1,1) )
+	pnb.place_unknown( 2, (1,1) )
 
 	# first order form ---
 	pnb.add_terms(fo_transport_term()) 
@@ -794,12 +799,15 @@ if __name__ == "__main__":
 
 
 	(A,b) = pnb.build_global( functions )
-
+	#'''
 	data = {}
 	data['A'] = A
 	data['b'] = b.reshape((domain.numVoxels*pnb.numCoeffs, 1))
+	data['numCoeffs'] = pnb.numCoeffs
 	filename = "C:/projects/epfl/epfl17/python/sopn/data_firstorder.mat"
 	#filename = "C:/projects/epfl/epfl17/python/sopn/data_lpsn.mat"
 	scipy.io.savemat(filename, data)
+	#'''
+	
 
 

@@ -191,7 +191,9 @@ class Domain2D:
 		self.size_y = size
 		self.h_x = size/float(self.res_x)
 		self.h_y = size/float(self.res_y)
-		self.voxelsize = np.array([self.h_x, self.h_y])
+		# NB: voxelsize channels are switched because i component is in y-axis, while
+		# j component is in x-axis
+		self.voxelsize = np.array([self.h_y, self.h_x])
 		self.numVoxels = self.res_x*self.res_y
 		if center == 'origin':
 			# center of the bounding box is origin

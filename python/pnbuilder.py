@@ -207,8 +207,8 @@ def eval_term_recursive( expr, info, level=0 ):
 			info.term_vanishes = True
 			return 0.0
 
-
-		stepsize = 2
+		# stepsize determines the stepsize of the stencil in number of half-voxels
+		stepsize = info.builder.stencil_half_steps
 
 		step = np.zeros(info.voxelsize.shape[0], dtype=int)
 		step[dimension] = stepsize
@@ -296,6 +296,8 @@ class PNBuilder(object):
 
 		self.unknown_info = [ {} for i in range(self.numCoeffs)]
 
+		self.stencil_half_steps = 1
+
 
 
 	def shIndex(self, l, m):
@@ -342,6 +344,8 @@ class PNBuilder(object):
 		self.unknown_info[coeff_index]['grid_id'] = grid_id
 		self.unknown_info[coeff_index]['offset'] = np.array( [grid_id[0], grid_id[1]] , dtype=int)
 
+	def set_stencil_half_steps(self, stencil_half_steps):
+		self.stencil_half_steps = stencil_half_steps
 
 	def add_terms(self, expr):
 		if expr.__class__ == cas.Multiplication or expr.__class__ == cas.Negate or isinstance(expr, cas.Function):
@@ -492,8 +496,7 @@ class PNBuilder(object):
 							#	raise ValueError()
 							# this is a rhs term (because it has no unknowns and evaluated to a number)
 							#this goes straight into b
-							#b_complex[global_i] += result
-							pass
+							b_complex[global_i] += result
 						ii += 1
 
 				# now transform all blocks of the current block-row into real variables

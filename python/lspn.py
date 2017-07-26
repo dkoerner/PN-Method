@@ -550,6 +550,80 @@ def lspn_directional_derivative_scattering_term():
 
 	return expr
 
+
+def lspn_directional_derivative_scattering_term2():
+	omega = cas.tensor("\\omega", rank=1, dimension=3)
+	omega_x = omega.getComponent(0)
+	omega_y = omega.getComponent(1)
+	omega_z = omega.getComponent(2)
+
+	x = cas.tensor("\\vec{x}", rank=1, dimension=3)
+	x.setComponent(0, cas.var("x"))
+	x.setComponent(1, cas.var("y"))
+	x.setComponent(2, cas.var("z"))
+	x.collapsed = True
+
+	L = cas.fun( "L", x, omega)
+
+	sigma_s = cas.fun( "\\sigma_s", x)
+
+	lambda_l = cas.fun( "\\lambda", cas.var("l"), arglevel=-1)
+	# TODO: use correct value
+	lambda_l.body2 = lambda l:1.0
+
+	SL_isotropic_expanded = cas.mul( sigma_s ,cas.sum( cas.sum( cas.mul( lambda_l, cas.SHCoefficient( "f_p", cas.var("l"), cas.num(0), x ), cas.SHCoefficient( "L", cas.var("l"), cas.var("m"), x ), cas.SHBasis(cas.var("l"), cas.var("m"), omega, conjugate_complex=False) ), cas.var('m'), cas.neg(cas.var('l')), cas.var('l') ), cas.var('l'), cas.num(0), cas.infty() ) )
+
+	nabla_SL = cas.tensor("", rank=1, dimension=3)
+	nabla_SL.setComponent(0, cas.deriv(SL_isotropic_expanded, x.getComponent(0), is_partial = True))
+	nabla_SL.setComponent(1, cas.deriv(SL_isotropic_expanded, x.getComponent(1), is_partial = True))
+	nabla_SL.setComponent(2, cas.deriv(SL_isotropic_expanded, x.getComponent(2), is_partial = True))
+
+	# NB: we should have negative omega, as we use the adjoint of the transport operator
+	# however, since we move the term to the lhs the negative signs cancel out
+	expr = cas.dot( omega, cas.grad(SL_isotropic_expanded) )
+	#print_expr(expr)
+	expr = cas.integrate(cas.mul( cas.SHBasis(cas.var("l'"), cas.var("m'"), omega, conjugate_complex=True), expr), omega) 
+	#print_expr(expr)
+	expr = cas.apply_recursive(expr, cas.CleanupSigns())
+	#print_expr(expr)
+	expr = cas.apply_recursive(expr, cas.ExpandDotProduct())
+	#print_expr(expr)
+	expr = cas.apply_recursive(expr, cas.DistributiveLaw())
+	#print_expr(expr)
+	expr = cas.apply_recursive(expr, cas.SplitIntegrals())
+	#print_expr(expr)
+	expr = cas.apply_recursive(expr, cas.CleanupSigns())
+	#print_expr(expr)
+	expr = cas.apply_recursive(expr, cas.SHRecursiveRelation())
+	#print_expr(expr)
+	expr = cas.apply_recursive(expr, cas.DistributiveLaw())
+	#print_expr(expr)
+	expr = cas.apply_recursive(expr, cas.SplitIntegrals())
+	#print_expr(expr)
+	expr = cas.apply_recursive(expr, cas.CleanupSigns())
+	#print_expr(expr)
+	expr = cas.apply_recursive(expr, cas.SwitchDomains())
+	expr = cas.apply_recursive(expr, cas.SwitchDomains())
+	expr = cas.apply_recursive(expr, cas.SwitchDomains())
+	#print_expr(expr)
+	expr = cas.apply_recursive(expr, cas.Factorize())
+	#print_expr(expr)
+	expr = cas.apply_recursive(expr, cas.SHOrthogonalityProperty())
+	#print_expr(expr)
+	expr = cas.apply_recursive(expr, cas.SummationOverKronecker())
+	#print_expr(expr)
+	expr = cas.apply_recursive(expr, cas.Factorize())
+	#print_expr(expr)
+	expr = cas.apply_recursive(expr, cas.ProductRule())
+	#print_expr(expr)
+	expr = cas.apply_recursive(expr, cas.DistributiveLaw())
+	#print_expr(expr)
+	expr = cas.apply_recursive(expr, cas.CleanupSigns())
+	print_expr(expr)
+
+	return expr
+
+
 def lspn_extinction_scattering_term():
 	omega = cas.tensor("\\omega", rank=1, dimension=3)
 	omega_x = omega.getComponent(0)
@@ -789,19 +863,20 @@ if __name__ == "__main__":
 	#pnb.set_stencil_half_steps(2)
 
 	# first order form ---
-	pnb.add_terms(fo_transport_term()) 
-	pnb.add_terms(fo_collision_term()) 
-	pnb.add_terms(fo_scattering_term()) 
-	pnb.add_terms(fo_source_term())
+	#pnb.add_terms(fo_transport_term()) 
+	#pnb.add_terms(fo_collision_term()) 
+	#pnb.add_terms(fo_scattering_term()) 
+	#pnb.add_terms(fo_source_term())
 
 	# second order form ---
-	#pnb.add_terms(lspn_sotransport_term())
+	pnb.add_terms(lspn_sotransport_term())
 	#pnb.add_terms(lspn_extinction_directional_derivative_term())
-	#pnb.add_terms(lspn_squared_extinction_term())
+	pnb.add_terms(lspn_squared_extinction_term())
 	#pnb.add_terms(lspn_directional_derivative_scattering_term())
-	#pnb.add_terms(lspn_extinction_scattering_term())
-	#pnb.add_terms(lspn_directional_derivative_source_term())
-	#pnb.add_terms(lspn_extinction_source_term())
+	pnb.add_terms(lspn_directional_derivative_scattering_term2())
+	pnb.add_terms(lspn_extinction_scattering_term())
+	pnb.add_terms(lspn_directional_derivative_source_term())
+	pnb.add_terms(lspn_extinction_source_term())
 
 
 	(A,b) = pnb.build_global( functions )
@@ -813,13 +888,25 @@ if __name__ == "__main__":
 	data['A'] = A
 	data['b'] = b.reshape((domain.numVoxels*pnb.numCoeffs, 1))
 	data['numCoeffs'] = pnb.numCoeffs
-	filename = "C:/projects/epfl/epfl17/python/sopn/data_firstorder_corrected_staggered.mat"
+	#filename = "C:/projects/epfl/epfl17/python/sopn/data_firstorder_corrected_staggered.mat"
 	#filename = "C:/projects/epfl/epfl17/python/sopn/data_firstorder_staggered.mat"
 	#filename = "C:/projects/epfl/epfl17/python/sopn/data_lspn_corrected.mat"
 	#filename = "C:/projects/epfl/epfl17/python/sopn/data_lspn_staggered.mat"
 	#filename = "C:/projects/epfl/epfl17/python/sopn/data_lspn_noddt.mat"
+	filename = "C:/projects/epfl/epfl17/python/sopn/data_lspn_test2.mat"
 	scipy.io.savemat(filename, data)
+
+	#test: all terms with new scattering derivative term
+
 	#'''
 	
+	'''
+	data = {}
+	data['sigma_s'] = domain.rasterize2(functions["\\sigma_s"])
+	data['sigma_a'] = domain.rasterize2(functions["\\sigma_a"])
+	data['sigma_t'] = domain.rasterize2(functions["\\sigma_t"])
+	data['q'] = domain.rasterize2(lambda pWS: source_shcoeffs(0,0,pWS))
+	scipy.io.savemat("C:/projects/epfl/epfl17/python/sopn/problem.mat", data)
+	'''
 
 

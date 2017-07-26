@@ -243,6 +243,17 @@ class Domain2D:
 				field[i, j] = fun(pWS)
 		return field
 
+	def rasterize2( self, fun, shape = None ):
+		if shape == None:
+			shape = (self.res_x, self.res_y)
+		field = np.zeros(shape)
+		for i in range(0, self.res_y):
+			for j in range(0, self.res_x):
+				pVS = np.array([i+0.5, j+0.5])
+				pWS = self.voxelToWorld(pVS)
+				field[i, j] = fun(pWS)
+		return field
+
 	def rasterizeVS( self, fun ):
 		field = np.zeros((self.res_x, self.res_y))
 		for i in range(0, self.res_y):

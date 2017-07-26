@@ -647,7 +647,26 @@ class DotProduct(Operator):
 	def deep_copy(self):
 		return DotProduct(self.getLeft().deep_copy(), self.getRight().deep_copy())
 	def toLatex(self):
-		return "{}\\cdot{}".format(self.getLeft().toLatex(), self.getRight().toLatex())
+		parentheses_left = False
+		parentheses_right = False
+
+		if self.getLeft().__class__ == Negate:
+			parentheses_left = True
+
+		if self.getRight().__class__ == Negate:
+			parentheses_right = True
+
+		if parentheses_left == True:
+			left = "\\left({}\\right)".format(self.getLeft().toLatex())
+		else:
+			left = "{}".format(self.getLeft().toLatex())
+
+		if parentheses_right == True:
+			right = "\\left({}\\right)".format(self.getRight().toLatex())
+		else:
+			right = "{}".format(self.getRight().toLatex())
+
+		return "{}\\cdot{}".format(left, right)
 
 class Gradient(Operator):
 	def __init__(self, operand):
@@ -656,8 +675,21 @@ class Gradient(Operator):
 		return self.getOperand(0)
 	def deep_copy(self):
 		return Gradient(self.getExpr().deep_copy())
+	def numComponents(self):
+		return 3
+	def getComponent(self, index):
+		symbol = "xyz"[index]
+		return deriv(self.getExpr().deep_copy(), var(symbol), is_partial = True)
 	def toLatex(self):
-		return "\\nabla{{{}}}".format(self.getExpr().toLatex())
+		parentheses = False
+
+		if self.getExpr().__class__ == Multiplication or self.getExpr().__class__ == Addition:
+			parentheses = True
+
+		if parentheses == True:
+			return "\\nabla{{\\left({}\\right)}}".format(self.getExpr().toLatex())
+		else:
+			return "\\nabla{{{}}}".format(self.getExpr().toLatex())
 
 
 class Divergence(Operator):
@@ -1212,7 +1244,7 @@ class CleanupSigns(object):
 
 		return expr
 	def visit_DotProduct(self, expr):
-		if expr.getLeft().__class__ == Negate and expr.getLeft().__class__ == Negate:
+		if expr.getLeft().__class__ == Negate and expr.getRight().__class__ == Negate:
 			# double negation
 			return DotProduct(expr.getLeft().getOperand(0), expr.getRight().getOperand(0))
 		elif expr.getLeft().__class__ == Negate:

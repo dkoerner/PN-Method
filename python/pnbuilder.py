@@ -267,6 +267,7 @@ def eval_term_recursive( expr, info, level=0 ):
 
 		info.location = location
 		info.vars["\\vec{x}"] = info.location.getPWS()
+		#info.vars["\\vec{x}"] = location.getPWS()
 		return central_difference_weight*(b - a)
 	elif expr.__class__ == cas.Multiplication:
 		if info.debug == True:

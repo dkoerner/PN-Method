@@ -777,31 +777,31 @@ if __name__ == "__main__":
 	pnb = pnbuilder.PNBuilder(order, domain)
 
 	# staggered grid (and 3 point stencil)
-	#pnb.place_unknown( 0, (1,1) )
-	#pnb.place_unknown( 1, (1,0) )
-	#pnb.place_unknown( 2, (0,1) )
-	#pnb.set_stencil_half_steps(1)
+	pnb.place_unknown( 0, (1,1) )
+	pnb.place_unknown( 1, (1,0) )
+	pnb.place_unknown( 2, (0,1) )
+	pnb.set_stencil_half_steps(1)
 
 	# non-staggered grid (all unknowns placed at cell center and 5 point stencils)
-	pnb.place_unknown( 0, (1,1) )
-	pnb.place_unknown( 1, (1,1) )
-	pnb.place_unknown( 2, (1,1) )
-	pnb.set_stencil_half_steps(2)
+	#pnb.place_unknown( 0, (1,1) )
+	#pnb.place_unknown( 1, (1,1) )
+	#pnb.place_unknown( 2, (1,1) )
+	#pnb.set_stencil_half_steps(2)
 
 	# first order form ---
-	#pnb.add_terms(fo_transport_term()) 
-	#pnb.add_terms(fo_collision_term()) 
-	#pnb.add_terms(fo_scattering_term()) 
-	#pnb.add_terms(fo_source_term())
+	pnb.add_terms(fo_transport_term()) 
+	pnb.add_terms(fo_collision_term()) 
+	pnb.add_terms(fo_scattering_term()) 
+	pnb.add_terms(fo_source_term())
 
 	# second order form ---
-	pnb.add_terms(lspn_sotransport_term())
-	pnb.add_terms(lspn_extinction_directional_derivative_term())
-	pnb.add_terms(lspn_squared_extinction_term())
-	pnb.add_terms(lspn_directional_derivative_scattering_term())
-	pnb.add_terms(lspn_extinction_scattering_term())
-	pnb.add_terms(lspn_directional_derivative_source_term())
-	pnb.add_terms(lspn_extinction_source_term())
+	#pnb.add_terms(lspn_sotransport_term())
+	#pnb.add_terms(lspn_extinction_directional_derivative_term())
+	#pnb.add_terms(lspn_squared_extinction_term())
+	#pnb.add_terms(lspn_directional_derivative_scattering_term())
+	#pnb.add_terms(lspn_extinction_scattering_term())
+	#pnb.add_terms(lspn_directional_derivative_source_term())
+	#pnb.add_terms(lspn_extinction_source_term())
 
 
 	(A,b) = pnb.build_global( functions )
@@ -813,10 +813,11 @@ if __name__ == "__main__":
 	data['A'] = A
 	data['b'] = b.reshape((domain.numVoxels*pnb.numCoeffs, 1))
 	data['numCoeffs'] = pnb.numCoeffs
-	#filename = "C:/projects/epfl/epfl17/python/sopn/data_firstorder.mat"
+	filename = "C:/projects/epfl/epfl17/python/sopn/data_firstorder_corrected_staggered.mat"
 	#filename = "C:/projects/epfl/epfl17/python/sopn/data_firstorder_staggered.mat"
-	filename = "C:/projects/epfl/epfl17/python/sopn/data_lspn.mat"
+	#filename = "C:/projects/epfl/epfl17/python/sopn/data_lspn_corrected.mat"
 	#filename = "C:/projects/epfl/epfl17/python/sopn/data_lspn_staggered.mat"
+	#filename = "C:/projects/epfl/epfl17/python/sopn/data_lspn_noddt.mat"
 	scipy.io.savemat(filename, data)
 	#'''
 	

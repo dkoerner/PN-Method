@@ -38,13 +38,13 @@ def sh_sum( order, coeffs, theta, phi ):
             result+=coeffs[shIndex(l,m)]*sph_harm(m, l, phi, theta)
     return result
 
-def project_sh( fun, order ):
+def project_sh( fun, order, debug=False ):
     coeffs = np.zeros(numSHCoeffs(order), dtype=complex)
     for l in range(order+1):
         for m in range(-l, l+1):
             # NB: we use the complex conjugate of the spherical harmonics function for projection
             # see https://en.wikipedia.org/wiki/Spherical_harmonics#Spherical_harmonics_expansion
-            coeffs[shIndex(l,m)] = integrate_sphere( lambda theta, phi: fun(theta, phi)*np.conj(sph_harm(m, l, phi, theta)) )
+            coeffs[shIndex(l,m)] = integrate_sphere( lambda theta, phi: fun(theta, phi)*np.conj(sph_harm(m, l, phi, theta)), debug )
     return coeffs            
 
 
@@ -83,7 +83,7 @@ def f_lm( l, m ):
 	return np.sqrt(base)
 
     
-def integrate_sphere( fun ):
+def integrate_sphere( fun, debug = False ):
     result = 0.0
 
     min_theta = 0

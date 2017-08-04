@@ -87,32 +87,39 @@ def eval_term_recursive( expr, info, level=0 ):
 		if info.debug == True:
 			print("{}eval_term_recursive::Number".format(istr))
 		result = expr.getValue()
+		if info.debug == True:
+			print("{}result={}".format(istr, str(result)))
 		return result
 	elif expr.__class__ == cas.Negate:
 		if info.debug == True:
 			print("{}eval_term_recursive::Negate".format(istr))
 
 		result = -eval_term_recursive(expr.getOperand(0), info, level+1)
+		if info.debug == True:
+			print("{}result={}".format(istr, str(result)))
 		return result
 	elif expr.__class__ == cas.Quotient:
 		if info.debug == True:
 			print("{}eval_term_recursive::Quotient".format(istr))
 
 		result = eval_term_recursive(expr.getNumerator(), info, level+1)/eval_term_recursive(expr.getDenominator(), info, level+1)
+		if info.debug == True:
+			print("{}result={}".format(istr, str(result)))
 		return result
 	elif expr.__class__ == cas.Addition:
 		if info.debug == True:
 			print("{}eval_term_recursive::Addition".format(istr))
-
 		numOperands = expr.numOperands()
-		result = 0.0
+		result = 0
 		for i in range(numOperands):
 			result += eval_term_recursive(expr.getOperand(i), info, level+1)
+		if info.debug == True:
+			print("{}result={}".format(istr, str(result)))
 		return result
 	#elif expr.__class__ == cas.Variable:
 	elif isinstance(expr, cas.Variable):
 		if info.debug == True:
-			print("{}eval_term_recursive::Variable".format(istr))
+			print("{}eval_term_recursive::Variable {}".format(istr, expr.getSymbol()))
 
 		result = None
 		# TODO: if we come across the unknown, then return a stencil point
@@ -125,7 +132,6 @@ def eval_term_recursive( expr, info, level=0 ):
 
 		if info.debug == True:
 			print("{}result={}".format(istr, str(result)))
-
 		return result
 	# in case of a function
 	elif isinstance(expr, cas.Function):
@@ -253,6 +259,7 @@ def eval_term_recursive( expr, info, level=0 ):
 		# of the discretization stencils
 		info.location = location.getShiftedLocation(-step)
 		info.vars["\\vec{x}"] = info.location.getPWS()
+		#print(info.vars["\\vec{x}"])
 		if info.debug == True:
 			print("{}-step={} {}".format(cas.indent_string(level), info.location.voxel[0], info.location.voxel[1]))
 
@@ -261,6 +268,7 @@ def eval_term_recursive( expr, info, level=0 ):
 
 		info.location = location.getShiftedLocation(step)
 		info.vars["\\vec{x}"] = info.location.getPWS()
+		#print(info.vars["\\vec{x}"])
 		if info.debug == True:
 			print("{}+step={} {}".format(cas.indent_string(level), info.location.voxel[0], info.location.voxel[1]))
 		b = eval_term_recursive(nested_expr, info, level+1)
@@ -268,14 +276,21 @@ def eval_term_recursive( expr, info, level=0 ):
 		info.location = location
 		info.vars["\\vec{x}"] = info.location.getPWS()
 		#info.vars["\\vec{x}"] = location.getPWS()
-		return central_difference_weight*(b - a)
+		#print(b)
+		#print(a)
+		#print(central_difference_weight)
+		result = central_difference_weight*(b - a)
+		#print("dx={}".format(result))
+		return result
 	elif expr.__class__ == cas.Multiplication:
 		if info.debug == True:
 			print("{}eval_term_recursive::Multiplication".format(cas.indent_string(level)))
 		numOperands = expr.numOperands()
-		result = 1.0
+		result = 1
 		for i in range(numOperands):
 			result = result * eval_term_recursive(expr.getOperand(i), info, level+1)
+		if info.debug == True:
+			print("{}result={}".format(cas.indent_string(level), str(result)))
 		return result
 	elif expr.__class__ == cas.Power:
 		if info.debug == True:
@@ -324,7 +339,11 @@ class PNBuilder(object):
 
 		self.unknown_info = [ {} for i in range(self.numCoeffs)]
 
-		self.stencil_half_steps = 1
+		# by default we place all unknowns at the cell centers
+		for i in range(self.numCoeffs):
+			self.place_unknown(i, (1, 1))
+		# and we use full voxel central differences
+		self.stencil_half_steps = 2
 
 
 
@@ -334,6 +353,10 @@ class PNBuilder(object):
 		if key in self.lm_to_index:
 			return self.lm_to_index[key]
 		return None
+
+	def lmIndex(self, coeff_index):
+		return self.index_to_lm[coeff_index]
+
 
 	def build_S(self):
 		'''builds the S matrix, which converts from complex-valued to real valued coefficients'''
@@ -372,18 +395,21 @@ class PNBuilder(object):
 		self.unknown_info[coeff_index]['grid_id'] = grid_id
 		self.unknown_info[coeff_index]['offset'] = np.array( [grid_id[0], grid_id[1]] , dtype=int)
 
+	def get_unknown_location(self, voxel_i, voxel_j, coeff_index):
+		return GridLocation2D( self.domain, voxel_i, voxel_j, self.unknown_info[coeff_index]['offset'] )
+
 	def set_stencil_half_steps(self, stencil_half_steps):
 		self.stencil_half_steps = stencil_half_steps
 
 	def add_terms(self, expr):
-		if expr.__class__ == cas.Multiplication or expr.__class__ == cas.Negate or isinstance(expr, cas.Function):
+		if expr.__class__ == cas.Multiplication or expr.__class__ == cas.Negate or isinstance(expr, cas.Function) or isinstance(expr, cas.Number) or expr.__class__ == cas.Derivation:
 			self.terms.append(expr)
 		elif expr.__class__ == cas.Addition:
 			numTerms = expr.numOperands()
 			for i in range(numTerms):
 				self.terms.append(expr.getOperand(i))
 		else:
-			ValueError("expected expression to be addition or multiplication")
+			raise ValueError("expected expression to be addition or multiplication")
 
 
 
@@ -409,6 +435,7 @@ class PNBuilder(object):
 		A_complex = np.zeros( (numVoxels*self.numCoeffs, numVoxels*self.numCoeffs), dtype = complex )
 		b_complex = np.zeros( (numVoxels*self.numCoeffs), dtype=complex )
 		A_real = np.zeros( (numVoxels*self.numCoeffs, numVoxels*self.numCoeffs) )
+		self.A_real_structure = np.zeros( (numVoxels, numVoxels), dtype=int )
 		b_real = np.zeros( (numVoxels*self.numCoeffs) )
 
 		# Now we build the global coefficient matrix A and rhs b by iterating over all elements (voxels)
@@ -474,8 +501,6 @@ class PNBuilder(object):
 					#print("numTerms={}".format(len(self.terms)))
 					for term in self.terms:
 
-						
-
 						#print("term={}".format(term.toLatex()))
 						#print(cas.hierarchy(term))
 
@@ -497,6 +522,8 @@ class PNBuilder(object):
 						info.builder = self
 						#info.debug = True
 
+						#if voxel_x == 2 and voxel_y == 2 and local_i==0:
+						#	info.debug = True
 						#if global_i == 6447 and term_index == 1:
 						#	info.debug = True
 						#	print("term debug {} ------------------------------".format(term_index))
@@ -516,6 +543,8 @@ class PNBuilder(object):
 							if info.debug == True:
 								print("term_index={} unknown info".format(term_index))
 								print("#unknowns={}".format(len(result.unknowns)))
+								for k in range(len(result.unknowns)):
+									print("\t unknown {}: weight={} voxel={} {}".format(k, result.unknowns[k].weight, result.unknowns[k].voxel[0], result.unknowns[k].voxel[1]))
 
 							# this is a lhs term
 							# weights are going into A
@@ -545,7 +574,7 @@ class PNBuilder(object):
 								A_complex[global_i, global_j] += u.weight
 						else:
 							if info.debug == True:
-								print("b term")
+								print("b term result={}".format(result))
 
 							#print("no unknown!")
 							#if np.isnan(result):
@@ -567,18 +596,21 @@ class PNBuilder(object):
 						block_j = self.get_global_index(voxel_x2, voxel_y2, 0)
 						M_complex = A_complex[block_i:block_i + self.numCoeffs, block_j:block_j + self.numCoeffs]
 
-						A_real[block_i:block_i + self.numCoeffs, block_j:block_j + self.numCoeffs] = np.real(self.S.dot(M_complex.dot(self.S_inv)))
+						block_real = np.real(self.S.dot(M_complex.dot(self.S_inv)))
+						A_real[block_i:block_i + self.numCoeffs, block_j:block_j + self.numCoeffs] = block_real
 						b_real[block_i:block_i + self.numCoeffs] = np.real(self.S.dot(b_complex[block_i:block_i + self.numCoeffs]))
+
+						
+
+						self.A_real_structure[voxel_y*self.domain.res_x + voxel_x, voxel_y2*self.domain.res_x + voxel_x2] = np.count_nonzero(block_real)
 				#'''
 				#A_real = np.real(A_complex)
 				#b_real = np.real(b_complex)
 
+				self.A_complex = A_complex
+				self.b_complex = b_complex
 
 
-
-
-
-		# todo: transform this into a system of real variables
 		return (A_real,b_real)
 
 

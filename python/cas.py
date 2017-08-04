@@ -357,6 +357,7 @@ class Function( Expression ):
 class Kronecker(Function):
 	def __init__(self, index_i, index_j):
 		super().__init__( "\\delta", [index_i, index_j])
+		self.body2 = lambda i, j: int(i==j)
 
 	def getFirstIndex(self):
 		return self.getArgument(0)

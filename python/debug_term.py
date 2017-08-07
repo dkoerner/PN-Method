@@ -408,7 +408,7 @@ if __name__ == "__main__":
 	#test_term( order, domain, problem, term2, lspn.lspn_squared_extinction_term() )
 	#test_term( order, domain, problem, term3, lspn.lspn_directional_derivative_scattering_term() )
 	#test_term( order, domain, problem, term4, lspn.lspn_extinction_scattering_term() )
-	test_rhs_term( order, domain, problem, term5, lspn.lspn_directional_derivative_source_term() )
+	#test_rhs_term( order, domain, problem, term5, lspn.lspn_directional_derivative_source_term() )
 	#test_rhs_term( order, domain, problem, term6, lspn.lspn_extinction_source_term() )
 
 

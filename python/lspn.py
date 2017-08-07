@@ -817,10 +817,10 @@ if __name__ == "__main__":
 	pnb = pnbuilder.PNBuilder(order, domain)
 
 	# staggered grid (and 3 point stencil)
-	pnb.place_unknown( 0, (1,1) )
-	pnb.place_unknown( 1, (1,0) )
-	pnb.place_unknown( 2, (0,1) )
-	pnb.set_stencil_half_steps(1)
+	#pnb.place_unknown( 0, (1,1) )
+	#pnb.place_unknown( 1, (1,0) )
+	#pnb.place_unknown( 2, (0,1) )
+	#pnb.set_stencil_half_steps(1)
 
 	# first order form ---
 	#pnb.add_terms(fo_transport_term()) 

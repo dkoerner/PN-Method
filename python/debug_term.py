@@ -5,201 +5,15 @@ import lspn
 import cas
 import pnbuilder
 import scipy.io
+import problems
 
 
 
-
-class Constant(object):
-    def __init__(self, value):
-        self.value = value
-    def __call__(self, x):
-        return self.value
-    def dx(self, x):
-        return 0.0
-    def dy(self, x):
-        return 0.0
-    def dz(self, x):
-        return 0.0
-
-class Gradient(object):
-    def __init__(self, normal):
-        norm=np.linalg.norm(normal)
-        if norm==0: 
-            self.normal = normal
-        else:
-            self.normal = normal/norm
-    def __call__(self, x):
-        return np.dot(x, self.normal)
-    def dx(self, x):
-        return self.normal[0]
-    def dy(self, x):
-        return self.normal[1]
-    def dz(self, x):
-        return 0.0
-        #return self.normal[2]
-
-    
-class RBF(object):
-	def __init__(self, stddev, amplitude=1.0 ):
-		self.amplitude = amplitude
-		self.stddev = stddev
-		self.variance = stddev*stddev
-		self.normalization = 1.0/(np.power(stddev, 3.0)*np.power(2.0*np.pi, 1.5))
-	def __call__(self, x):
-		#return self.normalization*np.exp(-(x[0]*x[0]+x[1]*x[1]+x[2]*x[2])/self.variance)
-		return self.normalization*np.exp(-(x[0]*x[0]+x[1]*x[1])/self.variance)
-	def dx(self, x):
-		return -self(x)*2.0/(self.variance)*x[0]
-	def dxdx(self, x):
-		c = 2.0/self.variance
-		return self(x)*(c*c*x[0]*x[0] - c)
-	def dxdy(self, x):
-		c = 2.0/self.variance
-		return self(x)*c*c*x[0]*x[1]
-	def dy(self, x):
-		return -self(x)*2.0/(self.variance)*x[1]
-	def dydx(self, x):
-		return self.dxdy(x)
-	def dydy(self, x):
-		c = 2.0/self.variance
-		return self(x)*(c*c*x[1]*x[1] - c)
-	def dz(self, x):
-		return 0.0
-
-
-class SHEXP(object):
-    def __init__(self, order, coeff_functions):
-        self.order = order
-        self.coeff_functions = coeff_functions
-    def __call__(self, x, omega):
-        (theta, phi) = shtools.sphericalCoordinates(omega)
-        coeffs = [f(x) for f in self.coeff_functions]
-        return shtools.sh_sum(self.order, coeffs, theta, phi)
-    def dx(self, x, omega):
-    	(theta, phi) = shtools.sphericalCoordinates(omega)
-    	coeffs_dx = [f.dx(x) for f in self.coeff_functions]
-    	return shtools.sh_sum(self.order, coeffs_dx, theta, phi)
-    def dxdx(self, x, omega):
-    	(theta, phi) = shtools.sphericalCoordinates(omega)
-    	coeffs_dxdx = [f.dxdx(x) for f in self.coeff_functions]
-    	return shtools.sh_sum(self.order, coeffs_dxdx, theta, phi)
-    def dxdy(self, x, omega):
-    	(theta, phi) = shtools.sphericalCoordinates(omega)
-    	coeffs_dxdy = [f.dxdy(x) for f in self.coeff_functions]
-    	return shtools.sh_sum(self.order, coeffs_dxdy, theta, phi)
-    def dydx(self, x, omega):
-    	return self.dxdy(x, omega)
-    def dy(self, x, omega):
-    	(theta, phi) = shtools.sphericalCoordinates(omega)
-    	coeffs_dy = [f.dy(x) for f in self.coeff_functions]
-    	return shtools.sh_sum(self.order, coeffs_dy, theta, phi)
-    def dydy(self, x, omega):
-    	(theta, phi) = shtools.sphericalCoordinates(omega)
-    	coeffs_dydy = [f.dydy(x) for f in self.coeff_functions]
-    	return shtools.sh_sum(self.order, coeffs_dydy, theta, phi)
-    def dz(self, x, omega):
-    	(theta, phi) = shtools.sphericalCoordinates(omega)
-    	coeffs_dz = [f.dz(x) for f in self.coeff_functions]
-    	return shtools.sh_sum(self.order, coeffs_dz, theta, phi)
-    def dzdz(self, x, omega):
-    	(theta, phi) = shtools.sphericalCoordinates(omega)
-    	coeffs_dzdz = [f.dzdz(x) for f in self.coeff_functions]
-    	return shtools.sh_sum(self.order, coeffs_dzdz, theta, phi)
-
-class Derivative(object):
-    def __init__(self, fun, dimension = 0, stepsize = 0.01):
-        self.fun = fun
-        self.step = np.zeros(3)
-        self.step[dimension] = stepsize
-        self.stepsize = stepsize
-    def __call__(self, x):
-        return (self.fun( x+self.step )-self.fun( x-self.step ))/(2.0*self.stepsize)
-
-def problem_debug( order = 1 ):
-
-	sigma_t = Gradient(np.array([1.0, 1.0]))
-	sigma_s = Gradient(np.array([1.0, 1.0]))
-
-	functions = {}
-	functions["\\sigma_t"] = lambda pWS: sigma_t(pWS)
-	functions["\\sigma_s"] = lambda pWS: sigma_s(pWS)
-	functions["sigma_t_instance"] = sigma_t
-	functions["sigma_s_instance"] = sigma_s
-	q_instance = SHEXP(order, [Constant(1.0), Constant(0.0), Constant(0.0), Constant(0.0)])
-	def q_fun( l, m, pWS ):
-		shindex = shtools.shIndex(l,m)
-		if shindex is None or l > order or m < -l or m > l:
-			return 0.0
-		return q_instance.coeff_functions[shindex](pWS)
-	functions["q"] = q_fun
-	functions["q_instance"] = q_instance
-
-
-	f_instance = SHEXP(order, [Constant(1.0), Constant(0.0), Constant(0.0), Constant(0.0)])
-	def f_fun( l, m, pWS ):
-		shindex = shtools.shIndex(l,m)
-		if shindex is None or l > order or m < -l or m > l:
-			return 0.0
-		return f_instance.coeff_functions[shindex](pWS)
-	functions["f_p"] = f_fun
-	functions["f_instance"] = f_instance
-
-
-	#functions["L"] = SHEXP(order, [Constant(1.0), Constant(0.2), Constant(0.3), Constant(0.4)])
-	functions["L"] = SHEXP(order, [RBF(1.0), RBF(0.2), RBF(0.3), RBF(0.4)])
-	return functions
-
-
-def term1_factorized( x, l, m, problem ):
-    #return shtools.c_lm(l-1, m-1)*0.5*sigma_t.dx(x)*L.coeff_functions[shtools.shIndex(l-1, m-1)](x)
-    sigma_t = problem["sigma_t_instance"]
-    L = problem["L"]
-
-
-    result = 0.0
-    if not pnb.shIndex(l-1, m-1) is None:
-	    result += shtools.c_lm(l-1, m-1)*0.5*sigma_t.dx(x)*L.coeff_functions[shtools.shIndex(l-1, m-1)](x)
-
-    if not pnb.shIndex(l+1, m-1) is None:
-    	result += -shtools.d_lm(l+1, m-1)*0.5*sigma_t.dx(x)*L.coeff_functions[shtools.shIndex(l+1, m-1)](x)
-
-    if not pnb.shIndex(l-1, m+1) is None:
-    	result += -shtools.e_lm(l-1, m+1)*0.5*sigma_t.dx(x)*L.coeff_functions[shtools.shIndex(l-1, m+1)](x)
-
-    if not pnb.shIndex(l+1, m+1) is None:
-    	result += shtools.f_lm(l+1, m+1)*0.5*sigma_t.dx(x)*L.coeff_functions[shtools.shIndex(l+1, m+1)](x)
-
-    if not pnb.shIndex(l-1, m-1) is None:
-    	result += -shtools.c_lm(l-1, m-1)*np.complex(0.0, 1.0)*0.5*sigma_t.dy(x)*L.coeff_functions[shtools.shIndex(l-1, m-1)](x)
-
-    if not pnb.shIndex(l+1, m-1) is None:
-    	result += shtools.d_lm(l+1, m-1)*np.complex(0.0, 1.0)*0.5*sigma_t.dy(x)*L.coeff_functions[shtools.shIndex(l+1, m-1)](x)
-
-    if not pnb.shIndex(l-1, m+1) is None:
-    	result += -shtools.e_lm(l-1, m+1)*np.complex(0.0, 1.0)*0.5*sigma_t.dy(x)*L.coeff_functions[shtools.shIndex(l-1, m+1)](x)
-
-    if not pnb.shIndex(l+1, m+1) is None:
-    	result += shtools.f_lm(l+1, m+1)*np.complex(0.0, 1.0)*0.5*sigma_t.dy(x)*L.coeff_functions[shtools.shIndex(l+1, m+1)](x)
-
-    if not pnb.shIndex(l-1, m) is None:
-    	result += -shtools.a_lm(l-1, m)*sigma_t.dz(x)*L.coeff_functions[shtools.shIndex(l-1, m)](x)
-
-    if not pnb.shIndex(l+1, m) is None:
-    	result += -shtools.b_lm(l+1, m)*sigma_t.dz(x)*L.coeff_functions[shtools.shIndex(l+1, m)](x)
-
-    return result
-
-def term0(x, theta, phi, l, m, problem):
+def term0(x, theta, phi, problem):
 	omega = shtools.sphericalDirection(theta, phi)
 	L = problem["L"]
 
 	result = 0.0
-
-	shindex = shtools.shIndex(l,m)
-	if shindex is None or l<0 or m< -l or m > l:
-		return 0.0
-
-	Llm = L.coeff_functions[shindex]
 	
 	for i in range(2):
 		for j in range(2):
@@ -218,25 +32,25 @@ def term0(x, theta, phi, l, m, problem):
 	return result
 
 
-def term1( x, theta, phi, l, m, problem ):
+def term1( x, theta, phi, problem ):
 	sigma_t = problem["sigma_t_instance"]
 	L = problem["L"]
 	omega = shtools.sphericalDirection(theta, phi)
 	return -(omega[0]*sigma_t.dx(x) + omega[1]*sigma_t.dy(x) + omega[2]*sigma_t.dz(x))*L(x, omega)
 
-def term2( x, theta, phi, l, m, problem ):
+def term2( x, theta, phi, problem ):
 	sigma_t = problem["sigma_t_instance"](x)
 	L = problem["L"]
 	omega = shtools.sphericalDirection(theta, phi)
 	return sigma_t*sigma_t*L(x, omega)
 
 
-def term3( x, theta, phi, l, m, problem ):
+def term3( x, theta, phi, problem ):
 	# NB: assuming constant phase function....
 	omega = shtools.sphericalDirection(theta, phi)
 	sigma_t = problem["sigma_t_instance"]
 	sigma_s = problem["sigma_s_instance"]
-	f = problem["f_instance"]
+	#f = problem["f_instance"]
 	L00 = problem["L"].coeff_functions[0]
 
 	result = 0.0
@@ -252,69 +66,75 @@ def term3( x, theta, phi, l, m, problem ):
 	#int_L = L.coeff_functions[0](x)*np.sqrt(4*np.pi)
 	#return -sigma_t*sigma_s*(1.0/(4.0*np.pi))*int_L
 
-def term4( x, theta, phi, l, m, problem ):
+def term4( x, theta, phi, problem ):
 	# NB: assuming constant phase function....
 	omega = shtools.sphericalDirection(theta, phi)
 	sigma_t = problem["sigma_t_instance"](x)
 	sigma_s = problem["sigma_s_instance"](x)
-	f = problem["f_instance"]
+	#f = problem["f_instance"]
 	L = problem["L"]
-	int_L = L.coeff_functions[0](x)*np.sqrt(4*np.pi)
+	int_L = L.integral_over_solid_angle(x)
 	return -sigma_t*sigma_s*(1.0/(4.0*np.pi))*int_L
 
-def term5( x, theta, phi, l, m, problem ):
+def term5( x, theta, phi, problem ):
 	omega = shtools.sphericalDirection(theta, phi)
 	q = problem["q_instance"]
 	return -(omega[0]*q.dx(x, omega) + omega[1]*q.dy(x, omega) + omega[2]*q.dz(x, omega))
 
-def term6( x, theta, phi, l, m, problem ):
+def term6( x, theta, phi, problem ):
 	sigma_t = problem["sigma_t_instance"](x)
 	q = problem["q_instance"]
 	omega = shtools.sphericalDirection(theta, phi)
 	return sigma_t*q(x, omega)
 
 
-def test_term( order, domain, problem, term, term_expr ):
-	voxel = np.array([2,2], dtype=int)
+
+def test_term( label, problem, voxel, term, term_expr ):
+
+	#print("\n\ntesting term {}----------------------".format(label))
+	staggered = problem["staggered"]
+	order = problem["order"]
+	domain = problem["domain"]
 	pnb = pnbuilder.PNBuilder(order, domain)
+
+	if staggered == True:
+		# staggered grid (and 3 point stencil)
+		pnb.place_unknown( 0, (1,1) )
+		pnb.place_unknown( 1, (1,0) )
+		pnb.place_unknown( 2, (0,1) )
+		pnb.set_stencil_half_steps(1)
+
 	pnb.add_terms(term_expr)
 	(A,b) = pnb.build_global( problem )
 
-	# now construct solution vector from known L at the
-	# respective coefficient locations
-	# this step is actually redundant, because L is already defined in terms of SH coefficients
-	# however, it serves as a sanity check...
-	'''
-	x_complex = np.zeros(domain.numVoxels*pnb.numCoeffs, dtype=complex)
-	for voxel_i in range(domain.res_x):
-		for voxel_j in range(domain.res_y):
-			for i in range(pnb.numCoeffs):
-				print("voxel_i={} voxel_j={} coeff={}".format(voxel_i, voxel_j, i))
-				pWS = pnb.get_unknown_location( voxel_i, voxel_j, i ).getPWS()
-				L = problem["L"]
-				coeffs = shtools.project_sh(lambda theta, phi: L(pWS, shtools.sphericalDirection(theta, phi)), order)
-				# NB: we take into account, that for 2d, pnb will have different index and lm ordering
-				(l,m) = pnb.lmIndex(i)
-				x_complex[pnb.get_global_index(voxel_i, voxel_j, i)] = coeffs[shtools.shIndex(l,m)]
-	'''
-	filename = "C:/projects/epfl/epfl17/python/sopn/data_debug_term.mat"
-	x_complex = scipy.io.loadmat(filename)["x_complex"].reshape(domain.numVoxels*pnb.numCoeffs)
 
-	#data = {}
-	#data['x_complex'] = x_complex
-	#data['A_complex'] = pnb.A_complex
-	#scipy.io.savemat(filename, data)
+	if not "x_complex" in problem:
+		# now construct solution vector from known L at the
+		# respective coefficient locations
+		# this step is actually redundant, because L is already defined in terms of SH coefficients
+		# however, it serves as a sanity check...
+		x_complex = np.zeros(domain.numVoxels*pnb.numCoeffs, dtype=complex)
+		for voxel_i in range(domain.res_x):
+			for voxel_j in range(domain.res_y):
+				for i in range(pnb.numCoeffs):
+					print("voxel_i={} voxel_j={} coeff={}".format(voxel_i, voxel_j, i))
+					pWS = pnb.get_unknown_location( voxel_i, voxel_j, i ).getPWS()
+					L = problem["L"]
+					coeffs = shtools.project_sh(lambda theta, phi: L(pWS, shtools.sphericalDirection(theta, phi)), order)
+					# NB: we take into account, that for 2d, pnb will have different index and lm ordering
+					(l,m) = pnb.lmIndex(i)
+					x_complex[pnb.get_global_index(voxel_i, voxel_j, i)] = coeffs[shtools.shIndex(l,m)]
+
+		data = {}
+		data['x_complex'] = x_complex
+		filename = "C:/projects/epfl/epfl17/python/sopn/data_debug_term.mat"
+		scipy.io.savemat(filename, data)
+
+		problem["x_complex"] = x_complex
+	else:
+		x_complex = problem["x_complex"]
 
 	b_complex_pnb = pnb.A_complex.dot(x_complex)
-	print("\n\n----------------------")
-
-	#print("A=")
-	#print(pnb.A_complex)
-	#print("x=")
-	#print(x_complex)
-	#print("Ax=")
-	#print()
-
 
 	# groundtruth ----------------------------
 	#print("\n\ngroundtruth ----------------------")
@@ -328,15 +148,9 @@ def test_term( order, domain, problem, term, term_expr ):
 		(l,m) = pnb.lmIndex(i)
 		pWS = pnb.get_unknown_location( voxel_i, voxel_j, i ).getPWS()
 		global_i = pnb.get_global_index(voxel_i, voxel_j, i)
-
-		debug = False
-		if i == 1:
-			#print(coeffs)
-			debug = True
-
-		coeffs = shtools.project_sh(lambda theta, phi: term(pWS, theta, phi, l, m, problem), order, debug)
 		# NB: we take into account, that for 2d, pnb will have different index and lm ordering
-		b_complex_gt[global_i] = coeffs[shtools.shIndex(l,m)]
+		coeff = shtools.project_sh_coeff(lambda theta, phi: term(pWS, theta, phi, problem), l, m)
+		b_complex_gt[global_i] = coeff
 
 	for i in range(pnb.numCoeffs):
 		voxel_i = voxel[0]
@@ -347,9 +161,21 @@ def test_term( order, domain, problem, term, term_expr ):
 
 
 
-def test_rhs_term( order, domain, problem, term, term_expr ):
-	voxel = np.array([2,2], dtype=int)
+def test_rhs_term( label, problem, voxel, term, term_expr ):
+	print("\n\ntesting term {}----------------------".format(label))
+	staggered = problem["staggered"]
+	order = problem["order"]
+	domain = problem["domain"]
 	pnb = pnbuilder.PNBuilder(order, domain)
+
+	if staggered == True:
+		# staggered grid (and 3 point stencil)
+		pnb.place_unknown( 0, (1,1) )
+		pnb.place_unknown( 1, (1,0) )
+		pnb.place_unknown( 2, (0,1) )
+		pnb.set_stencil_half_steps(1)
+
+
 	pnb.add_terms(term_expr)
 	(A,b) = pnb.build_global( problem )
 
@@ -367,7 +193,7 @@ def test_rhs_term( order, domain, problem, term, term_expr ):
 		(l,m) = pnb.lmIndex(i)
 		pWS = pnb.get_unknown_location( voxel_i, voxel_j, i ).getPWS()
 		global_i = pnb.get_global_index(voxel_i, voxel_j, i)
-		coeffs = shtools.project_sh(lambda theta, phi: term(pWS, theta, phi, l, m, problem), order)
+		coeffs = shtools.project_sh(lambda theta, phi: term(pWS, theta, phi, problem), order)
 		# NB: we take into account, that for 2d, pnb will have different index and lm ordering
 		b_complex_gt[global_i] = coeffs[shtools.shIndex(l,m)]
 
@@ -395,21 +221,109 @@ def print_expr(expr, switch = True):
 
 
 
+def debug_terms_simple():
+	problem = problems.debug()
+
+	#problem = problems.checkerboard2d_rasterized()
+	#filename = "C:/projects/epfl/epfl17/python/sopn/dat_checkerboard2d_rasterized.mat"
+	#data = {}
+	#data["sigma_t"] = problem["\\sigma_t"].voxels
+	#scipy.io.savemat(filename, data)
+
+
+	#'''
+	filename = "C:/projects/epfl/epfl17/python/sopn/data_debug_term_staggered.mat"
+	x_complex_shape = scipy.io.loadmat(filename)["x_complex"].shape
+	problem["x_complex"] = scipy.io.loadmat(filename)["x_complex"].reshape(x_complex_shape[0]*x_complex_shape[1])
+
+	voxel = np.array([2,2], dtype=int)
+
+	test_term( "term0", problem, voxel, term0, lspn.lspn_sotransport_term() )
+	test_term( "term1", problem, voxel, term1, lspn.lspn_extinction_directional_derivative_term() )
+	test_term( "term2", problem, voxel, term2, lspn.lspn_squared_extinction_term() )
+	test_term( "term3", problem, voxel, term3, lspn.lspn_directional_derivative_scattering_term() )
+	test_term( "term4", problem, voxel, term4, lspn.lspn_extinction_scattering_term() )
+	test_rhs_term( "term5", problem, voxel, term5, lspn.lspn_directional_derivative_source_term() )
+	test_rhs_term( "term6", problem, voxel, term6, lspn.lspn_extinction_source_term() )
+	#'''	
+
+
+class Test(object):
+	def __init__( self, pWS, problem, term ):
+		self.pWS = pWS
+		self.problem = problem
+		self.term = term
+	def __call__( self, angle ):
+		return self.term(self.pWS, angle[0], angle[1], self.problem)
+
 
 if __name__ == "__main__":
-	order = 1
-	domain = util.Domain2D(0.1, 5)
 
-	problem = problem_debug()
+	#debug_terms_simple()
+
+	id = "checkerboard_blur10.0_term1"
+	data = lspn.load_pn_solution("C:/projects/epfl/epfl17/python/sopn/solution_{}.mat".format(id))
+	pnb = data["pnb"]
+
+	problem = {}
+
+	# L -----
+	x_complex = pnb.to_complex(data["x_real"])
+	coefficient_grids = [problems.Constant(0.0) for i in range(shtools.numSHCoeffs(pnb.N))]
+	for i in range(pnb.numCoeffs):
+		(l,m) = pnb.lmIndex(i)
+		offset = pnb.get_unknown_offset(i)*0.5
+		grid = problems.CoefficientGrid(pnb.domain, pnb.numCoeffs, i, offset, x_complex )
+		coefficient_grids[shtools.shIndex(l,m)] = grid
+	problem["L"] = problems.SHEXP( pnb.N, coefficient_grids )
+
+	# sigma_t -----
+	problem["sigma_t_instance"] = problems.VoxelGrid(pnb.domain, data["sigma_t"])
+	problem["sigma_t_instance"].build_derivatives()
+
+	problem["sigma_s_instance"] = problems.VoxelGrid(pnb.domain, data["sigma_s"])
+	problem["sigma_s_instance"].build_derivatives()
 
 
-	#test_term( order, domain, problem, term0, lspn.lspn_sotransport_term() )
-	#test_term( order, domain, problem, term1, lspn.lspn_extinction_directional_derivative_term() )
-	#test_term( order, domain, problem, term2, lspn.lspn_squared_extinction_term() )
-	#test_term( order, domain, problem, term3, lspn.lspn_directional_derivative_scattering_term() )
-	#test_term( order, domain, problem, term4, lspn.lspn_extinction_scattering_term() )
-	#test_rhs_term( order, domain, problem, term5, lspn.lspn_directional_derivative_source_term() )
-	#test_rhs_term( order, domain, problem, term6, lspn.lspn_extinction_source_term() )
+
+	terms = []
+	terms.append(term0)
+	terms.append(term1)
+	terms.append(term2)
+	terms.append(term3)
+	terms.append(term4)
+	#terms.append(term5)
+	#terms.append(term6)
 
 
+	voxels_min = np.array([5, 5])
+	voxels_max = np.array([65, 65])
+
+	data = {}
+	
+
+	for term_index in range(5):
+		#term_index = 1
+		term = terms[term_index]
+		x_complex_gt = np.zeros(pnb.domain.numVoxels*pnb.numCoeffs, dtype=complex)
+		for voxel_i in range(voxels_min[0], voxels_max[0]):
+			print("voxel_i={}".format(voxel_i))
+			for voxel_j in range(voxels_min[1], voxels_max[1]):
+				# here we project the term under investigation into SH. This is done at the respective locations
+				# of all the unknowns
+				#for i in range(pnb.numCoeffs):
+				for i in range(1):
+					(l,m) = pnb.lmIndex(i)
+					pWS = pnb.get_unknown_location(voxel_i, voxel_j, i).getPWS()
+					global_i = pnb.get_global_index(voxel_i, voxel_j, i)
+					# NB: we take into account, that for 2d, pnb will have different index and lm ordering
+					#print("---------------")
+					#coeff = shtools.project_sh_coeff(lambda theta, phi: term(pWS, theta, phi, problem), l, m)
+					#coeff = shtools.project_sh_coeff_x(lambda angle: term(pWS, angle[0], angle[1], problem), l, m)
+					coeff = shtools.project_sh_coeff_x(Test(pWS, problem, term), l, m)
+					#print("done")
+					x_complex_gt[global_i] = coeff
+		x_real_gt = pnb.to_real(x_complex_gt)
+		data['x_term{}'.format(term_index)] = x_real_gt.reshape((pnb.domain.numVoxels*pnb.numCoeffs, 1))
+		scipy.io.savemat("C:/projects/epfl/epfl17/python/sopn/debug_terms/data_term{}.mat".format(term_index), data)
 

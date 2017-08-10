@@ -3,6 +3,7 @@ import math
 from scipy.special import sph_harm, lpmv
 from sympy.physics.quantum.cg import CG
 import matplotlib.pyplot as plt
+from multiprocessing import Pool
 
 
 
@@ -47,6 +48,81 @@ def project_sh( fun, order, debug=False ):
             coeffs[shIndex(l,m)] = integrate_sphere( lambda theta, phi: fun(theta, phi)*np.conj(sph_harm(m, l, phi, theta)), debug )
     return coeffs            
 
+def project_sh_coeff( fun, l, m ):
+	return integrate_sphere( lambda theta, phi: fun(theta, phi)*np.conj(sph_harm(m, l, phi, theta)) )
+
+
+def test(x):
+	print(x)
+	return x
+project_sh_coeff_x_data = None
+def project_sh_coeff_x( fun, l, m ):
+	global project_sh_coeff_x_data
+	if project_sh_coeff_x_data is None:
+		min_theta = 0
+		max_theta = np.pi
+		min_phi = 0
+		max_phi = 2.0*np.pi
+
+		resolution_theta=128 # resolution along theta angle
+		resolution_phi=256 # resolution along phi angle
+		dtheta = (max_theta-min_theta)/float(resolution_theta)
+		dphi = (max_phi-min_phi)/float(resolution_phi)
+
+		pixel_area = dtheta*dphi
+
+		theta_phi = np.zeros( (resolution_theta, resolution_phi, 2) )
+
+		ins = []
+		for t in range(resolution_theta):
+			for p in range(resolution_phi):
+				phi = dphi*p
+				theta = dtheta*t
+				theta_phi[t, p, 0] = theta
+				theta_phi[t, p, 1] = phi
+				ins.append((theta, phi))
+
+		project_sh_coeff_x_data = {}
+		project_sh_coeff_x_data["theta_phi"] = theta_phi
+		project_sh_coeff_x_data["pixel_area"] = pixel_area
+		project_sh_coeff_x_data["pool"] = Pool(5)
+		project_sh_coeff_x_data["ins"] = ins
+		
+
+	theta_phi = project_sh_coeff_x_data["theta_phi"]
+
+	if not (l,m) in project_sh_coeff_x_data:
+		pixel_area = project_sh_coeff_x_data["pixel_area"]
+		factor = np.zeros( (theta_phi.shape[0],theta_phi.shape[1]) , dtype=complex )
+		for t in range(theta_phi.shape[0]):
+			for p in range(theta_phi.shape[1]):
+				theta = theta_phi[t, p, 0]
+				phi = theta_phi[t, p, 1]
+				factor[t, p] = np.conj(sph_harm(m, l, phi, theta))*pixel_area*np.sin(theta)
+		project_sh_coeff_x_data[(l,m)] = factor.reshape(theta_phi.shape[0]*theta_phi.shape[1])
+
+	factor = project_sh_coeff_x_data[(l,m)]
+
+
+	res = project_sh_coeff_x_data["pool"].map( fun, project_sh_coeff_x_data["ins"] )
+	result = np.sum(np.array(res)*factor)
+	'''
+	# integrate sphere
+	for t in range(theta_phi.shape[0]):
+		for p in range(theta_phi.shape[1]):
+			theta = theta_phi[t, p, 0]
+			phi = theta_phi[t, p, 1]
+			result+= fun(theta, phi)*factor[t,p]
+	'''
+
+	return result
+
+
+# condon-shortley phase
+def csp( m ):
+	if m % 2 == 0:
+		return 1.0
+	return -1.0
 
 
 # these functions are the coefficients for the recursive relation of the sh basis function

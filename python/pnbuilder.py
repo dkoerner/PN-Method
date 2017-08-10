@@ -395,6 +395,9 @@ class PNBuilder(object):
 		self.unknown_info[coeff_index]['grid_id'] = grid_id
 		self.unknown_info[coeff_index]['offset'] = np.array( [grid_id[0], grid_id[1]] , dtype=int)
 
+	def get_unknown_offset(self, coeff_index):
+		return self.unknown_info[coeff_index]['offset']
+
 	def get_unknown_location(self, voxel_i, voxel_j, coeff_index):
 		return GridLocation2D( self.domain, voxel_i, voxel_j, self.unknown_info[coeff_index]['offset'] )
 
@@ -590,28 +593,89 @@ class PNBuilder(object):
 				# now transform all blocks of the current block-row into real variables
 				# TODO: this can be optimized by analysing which blocks are zero
 				#'''
+				block_i = self.get_global_index(voxel_x, voxel_y, 0)
+
+				#if block_i <= 6628 and block_i+self.numCoeffs >= 6628:
+				#	print("block_i={}".format(block_i))
+
+
+				b_real[block_i:block_i + self.numCoeffs] = np.real(self.S.dot(b_complex[block_i:block_i + self.numCoeffs]))
 				for voxel_x2 in range(self.domain.res_x):
 					for voxel_y2 in range(self.domain.res_y):
-						block_i = self.get_global_index(voxel_x, voxel_y, 0)
 						block_j = self.get_global_index(voxel_x2, voxel_y2, 0)
 						M_complex = A_complex[block_i:block_i + self.numCoeffs, block_j:block_j + self.numCoeffs]
 
 						block_real = np.real(self.S.dot(M_complex.dot(self.S_inv)))
 						A_real[block_i:block_i + self.numCoeffs, block_j:block_j + self.numCoeffs] = block_real
-						b_real[block_i:block_i + self.numCoeffs] = np.real(self.S.dot(b_complex[block_i:block_i + self.numCoeffs]))
-
-						
-
 						self.A_real_structure[voxel_y*self.domain.res_x + voxel_x, voxel_y2*self.domain.res_x + voxel_x2] = np.count_nonzero(block_real)
 				#'''
 				#A_real = np.real(A_complex)
 				#b_real = np.real(b_complex)
 
-				self.A_complex = A_complex
-				self.b_complex = b_complex
+		self.A_complex = A_complex
+		self.b_complex = b_complex
 
 
 		return (A_real,b_real)
+
+	def to_complex(self, x_real):
+		# use this to convert the solution from complex valued to real valued
+		numVoxels = self.domain.res_x*self.domain.res_y
+		x_complex = np.zeros( (numVoxels*self.numCoeffs), dtype=complex )
+		for voxel_x in range(self.domain.res_x):
+			for voxel_y in range(self.domain.res_y):
+				block_i = self.get_global_index(voxel_x, voxel_y, 0)
+				x_complex[block_i:block_i + self.numCoeffs] = self.S_inv.dot(x_real[block_i:block_i + self.numCoeffs])
+		return x_complex
+
+	def to_real(self, x_complex):
+		# use this to convert the solution from real valued to complex valued
+		numVoxels = self.domain.res_x*self.domain.res_y
+		x_real = np.zeros( (numVoxels*self.numCoeffs), dtype=float )
+		for voxel_x in range(self.domain.res_x):
+			for voxel_y in range(self.domain.res_y):
+				block_i = self.get_global_index(voxel_x, voxel_y, 0)
+				#if block_i <= 6628 and block_i+self.numCoeffs >= 6628:
+				#if block_i == 6627:
+				#	print(block_i)
+				#	print(x_complex[block_i:block_i + self.numCoeffs])
+				#	print(np.real(self.S.dot(x_complex[block_i:block_i + self.numCoeffs])))
+				x_real[block_i:block_i + self.numCoeffs] = np.real(self.S.dot(x_complex[block_i:block_i + self.numCoeffs]))
+		return x_real
+
+	def get_info(self):
+		coeff_offsets = np.zeros( (self.numCoeffs, 2) )
+		for i in range(self.numCoeffs):
+			offset = self.get_unknown_offset(i)
+			coeff_offsets[i, 0] = offset[0]
+			coeff_offsets[i, 1] = offset[1]
+
+		pnb_info = {}
+		pnb_info["order"] = self.N
+		pnb_info["numCoeffs"] = self.numCoeffs
+		pnb_info["coeff_offsets"] = coeff_offsets
+		pnb_info["domain_size"] = self.domain.size_x
+		pnb_info["domain_res"] = self.domain.res_x
+
+		return pnb_info
+
+	@staticmethod
+	def from_info( pnb_info ):
+		order = pnb_info["order"]
+		numCoeffs = pnb_info["numCoeffs"]
+		domain = util.Domain2D(pnb_info["domain_size"], pnb_info["domain_res"])
+		pnb = PNBuilder(order, domain)
+
+		# setup offsets with pnbuilder
+		coeff_offsets = pnb_info["coeff_offsets"]
+		for i in range(numCoeffs):
+			offset = (coeff_offsets[i, 0], coeff_offsets[i, 1])
+			pnb.place_unknown(i, offset)
+		return pnb
+
+
+
+
 
 
 

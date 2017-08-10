@@ -232,6 +232,7 @@ class Domain2D:
 		pVS = self.worldToVoxel(pWS)
 		return (int(pVS[1]), int(pVS[0]))
 
+	'''
 	def rasterize( self, fun, shape = None ):
 		if shape == None:
 			shape = (self.res_x, self.res_y)
@@ -242,8 +243,9 @@ class Domain2D:
 				pWS = self.voxelToWorld(pVS)
 				field[i, j] = fun(pWS)
 		return field
+	'''
 
-	def rasterize2( self, fun, shape = None ):
+	def rasterize( self, fun, shape = None ):
 		if shape == None:
 			shape = (self.res_x, self.res_y)
 		field = np.zeros(shape)

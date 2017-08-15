@@ -51,6 +51,8 @@ class Unknown(object):
 		self.m = m
 		self.voxel = voxel
 		self.weight = weight
+	def __str__(self):
+		return "l={} m={} voxel={} {} weight={}\n".format(self.l, self.m, self.voxel[0], self.voxel[1], self.weight)
 
 
 
@@ -60,7 +62,7 @@ class UnknownInfo(object):
 	def __str__(self):
 		result = "unknowns:\n"
 		for u in self.unknowns:
-			result += "\t l={} m={} voxel={} {} weight={}\n".format(u.l, u.m, u.voxel[0], u.voxel[1], u.weight)
+			result += "\t {}\n".format(str(u))
 		return result
 	def __mul__(self, other):
 		for u in self.unknowns:
@@ -441,11 +443,23 @@ class PNBuilder(object):
 		self.A_real_structure = np.zeros( (numVoxels, numVoxels), dtype=int )
 		b_real = np.zeros( (numVoxels*self.numCoeffs) )
 
+		#voxel_x_min = 0
+		#voxel_x_max = self.domain.res_x
+		#voxel_y_min = 0
+		#voxel_y_max = self.domain.res_y
+
+		if "debug_voxel_x" in functions:
+			voxel_x_min = functions["debug_voxel_x"]
+			voxel_x_max = functions["debug_voxel_x"]+1
+			voxel_y_min = functions["debug_voxel_y"]
+			voxel_y_max = functions["debug_voxel_y"]+1
+
+
 		# Now we build the global coefficient matrix A and rhs b by iterating over all elements (voxels)
 		# and within each voxel, we iterate over all sh coefficients. Each row within the global system
 		# is associated with a specific sh coefficient of a specific voxel.
 		# Then, for each row, we evaluate all terms and accumulate the results into A and b.
-		for voxel_x in range(self.domain.res_x):
+		for voxel_x in range(voxel_x_min, voxel_x_max):
 			print("voxel_x={}".format(voxel_x))
 
 			#if voxel_x > 0:
@@ -454,7 +468,7 @@ class PNBuilder(object):
 			#if voxel_x > 10:
 			#	break
 
-			for voxel_y in range(self.domain.res_y):
+			for voxel_y in range(voxel_y_min, voxel_y_max):
 
 				#if voxel_y > 0:
 				#	continue
@@ -552,6 +566,7 @@ class PNBuilder(object):
 							# this is a lhs term
 							# weights are going into A
 							for u in result.unknowns:
+
 								if u.l < 0 or u.l > self.N or u.weight == 0.0:
 									if info.debug == True:
 										print("skipping unknown u.l={} u.weight={} {}".format(u.l, np.real(u.weight), np.imag(u.weight)))

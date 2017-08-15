@@ -168,6 +168,7 @@ def lspn_sotransport_term(debug = False):
 	expr_x = cas.neg(cas.deriv(cas.integrate( cas.mul( omega_x, Ylm, omega__dot_nablaL), omega ), x.getComponent(0), is_partial=True))
 	expr_y = cas.neg(cas.deriv(cas.integrate( cas.mul( omega_y, Ylm, omega__dot_nablaL), omega ), x.getComponent(1), is_partial=True))
 	expr_z = cas.neg(cas.deriv(cas.integrate( cas.mul( omega_z, Ylm, omega__dot_nablaL), omega ), x.getComponent(2), is_partial=True))
+	#'''
 	expr = cas.add(expr_x, expr_y, expr_z)
 
 	# now expr holds the equation. we now perform a series of operations
@@ -217,6 +218,47 @@ def lspn_sotransport_term(debug = False):
 	print_expr(expr, debug)
 	expr = cas.apply_recursive(expr, cas.CleanupSigns())
 	print_expr(expr, debug)
+	#'''
+
+	'''
+	expr =  cas.mul( omega_x, dx_L )
+	print_expr(expr, debug)
+	expr = cas.integrate(cas.mul( cas.SHBasis(cas.var("l'"), cas.var("m'"), omega, conjugate_complex=True), expr), omega) 
+	print_expr(expr, debug)
+	expr = cas.apply_recursive(expr, cas.SHRecursiveRelation())
+	print_expr(expr, debug)
+	expr = cas.apply_recursive(expr, cas.DistributiveLaw())
+	print_expr(expr, debug)
+	expr = cas.apply_recursive(expr, cas.CleanupSigns())
+	print_expr(expr, debug)
+	expr = cas.apply_recursive(expr, cas.SplitIntegrals())
+	print_expr(expr, debug)
+	expr = cas.apply_recursive(expr, cas.Substitute(L, L_expanded))
+	print_expr(expr, debug)
+	expr = cas.apply_recursive(expr, cas.CleanupSigns())
+	print_expr(expr, debug)
+	expr = cas.apply_recursive(expr, cas.Factorize())
+	print_expr(expr, debug)
+	expr = cas.apply_recursive(expr, cas.SwitchDomains())
+	print_expr(expr, debug)
+	expr = cas.apply_recursive(expr, cas.SwitchDomains())
+	print_expr(expr, debug)
+	expr = cas.apply_recursive(expr, cas.SwitchDomains())
+	print_expr(expr, debug)
+	expr = cas.apply_recursive(expr, cas.Factorize())
+	print_expr(expr, debug)
+	expr = cas.apply_recursive(expr, cas.SHOrthogonalityProperty())
+	print_expr(expr, debug)
+	expr = cas.apply_recursive(expr, cas.SummationOverKronecker())
+	print_expr(expr, debug)
+	'''
+
+	'''
+	expr = cas.SHCoefficient( "L", cas.add( cas.var("l'"), cas.num(1)), cas.add( cas.var("m'"), cas.num(1)), x )
+	expr = cas.deriv(expr, x.getComponent(0), is_partial=True)
+	expr = cas.mul( cas.num(np.sqrt(4*np.pi)), expr )
+	print_expr(expr, debug)
+	'''
 
 	return expr
 
@@ -685,8 +727,10 @@ def diffusion_terms():
 def write_pn_system(pnb, problem, A, b):
 	#'''
 	data = {}
-	data['A'] = A
-	data['b'] = b.reshape((pnb.domain.numVoxels*pnb.numCoeffs, 1))
+	if not A is None:
+		data['A'] = A
+	if not b is None:
+		data['b'] = b.reshape((pnb.domain.numVoxels*pnb.numCoeffs, 1))
 	data['pnb_info'] = pnb.get_info()
 
 	#filename = "C:/projects/epfl/epfl17/python/sopn/data_{}.mat".format(problem["id"])
@@ -714,14 +758,21 @@ def load_pn_solution( filename ):
 	pnb = pnbuilder.PNBuilder.from_info(pnb_info)
 
 
-	x_real = data["x"].reshape((pnb.domain.numVoxels*pnb.numCoeffs))
-	b_real = data["b"].reshape((pnb.domain.numVoxels*pnb.numCoeffs))
-	A_real = data["A"]
-
 	result = {}
-	result["A_real"] = A_real
-	result["x_real"] = x_real
-	result["b_real"] = b_real
+	if "x" in data:
+		x_real = data["x"].reshape((pnb.domain.numVoxels*pnb.numCoeffs))
+		result["x_real"] = x_real
+	if "b" in data:
+		b_real = data["b"].reshape((pnb.domain.numVoxels*pnb.numCoeffs))
+		result["b_real"] = b_real
+	if "A" in data:
+		A_real = data["A"]
+		result["A_real"] = A_real
+
+	
+	
+	
+	
 	result["pnb"] = pnb
 	result["sigma_t"] = data["sigma_t"]
 	result["sigma_a"] = data["sigma_a"]
@@ -747,16 +798,15 @@ def load_pn_solution( filename ):
 def debug_A():
 
 	terms = []
-	terms.append(lspn_sotransport_term())
-	terms.append(lspn_extinction_directional_derivative_term())
-	terms.append(lspn_squared_extinction_term())
-	terms.append(lspn_directional_derivative_scattering_term2())
-	terms.append(lspn_extinction_scattering_term())
-	terms.append(lspn_directional_derivative_source_term())
-	terms.append(lspn_extinction_source_term())
+	#terms.append((0, lspn_sotransport_term()))
+	terms.append((1, lspn_extinction_directional_derivative_term()))
+	#terms.append((2, lspn_squared_extinction_term()))
+	#terms.append((3, lspn_directional_derivative_scattering_term2()))
+	#terms.append((4, lspn_extinction_scattering_term()))
+	#terms.append((5, lspn_directional_derivative_source_term()))
+	#terms.append((6, lspn_extinction_source_term()))
 
-	count = 0
-	for term in terms:
+	for (term_index, term) in terms:
 		problem = problems.blurred(problems.checkerboard2d(), 10.0)
 
 		pnb = pnbuilder.PNBuilder(problem["order"], problem["domain"])
@@ -770,25 +820,27 @@ def debug_A():
 
 		pnb.add_terms(term)
 
-		problem["id"] += "_term{}".format(count)
+		problem["id"] += "_term{}".format(term_index)
 
 		(A,b) = pnb.build_global( problem )
 
 		data = {}
 		data['A'] = A
 		data['b'] = b.reshape((pnb.domain.numVoxels*pnb.numCoeffs, 1))
-		scipy.io.savemat("C:/projects/epfl/epfl17/python/sopn/debug_terms/system_{}.mat".format(problem["id"]), data)
-
-		count += 1
+		scipy.io.savemat("C:/projects/epfl/epfl17/python/sopn/debug_terms/debug_A_term{}.mat".format(term_index), data)
 
 
 if __name__ == "__main__":
 	#debug_A()
 	#exit(0)
 
-	problem = problems.checkerboard2d()
-	#problem = problems.blurred(problems.checkerboard2d(), 10.0)
+	#'''
+	#problem = problems.checkerboard2d()
+	problem = problems.blurred(problems.checkerboard2d(), 10.0)
 	#problem = problems.blob2d()
+
+	problem["id"] += "_fade"
+	problem["id"] += "_noterm1"
 
 	pnb = pnbuilder.PNBuilder(problem["order"], problem["domain"])
 
@@ -807,10 +859,7 @@ if __name__ == "__main__":
 
 	# second order form ---
 	pnb.add_terms(lspn_sotransport_term())
-
-	pnb.add_terms(lspn_extinction_directional_derivative_term())
-	problem["id"] += "_term1"
-
+	#pnb.add_terms(lspn_extinction_directional_derivative_term())
 	pnb.add_terms(lspn_squared_extinction_term())
 	#pnb.add_terms(lspn_directional_derivative_scattering_term())
 	pnb.add_terms(lspn_directional_derivative_scattering_term2())
@@ -818,13 +867,12 @@ if __name__ == "__main__":
 	pnb.add_terms(lspn_directional_derivative_source_term())
 	pnb.add_terms(lspn_extinction_source_term())
 
+	A = None
+	b = None
 	(A,b) = pnb.build_global( problem )
-	#A = None
-	#b = None
 
 	write_pn_system( pnb, problem, A, b )
-	#L = load_pn_solution("C:/projects/epfl/epfl17/python/sopn/solution_blob2d.mat")
-	#L, domain, x_real = load_pn_solution("C:/projects/epfl/epfl17/python/sopn/solution_checkerboard.mat")
+	#'''
 
 
 

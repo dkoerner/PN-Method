@@ -6,6 +6,7 @@ import cas
 import pnbuilder
 from scipy.ndimage.filters import gaussian_filter
 import scipy.io
+import itertools
 
 
 
@@ -96,42 +97,42 @@ class SHEXP(object):
     def __init__(self, order, coeff_functions):
         self.order = order
         self.coeff_functions = coeff_functions
-    def __call__(self, x, omega):
+    def __call__(self, location, omega):
         (theta, phi) = shtools.sphericalCoordinates(omega)
-        coeffs = [f(x) for f in self.coeff_functions]
+        coeffs = [f(location) for f in self.coeff_functions]
         return shtools.sh_sum(self.order, coeffs, theta, phi)
-    def dx(self, x, omega):
+    def dx(self, location, omega):
     	(theta, phi) = shtools.sphericalCoordinates(omega)
-    	coeffs_dx = [f.dx(x) for f in self.coeff_functions]
+    	coeffs_dx = [f.dx(location) for f in self.coeff_functions]
     	return shtools.sh_sum(self.order, coeffs_dx, theta, phi)
-    def dxdx(self, x, omega):
+    def dxdx(self, location, omega):
     	(theta, phi) = shtools.sphericalCoordinates(omega)
-    	coeffs_dxdx = [f.dxdx(x) for f in self.coeff_functions]
+    	coeffs_dxdx = [f.dxdx(location) for f in self.coeff_functions]
     	return shtools.sh_sum(self.order, coeffs_dxdx, theta, phi)
-    def dxdy(self, x, omega):
+    def dxdy(self, location, omega):
     	(theta, phi) = shtools.sphericalCoordinates(omega)
-    	coeffs_dxdy = [f.dxdy(x) for f in self.coeff_functions]
+    	coeffs_dxdy = [f.dxdy(location) for f in self.coeff_functions]
     	return shtools.sh_sum(self.order, coeffs_dxdy, theta, phi)
-    def dydx(self, x, omega):
-    	return self.dxdy(x, omega)
-    def dy(self, x, omega):
+    def dydx(self, location, omega):
+    	return self.dxdy(location, omega)
+    def dy(self, location, omega):
     	(theta, phi) = shtools.sphericalCoordinates(omega)
-    	coeffs_dy = [f.dy(x) for f in self.coeff_functions]
+    	coeffs_dy = [f.dy(location) for f in self.coeff_functions]
     	return shtools.sh_sum(self.order, coeffs_dy, theta, phi)
-    def dydy(self, x, omega):
+    def dydy(self, location, omega):
     	(theta, phi) = shtools.sphericalCoordinates(omega)
-    	coeffs_dydy = [f.dydy(x) for f in self.coeff_functions]
+    	coeffs_dydy = [f.dydy(location) for f in self.coeff_functions]
     	return shtools.sh_sum(self.order, coeffs_dydy, theta, phi)
-    def dz(self, x, omega):
+    def dz(self, location, omega):
     	(theta, phi) = shtools.sphericalCoordinates(omega)
-    	coeffs_dz = [f.dz(x) for f in self.coeff_functions]
+    	coeffs_dz = [f.dz(location) for f in self.coeff_functions]
     	return shtools.sh_sum(self.order, coeffs_dz, theta, phi)
-    def dzdz(self, x, omega):
+    def dzdz(self, location, omega):
     	(theta, phi) = shtools.sphericalCoordinates(omega)
-    	coeffs_dzdz = [f.dzdz(x) for f in self.coeff_functions]
+    	coeffs_dzdz = [f.dzdz(location) for f in self.coeff_functions]
     	return shtools.sh_sum(self.order, coeffs_dzdz, theta, phi)
-    def integral_over_solid_angle(self, x):
-    	return self.coeff_functions[0](x)*np.sqrt(4*np.pi)
+    def integral_over_solid_angle(self, location):
+    	return self.coeff_functions[0](location)*np.sqrt(4*np.pi)
 
 class VoxelGrid(object):
 	def __init__( self, domain, voxels, offset = np.array([0.5, 0.5]) ):
@@ -141,23 +142,42 @@ class VoxelGrid(object):
 
 
 
-	def sample( self, voxel ):
-		return self.voxels[voxel[0], voxel[1]]
+	def sample( self, voxel_i, voxel_j ):
+		return self.voxels[voxel_i, voxel_j]
 		
+
 	def eval( self, pVS ):
-		voxel = np.floor(pVS).astype(int)
+		v0 = np.floor(pVS).astype(int)
+		v1 = v0+np.array([1, 1])
+		t = pVS - v0
 
 		# clamp to domain boundaries
-		if voxel[0] < 0:
-			voxel[0] = 0
-		elif voxel[0] >= self.domain.res_x:
-			voxel[0] = self.domain.res_x-1
-		if voxel[1] < 0:
-			voxel[1] = 0
-		elif voxel[1] >= self.domain.res_y:
-			voxel[1] = self.domain.res_y-1
+		if v0[0] < 0:
+			v0[0] = 0
+		elif v0[0] >= self.domain.res_x:
+			v0[0] = self.domain.res_x-1
+		if v0[1] < 0:
+			v0[1] = 0
+		elif v0[1] >= self.domain.res_y:
+			v0[1] = self.domain.res_y-1
+		if v1[0] < 0:
+			v1[0] = 0
+		elif v1[0] >= self.domain.res_x:
+			v1[0] = self.domain.res_x-1
+		if v1[1] < 0:
+			v1[1] = 0
+		elif v1[1] >= self.domain.res_y:
+			v1[1] = self.domain.res_y-1
 
-		return self.sample(voxel)
+		#return self.sample(v0[0], v0[1])
+
+		result = 0.0
+		result += self.sample(v0[0], v0[1])*(1.0-t[0])*(1.0-t[1])
+		result += self.sample(v1[0], v0[1])*t[0]*(1.0-t[1])
+		result += self.sample(v0[0], v1[1])*(1.0-t[0])*t[1]
+		result += self.sample(v1[0], v1[1])*t[0]*t[1]
+		return result
+
 
 		
 	def __call__(self, pWS):
@@ -177,13 +197,13 @@ class VoxelGrid(object):
 				m = c - step
 				if not self.in_bounds(p):
 					# forward differences
-					voxels[voxel_i, voxel_j] = (self.sample(c) - self.sample(m))/self.domain.voxelsize[dimension]
+					voxels[voxel_i, voxel_j] = (self.sample(c[0], c[1]) - self.sample(m[0], m[1]))/self.domain.voxelsize[dimension]
 				elif not self.in_bounds(m):
 					# backward differences
-					voxels[voxel_i, voxel_j] = (self.sample(p) - self.sample(c))/self.domain.voxelsize[dimension]
+					voxels[voxel_i, voxel_j] = (self.sample(p[0], p[1]) - self.sample(c[0], c[1]))/self.domain.voxelsize[dimension]
 				else:
 					# finite differences
-					voxels[voxel_i, voxel_j] = (self.sample(p) - self.sample(m))/(2.0*self.domain.voxelsize[dimension])
+					voxels[voxel_i, voxel_j] = (self.sample(p[0], p[1]) - self.sample(m[0], m[1]))/(2.0*self.domain.voxelsize[dimension])
 		return VoxelGrid(self.domain, voxels, self.offset)
 
 	def in_bounds(self, voxel):
@@ -205,7 +225,7 @@ class VoxelGrid(object):
 		self.dydx = self.dxdy
 		self.dz = Constant(0.0)
 
-
+'''
 class CoefficientGrid(VoxelGrid):
 	def __init__(self, domain, stride, index, offset, x):
 		self.domain = domain
@@ -221,41 +241,109 @@ class CoefficientGrid(VoxelGrid):
 		self.build_derivatives()
 
 
+	def get_global_index( self, voxel_i, voxel_j, coeff_index ):
+		v = voxel_j*self.domain.res_x + voxel_i
+		return v*self.stride + coeff_index
+
+'''
+
+#'''
+class CoefficientGrid(object):
+	def __init__(self, domain, stride, index, offset, x):
+		self.domain = domain
+		self.stride = stride
+		self.offset = offset
+
+		voxels = np.zeros( (domain.res_x, domain.res_y), dtype=complex )
+		for voxel_i in range(domain.res_y):
+			for voxel_j in range(domain.res_x):
+				voxels[voxel_i, voxel_j] = x[self.get_global_index(voxel_i, voxel_j, index)]
+		self.voxels = voxels
+
+		#super().__init__(domain, voxels, offset)
+
+		#self.build_derivatives()
+
 
 	def get_global_index( self, voxel_i, voxel_j, coeff_index ):
 		v = voxel_j*self.domain.res_x + voxel_i
 		return v*self.stride + coeff_index
 
-	'''
-	def dx(self, x):
-		return self.dx_grid(x)
-	def dxdx(self, x):
-		return self.dxdx_grid(x)
-	def dxdy(self, x):
-		return self.dxdy_grid(x)
-	def dy(self, x):
-		return self.dy_grid(x)
-	def dydx(self, x):
-		return self.dxdy_grid(x)
-	def dydy(self, x):
-		return self.dydy_grid(x)
-	def dz(self, x):
-		#return self.dz_grid(x)
+	def sample( self, voxel ):
+		return self.voxels[voxel[0], voxel[1]]
+
+	def __call__(self, location):
+		numDimensions = 2
+		# check if the location, at which to evaluate the unknown,
+		# matches the actual grid location of the unknown
+		# this is true for first order equation with non-anisotropic media
+		location_offset = location.getOffset()
+		unknown_offset = self.offset
+		if (location_offset == unknown_offset).all():
+			# unknown location and eval location are the same spot
+			# no interpolation needed
+			return self.sample(location.getVoxel())
+		elif location_offset[0] == unknown_offset[0]:
+			# in the previous if-clause, we checked for location and unknown to be exactly equal
+			# now if their offset matches only in one dimension, then we can simply interpolate
+			# between the two neighbouring datapoints in that dimension
+
+			# TODO: generalize to 3D
+
+			l = self.sample(location.getShiftedLocation(np.array([0, 1])).getVoxel())
+			r = self.sample(location.getShiftedLocation(np.array([0, -1])).getVoxel())
+			return 0.5*(l+r)
+		elif location_offset[1] == unknown_offset[1]:
+			l = self.sample(location.getShiftedLocation(np.array([1, 0])).getVoxel())
+			r = self.sample(location.getShiftedLocation(np.array([-1, 0])).getVoxel())
+			return 0.5*(l+r)
+		#elif (location_offset[0]+1)%2 == unknown_offset[0] and (location_offset[1]+1)%2 == unknown_offset[1]:
+		else:
+			# the offsets of evaluation and unknown do not match in any dimension, therefore 
+			# we can conclude that the location of the unknown is on the diagonals to the eval location
+
+			# the unknown is located diagonal to the position at which we want to evaluate it
+			# therefore we will do an equal weighted sum of all for surrounding unknowns
+			offset_combinations = itertools.product(*[[-1, 1] for d in range(numDimensions)])
+			num_offset_combinations = 2**numDimensions
+
+			result = 0.0
+			for o in offset_combinations:
+				result += self.sample(location.getShiftedLocation(np.array(o)).getVoxel())
+			return result/num_offset_combinations
+
+
+
+	def dx(self, location):
+		step = np.array([1,0], dtype=int)
+		a = self(location.getShiftedLocation(-step))
+		b = self(location.getShiftedLocation(step))
+		return (b-a)/self.domain.voxelsize[0]
+	def dxdx(self, location):
+		step = np.array([1,0], dtype=int)
+		a = self.dx(location.getShiftedLocation(-step))
+		b = self.dx(location.getShiftedLocation(step))
+		return (b-a)/self.domain.voxelsize[0]
+	def dxdy(self, location):
+		step = np.array([0,1], dtype=int)
+		a = self.dx(location.getShiftedLocation(-step))
+		b = self.dx(location.getShiftedLocation(step))
+		return (b-a)/self.domain.voxelsize[1]
+	def dy(self, location):
+		step = np.array([0,1], dtype=int)
+		a = self(location.getShiftedLocation(-step))
+		b = self(location.getShiftedLocation(step))
+		return (b-a)/self.domain.voxelsize[1]
+	def dydy(self, location):
+		step = np.array([0,1], dtype=int)
+		a = self.dy(location.getShiftedLocation(-step))
+		b = self.dy(location.getShiftedLocation(step))
+		return (b-a)/self.domain.voxelsize[1]
+	def dydx(self, location):
+		return self.dxdy(location)
+	def dz(self, location):
 		return 0.0
-	'''
-
-
-class Derivative(object):
-    def __init__(self, fun, dimension = 0, stepsize = 0.01):
-        self.fun = fun
-        self.step = np.zeros(3)
-        self.step[dimension] = stepsize
-        self.stepsize = stepsize
-    def __call__(self, x):
-        return (self.fun( x+self.step )-self.fun( x-self.step ))/(2.0*self.stepsize)
-
-
-
+#'''
 
 
 
@@ -393,6 +481,33 @@ def blurred( problem, stddev = 1.0 ):
 	problem["\\sigma_a"].blur(stddev)
 	problem["\\sigma_s"] = VoxelGrid(domain, domain.rasterize(problem["\\sigma_s"]))
 	problem["\\sigma_s"].blur(stddev)
+
+	# fade out sigma_a and sigma_s near the border
+	def fade(pWS):
+		d0 = np.abs(pWS[0] - domain.bound_min[0])
+		d1 = np.abs(pWS[0] - domain.bound_max[0])
+		d2 = np.abs(pWS[1] - domain.bound_min[1])
+		d3 = np.abs(pWS[1] - domain.bound_max[1])
+		d = min( d0, d1, d2, d3 )
+
+		left = 0.2
+		right = 0.8
+		if d < left:
+			return 0.0
+		elif d > right:
+			return 1.0
+		t = (d-left)/(right-left)
+		return t
+		
+	fade_field = domain.rasterize(fade)
+
+	# fade to zero near border
+	problem["\\sigma_a"].voxels *= fade_field
+	problem["\\sigma_s"].voxels *= fade_field
+
+	#data = {"fade":}
+	#scipy.io.savemat("C:/projects/epfl/epfl17/python/sopn/debug_terms/fade_test.mat", data)
+
 	problem["\\sigma_t"] = VoxelGrid(domain, problem["\\sigma_a"].voxels+problem["\\sigma_s"].voxels)
 
 	return problem

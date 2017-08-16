@@ -295,6 +295,8 @@ def term1( pWS, theta, phi, problem ):
 	L = problem["L"]
 	omega = util.sphericalDirection(theta, phi)
 	return -(omega[0]*sigma_t.dx(pWS) + omega[1]*sigma_t.dy(pWS) + omega[2]*sigma_t.dz(pWS))*L(pWS, omega)
+	#return L(pWS, omega)
+	#return L.coeff_functions[2](pWS)
 
 
 def squared_extinction_term( debug = False ):

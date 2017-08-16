@@ -38,8 +38,8 @@ if __name__ == "__main__":
 	problem["L"] = field.from_pn_solution(pnb.to_complex(x_real), pnb)
 
 	terms = []
-	#terms.append((0, lspn.term0))
-	terms.append((1, lspn.term1))
+	terms.append((0, lspn.term0))
+	#terms.append((1, lspn.term1))
 
 
 	data = {}
@@ -65,7 +65,7 @@ if __name__ == "__main__":
 					global_i = pnb.global_index(voxel_i, voxel_j, i)
 					# NB: we take into account, that for 2d, pnb will have different index and lm ordering
 					#print("---------------")
-					#gg = lambda theta, phi: term(location, theta, phi, problem)
+					#gg = lambda theta, phi: term(pWS, theta, phi, problem)
 					#print(gg(np.pi*0.3, 0.0))
 					coeff = util.project_sh_coeff(lambda theta, phi: term(pWS, theta, phi, problem), l, m)
 					#coeff = shtools.project_sh_coeff_x(lambda angle: term(pWS, angle[0], angle[1], problem), l, m)

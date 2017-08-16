@@ -241,6 +241,7 @@ def from_pn_solution( x_complex, pnb ):
 		grid = VoxelGrid( voxels, pnb.domain_cpp, offset*0.5 )
 		#grid = pnbuilder.VoxelGrid( voxels, pnb.domain_cpp, offset*0.5 )
 
-		shexp.set_coeff(i,grid)
+		sh_index = util.sh_index(l,m)
+		shexp.set_coeff(sh_index,grid)
 
 	return shexp

@@ -253,6 +253,10 @@ PYBIND11_MODULE(pnbuilder_cpp, m)
 	{
 		return m.dz(to_P2d(pWS_array), to_V3d(omega_array));
 	})
+	.def("integral_over_solid_angle", [](RadianceField &m, py::array pWS_array)
+	{
+		return m.integral_over_solid_angle(to_P2d(pWS_array));
+	})
 	;
 
 	// SHEXP ============================================================
@@ -264,5 +268,6 @@ PYBIND11_MODULE(pnbuilder_cpp, m)
 		new (&m) SHEXP(order);
 	})
 	.def("set_coeff", &SHEXP::set_coeff)
+	.def("get_coeff", &SHEXP::get_coeff)
 	;
 }

@@ -48,6 +48,10 @@ struct SHEXP : public RadianceField
 		m_coefficient_fields[index] = field;
 	}
 
+	Field::Ptr get_coeff( int index )
+	{
+		return m_coefficient_fields[index];
+	}
 
 	virtual std::complex<double> eval( const P2d& pWS, const V3d& omega )const override
 	{
@@ -136,6 +140,10 @@ struct SHEXP : public RadianceField
 			for( int m=-l;m<=l;++m )
 				result+=m_coefficient_fields[sh_index(l,m)]->dz(pWS)*sph::sph_basis(l,m,theta, phi);
 		return result;
+	}
+	virtual std::complex<double> integral_over_solid_angle(const P2d& pWS)const override
+	{
+		return m_coefficient_fields[0]->eval(pWS)*std::sqrt(4.0*M_PI);
 	}
 
 

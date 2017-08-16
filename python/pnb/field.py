@@ -98,6 +98,8 @@ class SHEXP(object):
     	self.coeff_functions = [Constant(0.0) for i in range(util.num_sh_coeffs(order))]
     def set_coeff(self, index, field):
     	self.coeff_functions[index] = field
+    def get_coeff(self, index):
+    	return self.coeff_functions[index]
     def __call__(self, pWS, omega):
         (theta, phi) = util.sphericalCoordinates(omega)
         coeffs = [f(pWS) for f in self.coeff_functions]
@@ -227,8 +229,8 @@ def from_pn_solution( x_complex, pnb ):
 
 
 	# now for each coefficient
-	shexp = SHEXP(pnb.order())
-	#shexp = pnbuilder.SHEXP(pnb.order())
+	#shexp = SHEXP(pnb.order())
+	shexp = pnbuilder.SHEXP(pnb.order())
 	for i in range(pnb.num_coeffs()):
 		(l,m) = pnb.lm_index(i)
 		offset = pnb.unknown_offset(i)
@@ -238,8 +240,8 @@ def from_pn_solution( x_complex, pnb ):
 		for voxel_i in range(res[1]):
 			for voxel_j in range(res[0]):
 				voxels[voxel_i, voxel_j] = x_complex[pnb.global_index(voxel_i, voxel_j, i)]
-		grid = VoxelGrid( voxels, pnb.domain_cpp, offset*0.5 )
-		#grid = pnbuilder.VoxelGrid( voxels, pnb.domain_cpp, offset*0.5 )
+		#grid = VoxelGrid( voxels, pnb.domain_cpp, offset*0.5 )
+		grid = pnbuilder.VoxelGrid( voxels, pnb.domain_cpp, offset*0.5 )
 
 		sh_index = util.sh_index(l,m)
 		shexp.set_coeff(sh_index,grid)

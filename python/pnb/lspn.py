@@ -2,6 +2,7 @@
 # (see http://www.tandfonline.com/doi/abs/10.1080/00411450.2014.927364).
 # These terms are discretized automatically by the PNBuilder into Ax=b form.
 
+import numpy as np
 import meh
 import util
 
@@ -295,11 +296,9 @@ def term1( pWS, theta, phi, problem ):
 	L = problem["L"]
 	omega = util.sphericalDirection(theta, phi)
 	return -(omega[0]*sigma_t.dx(pWS) + omega[1]*sigma_t.dy(pWS) + omega[2]*sigma_t.dz(pWS))*L(pWS, omega)
-	#return L(pWS, omega)
-	#return L.coeff_functions[2](pWS)
 
 
-def squared_extinction_term( debug = False ):
+def term2_projected_expr( debug = False ):
 	omega = meh.tensor("\\omega", rank=1, dimension=3)
 	omega_x = omega.getComponent(0)
 	omega_y = omega.getComponent(1)
@@ -337,7 +336,14 @@ def squared_extinction_term( debug = False ):
 
 	return expr
 
-def directional_derivative_scattering_term(debug = False):
+def term2( pWS, theta, phi, problem ):
+	sigma_t = problem["\\sigma_t"](pWS)
+	L = problem["L"]
+	omega = util.sphericalDirection(theta, phi)
+	return sigma_t*sigma_t*L(pWS, omega)
+
+
+def term3_projected_expr(debug = False):
 	omega = meh.tensor("\\omega", rank=1, dimension=3)
 	omega_x = omega.getComponent(0)
 	omega_y = omega.getComponent(1)
@@ -431,7 +437,24 @@ def directional_derivative_scattering_term(debug = False):
 	return expr
 
 
-def directional_derivative_scattering_term2( debug = False):
+def term3( pWS, theta, phi, problem ):
+	# NB: assuming constant phase function....
+	omega = util.sphericalDirection(theta, phi)
+	sigma_t = problem["\\sigma_t"]
+	sigma_s = problem["\\sigma_s"]
+
+	L00 = problem["L"].get_coeff(0)
+
+	result = 0.0
+	result += omega[0]*(sigma_s.dx(pWS)*L00(pWS) + sigma_s(pWS)*L00.dx(pWS))
+	result += omega[1]*(sigma_s.dy(pWS)*L00(pWS) + sigma_s(pWS)*L00.dy(pWS))
+	result += omega[2]*(sigma_s.dz(pWS)*L00(pWS) + sigma_s(pWS)*L00.dz(pWS))
+	result *= np.sqrt(4.0*np.pi)/(4.0*np.pi)
+
+	return result
+
+
+def term4_projected_expr( debug = False):
 	omega = meh.tensor("\\omega", rank=1, dimension=3)
 	omega_x = omega.getComponent(0)
 	omega_y = omega.getComponent(1)
@@ -502,6 +525,15 @@ def directional_derivative_scattering_term2( debug = False):
 	print_expr(expr,debug)
 
 	return expr
+
+def term4( pWS, theta, phi, problem ):
+	# NB: assuming constant phase function....
+	omega = util.sphericalDirection(theta, phi)
+	sigma_t = problem["\\sigma_t"](pWS)
+	sigma_s = problem["\\sigma_s"](pWS)
+	L = problem["L"]
+	int_L = L.integral_over_solid_angle(pWS)
+	return -sigma_t*sigma_s*(1.0/(4.0*np.pi))*int_L
 
 
 def extinction_scattering_term(debug=False):

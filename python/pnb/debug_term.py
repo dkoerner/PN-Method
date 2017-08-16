@@ -19,13 +19,17 @@ class Test(object):
 
 if __name__ == "__main__":
 
-	debug_voxel_x = 40
-	debug_voxel_y = 35
-	voxels_min = np.array([debug_voxel_x, debug_voxel_y])
-	voxels_max = np.array([debug_voxel_x+1, debug_voxel_y+1])
+	#debug_voxel_x = 40
+	#debug_voxel_y = 35
+	#voxels_min = np.array([debug_voxel_x, debug_voxel_y])
+	#voxels_max = np.array([debug_voxel_x+1, debug_voxel_y+1])
 
 	#voxels_min = np.array([20, 20])
 	#voxels_max = np.array([50, 50])
+
+	voxels_min = np.array([0, 0])
+	voxels_max = np.array([70, 70])
+
 
 	id = "checkerboard_blur10.0_term1"
 	data = util.load_pn_solution("C:/projects/epfl/epfl17/python/sopn/solution_{}.mat".format(id))
@@ -39,7 +43,10 @@ if __name__ == "__main__":
 
 	terms = []
 	terms.append((0, lspn.term0))
-	#terms.append((1, lspn.term1))
+	terms.append((1, lspn.term1))
+	terms.append((2, lspn.term2))
+	terms.append((3, lspn.term3))
+	terms.append((4, lspn.term4))
 
 
 	data = {}
@@ -74,10 +81,10 @@ if __name__ == "__main__":
 					x_term_complex_gt[global_i] = coeff
 		x_term_real_gt = pnb.to_real(x_term_complex_gt)
 
-		debug_i = pnb.global_index(debug_voxel_x,debug_voxel_y,0)
-		print(x_term_real[debug_i])
-		print(x_term_real_gt[debug_i])
-		#data['x_term{}'.format(term_index)] = x_term_real_gt.reshape((pnb.domain.numVoxels*pnb.numCoeffs, 1))
-		#scipy.io.savemat("C:/projects/epfl/epfl17/python/pnb/debug_terms/data_term{}.mat".format(term_index), data)
+		#debug_i = pnb.global_index(debug_voxel_x,debug_voxel_y,0)
+		#print(x_term_real[debug_i])
+		#print(x_term_real_gt[debug_i])
+		data['x_term{}'.format(term_index)] = x_term_real_gt.reshape((pnb.domain.numVoxels*pnb.numCoeffs, 1))
+		scipy.io.savemat("C:/projects/epfl/epfl17/python/pnb/debug_terms/data_term{}.mat".format(term_index), data)
 
 

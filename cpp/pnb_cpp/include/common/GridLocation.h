@@ -38,6 +38,7 @@ struct GridLocation
 
 		m_voxel = V2i(voxel[0] + d0.quot,voxel[1] + d1.quot );
 		m_offset = V2i( d0.rem, d1.rem );
+		m_pWS = domain.voxelToWorld( P2d(m_voxel[0] + m_offset[0]*0.5, m_voxel[1] + m_offset[1]*0.5) );
 
 		// TODO: m_pWS
 		//#self.pWS = self.domain.bound_min + np.multiply(np.array([self.voxel_i+self.offset[0]*0.5, self.voxel_j+self.offset[1]*0.5]), self.domain.voxelsize)
@@ -56,6 +57,10 @@ struct GridLocation
 	{
 		return m_voxel;
 	}
+	V2d getPWS()const
+	{
+		return m_pWS;
+	}
 	GridLocation getShiftedLocation(const V2i& offset)const
 	{
 		return GridLocation(m_domain, m_voxel, m_offset+offset);
@@ -65,5 +70,5 @@ private:
 	Domain m_domain;
 	V2i m_offset;
 	V2i m_voxel;
-	//V2d m_pWS;
+	V2d m_pWS;
 };

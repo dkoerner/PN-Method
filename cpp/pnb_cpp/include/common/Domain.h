@@ -39,15 +39,30 @@ struct Domain
 	{
 		return P2d(pVS[0]/m_resolution[0], pVS[1]/m_resolution[1]);
 	}
+	P2d localToVoxel(const P2d& pLS)const
+	{
+		return P2d(pLS[0]*m_resolution[0], pLS[1]*m_resolution[1]);
+	}
 
 	P2d localToWorld( const P2d& pLS )const
 	{
 		return P2d(pLS[0]*m_extend[0] + m_bound.min[0], pLS[1]*m_extend[1] + m_bound.min[1]);
 	}
 
+	P2d worldToLocal( const P2d& pWS )const
+	{
+		return P2d((pWS[0]-m_bound.min[0])/m_extend[0] , (pWS[1]-m_bound.min[1])/m_extend[1] );
+	}
+
 	P2d voxelToWorld( const P2d& pVS)const
 	{
 		return localToWorld(voxelToLocal(pVS));
+	}
+
+
+	P2d worldToVoxel( const P2d& pWS)const
+	{
+		return localToVoxel(worldToLocal(pWS));
 	}
 
 private:

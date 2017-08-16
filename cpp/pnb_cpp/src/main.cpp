@@ -22,6 +22,13 @@ namespace py = pybind11;
 
 
 
+V2d to_V2d( py::array array )
+{
+	auto data = static_cast<double *>(array.request().ptr);
+	return V2d(data[0], data[1]);
+}
+
+
 V3d to_V3d( py::array array )
 {
 	auto data = static_cast<double *>(array.request().ptr);
@@ -78,13 +85,31 @@ PYBIND11_MODULE(pnbuilder_cpp, m)
 		a.mutable_data()[0] = resolution[0];
 		a.mutable_data()[1] = resolution[1];
 		return a;
-
+	})
+	.def("voxelSize",
+	[](Domain &m)
+	{
+		V2d voxelSize = m.voxelSize();
+		py::array_t<double> a({ 2 });
+		a.mutable_data()[0] = voxelSize[0];
+		a.mutable_data()[1] = voxelSize[1];
+		return a;
 	})
 	.def("numVoxels",
 	[](Domain &m)
 	{
 		return m.numVoxels();
-	});
+	})
+	.def("worldToVoxel",
+	[](Domain &m, py::array pWS_array)
+	{
+		P2d pVS = m.worldToVoxel( to_P2d(pWS_array) );
+		py::array_t<double> a({ 2 });
+		a.mutable_data()[0] = pVS[0];
+		a.mutable_data()[1] = pVS[1];
+		return a;
+	})
+	;
 
 	// GridLocation ============================================================
 	py::class_<GridLocation> class_gridlocation(m, "GridLocation");
@@ -161,7 +186,6 @@ PYBIND11_MODULE(pnbuilder_cpp, m)
 
 		// Request a buffer descriptor from Python
 		py::buffer_info info = b.request();
-		py::buffer_info offset_info = offset_array.request();
 
 		// Some sanity checks ...
 		//std::cout << "format=" << info.format << std::endl;
@@ -181,10 +205,7 @@ PYBIND11_MODULE(pnbuilder_cpp, m)
 		//auto map = Eigen::Map<Matrix, 0, Strides>( static_cast<Scalar *>(info.ptr), info.shape[0], info.shape[1], strides);
 
 		auto data = static_cast<std::complex<double> *>(info.ptr);
-
-		auto offset_data = static_cast<int*>(offset_info.ptr);
-
-		new (&m) VoxelGrid( data, domain, V2i(offset_data[0], offset_data[1]) );
+		new (&m) VoxelGrid( data, domain, to_V2d(offset_array) );
 	})
 	;
 

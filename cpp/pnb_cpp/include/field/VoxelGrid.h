@@ -17,7 +17,7 @@ struct VoxelGrid : public Field
 {
 	typedef std::shared_ptr<VoxelGrid> Ptr;
 
-	VoxelGrid( std::complex<double>* data, const Domain& domain, V2i offset ):
+	VoxelGrid( std::complex<double>* data, const Domain& domain, V2d offset ):
 		m_data(data),
 		m_domain(domain),
 		m_offset(offset)
@@ -35,7 +35,7 @@ struct VoxelGrid : public Field
 
 	virtual std::complex<double> eval( const P2d& pWS )const override
 	{
-		P2d pVS = m_domain.worldToVoxel(pWS)-m_offset.cast<double>()*0.5;
+		P2d pVS = m_domain.worldToVoxel(pWS)-m_offset;
 		P2i v0;
 		v0[0] = (int)floor(pVS[0]);
 		v0[1] = (int)floor(pVS[1]);
@@ -79,85 +79,33 @@ struct VoxelGrid : public Field
 		result += sample(V2i(v0[0], v1[1]))*(1.0-tx)*ty;
 		result += sample(V2i(v1[0], v1[1]))*tx*ty;
 		return result;
-
-
-
-		/*
-		V2i pWSation_offset = pWS.getOffset();
-		V2i voxel = pWS.getVoxel();
-
-		if( (pWSation_offset[0] == m_offset[0])&&
-			(pWSation_offset[1] == m_offset[1]))
-		{
-			return sample(voxel);
-		}else
-		if(pWSation_offset[0] == m_offset[0])
-		{
-			std::complex<double> l = sample(pWS.getShiftedpWSation(V2i(0, 1)).getVoxel());
-			std::complex<double> r = sample(pWS.getShiftedpWSation(V2i(0, -1)).getVoxel());
-			return 0.5*(l+r);
-		}else
-		if(pWSation_offset[1] == m_offset[1])
-		{
-			std::complex<double> l = sample(pWS.getShiftedpWSation(V2i(1, 0)).getVoxel());
-			std::complex<double> r = sample(pWS.getShiftedpWSation(V2i(-1,0)).getVoxel());
-			return 0.5*(l+r);
-		}else
-		{
-			const std::vector<V2i> offsets = {V2i(-1,-1), V2i(-1,1), V2i(1,-1), V2i(1,1)};
-			std::complex<double> result = 0.0;
-			for( auto offset:offsets )
-			{
-				result += sample(pWS.getShiftedpWSation(offset).getVoxel());
-			}
-			return result/double(offsets.size());
-		}
-
-		return std::complex<double>(0.0,0.0);
-		*/
 	}
 	virtual std::complex<double> dx(const P2d& pWS)const override
 	{
-		//V2i step(1,0);
-		//std::complex<double> a = eval(pWS.getShiftedpWSation(-step));
-		//std::complex<double> b = eval(pWS.getShiftedpWSation(step));
 		std::complex<double> a = eval(pWS-m_step_x);
 		std::complex<double> b = eval(pWS+m_step_x);
 		return (b-a)/m_domain.voxelSize()[0];
 	}
 	virtual std::complex<double> dxdx(const P2d& pWS)const override
 	{
-		//V2i step(1,0);
-		//std::complex<double> a = dx(pWS.getShiftedpWSation(-step));
-		//std::complex<double> b = dx(pWS.getShiftedpWSation(step));
 		std::complex<double> a = dx(pWS-m_step_x);
 		std::complex<double> b = dx(pWS+m_step_x);
 		return (b-a)/m_domain.voxelSize()[0];
 	}
 	virtual std::complex<double> dxdy(const P2d& pWS)const override
 	{
-		//V2i step(0,1);
-		//std::complex<double> a = dx(pWS.getShiftedpWSation(-step));
-		//std::complex<double> b = dx(pWS.getShiftedpWSation(step));
 		std::complex<double> a = dx(pWS-m_step_y);
 		std::complex<double> b = dx(pWS+m_step_y);
 		return (b-a)/m_domain.voxelSize()[1];
 	}
 	virtual std::complex<double> dy(const P2d& pWS)const override
 	{
-		//V2i step(0,1);
-		//std::complex<double> a = eval(pWS.getShiftedpWSation(-step));
-		//std::complex<double> b = eval(pWS.getShiftedpWSation(step));
 		std::complex<double> a = eval(pWS-m_step_y);
 		std::complex<double> b = eval(pWS+m_step_y);
 		return (b-a)/m_domain.voxelSize()[1];
 	}
 	virtual std::complex<double> dydy(const P2d& pWS)const override
 	{
-		//V2i step(0,1);
-		//std::complex<double> a = dy(pWS.getShiftedpWSation(-step));
-		//std::complex<double> b = dy(pWS.getShiftedpWSation(step));
-		//return (b-a)/m_domain.voxelSize()[1];
 		std::complex<double> a = dy(pWS-m_step_y);
 		std::complex<double> b = dy(pWS+m_step_y);
 		return (b-a)/m_domain.voxelSize()[1];
@@ -183,7 +131,7 @@ struct VoxelGrid : public Field
 
 private:
 	Domain m_domain;
-	V2i m_offset;
+	V2d m_offset;
 	V2d m_step_x;
 	V2d m_step_y;
 	std::complex<double>* m_data;

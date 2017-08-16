@@ -4,17 +4,21 @@ import pnb
 
 offset = np.array([1,1])
 
+resolution = np.array([3,3])
+voxelsize = np.array([0.1,0.1])
 
-voxels = np.zeros([3,3], dtype=complex)
+voxels = np.zeros([resolution[0],resolution[1]], dtype=complex)
 
 voxels[2, 0] = 1.23j
 voxels[0, 1] = 1.23
 
-test = pnb.CoefficientGrid(voxels, offset)
+domain = pnb.Domain( resolution, voxelsize )
+
+test = pnb.CoefficientGrid(voxels, domain, offset)
 
 
 voxel = np.array([0,1])
-l = pnb.Location(voxel, offset)
+l = pnb.GridLocation(voxel, offset)
 
 result = test(l)
 

@@ -261,8 +261,8 @@ class Test(object):
 		self.problem = problem
 		self.term = term
 	def __call__( self, angle ):
-		#return self.term(self.location, angle[0], angle[1], self.problem)
-		return 1.0
+		return self.term(self.location, angle[0], angle[1], self.problem)
+		#return 1.0
 
 
 def debug_A_term(debug_voxel_x, debug_voxel_y):
@@ -349,13 +349,13 @@ if __name__ == "__main__":
 	##terms.append(term6)
 
 
-	#debug_voxel_x = 40
-	#debug_voxel_y = 35
-	#voxels_min = np.array([debug_voxel_x, debug_voxel_y])
-	#voxels_max = np.array([debug_voxel_x+1, debug_voxel_y+1])
+	debug_voxel_x = 40
+	debug_voxel_y = 35
+	voxels_min = np.array([debug_voxel_x, debug_voxel_y])
+	voxels_max = np.array([debug_voxel_x+1, debug_voxel_y+1])
 
-	voxels_min = np.array([20, 20])
-	voxels_max = np.array([50, 50])
+	#voxels_min = np.array([20, 20])
+	#voxels_max = np.array([50, 50])
 
 
 	data = {}
@@ -369,8 +369,6 @@ if __name__ == "__main__":
 		#A_term = debug_A_term(debug_voxel_x, debug_voxel_y)
 		x_term_real = A_term.dot(x_real)
 
-		#debug_i = pnb.get_global_index(debug_voxel_x,debug_voxel_y,0)
-		#print(x_term_real[debug_i])
 
 		x_term_complex_gt = np.zeros(pnb.domain.numVoxels*pnb.numCoeffs, dtype=complex)
 		for voxel_i in range(voxels_min[0], voxels_max[0]):
@@ -385,13 +383,18 @@ if __name__ == "__main__":
 					global_i = pnb.get_global_index(voxel_i, voxel_j, i)
 					# NB: we take into account, that for 2d, pnb will have different index and lm ordering
 					#print("---------------")
-					#coeff = shtools.project_sh_coeff(lambda theta, phi: term(pWS, theta, phi, problem), l, m)
+					#coeff = shtools.project_sh_coeff(lambda theta, phi: term(location, theta, phi, problem), l, m)
 					#coeff = shtools.project_sh_coeff_x(lambda angle: term(pWS, angle[0], angle[1], problem), l, m)
 					coeff = shtools.project_sh_coeff_x(Test(location, problem, term), l, m)
+					#print(coeff)
 					#print("done")
 					x_term_complex_gt[global_i] = coeff
 		x_term_real_gt = pnb.to_real(x_term_complex_gt)
-		#print(x_term_real_gt[debug_i])
+		debug_i = pnb.get_global_index(debug_voxel_x,debug_voxel_y,0)
+		print(x_term_real[debug_i])
+		print(x_term_real_gt[debug_i])
+		#print(pnb.to_complex(x_term_real)[debug_i])
+		#print(x_term_complex_gt[debug_i])
 
 		#data['x_term{}'.format(term_index)] = x_term_real_gt.reshape((pnb.domain.numVoxels*pnb.numCoeffs, 1))
 		#scipy.io.savemat("C:/projects/epfl/epfl17/python/sopn/debug_terms/data_term{}.mat".format(term_index), data)

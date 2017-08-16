@@ -7,7 +7,7 @@ import util
 import meh
 import itertools
 
-from pnbuilder_cpp import Domain,GridLocation, CoefficientGrid
+from pnbuilder_cpp import Domain,GridLocation, Constant, VoxelGrid, SHEXP
 
 
 class Domain2D:
@@ -59,19 +59,13 @@ class Domain2D:
 		pVS = self.worldToVoxel(pWS)
 		return (int(pVS[1]), int(pVS[0]))
 
-	def rasterize( self, fun, shape = None ):
-		if shape == None:
-			shape = (self.res_x, self.res_y)
-		field = np.zeros(shape)
-		for i in range(0, self.res_y):
-			for j in range(0, self.res_x):
-				pVS = np.array([i+0.5, j+0.5])
-				pWS = self.voxelToWorld(pVS)
-				field[i, j] = fun(pWS)
-		return field
-
 	def num_voxels(self):
 		return self.numVoxels
+
+	def resolution(self):
+		return np.array([self.res_x, self.res_y])
+	def voxelSize(self):
+		return self.voxelsize
 
 
 

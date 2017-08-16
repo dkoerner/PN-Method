@@ -5,7 +5,7 @@ import numpy as np
 import field
 import pnbuilder
 
-
+from scipy.ndimage.filters import gaussian_filter
 
 
 
@@ -69,6 +69,19 @@ def checkerboard2d():
 	return problem
 
 
+
+def rasterize( fun, domain, offset = np.array([0.5, 0.5]), dtype=float ):
+	res = domain.resolution()
+	shape = (res[0], res[1])
+	voxels = np.zeros(shape, dtype=dtype)
+	for i in range(0, res[0]):
+		for j in range(0, res[1]):
+			pVS = np.array([i, j]) + offset
+			pWS = domain.voxelToWorld(pVS)
+			voxels[i, j] = fun(pWS)
+	return voxels
+
+
 # This basically takes an arbitrary problem and blurs it.
 def blurred( problem, stddev = 1.0 ):
 
@@ -76,16 +89,19 @@ def blurred( problem, stddev = 1.0 ):
 
 	problem["id"] = "{}_blur{}".format(problem["id"], stddev)
 
-	sigma_t_grid = domain.rasterize(problem["\\sigma_t"])
-	albedo_grid = domain.rasterize(problem["\\sigma_s"])/sigma_t_grid
+	sigma_a_voxels = rasterize(problem["\\sigma_a"], domain)
+	sigma_s_voxels = rasterize(problem["\\sigma_s"], domain)
 
-	problem["\\sigma_a"] = field.VoxelGrid(domain, domain.rasterize(problem["\\sigma_a"]))
-	problem["\\sigma_a"].blur(stddev)
-	problem["\\sigma_s"] = field.VoxelGrid(domain, domain.rasterize(problem["\\sigma_s"]))
-	problem["\\sigma_s"].blur(stddev)
+	# blur voxels
+	sigma_a_voxels = gaussian_filter(sigma_a_voxels, stddev)
+	sigma_s_voxels = gaussian_filter(sigma_s_voxels, stddev)
+
+	problem["\\sigma_a"] = field.VoxelGrid(sigma_a_voxels, domain)
+	problem["\\sigma_s"] = field.VoxelGrid(sigma_s_voxels, domain)
 
 
 	# fade to zero near border ----------------------------
+	'''
 	# fade out sigma_a and sigma_s near the border
 	def fade(pWS):
 		d0 = np.abs(pWS[0] - domain.bound_min[0])
@@ -106,9 +122,10 @@ def blurred( problem, stddev = 1.0 ):
 	fade_field = domain.rasterize(fade)
 	problem["\\sigma_a"].voxels *= fade_field
 	problem["\\sigma_s"].voxels *= fade_field
+	'''
 
 
-	problem["\\sigma_t"] = field.VoxelGrid(domain, problem["\\sigma_a"].voxels+problem["\\sigma_s"].voxels)
+	problem["\\sigma_t"] = field.VoxelGrid(sigma_a_voxels+sigma_s_voxels, domain)
 
 	return problem
 

@@ -27,7 +27,7 @@ def sh_sum( order, coeffs, theta, phi ):
             result+=coeffs[sh_index(l,m)]*sph_harm(m, l, phi, theta)
     return result
 
-'''
+#'''
 project_sh_coeff_data = None
 def project_sh_coeff( fun, l, m ):
 	global project_sh_coeff_data
@@ -58,7 +58,7 @@ def project_sh_coeff( fun, l, m ):
 		project_sh_coeff_data = {}
 		project_sh_coeff_data["theta_phi"] = theta_phi
 		project_sh_coeff_data["pixel_area"] = pixel_area
-		project_sh_coeff_data["pool"] = Pool(5)
+		#project_sh_coeff_data["pool"] = Pool(5)
 		project_sh_coeff_data["ins"] = ins
 		
 
@@ -77,14 +77,18 @@ def project_sh_coeff( fun, l, m ):
 	factor = project_sh_coeff_data[(l,m)]
 
 
-	res = project_sh_coeff_data["pool"].map( fun, project_sh_coeff_data["ins"] )
+	#res = project_sh_coeff_data["pool"].map( fun, project_sh_coeff_data["ins"] )
+	res = [fun(theta, phi) for (theta, phi) in project_sh_coeff_data["ins"]]
+	
+
+
 	result = np.sum(np.array(res)*factor)
 
 	return result
-'''
-
-
 #'''
+
+
+'''
 def project_sh_coeff( fun, l, m ):
 	return integrate_sphere( lambda theta, phi: fun(theta, phi)*np.conj(sph_harm(m, l, phi, theta)) )
 
@@ -110,7 +114,7 @@ def integrate_sphere( fun, debug = False ):
             result+=fun(theta, phi)*pixel_area*np.sin(theta)
 
     return result
-#'''
+'''
 # misc ==============================================================
 def sphericalCoordinates( d ):
 	theta = np.arccos(d[2])

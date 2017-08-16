@@ -161,7 +161,7 @@ def term0_projected_expr(debug = False):
 	return expr
 
 
-def term0(location, theta, phi, problem):
+def term0(pWS, theta, phi, problem):
 	omega = util.sphericalDirection(theta, phi)
 	L = problem["L"]
 
@@ -172,19 +172,19 @@ def term0(location, theta, phi, problem):
 		for j in range(2):
 			c = 0.0
 			if i ==0 and j == 0:
-				c = L.dxdx(location, omega)
+				c = L.dxdx(pWS, omega)
 			elif i ==0 and j == 1:
-				c = L.dxdy(location, omega)
+				c = L.dxdy(pWS, omega)
 			elif i ==1 and j == 0:
-				c = L.dydx(location, omega)
+				c = L.dydx(pWS, omega)
 			elif i ==1 and j == 1:
-				c = L.dydy(location, omega)
+				c = L.dydy(pWS, omega)
 			else:
 				raise ValueError("sdadasdasdsd")
 			result += -omega[i]*omega[j]*c
 	#'''
 
-	#t = L.coeff_functions[0].dx(location)
+	#t = L.coeff_functions[0](location)
 	#print("t={}".format(t))
 	#result += 
 	#L.coeff_functions[0].test()
@@ -196,7 +196,7 @@ def term0(location, theta, phi, problem):
 	return result
 
 
-def extinction_directional_derivative_term( debug = False):
+def term1_projected_expr( debug = False):
 	omega = meh.tensor("\\omega", rank=1, dimension=3)
 	omega_x = omega.getComponent(0)
 	omega_y = omega.getComponent(1)
@@ -227,47 +227,75 @@ def extinction_directional_derivative_term( debug = False):
 
 	expr = meh.neg(meh.dot(omegaL, nabla_sigma_t))
 
-	print_expr(expr, debug)
+	if debug == True:
+		meh.print_expr(expr)
 	expr = meh.apply_recursive(expr, meh.ExpandDotProduct())
-	print_expr(expr, debug)
+	if debug == True:
+		meh.print_expr(expr)
 	expr = meh.integrate(meh.mul( meh.SHBasis(meh.var("l'"), meh.var("m'"), omega, conjugate_complex=True), expr), omega) 
-	print_expr(expr, debug)
+	if debug == True:
+		meh.print_expr(expr)
 	expr = meh.apply_recursive(expr, meh.CleanupSigns())
-	print_expr(expr, debug)
+	if debug == True:
+		meh.print_expr(expr)
 	expr = meh.apply_recursive(expr, meh.DistributiveLaw())
-	print_expr(expr, debug)
+	if debug == True:
+		meh.print_expr(expr)
 	expr = meh.apply_recursive(expr, meh.CleanupSigns())
-	print_expr(expr, debug)
+	if debug == True:
+		meh.print_expr(expr)
 	expr = meh.apply_recursive(expr, meh.SplitIntegrals())
-	print_expr(expr, debug)
+	if debug == True:
+		meh.print_expr(expr)
 	expr = meh.apply_recursive(expr, meh.CleanupSigns())
-	print_expr(expr, debug)
+	if debug == True:
+		meh.print_expr(expr)
 	expr = meh.apply_recursive(expr, meh.SHRecursiveRelation())
-	print_expr(expr, debug)
+	if debug == True:
+		meh.print_expr(expr)
 	expr = meh.apply_recursive(expr, meh.DistributiveLaw())
-	print_expr(expr, debug)
+	if debug == True:
+		meh.print_expr(expr)
 	expr = meh.apply_recursive(expr, meh.CleanupSigns())
-	print_expr(expr, debug)
+	if debug == True:
+		meh.print_expr(expr)
 	expr = meh.apply_recursive(expr, meh.SplitIntegrals())
-	print_expr(expr, debug)
+	if debug == True:
+		meh.print_expr(expr)
 	expr = meh.apply_recursive(expr, meh.CleanupSigns())
-	print_expr(expr, debug)
+	if debug == True:
+		meh.print_expr(expr)
 	expr = meh.apply_recursive(expr, meh.Factorize())
-	print_expr(expr, debug)
+	if debug == True:
+		meh.print_expr(expr)
 	expr = meh.apply_recursive(expr, meh.Substitute(L, L_expanded))
-	print_expr(expr, debug)
+	if debug == True:
+		meh.print_expr(expr)
 	expr = meh.apply_recursive(expr, meh.SwitchDomains())
-	print_expr(expr, debug)
+	if debug == True:
+		meh.print_expr(expr)
 	expr = meh.apply_recursive(expr, meh.SwitchDomains())
-	print_expr(expr, debug)
+	if debug == True:
+		meh.print_expr(expr)
 	expr = meh.apply_recursive(expr, meh.Factorize())
-	print_expr(expr, debug)
+	if debug == True:
+		meh.print_expr(expr)
 	expr = meh.apply_recursive(expr, meh.SHOrthogonalityProperty())
-	print_expr(expr, debug)
+	if debug == True:
+		meh.print_expr(expr)
 	expr = meh.apply_recursive(expr, meh.SummationOverKronecker())
-	print_expr(expr, debug)
+	if debug == True:
+		meh.print_expr(expr)
+
 
 	return expr
+
+def term1( pWS, theta, phi, problem ):
+	sigma_t = problem["\\sigma_t"]
+	L = problem["L"]
+	omega = util.sphericalDirection(theta, phi)
+	return -(omega[0]*sigma_t.dx(pWS) + omega[1]*sigma_t.dy(pWS) + omega[2]*sigma_t.dz(pWS))*L(pWS, omega)
+
 
 def squared_extinction_term( debug = False ):
 	omega = meh.tensor("\\omega", rank=1, dimension=3)

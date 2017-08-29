@@ -17,6 +17,8 @@ include_directories( ${CMAKE_INSTALL_PREFIX}/include/eigen3 )
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/include )
 #pybind11_add_module(pnb src/main.cpp src/util/string.cpp src/util/dda2d.cpp)
 pybind11_add_module(pnbuilder_cpp src/main.cpp
+	                              src/PNSystem.cpp
+								  src/stencil.cpp
 	                              src/field/VoxelGrid.cpp
 								  src/field/Constant.cpp
 								  src/field/SHEXP.cpp

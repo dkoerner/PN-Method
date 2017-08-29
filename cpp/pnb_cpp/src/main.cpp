@@ -14,9 +14,21 @@
 #include<field/VoxelGrid.h>
 #include<field/Constant.h>
 #include<field/SHEXP.h>
-
+#include <PNSystem.h>
 
 namespace py = pybind11;
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -51,6 +63,22 @@ P2d to_P2d( py::array array )
 
 PYBIND11_MODULE(pnbuilder_cpp, m)
 {
+	// PNSystem ==============================
+	py::class_<PNSystem> class_pnsystem(m, "PNSystem");
+	class_pnsystem
+	.def("__init__",
+	 [](PNSystem &m, Domain &domain, int order)
+	 {
+		new (&m) PNSystem(domain, order);
+	 })
+	.def("getGlobalIndex", &PNSystem::getGlobalIndex )
+	.def("getNumCoefficients", &PNSystem::getNumCoefficients )
+	.def("getNumVoxels", &PNSystem::getNumVoxels )
+	.def("build", &PNSystem::build )
+	.def("setField", &PNSystem::setField )
+	.def("get_A", &PNSystem::get_A )
+	;
+
 	// Domain ============================================================
 	py::class_<Domain> class_domain(m, "Domain");
 	class_domain

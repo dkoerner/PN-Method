@@ -132,6 +132,39 @@ def sphericalDirection( theta, phi ):
 	return np.array([sinTheta * cosPhi, sinTheta * sinPhi, cosTheta])
 
 # I/O related =====================================================
+def rasterize( fun, domain, offset = np.array([0.5, 0.5]), dtype=float ):
+	res = domain.resolution()
+	shape = (res[0], res[1])
+	voxels = np.zeros(shape, dtype=dtype)
+	for i in range(0, res[0]):
+		for j in range(0, res[1]):
+			pVS = np.array([i, j]) + offset
+			pWS = domain.voxelToWorld(pVS)
+			voxels[i, j] = fun(pWS)
+	return voxels
+
+def write_pn_system(pnb, problem, A, b):
+	data = {}
+	if not A is None:
+		data['A'] = A
+	if not b is None:
+		data['b'] = b.reshape((pnb.domain.numVoxels*pnb.numCoeffs, 1))
+	data['pnb_info'] = pnb.get_info()
+
+	#filename = "C:/projects/epfl/epfl17/python/sopn/data_{}.mat".format(problem["id"])
+	#scipy.io.savemat(filename, data)
+
+	data['sigma_s'] = rasterize(problem["\\sigma_s"], pnb.domain)
+	data['sigma_a'] = rasterize(problem["\\sigma_a"], pnb.domain)
+	data['sigma_t'] = rasterize(problem["\\sigma_t"], pnb.domain)
+	data['q']       = rasterize(lambda pWS: problem['q'](0,0,pWS), pnb.domain)
+
+	filename = "C:/projects/epfl/epfl17/python/sopn/system_{}.mat".format(problem["id"])
+	print("writing PN system to {}".format(filename))
+	scipy.io.savemat(filename, data)
+
+
+
 def load_pn_solution( filename ):
 	print("loading PN solution from {}".format(filename))
 	data = scipy.io.loadmat(filename)

@@ -314,25 +314,25 @@ def term2_projected_expr( debug = False ):
 	L_expanded = meh.sh_expansion(L, x, omega)
 
 	# extinction coefficient field
-	sigma_t = meh.fun( "\\sigma_t", x)
-	sigma_s = meh.fun( "\\sigma_s", x)
+	sigma_t = meh.fun("\\sigma_t", x)
+	sigma_s = meh.fun("\\sigma_s", x)
 
 	expr = meh.mul(meh.pow(sigma_t, meh.num(2)), L)
-	print_expr(expr, debug)
+	#print_expr(expr, debug)
 	expr = meh.integrate(meh.mul( meh.SHBasis(meh.var("l'"), meh.var("m'"), omega, conjugate_complex=True), expr), omega) 
-	print_expr(expr, debug)
+	#print_expr(expr, debug)
 	expr = meh.apply_recursive(expr, meh.Substitute(L, L_expanded))
-	print_expr(expr, debug)
+	#print_expr(expr, debug)
 	expr = meh.apply_recursive(expr, meh.SwitchDomains())
-	print_expr(expr, debug)
+	#print_expr(expr, debug)
 	expr = meh.apply_recursive(expr, meh.SwitchDomains())
-	print_expr(expr, debug)
+	#print_expr(expr, debug)
 	expr = meh.apply_recursive(expr, meh.Factorize())
-	print_expr(expr, debug)
+	#print_expr(expr, debug)
 	expr = meh.apply_recursive(expr, meh.SHOrthogonalityProperty())
-	print_expr(expr, debug)
+	#print_expr(expr, debug)
 	expr = meh.apply_recursive(expr, meh.SummationOverKronecker())
-	print_expr(expr, debug)
+	#print_expr(expr, debug)
 
 	return expr
 
@@ -431,7 +431,7 @@ def term3_projected_expr(debug = False):
 	expr = meh.apply_recursive(expr, meh.CleanupSigns())
 	#print_expr(expr)
 	expr = meh.apply_recursive(expr, meh.CleanupSigns())
-	print_expr(expr, debug)
+	#print_expr(expr, debug)
 
 
 	return expr
@@ -484,45 +484,45 @@ def term4_projected_expr( debug = False):
 	# NB: we should have negative omega, as we use the adjoint of the transport operator
 	# however, since we move the term to the lhs the negative signs cancel out
 	expr = meh.dot( omega, meh.grad(SL_isotropic_expanded) )
-	print_expr(expr,debug)
+	#print_expr(expr,debug)
 	expr = meh.integrate(meh.mul( meh.SHBasis(meh.var("l'"), meh.var("m'"), omega, conjugate_complex=True), expr), omega) 
-	print_expr(expr,debug)
+	#print_expr(expr,debug)
 	expr = meh.apply_recursive(expr, meh.CleanupSigns())
-	print_expr(expr,debug)
+	#print_expr(expr,debug)
 	expr = meh.apply_recursive(expr, meh.ExpandDotProduct())
-	print_expr(expr,debug)
+	#print_expr(expr,debug)
 	expr = meh.apply_recursive(expr, meh.DistributiveLaw())
-	print_expr(expr,debug)
+	#print_expr(expr,debug)
 	expr = meh.apply_recursive(expr, meh.SplitIntegrals())
-	print_expr(expr,debug)
+	#print_expr(expr,debug)
 	expr = meh.apply_recursive(expr, meh.CleanupSigns())
-	print_expr(expr,debug)
+	#print_expr(expr,debug)
 	expr = meh.apply_recursive(expr, meh.SHRecursiveRelation())
-	print_expr(expr,debug)
+	#print_expr(expr,debug)
 	expr = meh.apply_recursive(expr, meh.DistributiveLaw())
-	print_expr(expr,debug)
+	#print_expr(expr,debug)
 	expr = meh.apply_recursive(expr, meh.SplitIntegrals())
-	print_expr(expr,debug)
+	#print_expr(expr,debug)
 	expr = meh.apply_recursive(expr, meh.CleanupSigns())
-	print_expr(expr,debug)
+	#print_expr(expr,debug)
 	expr = meh.apply_recursive(expr, meh.SwitchDomains())
 	expr = meh.apply_recursive(expr, meh.SwitchDomains())
 	expr = meh.apply_recursive(expr, meh.SwitchDomains())
-	print_expr(expr,debug)
+	#print_expr(expr,debug)
 	expr = meh.apply_recursive(expr, meh.Factorize())
-	print_expr(expr,debug)
+	#print_expr(expr,debug)
 	expr = meh.apply_recursive(expr, meh.SHOrthogonalityProperty())
-	print_expr(expr,debug)
+	#print_expr(expr,debug)
 	expr = meh.apply_recursive(expr, meh.SummationOverKronecker())
-	print_expr(expr,debug)
+	#print_expr(expr,debug)
 	expr = meh.apply_recursive(expr, meh.Factorize())
-	print_expr(expr,debug)
+	#print_expr(expr,debug)
 	expr = meh.apply_recursive(expr, meh.ProductRule())
-	print_expr(expr,debug)
+	#print_expr(expr,debug)
 	expr = meh.apply_recursive(expr, meh.DistributiveLaw())
-	print_expr(expr,debug)
+	#print_expr(expr,debug)
 	expr = meh.apply_recursive(expr, meh.CleanupSigns())
-	print_expr(expr,debug)
+	#print_expr(expr,debug)
 
 	return expr
 
@@ -535,7 +535,7 @@ def term4( pWS, theta, phi, problem ):
 	int_L = L.integral_over_solid_angle(pWS)
 	return -sigma_t*sigma_s*(1.0/(4.0*np.pi))*int_L
 
-
+'''
 def extinction_scattering_term(debug=False):
 	omega = meh.tensor("\\omega", rank=1, dimension=3)
 	omega_x = omega.getComponent(0)
@@ -583,10 +583,10 @@ def extinction_scattering_term(debug=False):
 	print_expr(expr,debug)
 
 	return expr
+'''
 
 
-
-def directional_derivative_source_term(debug = False):
+def term5_projected_expr(debug = False):
 	omega = meh.tensor("\\omega", rank=1, dimension=3)
 	omega_x = omega.getComponent(0)
 	omega_y = omega.getComponent(1)
@@ -648,11 +648,11 @@ def directional_derivative_source_term(debug = False):
 	expr = meh.apply_recursive(expr, meh.SummationOverKronecker())
 
 	#expr = expr.getOperand(0)
-	print_expr(expr, debug)
+	#print_expr(expr, debug)
 
 	return expr
 
-def extinction_source_term( debug = False ):
+def term6_projected_expr( debug = False ):
 	omega = meh.tensor("\\omega", rank=1, dimension=3)
 	omega_x = omega.getComponent(0)
 	omega_y = omega.getComponent(1)
@@ -671,21 +671,21 @@ def extinction_source_term( debug = False ):
 	Q_expanded = meh.sh_expansion(Q, x, omega)
 
 	expr = meh.mul(sigma_t, Q)
-	print_expr(expr, debug)
+	#print_expr(expr, debug)
 	expr = meh.integrate(meh.mul( meh.SHBasis(meh.var("l'"), meh.var("m'"), omega, conjugate_complex=True), expr), omega) 
-	print_expr(expr, debug)
+	#print_expr(expr, debug)
 	expr = meh.apply_recursive(expr, meh.Substitute(Q, Q_expanded))
-	print_expr(expr, debug)
+	#print_expr(expr, debug)
 	expr = meh.apply_recursive(expr, meh.SwitchDomains())
 	expr = meh.apply_recursive(expr, meh.SwitchDomains())
 	expr = meh.apply_recursive(expr, meh.SwitchDomains())
-	print_expr(expr, debug)
+	#print_expr(expr, debug)
 	expr = meh.apply_recursive(expr, meh.Factorize())
-	print_expr(expr, debug)
+	#print_expr(expr, debug)
 	expr = meh.apply_recursive(expr, meh.SHOrthogonalityProperty())
-	print_expr(expr, debug)
+	#print_expr(expr, debug)
 	expr = meh.apply_recursive(expr, meh.SummationOverKronecker())
-	print_expr(expr, debug)
+	#print_expr(expr, debug)
 
 	return expr
 

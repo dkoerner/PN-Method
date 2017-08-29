@@ -4,6 +4,7 @@
 import numpy as np
 import field
 import pnbuilder
+import util
 
 from scipy.ndimage.filters import gaussian_filter
 
@@ -13,7 +14,7 @@ from scipy.ndimage.filters import gaussian_filter
 
 # This is the problem from the starmap paper. An emitting square at the center, surrounded by
 # some highly absorbing squares, embedded within a scattering medium.
-def checkerboard2d():
+def checkerboard():
 
 	def sigma_a( pWS ):
 		x = pWS[0]
@@ -60,26 +61,32 @@ def checkerboard2d():
 	problem["staggered"] = True
 
 	# here we set the RTE fields
-	problem["\\sigma_t"] = lambda pWS: sigma_a(pWS) + sigma_s(pWS)
-	problem["\\sigma_a"] = sigma_a
-	problem["\\sigma_s"] = sigma_s
+	#problem["\\sigma_t"] = lambda pWS: sigma_a(pWS) + sigma_s(pWS)
+	#problem["\\sigma_a"] = sigma_a
+	#problem["\\sigma_s"] = sigma_s
+	#problem["f_p"] = phase_shcoeffs
+	#problem["q"] = source_shcoeffs
+
+	problem["\\sigma_t"] = field.VoxelGrid(util.rasterize(lambda pWS: sigma_a(pWS) + sigma_s(pWS), problem["domain"]), problem["domain"])
+	problem["\\sigma_a"] = field.VoxelGrid(util.rasterize(sigma_a, problem["domain"]), problem["domain"])
+	problem["\\sigma_s"] = field.VoxelGrid(util.rasterize(sigma_s, problem["domain"]), problem["domain"])
 	problem["f_p"] = phase_shcoeffs
 	problem["q"] = source_shcoeffs
+
+
+	# temp
+	offset = np.array([1.0, 1.0])
+	problem["sigma_t"] = pnbuilder.VoxelGrid( util.rasterize(lambda pWS: sigma_a(pWS) + sigma_s(pWS), problem["domain"], dtype=complex), problem["domain_cpp"], offset*0.5 )
+	problem["sigma_a"] = pnbuilder.VoxelGrid( util.rasterize(sigma_a, problem["domain"], dtype=complex), problem["domain_cpp"], offset*0.5 )
+	problem["sigma_s"] = pnbuilder.VoxelGrid( util.rasterize(sigma_s, problem["domain"], dtype=complex), problem["domain_cpp"], offset*0.5 )
+
+
 
 	return problem
 
 
 
-def rasterize( fun, domain, offset = np.array([0.5, 0.5]), dtype=float ):
-	res = domain.resolution()
-	shape = (res[0], res[1])
-	voxels = np.zeros(shape, dtype=dtype)
-	for i in range(0, res[0]):
-		for j in range(0, res[1]):
-			pVS = np.array([i, j]) + offset
-			pWS = domain.voxelToWorld(pVS)
-			voxels[i, j] = fun(pWS)
-	return voxels
+
 
 
 # This basically takes an arbitrary problem and blurs it.
@@ -89,8 +96,8 @@ def blurred( problem, stddev = 1.0 ):
 
 	problem["id"] = "{}_blur{}".format(problem["id"], stddev)
 
-	sigma_a_voxels = rasterize(problem["\\sigma_a"], domain)
-	sigma_s_voxels = rasterize(problem["\\sigma_s"], domain)
+	sigma_a_voxels = util.rasterize(problem["\\sigma_a"], domain)
+	sigma_s_voxels = util.rasterize(problem["\\sigma_s"], domain)
 
 	# blur voxels
 	sigma_a_voxels = gaussian_filter(sigma_a_voxels, stddev)

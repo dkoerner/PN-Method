@@ -1,7 +1,7 @@
 # MEH - Math Expression Helper
 # A framework for representing and manipulating mathematical expressions.
 
-
+import numpy as np
 import traceback
 import math
 
@@ -107,6 +107,8 @@ class Variable(Expression):
 class ImaginaryUnit(Variable):
 	def __init__(self):
 		super().__init__("i")
+	def getValue(self):
+		return np.complex(0.0, 1.0)
 	def depends_on(self, variable, debug = False):
 		return False
 	def deep_copy(self):
@@ -224,7 +226,7 @@ class TensorComponent(Variable):
 
 		
 class Function( Expression ):
-	def __init__( self, symbol, arguments, arg_symbols = None, body_expr = None ):
+	def __init__( self, symbol, arguments, arg_symbols = None ):
 		# arg_symbols     : is list of variable symbols, which relate the function arguments
 		# 					to variables in the expression for the function body
 		#					this is only reqiuired, when this function should have a body for eval
@@ -233,7 +235,7 @@ class Function( Expression ):
 		super().__init__(arguments)
 		self.symbol = symbol
 		self.arg_symbols = arg_symbols # 
-		self.body_expr = body_expr # the function body expressed as expression
+		#self.body_expr = body_expr # the function body expressed as expression
 		self.body2 = None
 		self.latexArgumentPositions = [0 for arg in arguments]
 
@@ -245,14 +247,18 @@ class Function( Expression ):
 	def getSymbol(self):
 		return self.symbol
 
-	def getFunctionBody(self):
-		return self.body_expr
+	def getBody(self):
+		return self.body2
 
-	def setFunctionBody( self, body_expr, *arg_symbols ):
-		if len(arg_symbols) != self.numChildren():
-			raise ValueError("number of argument symbols must match number of argument expressions")
-		self.arg_symbols = arg_symbols
-		self.body_expr = body_expr # the function body expressed as expression
+
+	#def getFunctionBody(self):
+	#	return self.body_expr
+
+	#def setFunctionBody( self, body_expr, *arg_symbols ):
+	#	if len(arg_symbols) != self.numChildren():
+	#		raise ValueError("number of argument symbols must match number of argument expressions")
+	#	self.arg_symbols = arg_symbols
+	#	self.body_expr = body_expr # the function body expressed as expression
 
 	def numArguments(self):
 		return self.numChildren()
@@ -282,10 +288,10 @@ class Function( Expression ):
 		self.latexArgumentPositions = [-1 for arg in self.getArguments()]
 
 	def deep_copy(self):
-		body_expr_cp = None
-		if self.body_expr:
-			body_expr_cp = self.body_expr.deep_copy()
-		cp = Function(self.getSymbol(), [arg.deep_copy() for arg in self.getArguments()], self.arg_symbols, body_expr_cp)
+		#body_expr_cp = None
+		#if self.body_expr:
+		#	body_expr_cp = self.body_expr.deep_copy()
+		cp = Function(self.getSymbol(), [arg.deep_copy() for arg in self.getArguments()], self.arg_symbols)
 		cp.latexArgumentPositions = [level for level in self.latexArgumentPositions]
 		cp.body2 = self.body2
 		return cp
@@ -436,6 +442,11 @@ class Negate( Operator ):
 		return self.getOperand(0)
 	def setExpr(self, expr):
 		self.setOperand(0, expr)
+	def getValue(self):
+		expr = self.getExpr()
+		if hasattr(expr, 'getValue'):
+			return -self.getExpr().getValue()
+		raise ValueError("Negate::getValue called but expr does not have a getValue method.")
 	def deep_copy(self):
 		return Negate(self.getOperand(0).deep_copy())
 	def toLatex(self):
@@ -481,6 +492,10 @@ class Addition( Operator ):
 					flattened.append(op.getOperand(i))
 			else:
 				flattened.append(op)
+
+		if len(flattened) < 2:
+			raise ValueError("expected at least two operands for Addition")
+
 		super().__init__(flattened)
 	def deep_copy(self):
 		return Addition( [op.deep_copy() for op in self.getOperands()] )
@@ -535,7 +550,7 @@ class Multiplication( Operator ):
 			if op.__class__ == Addition or op.__class__ == Negate:
 				parentheses = True
 
-			if op.__class__ == Number and op.getValue() < 0:
+			if op.__class__ == Number and op.getValue().__class__ != complex and op.getValue() < 0:
 				parentheses = True
 
 			if op.__class__ == Summation:
@@ -711,8 +726,12 @@ class Divergence(Operator):
 			return "\\nabla\\cdot{{{}}}".format(expr.toLatex())
 
 def num( value ):
+	if value.__class__ == complex:
+		return Number(value)
+
 	if value < 0:
 		return neg(num(-value))
+
 	return Number(value)
 
 # imaginary number
@@ -821,15 +840,28 @@ def print_expr(expr):
 	print("$$\n" + latex(expr) + "\n$$")
 
 
+
+def tree_str(expr, level=0):
+	result = indent_string(level) + "{}\n".format(expr.__class__.__name__)
+	if isinstance(expr, Expression):
+		for child in expr.children:
+			result += "{}".format(tree_str(child, level+1))
+	return result
+
+
+
 class FoldConstants(object):
 	def __init__(self, debug = False):
 		self.debug = debug
 
 	def visit_Addition(self, expr):
-		sum = None
-		other_childs = []
+		sum = None # the number which all number terms will be folded into
+		other_childs = [] # all terms which cant be folded into a number
 
 		numOperands = expr.numOperands()
+		if self.debug == True:
+			print("FoldConstants::visit_Addition: numOperands={}".format(numOperands))
+
 		for i in range(numOperands):
 			child = expr.getOperand(i)
 			if isinstance(child, Number):
@@ -847,14 +879,29 @@ class FoldConstants(object):
 					continue
 			other_childs.append(child)
 
+		if self.debug == True:
+			print("FoldConstants::visit_Addition: sum={}".format(sum))
+			print("FoldConstants::visit_Addition: other_childs=")
+			print(other_childs)
+
 
 		if sum and other_childs:
+			if self.debug == True:
+				print("FoldConstants::visit_Addition: sum and other_childs exists")
 			# be aware that sum == False in case when sum is 0
 			return Addition( other_childs + [num(sum)] )
 		elif sum:
+			if self.debug == True:
+				print("FoldConstants::visit_Addition: only sum exists")
 			return num(sum)
 		else:
-			if len(other_childs) == 1:
+			if self.debug == True:
+				print("FoldConstants::visit_Addition: only other_childs exists")
+			if len(other_childs) == 0:
+				# be aware that sum == False in case when sum=0
+				# this is why we may end up in this branch with sum != None
+				return num(0)
+			elif len(other_childs) == 1:
 				return other_childs[0]
 			return Addition( other_childs  )
 
@@ -884,7 +931,15 @@ class FoldConstants(object):
 
 		folded_result = None
 
-		if other_childs and folded_number != None:
+		if self.debug == True:
+			print("FoldConstants::visit_Multiplication: folded_number={}".format(folded_number))
+			print("FoldConstants::visit_Multiplication: other_childs=")
+			print(other_childs)
+
+
+		if other_childs and not folded_number is None:
+			if self.debug == True:
+				print("FoldConstants::visit_Multiplication: folded_number and other_childs exists")
 			if folded_number == 0:
 				return num(0)
 			elif folded_number == 1:
@@ -896,14 +951,22 @@ class FoldConstants(object):
 				# there are some expression childs and a folded number
 				folded_result = Multiplication( [num(folded_number)] + other_childs )
 		elif other_childs:
+			if self.debug == True:
+				print("FoldConstants::visit_Multiplication: other_childs exists")
+
 			# there are only other childs, no folded number
 			if len(other_childs) == 1:
 				folded_result = other_childs
 			else:
 				folded_result = Multiplication( other_childs )
-		elif folded_number:
+		elif not folded_number is None:
+			if self.debug == True:
+				print("FoldConstants::visit_Multiplication: folded_number exists")
+
 			# all childs are numbers, we can return a pure number
 			folded_result = num(folded_number)
+		else:
+			raise ValueError("expected folded_number of other_childs to exist")
 
 
 		if numNegates % 2 == 0:
@@ -917,8 +980,9 @@ class FoldConstants(object):
 		# here we actually do the opposite of folding, however
 		# using negate is much better for equation manipulation
 		# since it allows to explicitly treat the sign
-		if expr.getValue() < 0:
-			return neg(num(-expr.getValue()))
+		expr_value = expr.getValue()
+		if expr_value.__class__ != complex and expr_value < 0:
+			return neg(num(-expr_value))
 		return expr
 	def visit_Negate(self, expr):
 		arg = expr.getOperand(0)
@@ -1694,8 +1758,9 @@ def apply( expr, cls, visitor ):
 
 
 def apply_recursive( expr, visitor ):
-	for i in range(expr.numChildren()):
-		expr.setChildren(i, apply_recursive(expr.getChildren(i), visitor))
+	if isinstance(expr, Expression):
+		for i in range(expr.numChildren()):
+			expr.setChildren(i, apply_recursive(expr.getChildren(i), visitor))
 	return apply(expr, expr.__class__, visitor)
 
 

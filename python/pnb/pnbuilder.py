@@ -7,7 +7,8 @@ import util
 import meh
 import itertools
 
-from pnbuilder_cpp import Domain,GridLocation, Constant, VoxelGrid, SHEXP
+#from pnbuilder_cpp import Domain,GridLocation, Constant, VoxelGrid, SHEXP
+from pnbuilder_cpp import *
 
 
 class Domain2D:
@@ -64,6 +65,8 @@ class Domain2D:
 
 	def resolution(self):
 		return np.array([self.res_x, self.res_y])
+	def size(self):
+		return np.array([self.size_x, self.size_y])
 	def voxelSize(self):
 		return self.voxelsize
 
@@ -72,8 +75,11 @@ class Domain2D:
 
 
 class GridLocation2D(object):
-	def __init__(self, domain, voxel_i , voxel_j, offset):
+	def __init__(self, domain, voxel, offset):
 		self.domain = domain
+
+		voxel_i = voxel[0]
+		voxel_j = voxel[1]
 
 		(voxel_offset_i, offset_i) = divmod( offset[0], 2 )
 		(voxel_offset_j, offset_j) = divmod( offset[1], 2 )
@@ -99,9 +105,13 @@ class GridLocation2D(object):
 	def getVoxel(self):
 		return self.voxel
 	def getShiftedLocation(self, offset):
-		return GridLocation2D(self.domain, self.voxel_i, self.voxel_j, self.offset+offset)
+		return GridLocation2D(self.domain, self.voxel, self.offset+offset)
 	def __str__(self):
 		return "voxel={} {} offset={} {}".format(self.voxel[0], self.voxel[1], self.offset[0], self.offset[1])
+	def toLatex(self):
+		return self.__class__.__name__
+	def deep_copy(self):
+		return GridLocation2D(self.domain, self.voxel, self.offset)
 
 
 
@@ -222,7 +232,7 @@ def eval_term_recursive( expr, info, level=0 ):
 				info.term_vanishes = True
 				return 0.0
 
-			coeff_index = info.builder.shIndex(l, m)
+			coeff_index = info.builder.sh_index(l, m)
 			# check bounds
 			if coeff_index == None or coeff_index >=info.builder.numCoeffs:
 				info.term_vanishes = True
@@ -517,10 +527,10 @@ class PNBuilder(object):
 		self.A_real_structure = np.zeros( (numVoxels, numVoxels), dtype=int )
 		b_real = np.zeros( (numVoxels*self.numCoeffs) )
 
-		#voxel_x_min = 0
-		#voxel_x_max = self.domain.res_x
-		#voxel_y_min = 0
-		#voxel_y_max = self.domain.res_y
+		voxel_x_min = 0
+		voxel_x_max = self.domain.resolution()[0]
+		voxel_y_min = 0
+		voxel_y_max = self.domain.resolution()[1]
 
 		if "debug_voxel_x" in functions:
 			voxel_x_min = functions["debug_voxel_x"]
@@ -646,7 +656,7 @@ class PNBuilder(object):
 										print("skipping unknown u.l={} u.weight={} {}".format(u.l, np.real(u.weight), np.imag(u.weight)))
 									continue
 
-								local_j = self.shIndex( u.l, u.m )
+								local_j = self.sh_index( u.l, u.m )
 								#print("coefficient {} depends on coefficient {} with weight={}".format(local_i, local_j, u.weight) )
 
 								# TODO: think about how to handle boundaries
@@ -735,7 +745,7 @@ class PNBuilder(object):
 	def get_info(self):
 		coeff_offsets = np.zeros( (self.numCoeffs, 2) )
 		for i in range(self.numCoeffs):
-			offset = self.get_unknown_offset(i)
+			offset = self.unknown_offset(i)
 			coeff_offsets[i, 0] = offset[0]
 			coeff_offsets[i, 1] = offset[1]
 
@@ -743,8 +753,8 @@ class PNBuilder(object):
 		pnb_info["order"] = self.N
 		pnb_info["numCoeffs"] = self.numCoeffs
 		pnb_info["coeff_offsets"] = coeff_offsets
-		pnb_info["domain_size"] = self.domain.size_x
-		pnb_info["domain_res"] = self.domain.res_x
+		pnb_info["domain_size"] = self.domain.size()
+		pnb_info["domain_res"] = self.domain.resolution()
 
 		return pnb_info
 

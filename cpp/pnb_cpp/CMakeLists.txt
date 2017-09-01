@@ -21,6 +21,7 @@ pybind11_add_module(pnbuilder_cpp src/main.cpp
 								  src/stencil.cpp
 	                              src/field/VoxelGrid.cpp
 								  src/field/Constant.cpp
+								  src/field/Function.cpp
 								  src/field/SHEXP.cpp
 								  src/common/Domain.cpp
 								  src/common/GridLocation.cpp

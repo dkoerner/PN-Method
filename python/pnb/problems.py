@@ -54,10 +54,11 @@ def checkerboard():
 	problem = {}
 
 	# here we set some general parameters 
+	res = 70
 	problem["id"] = "checkerboard"
 	problem["order"] = 1
-	problem["domain"] = pnbuilder.Domain2D(7.0, 70)
-	problem["domain_cpp"] = pnbuilder.Domain( np.array([7.0, 7.0]), np.array([70, 70]), np.array([0.0, 0.0]))
+	problem["domain"] = pnbuilder.Domain2D(7.0, res)
+	problem["domain_cpp"] = pnbuilder.Domain( np.array([7.0, 7.0]), np.array([res, res]), np.array([0.0, 0.0]))
 	problem["staggered"] = True
 
 	# here we set the RTE fields
@@ -76,9 +77,12 @@ def checkerboard():
 
 	# temp
 	offset = np.array([1.0, 1.0])
-	problem["sigma_t"] = pnbuilder.VoxelGrid( util.rasterize(lambda pWS: sigma_a(pWS) + sigma_s(pWS), problem["domain"], dtype=complex), problem["domain_cpp"], offset*0.5 )
-	problem["sigma_a"] = pnbuilder.VoxelGrid( util.rasterize(sigma_a, problem["domain"], dtype=complex), problem["domain_cpp"], offset*0.5 )
-	problem["sigma_s"] = pnbuilder.VoxelGrid( util.rasterize(sigma_s, problem["domain"], dtype=complex), problem["domain_cpp"], offset*0.5 )
+	rasterization_domain = pnbuilder.Domain( np.array([7.0, 7.0]), np.array([70, 70]), np.array([0.0, 0.0]))
+	problem["sigma_t"] = pnbuilder.VoxelGrid( util.rasterize(lambda pWS: sigma_a(pWS) + sigma_s(pWS), rasterization_domain, dtype=complex), rasterization_domain, offset*0.5 )
+	problem["sigma_a"] = pnbuilder.VoxelGrid( util.rasterize(sigma_a, rasterization_domain, dtype=complex), rasterization_domain, offset*0.5 )
+	problem["sigma_s"] = pnbuilder.VoxelGrid( util.rasterize(sigma_s, rasterization_domain, dtype=complex), rasterization_domain, offset*0.5 )
+	problem["f_p"] = [pnbuilder.Constant(1.0)]
+	problem["q"] = [pnbuilder.VoxelGrid( util.rasterize(lambda pWS: source_shcoeffs(0, 0, pWS), rasterization_domain, dtype=complex), rasterization_domain, offset*0.5 )]
 
 
 

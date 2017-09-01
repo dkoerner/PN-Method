@@ -740,7 +740,7 @@ def write_pn_system(pnb, problem, A, b):
 	data['sigma_a'] = pnb.domain.rasterize(problem["\\sigma_a"])
 	data['sigma_t'] = pnb.domain.rasterize(problem["\\sigma_t"])
 	data['q']       = pnb.domain.rasterize(lambda pWS: problem['q'](0,0,pWS))
-	scipy.io.savemat("C:/projects/epfl/epfl17/python/sopn/system_{}.mat".format(problem["id"]), data)
+	scipy.io.savemat("C:/projects/epfl/epfl17/python/sopn/system2_{}.mat".format(problem["id"]), data)
 	#'''
 
 
@@ -830,17 +830,48 @@ def debug_A():
 		scipy.io.savemat("C:/projects/epfl/epfl17/python/sopn/debug_terms/debug_A_term{}.mat".format(term_index), data)
 
 
+def test_term():
+	x = cas.tensor("\\vec{x}", rank=1, dimension=3)
+	x.setComponent(0, cas.var("x"))
+	x.setComponent(1, cas.var("y"))
+	x.setComponent(2, cas.var("z"))
+	x.collapsed = True
+
+	sigma_t = cas.fun("\\sigma_t", x)
+
+	#term = cas.SHCoefficient( "L", cas.var("l'"), cas.var("m'"), x )
+	#term = cas.mul(cas.num(2.0), cas.SHCoefficient( "L", cas.var("l'"), cas.var("m'"), x ))
+	#term = cas.mul(sigma_t, cas.SHCoefficient( "L", cas.var("l'"), cas.var("m'"), x ))
+	#term = cas.deriv(sigma_t, x.getComponent(0), is_partial=True)
+	#term = cas.deriv(cas.SHCoefficient( "L", cas.var("l'"), cas.var("m'"), x ), x.getComponent(0), is_partial=True)
+	#term = cas.deriv(cas.SHCoefficient( "L", cas.var("l'"), cas.var("m'"), x ), x.getComponent(1), is_partial=True)
+	#term = cas.mul(cas.deriv(sigma_t, x.getComponent(0), is_partial=True), cas.SHCoefficient( "L", cas.var("l'"), cas.var("m'"), x ))
+	# derivative of different coefficient index
+	#term = cas.deriv(cas.SHCoefficient( "L", cas.add(cas.var("l'"), cas.num(1)), cas.var("m'"), x ), x.getComponent(1), is_partial=True)
+	#term = cas.deriv(cas.SHCoefficient( "L", cas.add(cas.var("l'"), cas.num(1)), cas.add(cas.var("m'"), cas.num(1)), x ), x.getComponent(0), is_partial=True)
+	#term = cas.deriv(cas.SHCoefficient( "L", cas.add(cas.var("l'"), cas.num(1)), cas.add(cas.var("m'"), cas.num(1)), x ), x.getComponent(1), is_partial=True)
+	#TODO: multiple derivatives
+	#dx_Llm = cas.deriv(cas.SHCoefficient( "L", cas.add(cas.var("l'"), cas.num(1)), cas.add(cas.var("m'"), cas.num(1)), x ), x.getComponent(0), is_partial=True)
+	dx_Llm = cas.deriv(cas.SHCoefficient( "L", cas.var("l'"), cas.sub(cas.var("m'"), cas.num(2)), x ), x.getComponent(0), is_partial=True)
+	term = cas.deriv(dx_Llm, x.getComponent(0), is_partial=True)
+	#term = cas.deriv(dx_Llm, x.getComponent(1), is_partial=True)
+	#'''
+	return term
+	#return dx_Llm
+
+
+
 if __name__ == "__main__":
 	#debug_A()
 	#exit(0)
 
 	#'''
-	#problem = problems.checkerboard2d()
-	problem = problems.blurred(problems.checkerboard2d(), 10.0)
+	problem = problems.checkerboard2d()
+	#problem = problems.blurred(problems.checkerboard2d(), 10.0)
 	#problem = problems.blob2d()
 
-	problem["id"] += "_fade"
-	problem["id"] += "_noterm1"
+	#problem["id"] += "_fade"
+	#problem["id"] += "_noterm1"
 
 	pnb = pnbuilder.PNBuilder(problem["order"], problem["domain"])
 
@@ -858,21 +889,56 @@ if __name__ == "__main__":
 	#pnb.add_terms(fo_source_term())
 
 	# second order form ---
-	pnb.add_terms(lspn_sotransport_term())
+	#pnb.add_terms(lspn_sotransport_term())
+
+	#term = lspn_sotransport_term()
+	#term = lspn_extinction_directional_derivative_term()
+	#term = lspn_squared_extinction_term()
+	#term = lspn_directional_derivative_scattering_term()
+	#term = lspn_extinction_scattering_term()
+	#term = lspn_directional_derivative_source_term()
+	#term = lspn_extinction_source_term()
+	lspn_terms = []
+	lspn_terms.append(lspn_sotransport_term())
+	lspn_terms.append(lspn_extinction_directional_derivative_term())
+	lspn_terms.append(lspn_squared_extinction_term()) # <-----
+	lspn_terms.append(lspn_directional_derivative_scattering_term()) # <-----
+	lspn_terms.append(lspn_extinction_scattering_term())
+	lspn_terms.append(lspn_directional_derivative_source_term())
+	lspn_terms.append(lspn_extinction_source_term())
+
+	for term in lspn_terms:
+		if term.__class__ == cas.Addition:
+			numOperands = term.numOperands()
+			for i in range(numOperands):
+				pnb.add_terms(term.getOperand(i))
+		else:
+			pnb.add_terms(term)
+
+	#tterm = cas.add(term_gg.getOperand(1), term_gg.getOperand(2))
+	#tterm = term_gg.getOperand(2)
+	#pnb.add_terms(tterm)
+	#pnb.add_terms(test_term())
 	#pnb.add_terms(lspn_extinction_directional_derivative_term())
-	pnb.add_terms(lspn_squared_extinction_term())
+	#pnb.add_terms(lspn_squared_extinction_term())
 	#pnb.add_terms(lspn_directional_derivative_scattering_term())
-	pnb.add_terms(lspn_directional_derivative_scattering_term2())
-	pnb.add_terms(lspn_extinction_scattering_term())
-	pnb.add_terms(lspn_directional_derivative_source_term())
-	pnb.add_terms(lspn_extinction_source_term())
+	#pnb.add_terms(lspn_directional_derivative_scattering_term2())
+	#pnb.add_terms(lspn_extinction_scattering_term())
+	#pnb.add_terms(lspn_directional_derivative_source_term())
+	#pnb.add_terms(lspn_extinction_source_term())
+
+
+	#problem["debug_voxel_x"] = 10
+	#problem["debug_voxel_y"] = 10
 
 	A = None
 	b = None
 	(A,b) = pnb.build_global( problem )
 
 	write_pn_system( pnb, problem, A, b )
+	#write_pn_system( pnb, problem, pnb.A_complex, pnb.b_complex )
 	#'''
+
 
 
 

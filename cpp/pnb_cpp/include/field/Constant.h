@@ -27,6 +27,7 @@ struct Constant : public Field
 	{
 		return m_value;
 	}
+	/*
 	virtual std::complex<double> dx(const P2d& pWS)const override
 	{
 		return 0.0;
@@ -55,6 +56,7 @@ struct Constant : public Field
 	{
 		return 0.0;
 	}
+	*/
 
 
 private:

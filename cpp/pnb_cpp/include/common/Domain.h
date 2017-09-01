@@ -25,6 +25,14 @@ struct Domain
 	{
 		return m_resolution;
 	}
+
+	void setResolution(const V2i& resolution)
+	{
+		m_resolution = resolution;
+		V2d size = m_bound.getExtents();
+		m_voxelsize( size[0]/resolution[0], size[1]/resolution[1] );
+	}
+
 	P2d voxelSize()const
 	{
 		return m_voxelsize;
@@ -63,6 +71,14 @@ struct Domain
 	P2d worldToVoxel( const P2d& pWS)const
 	{
 		return localToVoxel(worldToLocal(pWS));
+	}
+
+	bool contains_voxel( const P2i& voxel )const
+	{
+		if( (voxel[0] < 0)||(voxel[0] >= m_resolution[0])||
+			(voxel[1] < 0)||(voxel[1] >= m_resolution[1]))
+			return false;
+		return true;
 	}
 
 private:

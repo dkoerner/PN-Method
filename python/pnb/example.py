@@ -116,8 +116,8 @@ def eval_term( expr, info, level=0 ):
 				raise ValueError("expected m to be of expression type meh.Number or meh.Negate")
 
 			# TODO: do we need sure to have ints here?
-			l = l_expr.getValue()
-			m = m_expr.getValue()
+			l = l_expr.evaluate()
+			m = m_expr.evaluate()
 
 			if l < 0 or l > info.pnb.N:
 				info.term_vanishes = True
@@ -178,7 +178,30 @@ def eval_term( expr, info, level=0 ):
 			# we have a function to evaluate which is not the unknown
 			# does the function has a body?
 			if not expr.getBody() is None:
-				return meh.num(expr.getBody()(*[arg.getValue() for arg in args]))
+				return meh.num(expr.getBody()(*[arg.evaluate() for arg in args]))
+
+			# kind-of-hack:
+			# here we have to check weather the l,m arguments to rte functions, such as q or f_p are valid
+			# otherwise we will filter out the term as l,m are invalid
+			# this is basially checking the l,m boundaries for functions which depend on them
+			if expr.getSymbol() == "q":
+				l_expr = args[0]
+				m_expr = args[1]
+
+				if not l_expr.__class__ == meh.Number and not l_expr.__class__ == meh.Negate:
+					raise ValueError("expected l to be of expression type meh.Number or meh.Negate")
+
+				if not m_expr.__class__ == meh.Number and not m_expr.__class__ == meh.Negate:
+					raise ValueError("expected m to be of expression type meh.Number or meh.Negate")
+
+				# TODO: do we need sure to have ints here?
+				l = l_expr.evaluate()
+				m = m_expr.evaluate()
+
+				if l < 0 or l > info.pnb.N or m < -l or m > l:
+					info.term_vanishes = True
+					return 0.0
+
 			# else keep and return the function expression
 			return meh.fun( expr.getSymbol(), *args)
 		#elif expr.getSymbol() in info.functions:
@@ -285,8 +308,10 @@ def to_cpp( expr, level=0 ):
 	istr = meh.indent_string(level)
 	#print("{}{}".format(istr, expr.__class__.__name__))
 	if expr.__class__ == meh.Number:
-		expr_value = expr.getValue()
-		if expr_value.__class__ == np.complex128:
+		expr_value = expr.evaluate()
+		#print(expr_value.__class__.__name__)
+		#if expr_value.__class__ == np.complex128 or :
+		if np.iscomplex(expr_value):
 			return "std::complex<double>({}, {})".format(np.real(expr_value), np.imag(expr_value))
 		return str(expr_value)
 	if expr.__class__ == meh.Negate:
@@ -370,7 +395,7 @@ class FactorizeUnknowns(object):
 	def visit_Quotient(self, expr):
 		num = expr.getNumerator()
 		denom = expr.getDenominator()
-		return meh.num(num.getValue()/denom.getValue())
+		return meh.num(num.evaluate()/denom.evaluate())
 	def visit_Multiplication(self, expr):
 		# look if there are unknowns among the operands
 		numOps = expr.numOperands()
@@ -417,51 +442,131 @@ class FactorizeUnknowns(object):
 			raise ValueError("unable to add unknowns and non_unknowns")
 
 
+def print_matrix( A ):
+	for i in range(A.shape[0]):
+		for j in range(A.shape[1]):
+			v = A[i,j]
+			if np.abs(np.real(v)) > 1.0e-8 or np.abs(np.imag(v)) > 1.0e-8:
+				print("  ({}, {}) {}".format(i, j, v))
 
 
 
+def compare( A0, A1, id0, id1 ):
+	if A0.shape != A1.shape:
+		raise ValueError("unmatched shape")
 
-def test_pnsystem():
-	problem = problems.checkerboard()
+	if A0.dtype != A1.dtype:
+		raise ValueError("unmatched dtype")
+
+	diff = A0-A1
+	abs_real_diff = np.abs(np.real(diff))
+	abs_imag_diff = np.abs(np.imag(diff))
+	#diff_real_flatten = abs_real_diff.flatten()
+	#diff_imag_flatten = abs_imag_diff.flatten()
+
+	max_index = np.unravel_index(np.argmax(abs_real_diff), abs_real_diff.shape)
+	mm = abs_real_diff[max_index]
+	print("real: max={} max_index={} {}".format(mm,max_index[0], max_index[1]))
+	max_index = np.unravel_index(np.argmax(abs_imag_diff), abs_imag_diff.shape)
+	mm = abs_imag_diff[max_index]
+	print("imag: max={} max_index={} {}".format(mm,max_index[0], max_index[1]))
+
+
+	#su = diff_real_flatten.sum(axis=1)
+	#print("real: sum={}".format(su[0,0]))
+	#mm = diff_imag_flatten.max(axis=1)
+	#su = diff_imag_flatten.sum(axis=1)
+
+	#print("imag: max={}".format(mm[0,0]))
+	#print("imag: sum={}".format(su[0,0]))
+
+	'''
+	print("{} result:".format(id0))
+	for i in range(A0.shape[0]):
+		for j in range(A0.shape[1]):
+			v = A0[i,j]
+			if np.abs(np.real(v)) > 1.0e-8 or np.abs(np.imag(v)) > 1.0e-8:
+				print("  ({}, {}) {}".format(i, j, v))
+
+
+	print("{} result:".format(id1))
+	for i in range(A1.shape[0]):
+		for j in range(A1.shape[1]):
+			v = A1[i,j]
+			if np.abs(np.real(v)) > 1.0e-8 or np.abs(np.imag(v)) > 1.0e-8:
+				print("  ({}, {}) {}".format(i, j, v))
+	'''
+
+
+def pnsystem( problem ):
 	sys = pnbuilder_cpp.PNSystem(problem["domain_cpp"], problem["order"])
 
 	sys.setField( "sigma_t", problem["sigma_t"] )
 	sys.setField( "sigma_a", problem["sigma_a"] )
 	sys.setField( "sigma_s", problem["sigma_s"] )
 
+	# if only one coefficient field is given for f_p, we assume its meant to
+	# define the zero coefficient field
+	if len(problem["f_p"]) == 1:
+		sys.setField( "f_p", problem["f_p"][0] )
+	else:
+		# TODO: set f_p field for given shindex (or l,m)
+		raise ValueError("no higher order phase functions supported yet")
+
+	# if only one coefficient field is given for q, we assume its meant to
+	# define the zero coefficient field
+	if len(problem["q"]) == 1:
+		sys.setField( "q", problem["q"][0] )
+	else:
+		# TODO: set f_p field for given shindex (or l,m)
+		raise ValueError("no higher order source functions supported yet")
+
+	return sys
+
+
+def test_pnsystem():
+	problem = problems.checkerboard()
+	sys = pnsystem( problem )
+
+	#global_index=2131 -> voxel=10 10  coeff=1
+	#global_index = 2131
+	#(voxel, coeff) = sys.getVoxelAndCoefficient(global_index)
+	#print( "global_index={} -> voxel={} {}  coeff={}".format(global_index, voxel[0], voxel[1], coeff) )
+	#return
+
+
+	#debugVoxel = np.array([10,10])
+	#index_i = sys.getGlobalIndex(debugVoxel, 0)
+	#sys.setDebugVoxel(debugVoxel)
+
+
 	sys.build()
-	#sys.solve()
 
-	A_sys = sys.get_A()
+	#util.write_pn_system(sys, problem, "pns_highres")
+	#return
 
-
-	debugVoxel = np.array([35,35])
-	index_i = sys.getGlobalIndex(debugVoxel, 0)
-
-
-
-	#print("PNSystem result:")
-	#print(A_sys[index_i:index_i+sys.getNumCoefficients(),:])
+	A_sys = sys.get_A_real()
+	b_sys = sys.get_b_real()
+	#A_sys = sys.get_A()
+	#b_sys = sys.get_b()
 
 
 	# load 
 	filename = "C:/projects/epfl/epfl17/python/sopn/system2_{}.mat".format("checkerboard")
 	data = scipy.io.loadmat(filename)
-	A_complex = data["A"]
-	'''
-	print("PNBuilder result:")
-	for i in range(sys.getNumCoefficients()):
-		for j in range(sys.getNumVoxels()*sys.getNumCoefficients()):
-			v = A_complex[index_i+i, j]
-			if np.abs(v) > 0.0:
-				print("  ({}, {}) {}".format(i, j, v))
-	'''
+	A_builder = data["A"]#[index_i:index_i+sys.getNumCoefficients(),:]
+	b_builder = data["b"]#[index_i:index_i+sys.getNumCoefficients(),:]
 
-	abs_diff = np.abs(A_sys[index_i:index_i+sys.getNumCoefficients(),:]-A_complex[index_i:index_i+sys.getNumCoefficients(),:])
-	diff_flatten = abs_diff.flatten()
-	mm = diff_flatten.max(axis=1)
-	print(mm[0,0])
+	if 'index_i' in locals():
+		A_sys = A_sys[index_i:index_i+sys.getNumCoefficients(),:]
+		b_sys = b_sys[index_i:index_i+sys.getNumCoefficients(),:]
+		A_builder = A_builder[index_i:index_i+sys.getNumCoefficients(),:]
+		b_builder = b_builder[index_i:index_i+sys.getNumCoefficients(),:]
 
+	print("A ----------------------")
+	compare(A_sys, A_builder, "PNSystem", "PNBuilder")
+	print("b ----------------------")
+	compare(b_sys, b_builder, "PNSystem", "PNBuilder")
 
 
 if __name__ == "__main__":
@@ -498,16 +603,36 @@ if __name__ == "__main__":
 
 	# terms from lsrte ------------
 	#term_gg = lspn.term0_projected_expr().getOperand(1)
-	term_gg = lspn.term0_projected_expr()
+
+	#term_gg = lspn.term0_projected_expr()
+	#term_gg = lspn.term1_projected_expr()
+	#term_gg = lspn.term2_projected_expr()
+	#term_gg = lspn.term3_projected_expr()
+	#term_gg = lspn.term4_projected_expr()
+	#term_gg = lspn.term5_projected_expr()
+	#term_gg = lspn.term6_projected_expr()
+	lspn_terms = []
+	lspn_terms.append(lspn.term0_projected_expr())
+	lspn_terms.append(lspn.term1_projected_expr())
+	lspn_terms.append(lspn.term2_projected_expr()) # <------- (differences come from linear interpolation)
+	lspn_terms.append(lspn.term3_projected_expr()) # <-------
+	lspn_terms.append(lspn.term4_projected_expr())
+	lspn_terms.append(lspn.term5_projected_expr())
+	lspn_terms.append(lspn.term6_projected_expr())
+
 	#term_gg = meh.add( lspn.term0_projected_expr().getOperand(1), lspn.term0_projected_expr().getOperand(2) )
 	#meh.print_expr(term_gg)
 	#term = term_gg
 	#term = term_gg.getOperand(1)
 	#term = lspn.term2_projected_expr()
 	terms = []
-	#for i in range(0,50):
-	for i in range(term_gg.numOperands()):
-		terms.append(term_gg.getOperand(i))
+	for term_gg in lspn_terms:
+		if term_gg.__class__ == meh.Addition:
+			#for i in range(0,5):
+			for i in range(term_gg.numOperands()):
+				terms.append(term_gg.getOperand(i))
+		else:
+			terms.append(term_gg)
 
 
 	# terms for testing ------------------
@@ -566,13 +691,22 @@ if __name__ == "__main__":
 	file.write( prototype )
 	file.write( "{\n" )
 	file.write( "\tV2i vi = sys.getVoxel();\n" )
-	file.write( "\tV2d vd = sys.getVoxel().cast<double>();\n\n" )
+	file.write( "\tV2d vd = sys.getVoxel().cast<double>();\n" )
 
 
 	unknowns = []
 	rhs = []
 	# for each term
-	for term in terms:
+	for term_index in range(len(terms)):
+		#if term_index != 12:
+		#	continue
+		term = terms[term_index]
+		file.write("\n\t// term {} ----------------\n".format(term_index))
+		print("term_index={}".format(term_index))
+
+		#meh.print_expr(term)
+		#print(meh.tree_str(term))
+
 		# for each coefficient->l,m
 		for coeff_index in range(pnb.num_coeffs()):
 		#for coeff_index in range(1):
@@ -640,18 +774,18 @@ if __name__ == "__main__":
 					expr = meh.apply_recursive(expr, meh.CleanupSigns())
 					expr = meh.apply_recursive(expr, meh.FoldConstants())
 
+					#print(meh.tree_str(expr))
+
 					# Here we check if the coefficient is reduced to zero. This happens alot.
-					if hasattr(expr, "getValue") and np.abs(expr.getValue()) < 1.0e-8:
+					if expr.canEvaluate() and np.abs(expr.evaluate()) < 1.0e-8:
 						# coefficient is vanishes
 						continue
-
 
 					# the expression consists of function calls or numerical values
 					# these are very easily translated into cpp code
 					# the t_cpp function parses the expression tree and replaces all meh expression nodes
 					# with a string of cpp code
 					#print(meh.tree_str(expr))
-					
 					expr_cpp = to_cpp(expr)
 
 					#print(u)
@@ -668,7 +802,6 @@ if __name__ == "__main__":
 				# therefore it goes straight to the RHS
 				# NB: we do not take care of the sign here. That should be considered
 				# by the user
-				#rhs.append((coeff_index, result))
 				result_cpp = to_cpp(result)
 				file.write( "\tsys.b({}) += {};".format(coeff_index, result_cpp) )
 				file.write("\n")

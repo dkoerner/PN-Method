@@ -72,11 +72,26 @@ PYBIND11_MODULE(pnbuilder_cpp, m)
 		new (&m) PNSystem(domain, order);
 	 })
 	.def("getGlobalIndex", &PNSystem::getGlobalIndex )
+	.def("getVoxelAndCoefficient",
+	[](PNSystem &m, int global_index)
+	{
+		V2i voxel;
+		int coeff;
+		m.getVoxelAndCoefficient(global_index, voxel, coeff);
+		return py::make_tuple(voxel, coeff);
+	})
 	.def("getNumCoefficients", &PNSystem::getNumCoefficients )
 	.def("getNumVoxels", &PNSystem::getNumVoxels )
 	.def("build", &PNSystem::build )
 	.def("setField", &PNSystem::setField )
 	.def("get_A", &PNSystem::get_A )
+	.def("get_b", &PNSystem::get_b )
+	.def("get_A_real", &PNSystem::get_A_real )
+	.def("get_b_real", &PNSystem::get_b_real )
+	.def("get_S", &PNSystem::get_S )
+	.def("get_S_inv", &PNSystem::get_S_inv )
+	.def("get_M", &PNSystem::get_M )
+	.def("setDebugVoxel", &PNSystem::setDebugVoxel )
 	;
 
 	// Domain ============================================================
@@ -114,6 +129,7 @@ PYBIND11_MODULE(pnbuilder_cpp, m)
 		a.mutable_data()[1] = resolution[1];
 		return a;
 	})
+	.def("setResolution", &Domain::setResolution )
 	.def("voxelSize",
 	[](Domain &m)
 	{
@@ -137,6 +153,7 @@ PYBIND11_MODULE(pnbuilder_cpp, m)
 		a.mutable_data()[1] = pVS[1];
 		return a;
 	})
+	.def("voxelToWorld", &Domain::voxelToWorld )
 	;
 
 	// GridLocation ============================================================
@@ -195,6 +212,7 @@ PYBIND11_MODULE(pnbuilder_cpp, m)
 	py::class_<Field, Field::Ptr> class_field(m, "Field");
 	class_field
 	.def("__call__",[](Field &m, py::array pWS_array){return m.eval(to_P2d(pWS_array));})
+	/*
 	.def("dx", [](Field &m, py::array pWS_array){return m.dx(to_P2d(pWS_array));})
 	.def("dxdx", [](Field &m, py::array pWS_array){return m.dxdx(to_P2d(pWS_array));})
 	.def("dxdy", [](Field &m, py::array pWS_array){return m.dxdy(to_P2d(pWS_array));})
@@ -202,6 +220,7 @@ PYBIND11_MODULE(pnbuilder_cpp, m)
 	.def("dydy", [](Field &m, py::array pWS_array){return m.dydy(to_P2d(pWS_array));})
 	.def("dydx", [](Field &m, py::array pWS_array){return m.dydx(to_P2d(pWS_array));})
 	.def("dz", [](Field &m, py::array pWS_array){return m.dz(to_P2d(pWS_array));})
+	*/
 	;
 
 	// VoxelGrid ============================================================
@@ -235,6 +254,7 @@ PYBIND11_MODULE(pnbuilder_cpp, m)
 		auto data = static_cast<std::complex<double> *>(info.ptr);
 		new (&m) VoxelGrid( data, domain, to_V2d(offset_array) );
 	})
+	.def("test", &VoxelGrid::test )
 	;
 
 	// Constant ============================================================
@@ -253,6 +273,7 @@ PYBIND11_MODULE(pnbuilder_cpp, m)
 	{
 		return m.eval(to_P2d(pWS_array), to_V3d(omega_array));
 	})
+	/*
 	.def("dx", [](RadianceField &m, py::array pWS_array, py::array omega_array)
 	{
 		return m.dx(to_P2d(pWS_array), to_V3d(omega_array));
@@ -285,6 +306,7 @@ PYBIND11_MODULE(pnbuilder_cpp, m)
 	{
 		return m.integral_over_solid_angle(to_P2d(pWS_array));
 	})
+	*/
 	;
 
 	// SHEXP ============================================================

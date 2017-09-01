@@ -330,12 +330,6 @@ class PNBuilder(object):
 		self.build_S()
 		#self.build_M()
 
-		# X and Y are scalar fields which store the x and y components of the center for each voxel
-		offset = (0.5,0.5)
-		self.X = np.array([np.arange(self.domain.res_x) for y in range(self.domain.res_y)]).T*self.domain.h_x + offset[0]*self.domain.h_x
-		self.Y = np.array([np.arange(self.domain.res_y) for x in range(self.domain.res_x)])*self.domain.h_y + offset[1]*self.domain.h_y
-
-
 		# extract the coefficients to the SH coefficients Llm
 		self.terms = []
 
@@ -359,7 +353,12 @@ class PNBuilder(object):
 	def lmIndex(self, coeff_index):
 		return self.index_to_lm[coeff_index]
 
-
+	def print_matrix( self, A ):
+		for i in range(A.shape[0]):
+			for j in range(A.shape[1]):
+				v = A[i,j]
+				if np.abs(np.real(v)) > 1.0e-8 or np.abs(np.imag(v)) > 1.0e-8:
+					print("  ({}, {}) {}".format(i, j, v))
 	def build_S(self):
 		'''builds the S matrix, which converts from complex-valued to real valued coefficients'''
 		# build S matrix ( we iterate over l, m to make sure that the order is correct)
@@ -392,6 +391,8 @@ class PNBuilder(object):
 						self.S[count, self.lm_to_index[(l,-m)]] = -np.power(-1.0, 2*m)/np.sqrt(2)*1j
 					count+=1
 		self.S_inv = np.linalg.inv(self.S)
+		#self.print_matrix(self.S)
+		#self.print_matrix(self.S_inv)
 
 	def place_unknown( self, coeff_index, grid_id ):
 		self.unknown_info[coeff_index]['grid_id'] = grid_id
@@ -443,10 +444,10 @@ class PNBuilder(object):
 		self.A_real_structure = np.zeros( (numVoxels, numVoxels), dtype=int )
 		b_real = np.zeros( (numVoxels*self.numCoeffs) )
 
-		#voxel_x_min = 0
-		#voxel_x_max = self.domain.res_x
-		#voxel_y_min = 0
-		#voxel_y_max = self.domain.res_y
+		voxel_x_min = 0
+		voxel_x_max = self.domain.res_x
+		voxel_y_min = 0
+		voxel_y_max = self.domain.res_y
 
 		if "debug_voxel_x" in functions:
 			voxel_x_min = functions["debug_voxel_x"]
@@ -498,8 +499,7 @@ class PNBuilder(object):
 
 					# get (grid)location of the unknown which is associated with the current row
 					location = GridLocation2D(self.domain, voxel_x, voxel_y, self.unknown_info[local_i]['offset'])
-					pWS = np.array([self.X[voxel_x, voxel_y], self.Y[voxel_x, voxel_y]])
-					pWS2 = location.getPWS()
+					pWS = location.getPWS()
 					#print("voxel={} {} center={} {}".format(voxel_i, voxel_j, pWS[0], pWS[1]))
 					#print("pWS={} {} check={} {}".format(pWS[0], pWS[1], pWS2[0], pWS2[1]))
 					#continue
@@ -561,7 +561,8 @@ class PNBuilder(object):
 								print("term_index={} unknown info".format(term_index))
 								print("#unknowns={}".format(len(result.unknowns)))
 								for k in range(len(result.unknowns)):
-									print("\t unknown {}: weight={} voxel={} {}".format(k, result.unknowns[k].weight, result.unknowns[k].voxel[0], result.unknowns[k].voxel[1]))
+									glob_j = self.get_global_index(result.unknowns[k].voxel[0], result.unknowns[k].voxel[1], self.shIndex(result.unknowns[k].l, result.unknowns[k].m))
+									print("\t unknown {}: weight={} voxel={} {} coeff={} ({})".format(k, result.unknowns[k].weight, result.unknowns[k].voxel[0], result.unknowns[k].voxel[1], self.shIndex(result.unknowns[k].l, result.unknowns[k].m), glob_j))
 
 							# this is a lhs term
 							# weights are going into A

@@ -438,6 +438,7 @@ def checkerboard2d():
 		return (1.0-g)*1 + g*0
 
 
+
 	def phase_shcoeffs( l, m, pWS ):
 		if l == 0:
 			return 1.0

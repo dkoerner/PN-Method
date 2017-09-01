@@ -143,23 +143,34 @@ def rasterize( fun, domain, offset = np.array([0.5, 0.5]), dtype=float ):
 			voxels[i, j] = fun(pWS)
 	return voxels
 
-def write_pn_system(pnb, problem, A, b):
+def write_pn_system(sys, problem, prefix=""):
+	domain = problem["domain"]
+	A = sys.get_A_real()
+	b = sys.get_b_real()
+
+	#print(type(b.todense().flatten()))
+	#t = b.todense().flatten()
+	#print(t.shape)
+	#print( "b: range= {}".format(t.max(axis=1) ))
+
 	data = {}
 	if not A is None:
 		data['A'] = A
 	if not b is None:
-		data['b'] = b.reshape((pnb.domain.numVoxels*pnb.numCoeffs, 1))
-	data['pnb_info'] = pnb.get_info()
+		#data['b'] = b.toarray().reshape((domain.numVoxels*sys.getNumCoefficients(), 1))
+		data['b'] = b
+	#data['pnb_info'] = pnb.get_info()
+
 
 	#filename = "C:/projects/epfl/epfl17/python/sopn/data_{}.mat".format(problem["id"])
 	#scipy.io.savemat(filename, data)
 
-	data['sigma_s'] = rasterize(problem["\\sigma_s"], pnb.domain)
-	data['sigma_a'] = rasterize(problem["\\sigma_a"], pnb.domain)
-	data['sigma_t'] = rasterize(problem["\\sigma_t"], pnb.domain)
-	data['q']       = rasterize(lambda pWS: problem['q'](0,0,pWS), pnb.domain)
+	data['sigma_s'] = rasterize(problem["sigma_s"], domain, dtype=complex)
+	data['sigma_a'] = rasterize(problem["sigma_a"], domain, dtype=complex)
+	data['sigma_t'] = rasterize(problem["sigma_t"], domain, dtype=complex)
+	#data['q']       = rasterize(lambda pWS: problem['q'](0,0,pWS), pnb.domain)
 
-	filename = "C:/projects/epfl/epfl17/python/sopn/system_{}.mat".format(problem["id"])
+	filename = "C:/projects/epfl/epfl17/python/sopn/{}{}.mat".format(prefix, problem["id"])
 	print("writing PN system to {}".format(filename))
 	scipy.io.savemat(filename, data)
 

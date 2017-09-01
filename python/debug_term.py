@@ -39,10 +39,13 @@ def term0(location, theta, phi, problem):
 
 
 def term1( location, theta, phi, problem ):
+	x = location.getPWS()
 	sigma_t = problem["sigma_t_instance"]
 	L = problem["L"]
 	omega = shtools.sphericalDirection(theta, phi)
-	return -(omega[0]*sigma_t.dx(x) + omega[1]*sigma_t.dy(x) + omega[2]*sigma_t.dz(x))*L(x, omega)
+	return -(omega[0]*sigma_t.dx(x) + omega[1]*sigma_t.dy(x) + omega[2]*sigma_t.dz(x))*L(location, omega)
+	#return L(location, omega)
+	#return L.coeff_functions[2](location)
 
 def term2( location, theta, phi, problem ):
 	sigma_t = problem["sigma_t_instance"](x)
@@ -327,7 +330,8 @@ if __name__ == "__main__":
 		(l,m) = pnb.lmIndex(i)
 		offset = pnb.get_unknown_offset(i)
 		grid = problems.CoefficientGrid(pnb.domain, pnb.numCoeffs, i, offset, x_complex )
-		coefficient_grids[shtools.shIndex(l,m)] = grid
+		sh_index = shtools.shIndex(l,m)
+		coefficient_grids[sh_index] = grid
 	problem["L"] = problems.SHEXP( pnb.N, coefficient_grids )
 
 	# sigma_t -----
@@ -340,8 +344,8 @@ if __name__ == "__main__":
 
 
 	terms = []
-	terms.append((0, term0))
-	#terms.append((1, term1))
+	#terms.append((0, term0))
+	terms.append((1, term1))
 	#terms.append((2, term2))
 	#terms.append((3, term3))
 	#terms.append((4, term4))
@@ -383,6 +387,8 @@ if __name__ == "__main__":
 					global_i = pnb.get_global_index(voxel_i, voxel_j, i)
 					# NB: we take into account, that for 2d, pnb will have different index and lm ordering
 					#print("---------------")
+					#gg = lambda theta, phi: term(location, theta, phi, problem)
+					#print(gg(np.pi*0.3, 0.0))
 					#coeff = shtools.project_sh_coeff(lambda theta, phi: term(location, theta, phi, problem), l, m)
 					#coeff = shtools.project_sh_coeff_x(lambda angle: term(pWS, angle[0], angle[1], problem), l, m)
 					coeff = shtools.project_sh_coeff_x(Test(location, problem, term), l, m)

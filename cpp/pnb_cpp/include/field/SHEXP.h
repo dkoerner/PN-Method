@@ -64,6 +64,7 @@ struct SHEXP : public RadianceField
 				result+=m_coefficient_fields[sh_index(l,m)]->eval(pWS)*sph::sph_basis(l,m,theta, phi);
 		return result;
 	}
+	/*
 	virtual std::complex<double> dx(const P2d& pWS, const V3d& omega)const override
 	{
 		P2d theta_phi = sphericalCoordinates(omega);
@@ -145,6 +146,7 @@ struct SHEXP : public RadianceField
 	{
 		return m_coefficient_fields[0]->eval(pWS)*std::sqrt(4.0*M_PI);
 	}
+	*/
 
 
 private:

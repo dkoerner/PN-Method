@@ -468,6 +468,53 @@ def term4_projected_expr( debug = False):
 
 	L = meh.fun( "L", x, omega)
 
+	lambda_l = meh.fun( "\\lambda", meh.var("l"), arglevel=-1)
+	# TODO: use correct value
+	lambda_l.body2 = lambda l:1.0
+
+	SL_isotropic_expanded = meh.sum( meh.sum( meh.mul( lambda_l, meh.SHCoefficient( "f_p", meh.var("l"), meh.num(0), x ), meh.SHCoefficient( "L", meh.var("l"), meh.var("m"), x ), meh.SHBasis(meh.var("l"), meh.var("m"), omega, conjugate_complex=False) ), meh.var('m'), meh.neg(meh.var('l')), meh.var('l') ), meh.var('l'), meh.num(0), meh.infty() )
+
+	nabla_SL = meh.tensor("", rank=1, dimension=3)
+	nabla_SL.setComponent(0, meh.deriv(SL_isotropic_expanded, x.getComponent(0), is_partial = True))
+	nabla_SL.setComponent(1, meh.deriv(SL_isotropic_expanded, x.getComponent(1), is_partial = True))
+	nabla_SL.setComponent(2, meh.deriv(SL_isotropic_expanded, x.getComponent(2), is_partial = True))
+
+	# extinction coefficient field
+	sigma_t = meh.fun( "\\sigma_t", x)
+	sigma_s = meh.fun( "\\sigma_s", x)
+
+	# we negate to move it onto the lefthandside
+	expr = meh.neg(meh.mul( sigma_t, sigma_s, SL_isotropic_expanded ))
+	#print_expr(expr,debug)
+	expr = meh.integrate(meh.mul( meh.SHBasis(meh.var("l'"), meh.var("m'"), omega, conjugate_complex=True), expr), omega) 
+	#print_expr(expr,debug)
+	expr = meh.apply_recursive(expr, meh.CleanupSigns())
+	#print_expr(expr,debug)
+	expr = meh.apply_recursive(expr, meh.SwitchDomains())
+	expr = meh.apply_recursive(expr, meh.SwitchDomains())
+	#print_expr(expr,debug)
+	expr = meh.apply_recursive(expr, meh.Factorize())
+	#print_expr(expr,debug)
+	expr = meh.apply_recursive(expr, meh.SHOrthogonalityProperty())
+	#print_expr(expr,debug)
+	expr = meh.apply_recursive(expr, meh.SummationOverKronecker())
+	#print_expr(expr,debug)
+
+	return expr
+	'''
+	omega = meh.tensor("\\omega", rank=1, dimension=3)
+	omega_x = omega.getComponent(0)
+	omega_y = omega.getComponent(1)
+	omega_z = omega.getComponent(2)
+
+	x = meh.tensor("\\vec{x}", rank=1, dimension=3)
+	x.setComponent(0, meh.var("x"))
+	x.setComponent(1, meh.var("y"))
+	x.setComponent(2, meh.var("z"))
+	x.collapsed = True
+
+	L = meh.fun( "L", x, omega)
+
 	sigma_s = meh.fun( "\\sigma_s", x)
 
 	lambda_l = meh.fun( "\\lambda", meh.var("l"), arglevel=-1)
@@ -525,6 +572,7 @@ def term4_projected_expr( debug = False):
 	#print_expr(expr,debug)
 
 	return expr
+	'''
 
 def term4( pWS, theta, phi, problem ):
 	# NB: assuming constant phase function....

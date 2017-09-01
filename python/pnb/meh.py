@@ -19,7 +19,6 @@ class Expression(object):
 	def toLatex(self):
 		return 
 
-
 	def indent_string( self, indent ):
 		return ''.join( ['\t' for i in range(indent)] )
 
@@ -28,7 +27,6 @@ class Expression(object):
 		for child in self.children:
 			result += child.toHierarchy(indent+1)
 		return result
-
 
 	def numChildren(self):
 		return len(self.children)
@@ -51,6 +49,12 @@ class Expression(object):
 	def __eq__(self, other):
 		return False
 
+	def canEvaluate(self):
+		return False
+
+	def evaluate(self):
+		return None
+
 
 
 class Number(Expression):
@@ -61,14 +65,21 @@ class Number(Expression):
 	def toLatex(self):
 		return str(self.value)
 
-	def getValue(self):
-		return self.value
-
 	def toHierarchy( self, indent = 0 ):
 		return self.indent_string(indent) + "Number {}\n".format(self.getValue())
 
 	def deep_copy(self):
 		return Number(self.getValue())
+
+	def canEvaluate(self):
+		return True
+
+	def evaluate(self):
+		return self.getValue()
+
+	def getValue(self):
+		return self.value
+
 
 class Variable(Expression):
 	def __init__( self, symbol, children = [] ):
@@ -107,10 +118,16 @@ class Variable(Expression):
 class ImaginaryUnit(Variable):
 	def __init__(self):
 		super().__init__("i")
-	def getValue(self):
+
+	def canEvaluate(self):
+		return True
+
+	def evaluate(self):
 		return np.complex(0.0, 1.0)
+
 	def depends_on(self, variable, debug = False):
 		return False
+
 	def deep_copy(self):
 		return ImaginaryUnit()
 
@@ -442,11 +459,10 @@ class Negate( Operator ):
 		return self.getOperand(0)
 	def setExpr(self, expr):
 		self.setOperand(0, expr)
-	def getValue(self):
-		expr = self.getExpr()
-		if hasattr(expr, 'getValue'):
-			return -self.getExpr().getValue()
-		raise ValueError("Negate::getValue called but expr does not have a getValue method.")
+	def canEvaluate(self):
+		return self.getExpr().canEvaluate()
+	def evaluate(self):
+		return -self.getExpr().evaluate()
 	def deep_copy(self):
 		return Negate(self.getOperand(0).deep_copy())
 	def toLatex(self):

@@ -18,7 +18,6 @@ struct VoxelGrid : public Field
 	typedef std::shared_ptr<VoxelGrid> Ptr;
 
 	VoxelGrid( std::complex<double>* data, const Domain& domain, V2d offset ):
-		m_data(data),
 		m_domain(domain),
 		m_offset(offset)
 	{
@@ -80,6 +79,7 @@ struct VoxelGrid : public Field
 		result += sample(V2i(v1[0], v1[1]))*tx*ty;
 		return result;
 	}
+	/*
 	virtual std::complex<double> dx(const P2d& pWS)const override
 	{
 		std::complex<double> a = eval(pWS-m_step_x);
@@ -118,15 +118,30 @@ struct VoxelGrid : public Field
 	{
 		return 0.0;
 	}
+	*/
 
-	void test()const
+	virtual void test()const override
 	{
-		for(int s=0;s<10;++s)
-			for(int t=0;t<10;++t)
-			{
-				std::cout << sample(V2i(s,t)) << std::endl;
-			}
+		double real_max=0.0;
+		double imag_max=0.0;
+		double real_min=std::numeric_limits<double>::max();
+		double imag_min=std::numeric_limits<double>::max();
 
+		for(auto d:m_data2)
+		{
+			if( d.real() > real_max )
+				real_max = d.real();
+			if( d.imag() > imag_max )
+				imag_max = d.imag();
+			if( d.real() < real_min )
+				real_min = d.real();
+			if( d.imag() < imag_min )
+				imag_min = d.imag();
+		}
+
+		std::cout << "VoxelGrid::test range=" << std::endl;
+		std::cout << "\treal=" << real_min << " " << real_max << std::endl;
+		std::cout << "\timag=" << imag_min << " " << imag_max << std::endl;
 	}
 
 private:
@@ -134,7 +149,7 @@ private:
 	V2d m_offset;
 	V2d m_step_x;
 	V2d m_step_y;
-	std::complex<double>* m_data;
+	//std::complex<double>* m_data;
 	std::vector<std::complex<double>> m_data2;
 };
 

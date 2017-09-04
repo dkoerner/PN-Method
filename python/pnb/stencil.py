@@ -661,8 +661,8 @@ if __name__ == "__main__":
 	lspn_terms = []
 	lspn_terms.append(rte_terms.lspn.term0_projected_expr())
 	lspn_terms.append(rte_terms.lspn.term1_projected_expr())
-	lspn_terms.append(rte_terms.lspn.term2_projected_expr()) # <------- (differences come from linear interpolation)
-	lspn_terms.append(rte_terms.lspn.term3_projected_expr()) # <-------
+	lspn_terms.append(rte_terms.lspn.term2_projected_expr())
+	lspn_terms.append(rte_terms.lspn.term3_projected_expr())
 	lspn_terms.append(rte_terms.lspn.term4_projected_expr())
 	lspn_terms.append(rte_terms.lspn.term5_projected_expr())
 	lspn_terms.append(rte_terms.lspn.term6_projected_expr())

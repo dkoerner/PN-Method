@@ -14,6 +14,7 @@ include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/include )
 pybind11_add_module(pnsolver src/main.cpp
 	                         src/PNSystem.cpp
 							 src/stencil.cpp
+							 src/field/Field.cpp
 							 src/field/VoxelGrid.cpp
 							 src/field/Constant.cpp
 							 src/field/Function.cpp

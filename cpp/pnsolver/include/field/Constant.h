@@ -12,7 +12,7 @@
 
 
 
-
+// A scalarfield which is constant throughout
 struct Constant : public Field
 {
 	typedef std::shared_ptr<Constant> Ptr;

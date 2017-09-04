@@ -12,7 +12,7 @@
 
 
 
-
+// Adapter for lambda functions to scalar fields
 struct Function : public Field
 {
 	typedef std::shared_ptr<Function> Ptr;

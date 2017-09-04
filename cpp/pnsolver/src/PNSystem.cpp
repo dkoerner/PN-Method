@@ -5,7 +5,7 @@
 
 
 PNSystem::PNSystem(const Domain& domain,
-					int order)
+				   int order)
 	:
 	m_domain(domain),
 	m_order(order),
@@ -17,7 +17,6 @@ PNSystem::PNSystem(const Domain& domain,
 			// in 2d, we only need to solve for moments where l+m is even
 			if( (l+m) % 2 == 0 )
 			{
-				//std::cout << "l=" << l << " m=" << m << " index=" << m_numCoeffs << std::endl;
 				m_lm_to_index[std::make_pair(l,m)] = m_numCoeffs;
 				++m_numCoeffs;
 			}
@@ -111,9 +110,9 @@ void PNSystem::setField( const std::string& id, Field::Ptr field )
 	*/
 }
 
-PNSystem::Voxel PNSystem::getVoxel( const V2i& voxel )
+PNSystem::VoxelSystem PNSystem::getVoxelSystem( const V2i& voxel )
 {
-	return PNSystem::Voxel(this, voxel);
+	return PNSystem::VoxelSystem(this, voxel);
 }
 
 const Domain& PNSystem::getDomain()const
@@ -121,14 +120,9 @@ const Domain& PNSystem::getDomain()const
 	return m_domain;
 }
 
-PNSystem::ComplexMatrix& PNSystem::get_A()
+PNSystem::ComplexMatrix& PNSystem::get_A_complex()
 {
 	return m_A_complex;
-}
-
-PNSystem::ComplexVector& PNSystem::get_b()
-{
-	return m_b_complex;
 }
 
 PNSystem::RealMatrix& PNSystem::get_A_real()
@@ -136,9 +130,20 @@ PNSystem::RealMatrix& PNSystem::get_A_real()
 	return m_A_real;
 }
 
+PNSystem::ComplexVector& PNSystem::get_b_complex()
+{
+	return m_b_complex;
+}
+
 PNSystem::RealVector& PNSystem::get_b_real()
 {
 	return m_b_real;
+}
+
+void PNSystem::setDebugVoxel(const V2i &dv)
+{
+	debugVoxel = dv;
+
 }
 
 
@@ -221,8 +226,6 @@ void PNSystem::build_S()
 
 int PNSystem::getGlobalIndex( V2i voxel, int coeff )const
 {
-	//int voxel_index = voxel[0]*m_domain.resolution()[1] + voxel[1];
-	//TODO: is this correct? shouldnt it be voxel[0]*res[1] + voxel[1] ?
 	int voxel_index = voxel[1]*m_domain.resolution()[0] + voxel[0];
 	return voxel_index*m_numCoeffs + coeff;
 }
@@ -273,9 +276,6 @@ PNSystem::MatrixAccessHelper PNSystem::A( V2i voxel_i,
 	mah.m_global_i = getGlobalIndex(voxel_i, coefficient_i);
 	mah.m_global_j = getGlobalIndex(voxel_j, coefficient_j);
 	return mah;
-
-	//int index = global_index_i*m_domain.resolution()[1]*m_numCoeffs + global_index_j;
-	//return m_A_ptr[index];
 }
 
 
@@ -299,6 +299,7 @@ PNSystem::MatrixAccessHelper PNSystem::b( V2i voxel_i,
 
 void PNSystem::build()
 {
+	std::cout << "PNSystem::build building system matrices A and b...\n";
 	int min_x = 0;
 	int min_y = 0;
 	int max_x = m_domain.resolution()[0];
@@ -315,10 +316,7 @@ void PNSystem::build()
 	// iterate all voxels and apply stencil which has been generated from python script ---
 	for( int i=min_x;i<max_x;++i )
 		for( int j=min_y;j<max_y;++j )
-		{
-			Voxel voxel = getVoxel(V2i(i,j));
-			set_system_row( voxel, m_fields );
-		}
+			set_system_row( getVoxelSystem(V2i(i,j)), m_fields );
 
 	// construct sparse matrix from all stencil operations ---
 	m_A_complex.setFromTriplets(m_triplets_A.begin(), m_triplets_A.end());
@@ -331,6 +329,8 @@ void PNSystem::build()
 
 PNSystem::RealVector PNSystem::solve()
 {
+	std::cout << "PNSystem::solve solving for x...\n";
+
 	Eigen::ConjugateGradient<Eigen::SparseMatrix<double> > solver;
 	solver.compute(get_A_real());
 	if(solver.info()!=Eigen::Success)
@@ -346,62 +346,31 @@ PNSystem::RealVector PNSystem::solve()
 	return x;
 }
 
-//PNSystem::Voxel ==============================================
-PNSystem::Voxel::Voxel(PNSystem* pns,
+//PNSystem::VoxelSystem ==============================================
+PNSystem::VoxelSystem::VoxelSystem(PNSystem* pns,
 				const V2i& voxel_i ):
 	m_pns(pns),
 	m_voxel_i(voxel_i)
 {
 }
 
-
-const V2i& PNSystem::Voxel::getVoxel()const
+const V2i& PNSystem::VoxelSystem::getVoxel()const
 {
 	return m_voxel_i;
 }
 
-
-
-PNSystem::MatrixAccessHelper PNSystem::Voxel::A( int coefficient_i, V2i voxel_j, int coefficient_j )
+PNSystem::MatrixAccessHelper PNSystem::VoxelSystem::A( int coefficient_i, V2i voxel_j, int coefficient_j )
 {
 	return m_pns->A( m_voxel_i, coefficient_i, voxel_j, coefficient_j );
 }
 
-
-PNSystem::MatrixAccessHelper PNSystem::Voxel::b( int coefficient_i )
+PNSystem::MatrixAccessHelper PNSystem::VoxelSystem::b( int coefficient_i )
 {
 	return m_pns->b( m_voxel_i, coefficient_i );
 }
 
-
-V2d PNSystem::Voxel::voxelToWorld(const V2d& pVS )const
+V2d PNSystem::VoxelSystem::voxelToWorld(const V2d& pVS )const
 {
 	return m_pns->getDomain().voxelToWorld(pVS);
 }
 
-//PNSystem::SHCoefficientArray ==============================================
-
-PNSystem::SHCoefficientArray::SHCoefficientArray( int order )
-{
-	// initialize all coefficient fields to zero
-	// NB: this is including coefficients with (l+m)%2==1
-	// so the coefficient indices of PNSystem for 2d dont match those here,
-	// which are the ones for general 3d
-	int numCoeffs = (order + 1) * (order + 1);
-	for( int i=0;i<numCoeffs;++i )
-		m_coeff_fields.push_back(std::make_shared<Constant>(0.0));
-}
-
-void PNSystem::SHCoefficientArray::setField( int l, int m, Field::Ptr field )
-{
-	int shindex = l * (l + 1) + m; // NB: this computes the sh index from l,m for the general 3d case
-	m_coeff_fields[shindex] = field;
-}
-
-std::complex<double> PNSystem::SHCoefficientArray::eval( int l, int m, const V2d& pWS )const
-{
-	// map l, m to shindex
-	int shindex = l * (l + 1) + m; // NB: this computes the sh index from l,m for the general 3d case
-	// evaluate field
-	return m_coeff_fields[shindex]->eval(pWS);
-}

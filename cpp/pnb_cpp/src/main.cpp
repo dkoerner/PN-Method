@@ -10,7 +10,6 @@
 #include <math/ray.h>
 
 #include<common/Domain.h>
-#include<common/GridLocation.h>
 #include<field/VoxelGrid.h>
 #include<field/Constant.h>
 #include<field/SHEXP.h>
@@ -83,6 +82,7 @@ PYBIND11_MODULE(pnbuilder_cpp, m)
 	.def("getNumCoefficients", &PNSystem::getNumCoefficients )
 	.def("getNumVoxels", &PNSystem::getNumVoxels )
 	.def("build", &PNSystem::build )
+	.def("solve", &PNSystem::solve )
 	.def("setField", &PNSystem::setField )
 	.def("get_A", &PNSystem::get_A )
 	.def("get_b", &PNSystem::get_b )
@@ -120,6 +120,7 @@ PYBIND11_MODULE(pnbuilder_cpp, m)
 						 V2i(resolution_data[0], resolution_data[1]),
 						 V2d(offset_data[0], offset_data[1]));
 	})
+	/*
 	.def("resolution",
 	[](Domain &m)
 	{
@@ -129,7 +130,10 @@ PYBIND11_MODULE(pnbuilder_cpp, m)
 		a.mutable_data()[1] = resolution[1];
 		return a;
 	})
+	*/
+	.def("resolution", &Domain::resolution )
 	.def("setResolution", &Domain::setResolution )
+	/*
 	.def("voxelSize",
 	[](Domain &m)
 	{
@@ -139,11 +143,17 @@ PYBIND11_MODULE(pnbuilder_cpp, m)
 		a.mutable_data()[1] = voxelSize[1];
 		return a;
 	})
+	*/
+	.def("voxelSize", &Domain::voxelSize )
+	.def("numVoxels", &Domain::numVoxels )
+	/*
 	.def("numVoxels",
 	[](Domain &m)
 	{
 		return m.numVoxels();
 	})
+	*/
+	/*
 	.def("worldToVoxel",
 	[](Domain &m, py::array pWS_array)
 	{
@@ -153,74 +163,16 @@ PYBIND11_MODULE(pnbuilder_cpp, m)
 		a.mutable_data()[1] = pVS[1];
 		return a;
 	})
+	*/
+	.def("worldToVoxel", &Domain::worldToVoxel )
 	.def("voxelToWorld", &Domain::voxelToWorld )
 	;
-
-	// GridLocation ============================================================
-	py::class_<GridLocation> class_gridlocation(m, "GridLocation");
-	class_gridlocation
-	.def("__init__",
-	[](GridLocation &m, Domain &domain, py::array voxel_array, py::array offset_array)
-	{
-		py::buffer_info voxel_info = voxel_array.request();
-		py::buffer_info offset_info = offset_array.request();
-
-		// Some sanity checks ...
-		if (voxel_info.ndim != 1 || offset_info.ndim != 1)
-			throw std::runtime_error("Incompatible dimension!");
-
-		if (voxel_info.shape[0] != 2 || offset_info.shape[0] != 2 )
-			throw std::runtime_error("Incompatible vector size!");
-
-		auto voxel_data = static_cast<int *>(voxel_info.ptr);
-		auto offset_data = static_cast<int *>(offset_info.ptr);
-
-		new (&m) GridLocation(  domain,
-								V2i(voxel_data[0], voxel_data[1]),
-								V2i(offset_data[0], offset_data[1]));
-	})
-	.def("getVoxel",
-	[](GridLocation &m)
-	{
-		V2i voxel = m.getVoxel();
-		py::array_t<int> a({ 2 });
-		a.mutable_data()[0] = voxel[0];
-		a.mutable_data()[1] = voxel[1];
-		return a;
-
-	})
-	.def("getOffset",
-	[](GridLocation &m)
-	{
-		V2i offset = m.getOffset();
-		py::array_t<int> a({ 2 });
-		a.mutable_data()[0] = offset[0];
-		a.mutable_data()[1] = offset[1];
-		return a;
-	})
-	.def("getPWS", &GridLocation::getPWS )
-	.def("getShiftedLocation",
-	[](GridLocation &m, py::array offset_array)
-	{
-		auto offset_data = static_cast<int *>(offset_array.request().ptr);
-		//std::cout << "offset_data: " << offset_data[0] << " " << offset_data[1]  << std::endl;
-		return m.getShiftedLocation(V2i(offset_data[0], offset_data[1]));
-	});
 
 
 	// Field ============================================================
 	py::class_<Field, Field::Ptr> class_field(m, "Field");
 	class_field
 	.def("__call__",[](Field &m, py::array pWS_array){return m.eval(to_P2d(pWS_array));})
-	/*
-	.def("dx", [](Field &m, py::array pWS_array){return m.dx(to_P2d(pWS_array));})
-	.def("dxdx", [](Field &m, py::array pWS_array){return m.dxdx(to_P2d(pWS_array));})
-	.def("dxdy", [](Field &m, py::array pWS_array){return m.dxdy(to_P2d(pWS_array));})
-	.def("dy", [](Field &m, py::array pWS_array){return m.dy(to_P2d(pWS_array));})
-	.def("dydy", [](Field &m, py::array pWS_array){return m.dydy(to_P2d(pWS_array));})
-	.def("dydx", [](Field &m, py::array pWS_array){return m.dydx(to_P2d(pWS_array));})
-	.def("dz", [](Field &m, py::array pWS_array){return m.dz(to_P2d(pWS_array));})
-	*/
 	;
 
 	// VoxelGrid ============================================================
@@ -245,12 +197,6 @@ PYBIND11_MODULE(pnbuilder_cpp, m)
 		int res_x = int(info.shape[0]);
 		int res_y = int(info.shape[1]);
 
-		//auto strides = Strides(
-		//	info.strides[rowMajor ? 0 : 1] / (py::ssize_t)sizeof(Scalar),
-		//	info.strides[rowMajor ? 1 : 0] / (py::ssize_t)sizeof(Scalar));
-
-		//auto map = Eigen::Map<Matrix, 0, Strides>( static_cast<Scalar *>(info.ptr), info.shape[0], info.shape[1], strides);
-
 		auto data = static_cast<std::complex<double> *>(info.ptr);
 		new (&m) VoxelGrid( data, domain, to_V2d(offset_array) );
 	})
@@ -273,40 +219,6 @@ PYBIND11_MODULE(pnbuilder_cpp, m)
 	{
 		return m.eval(to_P2d(pWS_array), to_V3d(omega_array));
 	})
-	/*
-	.def("dx", [](RadianceField &m, py::array pWS_array, py::array omega_array)
-	{
-		return m.dx(to_P2d(pWS_array), to_V3d(omega_array));
-	})
-	.def("dxdx", [](RadianceField &m, py::array pWS_array, py::array omega_array)
-	{
-		return m.dxdx(to_P2d(pWS_array), to_V3d(omega_array));
-	})
-	.def("dxdy", [](RadianceField &m, py::array pWS_array, py::array omega_array)
-	{
-		return m.dxdy(to_P2d(pWS_array), to_V3d(omega_array));
-	})
-	.def("dy", [](RadianceField &m, py::array pWS_array, py::array omega_array)
-	{
-		return m.dy(to_P2d(pWS_array), to_V3d(omega_array));
-	})
-	.def("dydy", [](RadianceField &m, py::array pWS_array, py::array omega_array)
-	{
-		return m.dydy(to_P2d(pWS_array), to_V3d(omega_array));
-	})
-	.def("dydx", [](RadianceField &m, py::array pWS_array, py::array omega_array)
-	{
-		return m.dydx(to_P2d(pWS_array), to_V3d(omega_array));
-	})
-	.def("dz", [](RadianceField &m, py::array pWS_array, py::array omega_array)
-	{
-		return m.dz(to_P2d(pWS_array), to_V3d(omega_array));
-	})
-	.def("integral_over_solid_angle", [](RadianceField &m, py::array pWS_array)
-	{
-		return m.integral_over_solid_angle(to_P2d(pWS_array));
-	})
-	*/
 	;
 
 	// SHEXP ============================================================

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.8)
-project("pnb")
+project("pns")
 
 find_package( pybind11 )
 if (pybind11_FOUND)
@@ -10,23 +10,13 @@ endif ()
 
 # required since eigen has eigen3 intermediate directory in include
 include_directories( ${CMAKE_INSTALL_PREFIX}/include/eigen3 )
-
-## houio
-#include_directories( ${CMAKE_INSTALL_PREFIX}/include/houio )
-
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/include )
-#pybind11_add_module(pnb src/main.cpp src/util/string.cpp src/util/dda2d.cpp)
-pybind11_add_module(pnbuilder_cpp src/main.cpp
-	                              src/PNSystem.cpp
-								  src/stencil.cpp
-	                              src/field/VoxelGrid.cpp
-								  src/field/Constant.cpp
-								  src/field/Function.cpp
-								  src/field/SHEXP.cpp
-								  src/common/Domain.cpp
-								  src/common/GridLocation.cpp
-								  src/math/sph.cpp)
-
-
-
-#target_link_libraries( pnb ${CMAKE_INSTALL_PREFIX}/lib/houio.lib )
+pybind11_add_module(pnsolver src/main.cpp
+	                         src/PNSystem.cpp
+							 src/stencil.cpp
+							 src/field/VoxelGrid.cpp
+							 src/field/Constant.cpp
+							 src/field/Function.cpp
+							 src/field/SHEXP.cpp
+							 src/common/Domain.cpp
+							 src/math/sph.cpp)

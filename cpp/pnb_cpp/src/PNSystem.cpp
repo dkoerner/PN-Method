@@ -1,6 +1,8 @@
 #include <PNSystem.h>
-
 #include <field/Function.h>
+
+#include<Eigen/IterativeLinearSolvers>
+
 
 PNSystem::PNSystem(const Domain& domain,
 					int order)
@@ -86,6 +88,7 @@ PNSystem::PNSystem(const Domain& domain,
 
 void PNSystem::setField( const std::string& id, Field::Ptr field )
 {
+	std::cout << "WARNING: PNSystem::setField currently ignored. Using explicit RTE functions.\n";
 	/*
 	if( id == "sigma_t" )
 		m_fields.sigma_t = field;
@@ -324,6 +327,23 @@ void PNSystem::build()
 	// convert from complex to real valued system
 	m_A_real = (m_S*m_A_complex*m_S_inv).real();
 	m_b_real = (m_S*m_b_complex).real();
+}
+
+PNSystem::RealVector PNSystem::solve()
+{
+	Eigen::ConjugateGradient<Eigen::SparseMatrix<double> > solver;
+	solver.compute(get_A_real());
+	if(solver.info()!=Eigen::Success)
+	{
+		throw std::runtime_error("PNSystem::solve decomposition failed");
+	}
+	RealVector x = solver.solve(get_b_real());
+	if(solver.info()!=Eigen::Success)
+	{
+		throw std::runtime_error("PNSystem::solve solve failed");
+	}
+
+	return x;
 }
 
 //PNSystem::Voxel ==============================================

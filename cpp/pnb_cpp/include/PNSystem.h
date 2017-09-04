@@ -117,6 +117,7 @@ struct PNSystem
 
 	void setField( const std::string& id, Field::Ptr field );
 	void build();
+	RealVector solve();
 	ComplexMatrix& get_A();
 	ComplexVector& get_b();
 	RealMatrix& get_A_real();

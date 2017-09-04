@@ -10,7 +10,8 @@
 
 
 
-
+// The Domain datastructure is used to define a voxelgrid over a rectangular (axis aligned)
+// section of the worldspace. It provides mappings between world and voxel space.
 struct Domain
 {
 	Domain( const V2d& size, V2i resolution, const P2d& offset ):

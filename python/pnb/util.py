@@ -143,7 +143,7 @@ def rasterize( fun, domain, offset = np.array([0.5, 0.5]), dtype=float ):
 			voxels[i, j] = fun(pWS)
 	return voxels
 
-def write_pn_system(sys, problem, prefix=""):
+def write_pn_system(sys, problem, prefix="", x=None):
 	domain = problem["domain"]
 	A = sys.get_A_real()
 	b = sys.get_b_real()
@@ -159,6 +159,10 @@ def write_pn_system(sys, problem, prefix=""):
 	if not b is None:
 		#data['b'] = b.toarray().reshape((domain.numVoxels*sys.getNumCoefficients(), 1))
 		data['b'] = b
+	if not x is None:
+		#data['b'] = b.toarray().reshape((domain.numVoxels*sys.getNumCoefficients(), 1))
+		data['x'] = x
+
 	#data['pnb_info'] = pnb.get_info()
 
 

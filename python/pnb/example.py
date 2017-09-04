@@ -523,7 +523,7 @@ def pnsystem( problem ):
 
 	return sys
 
-
+#pnsolver.cp36-win_amd64.pyd c:/projects/epfl/epfl17/python/pnb/.
 def test_pnsystem():
 	problem = problems.checkerboard()
 	sys = pnsystem( problem )
@@ -541,8 +541,13 @@ def test_pnsystem():
 
 
 	sys.build()
+	print("solving...")
+	x = sys.solve()
+	print(x.shape)
 
-	#util.write_pn_system(sys, problem, "pns_highres")
+	util.write_pn_system(sys, problem, "pns_highres", x)
+	'''
+	
 	#return
 
 	A_sys = sys.get_A_real()
@@ -567,6 +572,7 @@ def test_pnsystem():
 	compare(A_sys, A_builder, "PNSystem", "PNBuilder")
 	print("b ----------------------")
 	compare(b_sys, b_builder, "PNSystem", "PNBuilder")
+	'''
 
 
 if __name__ == "__main__":

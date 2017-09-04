@@ -56,10 +56,8 @@ def checkerboard():
 	# here we set some general parameters 
 	res = 70
 	problem["id"] = "checkerboard"
-	problem["order"] = 1
 	problem["domain"] = pnbuilder.Domain2D(7.0, res)
 	problem["domain_cpp"] = pnbuilder.Domain( np.array([7.0, 7.0]), np.array([res, res]), np.array([0.0, 0.0]))
-	problem["staggered"] = True
 
 	# here we set the RTE fields
 	#problem["\\sigma_t"] = lambda pWS: sigma_a(pWS) + sigma_s(pWS)

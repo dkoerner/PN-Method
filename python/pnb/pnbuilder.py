@@ -8,7 +8,7 @@ import meh
 import itertools
 
 #from pnbuilder_cpp import Domain,GridLocation, Constant, VoxelGrid, SHEXP
-from pnbuilder_cpp import *
+from pnsolver import *
 
 
 class Domain2D:

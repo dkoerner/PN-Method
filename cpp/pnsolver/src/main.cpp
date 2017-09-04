@@ -26,9 +26,9 @@ PYBIND11_MODULE(pnsolver, m)
 	py::class_<PNSystem> class_pnsystem(m, "PNSystem");
 	class_pnsystem
 	.def("__init__",
-	[](PNSystem &m, Domain &domain, int order)
+	[](PNSystem &m, Domain &domain)
 	{
-		new (&m) PNSystem(domain, order);
+		new (&m) PNSystem(domain);
 	})
 	.def("getGlobalIndex", &PNSystem::getGlobalIndex )
 	.def("getVoxelAndCoefficient",

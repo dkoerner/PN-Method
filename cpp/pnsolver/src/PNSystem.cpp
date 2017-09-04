@@ -4,15 +4,13 @@
 #include<Eigen/IterativeLinearSolvers>
 
 
-PNSystem::PNSystem(const Domain& domain,
-				   int order)
+PNSystem::PNSystem(const Domain& domain)
 	:
 	m_domain(domain),
-	m_order(order),
-	m_fields(order)
+	m_fields(g_order)
 {
 	m_numCoeffs = 0;
-	for( int l=0;l<=order;++l )
+	for( int l=0;l<=g_order;++l )
 		for( int m=-l;m<=l;++m )
 			// in 2d, we only need to solve for moments where l+m is even
 			if( (l+m) % 2 == 0 )
@@ -152,7 +150,7 @@ void PNSystem::build_S()
 	std::vector<ComplexTriplet> triplets_S;
 
 	int count = 0;
-	for( int l=0;l<=m_order;++l )
+	for( int l=0;l<=g_order;++l )
 		for( int m=l;m>=0;--m )
 		{
 			// in 2D, we skip coefficients for which l+m is odd
@@ -357,6 +355,11 @@ PNSystem::VoxelSystem::VoxelSystem(PNSystem* pns,
 const V2i& PNSystem::VoxelSystem::getVoxel()const
 {
 	return m_voxel_i;
+}
+
+P2d PNSystem::VoxelSystem::getVoxelSize() const
+{
+	return m_pns->getDomain().voxelSize();
 }
 
 PNSystem::MatrixAccessHelper PNSystem::VoxelSystem::A( int coefficient_i, V2i voxel_j, int coefficient_j )

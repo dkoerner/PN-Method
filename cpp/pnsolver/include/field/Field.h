@@ -1,7 +1,6 @@
 #pragma once
 #include <memory>
 #include <common/Domain.h>
-#include <common/GridLocation.h>
 
 
 // Abstract interface to a (complex-valued) scalarfield which

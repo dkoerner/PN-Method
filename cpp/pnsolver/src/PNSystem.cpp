@@ -28,7 +28,6 @@ PNSystem::PNSystem(const Domain& domain)
 	debugVoxel = V2i(-1, -1);
 
 	// TEMP: testing with non-rasterized rte parameters
-
 	Function::FunctionType sigma_a = [](const P2d& pWS)
 	{
 		double x = pWS[0];
@@ -75,18 +74,19 @@ PNSystem::PNSystem(const Domain& domain)
 
 	};
 
+	/*
 	m_fields.sigma_a = std::make_shared<Function>(sigma_a);
 	m_fields.sigma_s = std::make_shared<Function>(sigma_s);
 	m_fields.sigma_t = std::make_shared<Function>(sigma_t);
 	m_fields.f_p->setField(0,0,std::make_shared<Function>(phase_shcoeff));
 	m_fields.q->setField(0,0,std::make_shared<Function>(source_shcoeffs));
-
+	*/
 }
 
 void PNSystem::setField( const std::string& id, Field::Ptr field )
 {
-	std::cout << "WARNING: PNSystem::setField currently ignored. Using explicit RTE functions.\n";
-	/*
+	//std::cout << "WARNING: PNSystem::setField currently ignored. Using explicit RTE functions.\n";
+	///*
 	if( id == "sigma_t" )
 		m_fields.sigma_t = field;
 	else
@@ -105,7 +105,7 @@ void PNSystem::setField( const std::string& id, Field::Ptr field )
 		m_fields.q->setField(0,0,field);
 	else
 		throw std::runtime_error("PNSystem::setField unable to set field " + id);
-	*/
+	//*/
 }
 
 PNSystem::VoxelSystem PNSystem::getVoxelSystem( const V2i& voxel )

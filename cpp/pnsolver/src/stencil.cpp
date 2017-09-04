@@ -693,104 +693,52 @@ void set_system_row(PNSystem::VoxelSystem& sys,
 	// term 99 ----------------
 
 	// term 100 ----------------
-	sys.A( 2, vi + V2i(0,0), 0 ) += (0.204124145232*(-(h_inv[0]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(-0.5, 0.5))))+
-			(h_inv[0]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5))))));
-	sys.A( 2, vi + V2i(-1,0), 0 ) += (0.204124145232*(-(h_inv[0]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(-0.5, 0.5))))+
-			(h_inv[0]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5))))));
-
-	// term 101 ----------------
-	sys.A( 0, vi + V2i(0,1), 1 ) += -(0.204124145232*(-(h_inv[0]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5))))+
-			(h_inv[0]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(1.0, 0.5))))));
-	sys.A( 0, vi + V2i(0,0), 1 ) += -(0.204124145232*(-(h_inv[0]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5))))+
-			(h_inv[0]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(1.0, 0.5))))));
-
-	// term 102 ----------------
-	sys.A( 1, vi + V2i(0,0), 0 ) += -(0.204124145232*(-(h_inv[0]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.0, 0.0))))+
-			(h_inv[0]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(1.0, 0.0))))));
-	sys.A( 1, vi + V2i(0,-1), 0 ) += -(0.204124145232*(-(h_inv[0]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.0, 0.0))))+
-			(h_inv[0]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(1.0, 0.0))))));
-
-	// term 103 ----------------
-	sys.A( 0, vi + V2i(1,0), 2 ) += (0.204124145232*(-(h_inv[0]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5))))+
-			(h_inv[0]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(1.0, 0.5))))));
-	sys.A( 0, vi + V2i(0,0), 2 ) += (0.204124145232*(-(h_inv[0]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5))))+
-			(h_inv[0]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(1.0, 0.5))))));
-
-	// term 104 ----------------
-	sys.A( 2, vi + V2i(0,0), 0 ) += -(std::complex<double>(0.0, 0.2041241452319315)*(-(h_inv[1]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.0, 0.0))))+
-			(h_inv[1]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.0, 1.0))))));
-	sys.A( 2, vi + V2i(-1,0), 0 ) += -(std::complex<double>(0.0, 0.2041241452319315)*(-(h_inv[1]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.0, 0.0))))+
-			(h_inv[1]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.0, 1.0))))));
-
-	// term 105 ----------------
-	sys.A( 0, vi + V2i(0,1), 1 ) += (std::complex<double>(0.0, 0.2041241452319315)*(-(h_inv[1]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0))))+
-			(h_inv[1]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 1.0))))));
-	sys.A( 0, vi + V2i(0,0), 1 ) += (std::complex<double>(0.0, 0.2041241452319315)*(-(h_inv[1]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0))))+
-			(h_inv[1]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 1.0))))));
-
-	// term 106 ----------------
-	sys.A( 1, vi + V2i(0,0), 0 ) += -(std::complex<double>(0.0, 0.2041241452319315)*(-(h_inv[1]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, -0.5))))+
-			(h_inv[1]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5))))));
-	sys.A( 1, vi + V2i(0,-1), 0 ) += -(std::complex<double>(0.0, 0.2041241452319315)*(-(h_inv[1]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, -0.5))))+
-			(h_inv[1]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5))))));
-
-	// term 107 ----------------
-	sys.A( 0, vi + V2i(1,0), 2 ) += (std::complex<double>(0.0, 0.2041241452319315)*(-(h_inv[1]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0))))+
-			(h_inv[1]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 1.0))))));
-	sys.A( 0, vi + V2i(0,0), 2 ) += (std::complex<double>(0.0, 0.2041241452319315)*(-(h_inv[1]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0))))+
-			(h_inv[1]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 1.0))))));
-
-	// term 108 ----------------
-
-	// term 109 ----------------
-
-	// term 110 ----------------
 	sys.A( 0, vi + V2i(0,0), 0 ) += std::pow(fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5))), 2);
 	sys.A( 1, vi + V2i(0,0), 1 ) += std::pow(fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0))), 2);
 	sys.A( 2, vi + V2i(0,0), 2 ) += std::pow(fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5))), 2);
 
-	// term 111 ----------------
+	// term 101 ----------------
 	sys.A( 0, vi + V2i(0,0), 0 ) += -(fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(0, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
 	sys.A( 1, vi + V2i(0,0), 1 ) += -(fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0)))*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0)))*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 0.0))));
 	sys.A( 2, vi + V2i(0,0), 2 ) += -(fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5)))*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5)))*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.0, 0.5))));
 
-	// term 112 ----------------
+	// term 102 ----------------
 	sys.b(2) += (0.5*0.816496580928*((-h_inv[0]*fields.q->eval(0, 0, sys.voxelToWorld(vd+V2d(-0.5, 0.5))))+
 			(h_inv[0]*fields.q->eval(0, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))))));
 
-	// term 113 ----------------
+	// term 103 ----------------
 	sys.b(0) += -(0.5*0.816496580928*((-h_inv[0]*fields.q->eval(1, -1, sys.voxelToWorld(vd+V2d(0.0, 0.5))))+
 			(h_inv[0]*fields.q->eval(1, -1, sys.voxelToWorld(vd+V2d(1.0, 0.5))))));
 
-	// term 114 ----------------
+	// term 104 ----------------
 	sys.b(1) += -(0.5*0.816496580928*((-h_inv[0]*fields.q->eval(0, 0, sys.voxelToWorld(vd+V2d(0.0, 0.0))))+
 			(h_inv[0]*fields.q->eval(0, 0, sys.voxelToWorld(vd+V2d(1.0, 0.0))))));
 
-	// term 115 ----------------
+	// term 105 ----------------
 	sys.b(0) += (0.5*0.816496580928*((-h_inv[0]*fields.q->eval(1, 1, sys.voxelToWorld(vd+V2d(0.0, 0.5))))+
 			(h_inv[0]*fields.q->eval(1, 1, sys.voxelToWorld(vd+V2d(1.0, 0.5))))));
 
-	// term 116 ----------------
+	// term 106 ----------------
 	sys.b(2) += -(std::complex<double>(0.0, 0.5)*0.816496580928*((-h_inv[1]*fields.q->eval(0, 0, sys.voxelToWorld(vd+V2d(0.0, 0.0))))+
 			(h_inv[1]*fields.q->eval(0, 0, sys.voxelToWorld(vd+V2d(0.0, 1.0))))));
 
-	// term 117 ----------------
+	// term 107 ----------------
 	sys.b(0) += (std::complex<double>(0.0, 0.5)*0.816496580928*((-h_inv[1]*fields.q->eval(1, -1, sys.voxelToWorld(vd+V2d(0.5, 0.0))))+
 			(h_inv[1]*fields.q->eval(1, -1, sys.voxelToWorld(vd+V2d(0.5, 1.0))))));
 
-	// term 118 ----------------
+	// term 108 ----------------
 	sys.b(1) += -(std::complex<double>(0.0, 0.5)*0.816496580928*((-h_inv[1]*fields.q->eval(0, 0, sys.voxelToWorld(vd+V2d(0.5, -0.5))))+
 			(h_inv[1]*fields.q->eval(0, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))))));
 
-	// term 119 ----------------
+	// term 109 ----------------
 	sys.b(0) += (std::complex<double>(0.0, 0.5)*0.816496580928*((-h_inv[1]*fields.q->eval(1, 1, sys.voxelToWorld(vd+V2d(0.5, 0.0))))+
 			(h_inv[1]*fields.q->eval(1, 1, sys.voxelToWorld(vd+V2d(0.5, 1.0))))));
 
-	// term 120 ----------------
+	// term 110 ----------------
 
-	// term 121 ----------------
+	// term 111 ----------------
 
-	// term 122 ----------------
+	// term 112 ----------------
 	sys.b(0) += (fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.q->eval(0, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
 	sys.b(1) += (fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0)))*fields.q->eval(1, -1, sys.voxelToWorld(vd+V2d(0.5, 0.0))));
 	sys.b(2) += (fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5)))*fields.q->eval(1, 1, sys.voxelToWorld(vd+V2d(0.0, 0.5))));

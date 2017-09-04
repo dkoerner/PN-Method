@@ -2,14 +2,10 @@
 # A problem essentially is a dictionary, containing fields for the different RTE parameters.
 
 import numpy as np
-import field
-import pnbuilder
+import pnsolver
 import util
 
-from scipy.ndimage.filters import gaussian_filter
-
-
-
+#from scipy.ndimage.filters import gaussian_filter
 
 
 # This is the problem from the starmap paper. An emitting square at the center, surrounded by
@@ -54,35 +50,20 @@ def checkerboard():
 	problem = {}
 
 	# here we set some general parameters 
+	size = 7.0
 	res = 70
+	domain = pnsolver.Domain( np.array([size, size]), np.array([res, res]), np.array([0.0, 0.0]))
+
 	problem["id"] = "checkerboard"
-	problem["domain"] = pnbuilder.Domain2D(7.0, res)
-	problem["domain_cpp"] = pnbuilder.Domain( np.array([7.0, 7.0]), np.array([res, res]), np.array([0.0, 0.0]))
+	problem["domain"] = domain
 
-	# here we set the RTE fields
-	#problem["\\sigma_t"] = lambda pWS: sigma_a(pWS) + sigma_s(pWS)
-	#problem["\\sigma_a"] = sigma_a
-	#problem["\\sigma_s"] = sigma_s
-	#problem["f_p"] = phase_shcoeffs
-	#problem["q"] = source_shcoeffs
-
-	problem["\\sigma_t"] = field.VoxelGrid(util.rasterize(lambda pWS: sigma_a(pWS) + sigma_s(pWS), problem["domain"]), problem["domain"])
-	problem["\\sigma_a"] = field.VoxelGrid(util.rasterize(sigma_a, problem["domain"]), problem["domain"])
-	problem["\\sigma_s"] = field.VoxelGrid(util.rasterize(sigma_s, problem["domain"]), problem["domain"])
-	problem["f_p"] = phase_shcoeffs
-	problem["q"] = source_shcoeffs
-
-
-	# temp
+	# RTE parameters ------------
 	offset = np.array([1.0, 1.0])
-	rasterization_domain = pnbuilder.Domain( np.array([7.0, 7.0]), np.array([70, 70]), np.array([0.0, 0.0]))
-	problem["sigma_t"] = pnbuilder.VoxelGrid( util.rasterize(lambda pWS: sigma_a(pWS) + sigma_s(pWS), rasterization_domain, dtype=complex), rasterization_domain, offset*0.5 )
-	problem["sigma_a"] = pnbuilder.VoxelGrid( util.rasterize(sigma_a, rasterization_domain, dtype=complex), rasterization_domain, offset*0.5 )
-	problem["sigma_s"] = pnbuilder.VoxelGrid( util.rasterize(sigma_s, rasterization_domain, dtype=complex), rasterization_domain, offset*0.5 )
-	problem["f_p"] = [pnbuilder.Constant(1.0)]
-	problem["q"] = [pnbuilder.VoxelGrid( util.rasterize(lambda pWS: source_shcoeffs(0, 0, pWS), rasterization_domain, dtype=complex), rasterization_domain, offset*0.5 )]
-
-
+	problem["sigma_t"] = pnsolver.VoxelGrid( util.rasterize(lambda pWS: sigma_a(pWS) + sigma_s(pWS), domain, dtype=complex), domain, offset*0.5 )
+	problem["sigma_a"] = pnsolver.VoxelGrid( util.rasterize(sigma_a, domain, dtype=complex), domain, offset*0.5 )
+	problem["sigma_s"] = pnsolver.VoxelGrid( util.rasterize(sigma_s, domain, dtype=complex), domain, offset*0.5 )
+	problem["f_p"] = [pnsolver.Constant(1.0)]
+	problem["q"] = [pnsolver.VoxelGrid( util.rasterize(lambda pWS: source_shcoeffs(0, 0, pWS), domain, dtype=complex), domain, offset*0.5 )]
 
 	return problem
 
@@ -90,7 +71,7 @@ def checkerboard():
 
 
 
-
+'''
 # This basically takes an arbitrary problem and blurs it.
 def blurred( problem, stddev = 1.0 ):
 
@@ -110,7 +91,7 @@ def blurred( problem, stddev = 1.0 ):
 
 
 	# fade to zero near border ----------------------------
-	'''
+
 	# fade out sigma_a and sigma_s near the border
 	def fade(pWS):
 		d0 = np.abs(pWS[0] - domain.bound_min[0])
@@ -131,13 +112,13 @@ def blurred( problem, stddev = 1.0 ):
 	fade_field = domain.rasterize(fade)
 	problem["\\sigma_a"].voxels *= fade_field
 	problem["\\sigma_s"].voxels *= fade_field
-	'''
+
 
 
 	problem["\\sigma_t"] = field.VoxelGrid(sigma_a_voxels+sigma_s_voxels, domain)
 
 	return problem
-
+'''
 if __name__ == "__main__":
 	pass
 

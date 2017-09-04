@@ -1,15 +1,10 @@
-# This module represents the application which uses pnbuilder to solve some problem.
+# This module uses the pnsolver to compute the solution of the checkerboard problem.
+# It assumes that the cpp stencil had been generated and compiled with the pnsolver module.
 
 import numpy as np
 import problems
-import pnbuilder
 import util
-import lspn
-import meh
-import itertools
 import pnsolver
-import scipy.io
-import stencil
 
 
 
@@ -121,7 +116,7 @@ if __name__ == "__main__":
 
 	# initialize the solver -----------------------------------
 	# NB: the truncation order has been baked into the cpp code as it is linked directly with the stencil
-	sys = pnsolver.PNSystem(problem["domain_cpp"])
+	sys = pnsolver.PNSystem(problem["domain"])
 
 	# set the RTE parameter fields ---------------------------------------------
 	sys.setField( "sigma_t", problem["sigma_t"] )

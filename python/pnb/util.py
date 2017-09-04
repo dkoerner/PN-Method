@@ -2,7 +2,6 @@
 # related to spherical harmonics, I/O etc.
 
 import numpy as np
-import pnbuilder
 import scipy.io
 import math
 
@@ -148,26 +147,13 @@ def write_pn_system(sys, problem, prefix="", x=None):
 	A = sys.get_A_real()
 	b = sys.get_b_real()
 
-	#print(type(b.todense().flatten()))
-	#t = b.todense().flatten()
-	#print(t.shape)
-	#print( "b: range= {}".format(t.max(axis=1) ))
-
 	data = {}
 	if not A is None:
 		data['A'] = A
 	if not b is None:
-		#data['b'] = b.toarray().reshape((domain.numVoxels*sys.getNumCoefficients(), 1))
 		data['b'] = b
 	if not x is None:
-		#data['b'] = b.toarray().reshape((domain.numVoxels*sys.getNumCoefficients(), 1))
 		data['x'] = x
-
-	#data['pnb_info'] = pnb.get_info()
-
-
-	#filename = "C:/projects/epfl/epfl17/python/sopn/data_{}.mat".format(problem["id"])
-	#scipy.io.savemat(filename, data)
 
 	data['sigma_s'] = rasterize(problem["sigma_s"], domain, dtype=complex)
 	data['sigma_a'] = rasterize(problem["sigma_a"], domain, dtype=complex)
@@ -179,50 +165,7 @@ def write_pn_system(sys, problem, prefix="", x=None):
 	scipy.io.savemat(filename, data)
 
 
-
-def load_pn_solution( filename ):
-	print("loading PN solution from {}".format(filename))
+def load_pn_system( filename ):
+	print("loading PN system from {}".format(filename))
 	data = scipy.io.loadmat(filename)
-	pnb_info = {}
-
-	pnb_info["order"] = data["pnb_info"]["order"][0][0][0][0]
-	pnb_info["numCoeffs"] = data["pnb_info"]["numCoeffs"][0][0][0][0]
-	pnb_info["domain_size"] = float(data["pnb_info"]["domain_size"][0][0][0][0])
-	pnb_info["domain_res"] = data["pnb_info"]["domain_res"][0][0][0][0]
-	pnb_info["coeff_offsets"] = data["pnb_info"]["coeff_offsets"][0][0]
-
-	pnb = pnbuilder.from_info(pnb_info)
-
-
-	result = {}
-	if "x" in data:
-		x_real = data["x"].reshape((pnb.domain.num_voxels()*pnb.num_coeffs()))
-		result["x_real"] = x_real
-	if "b" in data:
-		b_real = data["b"].reshape((pnb.domain.num_voxels()*pnb.num_coeffs()))
-		result["b_real"] = b_real
-	if "A" in data:
-		A_real = data["A"]
-		result["A_real"] = A_real
-	
-	
-	result["pnb"] = pnb
-	result["sigma_t"] = data["sigma_t"]
-	result["sigma_a"] = data["sigma_a"]
-	result["sigma_s"] = data["sigma_s"]
-	result["q"] = data["q"]
-
-	#return A_real, x_real, b_real, pnb
-	return result
-
-	'''
-	# convert to complex variables
-	x_complex = pnb.to_complex(x_real)
-
-	# now construct field of SHexpansions...
-	coeff_fields = []
-	for i in range(numCoeffs):
-		offset = coeff_offsets[i]*0.5
-		coeff_fields.append( problems.CoefficientGrid(domain, numCoeffs, i, offset, x_complex) )
-	return problems.SHEXP(order, coeff_fields), domain, x_real
-	'''
+	raise ValueError("loading pn system not fully implemented yet")

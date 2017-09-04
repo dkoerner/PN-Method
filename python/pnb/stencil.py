@@ -1,12 +1,15 @@
+# This module is in charge of generating cpp code for applying the stencil to a particular voxel.
+# The generated code is used by the pnsolver (cpp) to generate Ax=b.
+# The generator uses terms from the factorized version of the expanded RTE and generates a cpp stencil
+# which respects spatial derivatives across voxels and coupling of different SH coefficients within a voxel.
+
+
 import numpy as np
-import problems
-import pnbuilder
 import util
-import lspn
+import rte_terms
 import meh
 import itertools
 import pnsolver
-import scipy.io
 import os
 
 
@@ -656,13 +659,13 @@ if __name__ == "__main__":
 	print("generating {}".format(filename))
 
 	lspn_terms = []
-	lspn_terms.append(lspn.term0_projected_expr())
-	lspn_terms.append(lspn.term1_projected_expr())
-	lspn_terms.append(lspn.term2_projected_expr()) # <------- (differences come from linear interpolation)
-	lspn_terms.append(lspn.term3_projected_expr()) # <-------
-	lspn_terms.append(lspn.term4_projected_expr())
-	lspn_terms.append(lspn.term5_projected_expr())
-	lspn_terms.append(lspn.term6_projected_expr())
+	lspn_terms.append(rte_terms.lspn.term0_projected_expr())
+	lspn_terms.append(rte_terms.lspn.term1_projected_expr())
+	lspn_terms.append(rte_terms.lspn.term2_projected_expr()) # <------- (differences come from linear interpolation)
+	lspn_terms.append(rte_terms.lspn.term3_projected_expr()) # <-------
+	lspn_terms.append(rte_terms.lspn.term4_projected_expr())
+	lspn_terms.append(rte_terms.lspn.term5_projected_expr())
+	lspn_terms.append(rte_terms.lspn.term6_projected_expr())
 
 	terms = []
 	for term in lspn_terms:

@@ -97,6 +97,11 @@ class EvalInfo(object):
 		self.term_vanishes = False
 		self.debug = False
 
+
+# eval_term will parse the term and replace all occurences of L^{lm} with a special
+# unknown token, holding the information about spatial offset and l,m offset
+# it will also take care of replacing general variables and applying derivation stencils
+# the result is an expression tree where leaves can be UnknownSets
 def eval_term( expr, info, level=0 ):
 	istr = meh.indent_string(level)
 
@@ -413,13 +418,9 @@ def to_cpp( expr, level=0 ):
 		#print("test {}".format(expr.__class__.__name__))
 
 
-
-#class PositionToken(object):
-#	def __init__(self, location):
-#		self.location = location
-#	def toLatex(self):
-#		return self.__class__.__name__
-
+# This visitor is applied to expression trees. It will collapse the unknownsets in Multiplications
+# and Additions. The result is a final unknownset where each unknown weight is an expression tree,
+# or an expression itsself if no unknowns are present (RHS terms)
 class FactorizeUnknowns(object):
 	def visit_Negate(self, expr):
 		if expr.getExpr().__class__ == UnknownSet:
@@ -598,8 +599,9 @@ def generate( terms, order, filename, staggered = True ):
 				#print("term vanishes coeff_index={}".format(coeff_index))
 				continue
 
-			# the next stepp will collapse the unknownsets in Multiplications and Additions
-			# the result could be a final unknownset or an expression
+			# This visitor is applied to the expression tree. It will collapse the unknownsets in Multiplications
+			# and Additions. The result is a final unknownset where each unknown weight is an expression tree,
+			# or an expression itsself, if no unknowns are present (RHS terms)
 			result = meh.apply_recursive(result, FactorizeUnknowns())
 
 			if result.__class__ == UnknownSet:
@@ -617,8 +619,6 @@ def generate( terms, order, filename, staggered = True ):
 					# here we make sure that we collapse numbers 
 					expr = meh.apply_recursive(expr, meh.CleanupSigns())
 					expr = meh.apply_recursive(expr, meh.FoldConstants())
-
-					#print(meh.tree_str(expr))
 
 					# Here we check if the coefficient is reduced to zero. This happens alot.
 					if expr.canEvaluate() and np.abs(expr.evaluate()) < 1.0e-8:
@@ -653,7 +653,7 @@ def generate( terms, order, filename, staggered = True ):
 
 if __name__ == "__main__":
 	order = 1
-	staggered = True
+	staggered = False
 	filename = "c:/projects/epfl/epfl17/cpp/pnsolver/src/stencil.cpp"
 
 	print("generating {}".format(filename))

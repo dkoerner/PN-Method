@@ -142,10 +142,12 @@ def rasterize( fun, domain, offset = np.array([0.5, 0.5]), dtype=float ):
 			voxels[i, j] = fun(pWS)
 	return voxels
 
-def write_pn_system(sys, problem, prefix="", x=None):
+def write_pn_system(filename, sys, problem, x=None):
 	domain = problem["domain"]
 	A = sys.get_A_real()
 	b = sys.get_b_real()
+	#A = sys.get_A_complex()
+	#b = sys.get_b_complex()
 
 	data = {}
 	if not A is None:
@@ -160,7 +162,6 @@ def write_pn_system(sys, problem, prefix="", x=None):
 	data['sigma_t'] = rasterize(problem["sigma_t"], domain, dtype=complex)
 	#data['q']       = rasterize(lambda pWS: problem['q'](0,0,pWS), pnb.domain)
 
-	filename = "C:/projects/epfl/epfl17/python/sopn/{}{}.mat".format(prefix, problem["id"])
 	print("writing PN system to {}".format(filename))
 	scipy.io.savemat(filename, data)
 

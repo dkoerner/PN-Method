@@ -15,6 +15,13 @@ if __name__ == "__main__":
 	# NB: the truncation order has been baked into the cpp code as it is linked directly with the stencil
 	sys = pnsolver.PNSystem(problem["domain"])
 
+	#index = 6392
+	#(voxel, coeff) = sys.getVoxelAndCoefficient(index)
+	#(l,m) = sys.getLM(coeff)
+	#print("index={} voxel={} {} coeff={} (l={} m={})".format(index, voxel[0], voxel[1], coeff, l, m))
+	#sys.setDebugVoxel(voxel)
+
+
 	# set the RTE parameter fields ---------------------------------------------
 	sys.setField( "sigma_t", problem["sigma_t"] )
 	sys.setField( "sigma_a", problem["sigma_a"] )
@@ -41,10 +48,15 @@ if __name__ == "__main__":
 	sys.build()
 
 	# solve for x -------------------
+	x = None
 	x = sys.solve()
 
 	# write the result to disk for visualization ---------------
-	util.write_pn_system(sys, problem, "pns_highres2", x)
+	path = "C:/projects/epfl/epfl17/python/pnsolver/results/terms_new"
+	postfix = ""
+	#postfix = "_term5"
+	filename = "{}/{}{}.mat".format(path, problem["id"], postfix)
+	util.write_pn_system(filename, sys, problem, x)
 
 
 

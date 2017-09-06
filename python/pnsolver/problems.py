@@ -34,12 +34,12 @@ def checkerboard():
 
 
 	def phase_shcoeffs( l, m, pWS ):
-		if l == 0:
+		if l == 0 and m == 0:
 			return 1.0
 		return 0.0
 
 	def source_shcoeffs( l, m, pWS ):
-		if l==0:
+		if l==0 and m == 0:
 			x = pWS[0]
 			y = pWS[1]
 			if x > 3.0 and x < 4.0 and y > 3.0 and y < 4.0:

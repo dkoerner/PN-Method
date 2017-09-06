@@ -536,6 +536,8 @@ class PNInfo2D(object):
 		return self.index_to_lm[coeff_index]
 
 def generate( terms, order, filename, staggered = True ):
+	print("generating {}".format(filename))
+
 	pni = PNInfo2D(order, staggered)
 
 	# source file
@@ -653,10 +655,8 @@ def generate( terms, order, filename, staggered = True ):
 
 if __name__ == "__main__":
 	order = 1
-	staggered = False
+	staggered = True
 	filename = "c:/projects/epfl/epfl17/cpp/pnsolver/src/stencil.cpp"
-
-	print("generating {}".format(filename))
 
 	lspn_terms = []
 	lspn_terms.append(rte_terms.lspn.term0_projected_expr())
@@ -671,7 +671,9 @@ if __name__ == "__main__":
 	for term in lspn_terms:
 		if term.__class__ == meh.Addition:
 			#for i in range(0,5):
+			#print(term.numOperands())
 			for i in range(term.numOperands()):
+			#for i in range(0,1):
 				terms.append(term.getOperand(i))
 		else:
 			terms.append(term)

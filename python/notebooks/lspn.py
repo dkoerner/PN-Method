@@ -724,7 +724,7 @@ def diffusion_terms():
 
 
 
-def write_pn_system(pnb, problem, A, b):
+def write_pn_system(pnb, problem, A, b, postfix = ""):
 	#'''
 	data = {}
 	if not A is None:
@@ -740,7 +740,8 @@ def write_pn_system(pnb, problem, A, b):
 	data['sigma_a'] = pnb.domain.rasterize(problem["\\sigma_a"])
 	data['sigma_t'] = pnb.domain.rasterize(problem["\\sigma_t"])
 	data['q']       = pnb.domain.rasterize(lambda pWS: problem['q'](0,0,pWS))
-	scipy.io.savemat("C:/projects/epfl/epfl17/python/sopn/system2_{}.mat".format(problem["id"]), data)
+	path = "c:/projects/epfl/epfl17/python/pnsolver/results/terms_original"
+	scipy.io.savemat("{}/{}{}.mat".format(path, problem["id"], postfix), data)
 	#'''
 
 
@@ -899,18 +900,38 @@ if __name__ == "__main__":
 	#term = lspn_directional_derivative_source_term()
 	#term = lspn_extinction_source_term()
 	lspn_terms = []
-	lspn_terms.append(lspn_sotransport_term())
-	lspn_terms.append(lspn_extinction_directional_derivative_term())
-	lspn_terms.append(lspn_squared_extinction_term()) # <-----
-	lspn_terms.append(lspn_directional_derivative_scattering_term()) # <-----
-	lspn_terms.append(lspn_extinction_scattering_term())
+	#lspn_terms.append(lspn_sotransport_term())
+	#lspn_terms.append(lspn_extinction_directional_derivative_term())
+	#lspn_terms.append(lspn_squared_extinction_term()) # <-----
+	#lspn_terms.append(lspn_directional_derivative_scattering_term()) # <-----
+	#lspn_terms.append(lspn_extinction_scattering_term())
 	lspn_terms.append(lspn_directional_derivative_source_term())
-	lspn_terms.append(lspn_extinction_source_term())
+	#lspn_terms.append(lspn_extinction_source_term())
+
+
+
+	'''
+	# debug
+	x = cas.tensor("\\vec{x}", rank=1, dimension=3)
+	x.setComponent(0, cas.var("x"))
+	x.setComponent(1, cas.var("y"))
+	x.setComponent(2, cas.var("z"))
+	x.collapsed = True
+
+	tt = cas.SHCoefficient( "q", cas.sub( cas.var("l'"), cas.num(1)), cas.sub(cas.var("m'"), cas.num(1)), x )
+	tt = cas.deriv( tt, x.getComponent(0), is_partial = True )
+
+	lspn_terms = [tt]
+	'''
+
+
 
 	for term in lspn_terms:
 		if term.__class__ == cas.Addition:
 			numOperands = term.numOperands()
+			#print(numOperands)
 			for i in range(numOperands):
+			#for i in range(0,1):
 				pnb.add_terms(term.getOperand(i))
 		else:
 			pnb.add_terms(term)
@@ -928,15 +949,15 @@ if __name__ == "__main__":
 	#pnb.add_terms(lspn_extinction_source_term())
 
 
-	#problem["debug_voxel_x"] = 10
-	#problem["debug_voxel_y"] = 10
+	#problem["debug_voxel_x"] = 30
+	#problem["debug_voxel_y"] = 30
 
 	A = None
 	b = None
 	(A,b) = pnb.build_global( problem )
 
-	write_pn_system( pnb, problem, A, b )
-	#write_pn_system( pnb, problem, pnb.A_complex, pnb.b_complex )
+	write_pn_system( pnb, problem, A, b, "_term5" )
+	#write_pn_system( pnb, problem, pnb.A_complex, pnb.b_complex, "_term5" )
 	#'''
 
 

@@ -16,6 +16,7 @@ PNSystem::PNSystem(const Domain& domain)
 			if( (l+m) % 2 == 0 )
 			{
 				m_lm_to_index[std::make_pair(l,m)] = m_numCoeffs;
+				m_index_to_lm[m_numCoeffs] = std::make_pair(l,m);
 				++m_numCoeffs;
 			}
 
@@ -244,6 +245,19 @@ void PNSystem::getVoxelAndCoefficient( int global_index, V2i& voxel, int& coeff 
 int PNSystem::getIndex(int l, int m) const
 {
 	return m_lm_to_index.at(std::make_pair(l, m));
+}
+
+void PNSystem::getLM(int sh_index, int &l, int &m) const
+{
+	auto it = m_index_to_lm.find(sh_index);
+	if(it != m_index_to_lm.end())
+	{
+		l = it->second.first;
+		m = it->second.second;
+		return;
+	}
+	l=-1;
+	m=-1;
 }
 
 int PNSystem::getNumCoefficients()const

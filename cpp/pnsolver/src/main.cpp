@@ -39,6 +39,13 @@ PYBIND11_MODULE(pnsolver, m)
 		m.getVoxelAndCoefficient(global_index, voxel, coeff);
 		return py::make_tuple(voxel, coeff);
 	})
+	.def("getLM",
+	[](PNSystem &sys, int sh_index)
+	{
+		int l,m;
+		sys.getLM(sh_index, l, m);
+		return py::make_tuple(l, m);
+	})
 	.def("getNumCoefficients", &PNSystem::getNumCoefficients )
 	.def("getNumVoxels", &PNSystem::getNumVoxels )
 	.def("build", &PNSystem::build )

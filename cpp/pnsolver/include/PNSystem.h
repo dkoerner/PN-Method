@@ -132,6 +132,7 @@ struct PNSystem
 	int getGlobalIndex( V2i voxel, int coeff )const; // converts voxel and coefficient into a global index
 	void getVoxelAndCoefficient( int global_index, V2i& voxel, int& coeff )const; // converts global index into voxel and coefficient
 	int getIndex( int l, int m )const; // returns a linear index from given SH band l, m
+	void getLM( int sh_index, int& l, int& m )const; // returns the sh band l,m from linear index
 	int getNumCoefficients()const; // returns the number of SH coefficients per voxel
 	int getNumVoxels()const; // returns the number of voxels
 
@@ -185,6 +186,7 @@ private:
 	std::vector<ComplexTriplet> m_triplets_A; // triplets for construction of sparse matrix A (used by MatrixAccessHelper)
 	std::vector<ComplexTriplet> m_triplets_b; // triplets for construction of sparse vector b (used by MatrixAccessHelper)
 	std::map<std::pair<int, int>, int> m_lm_to_index; // used to convert from l,m to linear index in 2d
+	std::map<int, std::pair<int, int>> m_index_to_lm; // used to convert from linear index to l,m in 2d
 
 	V2i debugVoxel;
 

@@ -2,6 +2,7 @@
 #include <field/Function.h>
 
 #include<Eigen/IterativeLinearSolvers>
+//#include<Eigen/SparseCholesky>
 
 
 PNSystem::PNSystem(const Domain& domain)
@@ -343,7 +344,8 @@ PNSystem::RealVector PNSystem::solve()
 {
 	std::cout << "PNSystem::solve solving for x...\n";
 
-	Eigen::ConjugateGradient<Eigen::SparseMatrix<double> > solver;
+	//Eigen::ConjugateGradient<Eigen::SparseMatrix<double> > solver;
+	Eigen::BiCGSTAB<Eigen::SparseMatrix<double> > solver;
 	solver.compute(get_A_real());
 	if(solver.info()!=Eigen::Success)
 	{

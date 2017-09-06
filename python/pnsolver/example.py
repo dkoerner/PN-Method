@@ -54,7 +54,8 @@ if __name__ == "__main__":
 	# write the result to disk for visualization ---------------
 	path = "C:/projects/epfl/epfl17/python/pnsolver/results/terms_new"
 	postfix = ""
-	#postfix = "_term5"
+	#postfix = "_nonrasterized"
+	#postfix = "_not3"
 	filename = "{}/{}{}.mat".format(path, problem["id"], postfix)
 	util.write_pn_system(filename, sys, problem, x)
 

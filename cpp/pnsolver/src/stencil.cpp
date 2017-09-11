@@ -3,7 +3,7 @@
 #include <PNSystem.h>
 
 // truncation order is directly linked to the generated stencil
-int PNSystem::g_order = 1;
+int PNSystem::g_order = 3;
 
 void set_system_row(PNSystem::VoxelSystem& sys,
 					PNSystem::Fields& fields)
@@ -13,6 +13,26 @@ void set_system_row(PNSystem::VoxelSystem& sys,
 	V2d h_inv( 1.0/(1*sys.getVoxelSize()[0]), 1.0/(1*sys.getVoxelSize()[1]) );
 
 	// term 0 ----------------
+	sys.A( 5, vi + V2i(-1,0), 0 ) += -(0.182574185835*h_inv[0]*h_inv[0]);
+	sys.A( 5, vi + V2i(0,0), 0 ) += (0.182574185835*h_inv[0]*h_inv[0]);
+	sys.A( 5, vi + V2i(0,0), 0 ) += (0.182574185835*h_inv[0]*h_inv[0]);
+	sys.A( 5, vi + V2i(1,0), 0 ) += -(0.182574185835*h_inv[0]*h_inv[0]);
+	sys.A( 8, vi + V2i(-1,1), 1 ) += -(0.0267261241912*h_inv[0]*h_inv[0]);
+	sys.A( 8, vi + V2i(-1,0), 1 ) += -(0.0267261241912*h_inv[0]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,1), 1 ) += (0.0267261241912*h_inv[0]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,0), 1 ) += (0.0267261241912*h_inv[0]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,1), 1 ) += (0.0267261241912*h_inv[0]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,0), 1 ) += (0.0267261241912*h_inv[0]*h_inv[0]);
+	sys.A( 8, vi + V2i(1,1), 1 ) += -(0.0267261241912*h_inv[0]*h_inv[0]);
+	sys.A( 8, vi + V2i(1,0), 1 ) += -(0.0267261241912*h_inv[0]*h_inv[0]);
+	sys.A( 9, vi + V2i(0,0), 2 ) += -(0.103509833901*h_inv[0]*h_inv[0]);
+	sys.A( 9, vi + V2i(-1,0), 2 ) += -(0.103509833901*h_inv[0]*h_inv[0]);
+	sys.A( 9, vi + V2i(1,0), 2 ) += (0.103509833901*h_inv[0]*h_inv[0]);
+	sys.A( 9, vi + V2i(0,0), 2 ) += (0.103509833901*h_inv[0]*h_inv[0]);
+	sys.A( 9, vi + V2i(1,0), 2 ) += (0.103509833901*h_inv[0]*h_inv[0]);
+	sys.A( 9, vi + V2i(0,0), 2 ) += (0.103509833901*h_inv[0]*h_inv[0]);
+	sys.A( 9, vi + V2i(2,0), 2 ) += -(0.103509833901*h_inv[0]*h_inv[0]);
+	sys.A( 9, vi + V2i(1,0), 2 ) += -(0.103509833901*h_inv[0]*h_inv[0]);
 
 	// term 1 ----------------
 	sys.A( 2, vi + V2i(-2,0), 1 ) += (0.0416666666667*h_inv[0]*h_inv[0]);
@@ -31,24 +51,228 @@ void set_system_row(PNSystem::VoxelSystem& sys,
 	sys.A( 2, vi + V2i(0,1), 1 ) += (0.0416666666667*h_inv[0]*h_inv[0]);
 	sys.A( 2, vi + V2i(1,0), 1 ) += (0.0416666666667*h_inv[0]*h_inv[0]);
 	sys.A( 2, vi + V2i(1,1), 1 ) += (0.0416666666667*h_inv[0]*h_inv[0]);
+	sys.A( 4, vi + V2i(-1,0), 3 ) += (0.0816496580928*h_inv[0]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,0), 3 ) += -(0.0816496580928*h_inv[0]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,0), 3 ) += -(0.0816496580928*h_inv[0]*h_inv[0]);
+	sys.A( 4, vi + V2i(1,0), 3 ) += (0.0816496580928*h_inv[0]*h_inv[0]);
+	sys.A( 5, vi + V2i(-1,0), 4 ) += (0.0816496580928*h_inv[0]*h_inv[0]);
+	sys.A( 5, vi + V2i(0,0), 4 ) += -(0.0816496580928*h_inv[0]*h_inv[0]);
+	sys.A( 5, vi + V2i(0,0), 4 ) += -(0.0816496580928*h_inv[0]*h_inv[0]);
+	sys.A( 5, vi + V2i(1,0), 4 ) += (0.0816496580928*h_inv[0]*h_inv[0]);
+	sys.A( 7, vi + V2i(-1,0), 6 ) += (0.0553283335172*h_inv[0]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,0), 6 ) += -(0.0553283335172*h_inv[0]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,0), 6 ) += -(0.0553283335172*h_inv[0]*h_inv[0]);
+	sys.A( 7, vi + V2i(1,0), 6 ) += (0.0553283335172*h_inv[0]*h_inv[0]);
+	sys.A( 8, vi + V2i(-1,0), 7 ) += (0.0857142857143*h_inv[0]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,0), 7 ) += -(0.0857142857143*h_inv[0]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,0), 7 ) += -(0.0857142857143*h_inv[0]*h_inv[0]);
+	sys.A( 8, vi + V2i(1,0), 7 ) += (0.0857142857143*h_inv[0]*h_inv[0]);
+	sys.A( 9, vi + V2i(-1,0), 8 ) += (0.0553283335172*h_inv[0]*h_inv[0]);
+	sys.A( 9, vi + V2i(0,0), 8 ) += -(0.0553283335172*h_inv[0]*h_inv[0]);
+	sys.A( 9, vi + V2i(0,0), 8 ) += -(0.0553283335172*h_inv[0]*h_inv[0]);
+	sys.A( 9, vi + V2i(1,0), 8 ) += (0.0553283335172*h_inv[0]*h_inv[0]);
 
 	// term 2 ----------------
+	sys.A( 4, vi + V2i(-1,0), 0 ) += (0.07453559925*h_inv[0]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,0), 0 ) += -(0.07453559925*h_inv[0]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,0), 0 ) += -(0.07453559925*h_inv[0]*h_inv[0]);
+	sys.A( 4, vi + V2i(1,0), 0 ) += (0.07453559925*h_inv[0]*h_inv[0]);
+	sys.A( 7, vi + V2i(-1,1), 1 ) += (0.0267261241912*h_inv[0]*h_inv[0]);
+	sys.A( 7, vi + V2i(-1,0), 1 ) += (0.0267261241912*h_inv[0]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,1), 1 ) += -(0.0267261241912*h_inv[0]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,0), 1 ) += -(0.0267261241912*h_inv[0]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,1), 1 ) += -(0.0267261241912*h_inv[0]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,0), 1 ) += -(0.0267261241912*h_inv[0]*h_inv[0]);
+	sys.A( 7, vi + V2i(1,1), 1 ) += (0.0267261241912*h_inv[0]*h_inv[0]);
+	sys.A( 7, vi + V2i(1,0), 1 ) += (0.0267261241912*h_inv[0]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,0), 2 ) += (0.0267261241912*h_inv[0]*h_inv[0]);
+	sys.A( 8, vi + V2i(-1,0), 2 ) += (0.0267261241912*h_inv[0]*h_inv[0]);
+	sys.A( 8, vi + V2i(1,0), 2 ) += -(0.0267261241912*h_inv[0]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,0), 2 ) += -(0.0267261241912*h_inv[0]*h_inv[0]);
+	sys.A( 8, vi + V2i(1,0), 2 ) += -(0.0267261241912*h_inv[0]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,0), 2 ) += -(0.0267261241912*h_inv[0]*h_inv[0]);
+	sys.A( 8, vi + V2i(2,0), 2 ) += (0.0267261241912*h_inv[0]*h_inv[0]);
+	sys.A( 8, vi + V2i(1,0), 2 ) += (0.0267261241912*h_inv[0]*h_inv[0]);
 
 	// term 3 ----------------
 	sys.A( 2, vi + V2i(-1,0), 2 ) += -(0.166666666667*h_inv[0]*h_inv[0]);
 	sys.A( 2, vi + V2i(0,0), 2 ) += (0.166666666667*h_inv[0]*h_inv[0]);
 	sys.A( 2, vi + V2i(0,0), 2 ) += (0.166666666667*h_inv[0]*h_inv[0]);
 	sys.A( 2, vi + V2i(1,0), 2 ) += -(0.166666666667*h_inv[0]*h_inv[0]);
+	sys.A( 4, vi + V2i(-1,0), 4 ) += -(0.0333333333333*h_inv[0]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,0), 4 ) += (0.0333333333333*h_inv[0]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,0), 4 ) += (0.0333333333333*h_inv[0]*h_inv[0]);
+	sys.A( 4, vi + V2i(1,0), 4 ) += -(0.0333333333333*h_inv[0]*h_inv[0]);
+	sys.A( 5, vi + V2i(-1,0), 5 ) += -(0.2*h_inv[0]*h_inv[0]);
+	sys.A( 5, vi + V2i(0,0), 5 ) += (0.2*h_inv[0]*h_inv[0]);
+	sys.A( 5, vi + V2i(0,0), 5 ) += (0.2*h_inv[0]*h_inv[0]);
+	sys.A( 5, vi + V2i(1,0), 5 ) += -(0.2*h_inv[0]*h_inv[0]);
+	sys.A( 7, vi + V2i(-1,0), 7 ) += -(0.0142857142857*h_inv[0]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,0), 7 ) += (0.0142857142857*h_inv[0]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,0), 7 ) += (0.0142857142857*h_inv[0]*h_inv[0]);
+	sys.A( 7, vi + V2i(1,0), 7 ) += -(0.0142857142857*h_inv[0]*h_inv[0]);
+	sys.A( 8, vi + V2i(-1,0), 8 ) += -(0.0857142857143*h_inv[0]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,0), 8 ) += (0.0857142857143*h_inv[0]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,0), 8 ) += (0.0857142857143*h_inv[0]*h_inv[0]);
+	sys.A( 8, vi + V2i(1,0), 8 ) += -(0.0857142857143*h_inv[0]*h_inv[0]);
+	sys.A( 9, vi + V2i(-1,0), 9 ) += -(0.214285714286*h_inv[0]*h_inv[0]);
+	sys.A( 9, vi + V2i(0,0), 9 ) += (0.214285714286*h_inv[0]*h_inv[0]);
+	sys.A( 9, vi + V2i(0,0), 9 ) += (0.214285714286*h_inv[0]*h_inv[0]);
+	sys.A( 9, vi + V2i(1,0), 9 ) += -(0.214285714286*h_inv[0]*h_inv[0]);
 
 	// term 4 ----------------
+	sys.A( 5, vi + V2i(-1,-1), 0 ) += (std::complex<double>(0.0, 0.04564354645876384)*h_inv[1]*h_inv[0]);
+	sys.A( 5, vi + V2i(-1,0), 0 ) += (std::complex<double>(0.0, 0.04564354645876384)*h_inv[1]*h_inv[0]);
+	sys.A( 5, vi + V2i(0,-1), 0 ) += (std::complex<double>(0.0, 0.04564354645876384)*h_inv[1]*h_inv[0]);
+	sys.A( 5, vi + V2i(0,0), 0 ) += (std::complex<double>(0.0, 0.04564354645876384)*h_inv[1]*h_inv[0]);
+	sys.A( 5, vi + V2i(-1,0), 0 ) += -(std::complex<double>(0.0, 0.04564354645876384)*h_inv[1]*h_inv[0]);
+	sys.A( 5, vi + V2i(-1,1), 0 ) += -(std::complex<double>(0.0, 0.04564354645876384)*h_inv[1]*h_inv[0]);
+	sys.A( 5, vi + V2i(0,0), 0 ) += -(std::complex<double>(0.0, 0.04564354645876384)*h_inv[1]*h_inv[0]);
+	sys.A( 5, vi + V2i(0,1), 0 ) += -(std::complex<double>(0.0, 0.04564354645876384)*h_inv[1]*h_inv[0]);
+	sys.A( 5, vi + V2i(0,-1), 0 ) += -(std::complex<double>(0.0, 0.04564354645876384)*h_inv[1]*h_inv[0]);
+	sys.A( 5, vi + V2i(0,0), 0 ) += -(std::complex<double>(0.0, 0.04564354645876384)*h_inv[1]*h_inv[0]);
+	sys.A( 5, vi + V2i(1,-1), 0 ) += -(std::complex<double>(0.0, 0.04564354645876384)*h_inv[1]*h_inv[0]);
+	sys.A( 5, vi + V2i(1,0), 0 ) += -(std::complex<double>(0.0, 0.04564354645876384)*h_inv[1]*h_inv[0]);
+	sys.A( 5, vi + V2i(0,0), 0 ) += (std::complex<double>(0.0, 0.04564354645876384)*h_inv[1]*h_inv[0]);
+	sys.A( 5, vi + V2i(0,1), 0 ) += (std::complex<double>(0.0, 0.04564354645876384)*h_inv[1]*h_inv[0]);
+	sys.A( 5, vi + V2i(1,0), 0 ) += (std::complex<double>(0.0, 0.04564354645876384)*h_inv[1]*h_inv[0]);
+	sys.A( 5, vi + V2i(1,1), 0 ) += (std::complex<double>(0.0, 0.04564354645876384)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,0), 1 ) += (std::complex<double>(0.0, 0.02672612419124244)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(-1,0), 1 ) += (std::complex<double>(0.0, 0.02672612419124244)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,1), 1 ) += -(std::complex<double>(0.0, 0.02672612419124244)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(-1,1), 1 ) += -(std::complex<double>(0.0, 0.02672612419124244)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(1,0), 1 ) += -(std::complex<double>(0.0, 0.02672612419124244)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,0), 1 ) += -(std::complex<double>(0.0, 0.02672612419124244)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(1,1), 1 ) += (std::complex<double>(0.0, 0.02672612419124244)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,1), 1 ) += (std::complex<double>(0.0, 0.02672612419124244)*h_inv[1]*h_inv[0]);
+	sys.A( 9, vi + V2i(0,0), 2 ) += (std::complex<double>(0.0, 0.10350983390135313)*h_inv[1]*h_inv[0]);
+	sys.A( 9, vi + V2i(0,-1), 2 ) += (std::complex<double>(0.0, 0.10350983390135313)*h_inv[1]*h_inv[0]);
+	sys.A( 9, vi + V2i(0,1), 2 ) += -(std::complex<double>(0.0, 0.10350983390135313)*h_inv[1]*h_inv[0]);
+	sys.A( 9, vi + V2i(0,0), 2 ) += -(std::complex<double>(0.0, 0.10350983390135313)*h_inv[1]*h_inv[0]);
+	sys.A( 9, vi + V2i(1,0), 2 ) += -(std::complex<double>(0.0, 0.10350983390135313)*h_inv[1]*h_inv[0]);
+	sys.A( 9, vi + V2i(1,-1), 2 ) += -(std::complex<double>(0.0, 0.10350983390135313)*h_inv[1]*h_inv[0]);
+	sys.A( 9, vi + V2i(1,1), 2 ) += (std::complex<double>(0.0, 0.10350983390135313)*h_inv[1]*h_inv[0]);
+	sys.A( 9, vi + V2i(1,0), 2 ) += (std::complex<double>(0.0, 0.10350983390135313)*h_inv[1]*h_inv[0]);
 
 	// term 5 ----------------
 	sys.A( 2, vi + V2i(-1,0), 1 ) += -(std::complex<double>(0.0, 0.16666666666666666)*h_inv[1]*h_inv[0]);
 	sys.A( 2, vi + V2i(-1,1), 1 ) += (std::complex<double>(0.0, 0.16666666666666666)*h_inv[1]*h_inv[0]);
 	sys.A( 2, vi + V2i(0,0), 1 ) += (std::complex<double>(0.0, 0.16666666666666666)*h_inv[1]*h_inv[0]);
 	sys.A( 2, vi + V2i(0,1), 1 ) += -(std::complex<double>(0.0, 0.16666666666666666)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(-1,-1), 3 ) += -(std::complex<double>(0.0, 0.02041241452319315)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(-1,0), 3 ) += -(std::complex<double>(0.0, 0.02041241452319315)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,-1), 3 ) += -(std::complex<double>(0.0, 0.02041241452319315)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,0), 3 ) += -(std::complex<double>(0.0, 0.02041241452319315)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(-1,0), 3 ) += (std::complex<double>(0.0, 0.02041241452319315)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(-1,1), 3 ) += (std::complex<double>(0.0, 0.02041241452319315)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,0), 3 ) += (std::complex<double>(0.0, 0.02041241452319315)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,1), 3 ) += (std::complex<double>(0.0, 0.02041241452319315)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,-1), 3 ) += (std::complex<double>(0.0, 0.02041241452319315)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,0), 3 ) += (std::complex<double>(0.0, 0.02041241452319315)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(1,-1), 3 ) += (std::complex<double>(0.0, 0.02041241452319315)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(1,0), 3 ) += (std::complex<double>(0.0, 0.02041241452319315)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,0), 3 ) += -(std::complex<double>(0.0, 0.02041241452319315)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,1), 3 ) += -(std::complex<double>(0.0, 0.02041241452319315)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(1,0), 3 ) += -(std::complex<double>(0.0, 0.02041241452319315)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(1,1), 3 ) += -(std::complex<double>(0.0, 0.02041241452319315)*h_inv[1]*h_inv[0]);
+	sys.A( 5, vi + V2i(-1,-1), 4 ) += -(std::complex<double>(0.0, 0.02041241452319315)*h_inv[1]*h_inv[0]);
+	sys.A( 5, vi + V2i(-1,0), 4 ) += -(std::complex<double>(0.0, 0.02041241452319315)*h_inv[1]*h_inv[0]);
+	sys.A( 5, vi + V2i(0,-1), 4 ) += -(std::complex<double>(0.0, 0.02041241452319315)*h_inv[1]*h_inv[0]);
+	sys.A( 5, vi + V2i(0,0), 4 ) += -(std::complex<double>(0.0, 0.02041241452319315)*h_inv[1]*h_inv[0]);
+	sys.A( 5, vi + V2i(-1,0), 4 ) += (std::complex<double>(0.0, 0.02041241452319315)*h_inv[1]*h_inv[0]);
+	sys.A( 5, vi + V2i(-1,1), 4 ) += (std::complex<double>(0.0, 0.02041241452319315)*h_inv[1]*h_inv[0]);
+	sys.A( 5, vi + V2i(0,0), 4 ) += (std::complex<double>(0.0, 0.02041241452319315)*h_inv[1]*h_inv[0]);
+	sys.A( 5, vi + V2i(0,1), 4 ) += (std::complex<double>(0.0, 0.02041241452319315)*h_inv[1]*h_inv[0]);
+	sys.A( 5, vi + V2i(0,-1), 4 ) += (std::complex<double>(0.0, 0.02041241452319315)*h_inv[1]*h_inv[0]);
+	sys.A( 5, vi + V2i(0,0), 4 ) += (std::complex<double>(0.0, 0.02041241452319315)*h_inv[1]*h_inv[0]);
+	sys.A( 5, vi + V2i(1,-1), 4 ) += (std::complex<double>(0.0, 0.02041241452319315)*h_inv[1]*h_inv[0]);
+	sys.A( 5, vi + V2i(1,0), 4 ) += (std::complex<double>(0.0, 0.02041241452319315)*h_inv[1]*h_inv[0]);
+	sys.A( 5, vi + V2i(0,0), 4 ) += -(std::complex<double>(0.0, 0.02041241452319315)*h_inv[1]*h_inv[0]);
+	sys.A( 5, vi + V2i(0,1), 4 ) += -(std::complex<double>(0.0, 0.02041241452319315)*h_inv[1]*h_inv[0]);
+	sys.A( 5, vi + V2i(1,0), 4 ) += -(std::complex<double>(0.0, 0.02041241452319315)*h_inv[1]*h_inv[0]);
+	sys.A( 5, vi + V2i(1,1), 4 ) += -(std::complex<double>(0.0, 0.02041241452319315)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(-1,-1), 6 ) += -(std::complex<double>(0.0, 0.013832083379312202)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(-1,0), 6 ) += -(std::complex<double>(0.0, 0.013832083379312202)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,-1), 6 ) += -(std::complex<double>(0.0, 0.013832083379312202)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,0), 6 ) += -(std::complex<double>(0.0, 0.013832083379312202)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(-1,0), 6 ) += (std::complex<double>(0.0, 0.013832083379312202)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(-1,1), 6 ) += (std::complex<double>(0.0, 0.013832083379312202)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,0), 6 ) += (std::complex<double>(0.0, 0.013832083379312202)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,1), 6 ) += (std::complex<double>(0.0, 0.013832083379312202)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,-1), 6 ) += (std::complex<double>(0.0, 0.013832083379312202)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,0), 6 ) += (std::complex<double>(0.0, 0.013832083379312202)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(1,-1), 6 ) += (std::complex<double>(0.0, 0.013832083379312202)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(1,0), 6 ) += (std::complex<double>(0.0, 0.013832083379312202)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,0), 6 ) += -(std::complex<double>(0.0, 0.013832083379312202)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,1), 6 ) += -(std::complex<double>(0.0, 0.013832083379312202)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(1,0), 6 ) += -(std::complex<double>(0.0, 0.013832083379312202)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(1,1), 6 ) += -(std::complex<double>(0.0, 0.013832083379312202)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(-1,-1), 7 ) += -(std::complex<double>(0.0, 0.021428571428571432)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(-1,0), 7 ) += -(std::complex<double>(0.0, 0.021428571428571432)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,-1), 7 ) += -(std::complex<double>(0.0, 0.021428571428571432)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,0), 7 ) += -(std::complex<double>(0.0, 0.021428571428571432)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(-1,0), 7 ) += (std::complex<double>(0.0, 0.021428571428571432)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(-1,1), 7 ) += (std::complex<double>(0.0, 0.021428571428571432)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,0), 7 ) += (std::complex<double>(0.0, 0.021428571428571432)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,1), 7 ) += (std::complex<double>(0.0, 0.021428571428571432)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,-1), 7 ) += (std::complex<double>(0.0, 0.021428571428571432)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,0), 7 ) += (std::complex<double>(0.0, 0.021428571428571432)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(1,-1), 7 ) += (std::complex<double>(0.0, 0.021428571428571432)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(1,0), 7 ) += (std::complex<double>(0.0, 0.021428571428571432)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,0), 7 ) += -(std::complex<double>(0.0, 0.021428571428571432)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,1), 7 ) += -(std::complex<double>(0.0, 0.021428571428571432)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(1,0), 7 ) += -(std::complex<double>(0.0, 0.021428571428571432)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(1,1), 7 ) += -(std::complex<double>(0.0, 0.021428571428571432)*h_inv[1]*h_inv[0]);
+	sys.A( 9, vi + V2i(-1,-1), 8 ) += -(std::complex<double>(0.0, 0.013832083379312202)*h_inv[1]*h_inv[0]);
+	sys.A( 9, vi + V2i(-1,0), 8 ) += -(std::complex<double>(0.0, 0.013832083379312202)*h_inv[1]*h_inv[0]);
+	sys.A( 9, vi + V2i(0,-1), 8 ) += -(std::complex<double>(0.0, 0.013832083379312202)*h_inv[1]*h_inv[0]);
+	sys.A( 9, vi + V2i(0,0), 8 ) += -(std::complex<double>(0.0, 0.013832083379312202)*h_inv[1]*h_inv[0]);
+	sys.A( 9, vi + V2i(-1,0), 8 ) += (std::complex<double>(0.0, 0.013832083379312202)*h_inv[1]*h_inv[0]);
+	sys.A( 9, vi + V2i(-1,1), 8 ) += (std::complex<double>(0.0, 0.013832083379312202)*h_inv[1]*h_inv[0]);
+	sys.A( 9, vi + V2i(0,0), 8 ) += (std::complex<double>(0.0, 0.013832083379312202)*h_inv[1]*h_inv[0]);
+	sys.A( 9, vi + V2i(0,1), 8 ) += (std::complex<double>(0.0, 0.013832083379312202)*h_inv[1]*h_inv[0]);
+	sys.A( 9, vi + V2i(0,-1), 8 ) += (std::complex<double>(0.0, 0.013832083379312202)*h_inv[1]*h_inv[0]);
+	sys.A( 9, vi + V2i(0,0), 8 ) += (std::complex<double>(0.0, 0.013832083379312202)*h_inv[1]*h_inv[0]);
+	sys.A( 9, vi + V2i(1,-1), 8 ) += (std::complex<double>(0.0, 0.013832083379312202)*h_inv[1]*h_inv[0]);
+	sys.A( 9, vi + V2i(1,0), 8 ) += (std::complex<double>(0.0, 0.013832083379312202)*h_inv[1]*h_inv[0]);
+	sys.A( 9, vi + V2i(0,0), 8 ) += -(std::complex<double>(0.0, 0.013832083379312202)*h_inv[1]*h_inv[0]);
+	sys.A( 9, vi + V2i(0,1), 8 ) += -(std::complex<double>(0.0, 0.013832083379312202)*h_inv[1]*h_inv[0]);
+	sys.A( 9, vi + V2i(1,0), 8 ) += -(std::complex<double>(0.0, 0.013832083379312202)*h_inv[1]*h_inv[0]);
+	sys.A( 9, vi + V2i(1,1), 8 ) += -(std::complex<double>(0.0, 0.013832083379312202)*h_inv[1]*h_inv[0]);
 
 	// term 6 ----------------
+	sys.A( 4, vi + V2i(-1,-1), 0 ) += (std::complex<double>(0.0, 0.018633899812498245)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(-1,0), 0 ) += (std::complex<double>(0.0, 0.018633899812498245)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,-1), 0 ) += (std::complex<double>(0.0, 0.018633899812498245)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,0), 0 ) += (std::complex<double>(0.0, 0.018633899812498245)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(-1,0), 0 ) += -(std::complex<double>(0.0, 0.018633899812498245)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(-1,1), 0 ) += -(std::complex<double>(0.0, 0.018633899812498245)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,0), 0 ) += -(std::complex<double>(0.0, 0.018633899812498245)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,1), 0 ) += -(std::complex<double>(0.0, 0.018633899812498245)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,-1), 0 ) += -(std::complex<double>(0.0, 0.018633899812498245)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,0), 0 ) += -(std::complex<double>(0.0, 0.018633899812498245)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(1,-1), 0 ) += -(std::complex<double>(0.0, 0.018633899812498245)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(1,0), 0 ) += -(std::complex<double>(0.0, 0.018633899812498245)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,0), 0 ) += (std::complex<double>(0.0, 0.018633899812498245)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,1), 0 ) += (std::complex<double>(0.0, 0.018633899812498245)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(1,0), 0 ) += (std::complex<double>(0.0, 0.018633899812498245)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(1,1), 0 ) += (std::complex<double>(0.0, 0.018633899812498245)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,0), 1 ) += (std::complex<double>(0.0, 0.02672612419124244)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(-1,0), 1 ) += (std::complex<double>(0.0, 0.02672612419124244)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,1), 1 ) += -(std::complex<double>(0.0, 0.02672612419124244)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(-1,1), 1 ) += -(std::complex<double>(0.0, 0.02672612419124244)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(1,0), 1 ) += -(std::complex<double>(0.0, 0.02672612419124244)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,0), 1 ) += -(std::complex<double>(0.0, 0.02672612419124244)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(1,1), 1 ) += (std::complex<double>(0.0, 0.02672612419124244)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,1), 1 ) += (std::complex<double>(0.0, 0.02672612419124244)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,0), 2 ) += (std::complex<double>(0.0, 0.02672612419124244)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,-1), 2 ) += (std::complex<double>(0.0, 0.02672612419124244)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,1), 2 ) += -(std::complex<double>(0.0, 0.02672612419124244)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,0), 2 ) += -(std::complex<double>(0.0, 0.02672612419124244)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(1,0), 2 ) += -(std::complex<double>(0.0, 0.02672612419124244)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(1,-1), 2 ) += -(std::complex<double>(0.0, 0.02672612419124244)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(1,1), 2 ) += (std::complex<double>(0.0, 0.02672612419124244)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(1,0), 2 ) += (std::complex<double>(0.0, 0.02672612419124244)*h_inv[1]*h_inv[0]);
 
 	// term 7 ----------------
 	sys.A( 2, vi + V2i(-1,-1), 2 ) += -(std::complex<double>(0.0, 0.041666666666666664)*h_inv[1]*h_inv[0]);
@@ -67,6 +291,86 @@ void set_system_row(PNSystem::VoxelSystem& sys,
 	sys.A( 2, vi + V2i(0,1), 2 ) += -(std::complex<double>(0.0, 0.041666666666666664)*h_inv[1]*h_inv[0]);
 	sys.A( 2, vi + V2i(1,0), 2 ) += -(std::complex<double>(0.0, 0.041666666666666664)*h_inv[1]*h_inv[0]);
 	sys.A( 2, vi + V2i(1,1), 2 ) += -(std::complex<double>(0.0, 0.041666666666666664)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(-1,-1), 4 ) += -(std::complex<double>(0.0, 0.008333333333333331)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(-1,0), 4 ) += -(std::complex<double>(0.0, 0.008333333333333331)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,-1), 4 ) += -(std::complex<double>(0.0, 0.008333333333333331)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,0), 4 ) += -(std::complex<double>(0.0, 0.008333333333333331)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(-1,0), 4 ) += (std::complex<double>(0.0, 0.008333333333333331)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(-1,1), 4 ) += (std::complex<double>(0.0, 0.008333333333333331)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,0), 4 ) += (std::complex<double>(0.0, 0.008333333333333331)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,1), 4 ) += (std::complex<double>(0.0, 0.008333333333333331)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,-1), 4 ) += (std::complex<double>(0.0, 0.008333333333333331)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,0), 4 ) += (std::complex<double>(0.0, 0.008333333333333331)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(1,-1), 4 ) += (std::complex<double>(0.0, 0.008333333333333331)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(1,0), 4 ) += (std::complex<double>(0.0, 0.008333333333333331)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,0), 4 ) += -(std::complex<double>(0.0, 0.008333333333333331)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,1), 4 ) += -(std::complex<double>(0.0, 0.008333333333333331)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(1,0), 4 ) += -(std::complex<double>(0.0, 0.008333333333333331)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(1,1), 4 ) += -(std::complex<double>(0.0, 0.008333333333333331)*h_inv[1]*h_inv[0]);
+	sys.A( 5, vi + V2i(-1,-1), 5 ) += -(std::complex<double>(0.0, 0.049999999999999996)*h_inv[1]*h_inv[0]);
+	sys.A( 5, vi + V2i(-1,0), 5 ) += -(std::complex<double>(0.0, 0.049999999999999996)*h_inv[1]*h_inv[0]);
+	sys.A( 5, vi + V2i(0,-1), 5 ) += -(std::complex<double>(0.0, 0.049999999999999996)*h_inv[1]*h_inv[0]);
+	sys.A( 5, vi + V2i(0,0), 5 ) += -(std::complex<double>(0.0, 0.049999999999999996)*h_inv[1]*h_inv[0]);
+	sys.A( 5, vi + V2i(-1,0), 5 ) += (std::complex<double>(0.0, 0.049999999999999996)*h_inv[1]*h_inv[0]);
+	sys.A( 5, vi + V2i(-1,1), 5 ) += (std::complex<double>(0.0, 0.049999999999999996)*h_inv[1]*h_inv[0]);
+	sys.A( 5, vi + V2i(0,0), 5 ) += (std::complex<double>(0.0, 0.049999999999999996)*h_inv[1]*h_inv[0]);
+	sys.A( 5, vi + V2i(0,1), 5 ) += (std::complex<double>(0.0, 0.049999999999999996)*h_inv[1]*h_inv[0]);
+	sys.A( 5, vi + V2i(0,-1), 5 ) += (std::complex<double>(0.0, 0.049999999999999996)*h_inv[1]*h_inv[0]);
+	sys.A( 5, vi + V2i(0,0), 5 ) += (std::complex<double>(0.0, 0.049999999999999996)*h_inv[1]*h_inv[0]);
+	sys.A( 5, vi + V2i(1,-1), 5 ) += (std::complex<double>(0.0, 0.049999999999999996)*h_inv[1]*h_inv[0]);
+	sys.A( 5, vi + V2i(1,0), 5 ) += (std::complex<double>(0.0, 0.049999999999999996)*h_inv[1]*h_inv[0]);
+	sys.A( 5, vi + V2i(0,0), 5 ) += -(std::complex<double>(0.0, 0.049999999999999996)*h_inv[1]*h_inv[0]);
+	sys.A( 5, vi + V2i(0,1), 5 ) += -(std::complex<double>(0.0, 0.049999999999999996)*h_inv[1]*h_inv[0]);
+	sys.A( 5, vi + V2i(1,0), 5 ) += -(std::complex<double>(0.0, 0.049999999999999996)*h_inv[1]*h_inv[0]);
+	sys.A( 5, vi + V2i(1,1), 5 ) += -(std::complex<double>(0.0, 0.049999999999999996)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(-1,-1), 7 ) += -(std::complex<double>(0.0, 0.0035714285714285713)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(-1,0), 7 ) += -(std::complex<double>(0.0, 0.0035714285714285713)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,-1), 7 ) += -(std::complex<double>(0.0, 0.0035714285714285713)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,0), 7 ) += -(std::complex<double>(0.0, 0.0035714285714285713)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(-1,0), 7 ) += (std::complex<double>(0.0, 0.0035714285714285713)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(-1,1), 7 ) += (std::complex<double>(0.0, 0.0035714285714285713)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,0), 7 ) += (std::complex<double>(0.0, 0.0035714285714285713)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,1), 7 ) += (std::complex<double>(0.0, 0.0035714285714285713)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,-1), 7 ) += (std::complex<double>(0.0, 0.0035714285714285713)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,0), 7 ) += (std::complex<double>(0.0, 0.0035714285714285713)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(1,-1), 7 ) += (std::complex<double>(0.0, 0.0035714285714285713)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(1,0), 7 ) += (std::complex<double>(0.0, 0.0035714285714285713)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,0), 7 ) += -(std::complex<double>(0.0, 0.0035714285714285713)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,1), 7 ) += -(std::complex<double>(0.0, 0.0035714285714285713)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(1,0), 7 ) += -(std::complex<double>(0.0, 0.0035714285714285713)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(1,1), 7 ) += -(std::complex<double>(0.0, 0.0035714285714285713)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(-1,-1), 8 ) += -(std::complex<double>(0.0, 0.021428571428571432)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(-1,0), 8 ) += -(std::complex<double>(0.0, 0.021428571428571432)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,-1), 8 ) += -(std::complex<double>(0.0, 0.021428571428571432)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,0), 8 ) += -(std::complex<double>(0.0, 0.021428571428571432)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(-1,0), 8 ) += (std::complex<double>(0.0, 0.021428571428571432)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(-1,1), 8 ) += (std::complex<double>(0.0, 0.021428571428571432)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,0), 8 ) += (std::complex<double>(0.0, 0.021428571428571432)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,1), 8 ) += (std::complex<double>(0.0, 0.021428571428571432)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,-1), 8 ) += (std::complex<double>(0.0, 0.021428571428571432)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,0), 8 ) += (std::complex<double>(0.0, 0.021428571428571432)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(1,-1), 8 ) += (std::complex<double>(0.0, 0.021428571428571432)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(1,0), 8 ) += (std::complex<double>(0.0, 0.021428571428571432)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,0), 8 ) += -(std::complex<double>(0.0, 0.021428571428571432)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,1), 8 ) += -(std::complex<double>(0.0, 0.021428571428571432)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(1,0), 8 ) += -(std::complex<double>(0.0, 0.021428571428571432)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(1,1), 8 ) += -(std::complex<double>(0.0, 0.021428571428571432)*h_inv[1]*h_inv[0]);
+	sys.A( 9, vi + V2i(-1,-1), 9 ) += -(std::complex<double>(0.0, 0.05357142857142857)*h_inv[1]*h_inv[0]);
+	sys.A( 9, vi + V2i(-1,0), 9 ) += -(std::complex<double>(0.0, 0.05357142857142857)*h_inv[1]*h_inv[0]);
+	sys.A( 9, vi + V2i(0,-1), 9 ) += -(std::complex<double>(0.0, 0.05357142857142857)*h_inv[1]*h_inv[0]);
+	sys.A( 9, vi + V2i(0,0), 9 ) += -(std::complex<double>(0.0, 0.05357142857142857)*h_inv[1]*h_inv[0]);
+	sys.A( 9, vi + V2i(-1,0), 9 ) += (std::complex<double>(0.0, 0.05357142857142857)*h_inv[1]*h_inv[0]);
+	sys.A( 9, vi + V2i(-1,1), 9 ) += (std::complex<double>(0.0, 0.05357142857142857)*h_inv[1]*h_inv[0]);
+	sys.A( 9, vi + V2i(0,0), 9 ) += (std::complex<double>(0.0, 0.05357142857142857)*h_inv[1]*h_inv[0]);
+	sys.A( 9, vi + V2i(0,1), 9 ) += (std::complex<double>(0.0, 0.05357142857142857)*h_inv[1]*h_inv[0]);
+	sys.A( 9, vi + V2i(0,-1), 9 ) += (std::complex<double>(0.0, 0.05357142857142857)*h_inv[1]*h_inv[0]);
+	sys.A( 9, vi + V2i(0,0), 9 ) += (std::complex<double>(0.0, 0.05357142857142857)*h_inv[1]*h_inv[0]);
+	sys.A( 9, vi + V2i(1,-1), 9 ) += (std::complex<double>(0.0, 0.05357142857142857)*h_inv[1]*h_inv[0]);
+	sys.A( 9, vi + V2i(1,0), 9 ) += (std::complex<double>(0.0, 0.05357142857142857)*h_inv[1]*h_inv[0]);
+	sys.A( 9, vi + V2i(0,0), 9 ) += -(std::complex<double>(0.0, 0.05357142857142857)*h_inv[1]*h_inv[0]);
+	sys.A( 9, vi + V2i(0,1), 9 ) += -(std::complex<double>(0.0, 0.05357142857142857)*h_inv[1]*h_inv[0]);
+	sys.A( 9, vi + V2i(1,0), 9 ) += -(std::complex<double>(0.0, 0.05357142857142857)*h_inv[1]*h_inv[0]);
+	sys.A( 9, vi + V2i(1,1), 9 ) += -(std::complex<double>(0.0, 0.05357142857142857)*h_inv[1]*h_inv[0]);
 
 	// term 8 ----------------
 
@@ -89,8 +393,48 @@ void set_system_row(PNSystem::VoxelSystem& sys,
 	sys.A( 2, vi + V2i(0,1), 1 ) += (0.00833333333333*h_inv[0]*h_inv[0]);
 	sys.A( 2, vi + V2i(1,0), 1 ) += (0.00833333333333*h_inv[0]*h_inv[0]);
 	sys.A( 2, vi + V2i(1,1), 1 ) += (0.00833333333333*h_inv[0]*h_inv[0]);
+	sys.A( 4, vi + V2i(-1,0), 3 ) += (0.0349927106112*h_inv[0]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,0), 3 ) += -(0.0349927106112*h_inv[0]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,0), 3 ) += -(0.0349927106112*h_inv[0]*h_inv[0]);
+	sys.A( 4, vi + V2i(1,0), 3 ) += (0.0349927106112*h_inv[0]*h_inv[0]);
+	sys.A( 5, vi + V2i(-1,0), 4 ) += (0.0349927106112*h_inv[0]*h_inv[0]);
+	sys.A( 5, vi + V2i(0,0), 4 ) += -(0.0349927106112*h_inv[0]*h_inv[0]);
+	sys.A( 5, vi + V2i(0,0), 4 ) += -(0.0349927106112*h_inv[0]*h_inv[0]);
+	sys.A( 5, vi + V2i(1,0), 4 ) += (0.0349927106112*h_inv[0]*h_inv[0]);
+	sys.A( 7, vi + V2i(-1,0), 6 ) += (0.0307379630651*h_inv[0]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,0), 6 ) += -(0.0307379630651*h_inv[0]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,0), 6 ) += -(0.0307379630651*h_inv[0]*h_inv[0]);
+	sys.A( 7, vi + V2i(1,0), 6 ) += (0.0307379630651*h_inv[0]*h_inv[0]);
+	sys.A( 8, vi + V2i(-1,0), 7 ) += (0.047619047619*h_inv[0]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,0), 7 ) += -(0.047619047619*h_inv[0]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,0), 7 ) += -(0.047619047619*h_inv[0]*h_inv[0]);
+	sys.A( 8, vi + V2i(1,0), 7 ) += (0.047619047619*h_inv[0]*h_inv[0]);
+	sys.A( 9, vi + V2i(-1,0), 8 ) += (0.0307379630651*h_inv[0]*h_inv[0]);
+	sys.A( 9, vi + V2i(0,0), 8 ) += -(0.0307379630651*h_inv[0]*h_inv[0]);
+	sys.A( 9, vi + V2i(0,0), 8 ) += -(0.0307379630651*h_inv[0]*h_inv[0]);
+	sys.A( 9, vi + V2i(1,0), 8 ) += (0.0307379630651*h_inv[0]*h_inv[0]);
 
 	// term 11 ----------------
+	sys.A( 0, vi + V2i(-1,0), 3 ) += -(0.182574185835*h_inv[0]*h_inv[0]);
+	sys.A( 0, vi + V2i(0,0), 3 ) += (0.182574185835*h_inv[0]*h_inv[0]);
+	sys.A( 0, vi + V2i(0,0), 3 ) += (0.182574185835*h_inv[0]*h_inv[0]);
+	sys.A( 0, vi + V2i(1,0), 3 ) += -(0.182574185835*h_inv[0]*h_inv[0]);
+	sys.A( 1, vi + V2i(-1,0), 6 ) += -(0.103509833901*h_inv[0]*h_inv[0]);
+	sys.A( 1, vi + V2i(-1,-1), 6 ) += -(0.103509833901*h_inv[0]*h_inv[0]);
+	sys.A( 1, vi + V2i(0,0), 6 ) += (0.103509833901*h_inv[0]*h_inv[0]);
+	sys.A( 1, vi + V2i(0,-1), 6 ) += (0.103509833901*h_inv[0]*h_inv[0]);
+	sys.A( 1, vi + V2i(0,0), 6 ) += (0.103509833901*h_inv[0]*h_inv[0]);
+	sys.A( 1, vi + V2i(0,-1), 6 ) += (0.103509833901*h_inv[0]*h_inv[0]);
+	sys.A( 1, vi + V2i(1,0), 6 ) += -(0.103509833901*h_inv[0]*h_inv[0]);
+	sys.A( 1, vi + V2i(1,-1), 6 ) += -(0.103509833901*h_inv[0]*h_inv[0]);
+	sys.A( 2, vi + V2i(-1,0), 7 ) += -(0.0267261241912*h_inv[0]*h_inv[0]);
+	sys.A( 2, vi + V2i(-2,0), 7 ) += -(0.0267261241912*h_inv[0]*h_inv[0]);
+	sys.A( 2, vi + V2i(0,0), 7 ) += (0.0267261241912*h_inv[0]*h_inv[0]);
+	sys.A( 2, vi + V2i(-1,0), 7 ) += (0.0267261241912*h_inv[0]*h_inv[0]);
+	sys.A( 2, vi + V2i(0,0), 7 ) += (0.0267261241912*h_inv[0]*h_inv[0]);
+	sys.A( 2, vi + V2i(-1,0), 7 ) += (0.0267261241912*h_inv[0]*h_inv[0]);
+	sys.A( 2, vi + V2i(1,0), 7 ) += -(0.0267261241912*h_inv[0]*h_inv[0]);
+	sys.A( 2, vi + V2i(0,0), 7 ) += -(0.0267261241912*h_inv[0]*h_inv[0]);
 
 	// term 12 ----------------
 	sys.A( 0, vi + V2i(-1,0), 0 ) += -(0.166666666667*h_inv[0]*h_inv[0]);
@@ -105,16 +449,176 @@ void set_system_row(PNSystem::VoxelSystem& sys,
 	sys.A( 2, vi + V2i(0,0), 2 ) += (0.0333333333333*h_inv[0]*h_inv[0]);
 	sys.A( 2, vi + V2i(0,0), 2 ) += (0.0333333333333*h_inv[0]*h_inv[0]);
 	sys.A( 2, vi + V2i(1,0), 2 ) += -(0.0333333333333*h_inv[0]*h_inv[0]);
+	sys.A( 3, vi + V2i(-1,0), 3 ) += -(0.214285714286*h_inv[0]*h_inv[0]);
+	sys.A( 3, vi + V2i(0,0), 3 ) += (0.214285714286*h_inv[0]*h_inv[0]);
+	sys.A( 3, vi + V2i(0,0), 3 ) += (0.214285714286*h_inv[0]*h_inv[0]);
+	sys.A( 3, vi + V2i(1,0), 3 ) += -(0.214285714286*h_inv[0]*h_inv[0]);
+	sys.A( 4, vi + V2i(-1,0), 4 ) += -(0.0857142857143*h_inv[0]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,0), 4 ) += (0.0857142857143*h_inv[0]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,0), 4 ) += (0.0857142857143*h_inv[0]*h_inv[0]);
+	sys.A( 4, vi + V2i(1,0), 4 ) += -(0.0857142857143*h_inv[0]*h_inv[0]);
+	sys.A( 5, vi + V2i(-1,0), 5 ) += -(0.0142857142857*h_inv[0]*h_inv[0]);
+	sys.A( 5, vi + V2i(0,0), 5 ) += (0.0142857142857*h_inv[0]*h_inv[0]);
+	sys.A( 5, vi + V2i(0,0), 5 ) += (0.0142857142857*h_inv[0]*h_inv[0]);
+	sys.A( 5, vi + V2i(1,0), 5 ) += -(0.0142857142857*h_inv[0]*h_inv[0]);
+	sys.A( 6, vi + V2i(-1,0), 6 ) += -(0.222222222222*h_inv[0]*h_inv[0]);
+	sys.A( 6, vi + V2i(0,0), 6 ) += (0.222222222222*h_inv[0]*h_inv[0]);
+	sys.A( 6, vi + V2i(0,0), 6 ) += (0.222222222222*h_inv[0]*h_inv[0]);
+	sys.A( 6, vi + V2i(1,0), 6 ) += -(0.222222222222*h_inv[0]*h_inv[0]);
+	sys.A( 7, vi + V2i(-1,0), 7 ) += -(0.119047619048*h_inv[0]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,0), 7 ) += (0.119047619048*h_inv[0]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,0), 7 ) += (0.119047619048*h_inv[0]*h_inv[0]);
+	sys.A( 7, vi + V2i(1,0), 7 ) += -(0.119047619048*h_inv[0]*h_inv[0]);
+	sys.A( 8, vi + V2i(-1,0), 8 ) += -(0.047619047619*h_inv[0]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,0), 8 ) += (0.047619047619*h_inv[0]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,0), 8 ) += (0.047619047619*h_inv[0]*h_inv[0]);
+	sys.A( 8, vi + V2i(1,0), 8 ) += -(0.047619047619*h_inv[0]*h_inv[0]);
+	sys.A( 9, vi + V2i(-1,0), 9 ) += -(0.00793650793651*h_inv[0]*h_inv[0]);
+	sys.A( 9, vi + V2i(0,0), 9 ) += (0.00793650793651*h_inv[0]*h_inv[0]);
+	sys.A( 9, vi + V2i(0,0), 9 ) += (0.00793650793651*h_inv[0]*h_inv[0]);
+	sys.A( 9, vi + V2i(1,0), 9 ) += -(0.00793650793651*h_inv[0]*h_inv[0]);
 
 	// term 13 ----------------
+	sys.A( 0, vi + V2i(-1,0), 4 ) += (0.07453559925*h_inv[0]*h_inv[0]);
+	sys.A( 0, vi + V2i(0,0), 4 ) += -(0.07453559925*h_inv[0]*h_inv[0]);
+	sys.A( 0, vi + V2i(0,0), 4 ) += -(0.07453559925*h_inv[0]*h_inv[0]);
+	sys.A( 0, vi + V2i(1,0), 4 ) += (0.07453559925*h_inv[0]*h_inv[0]);
+	sys.A( 1, vi + V2i(-1,0), 7 ) += (0.0267261241912*h_inv[0]*h_inv[0]);
+	sys.A( 1, vi + V2i(-1,-1), 7 ) += (0.0267261241912*h_inv[0]*h_inv[0]);
+	sys.A( 1, vi + V2i(0,0), 7 ) += -(0.0267261241912*h_inv[0]*h_inv[0]);
+	sys.A( 1, vi + V2i(0,-1), 7 ) += -(0.0267261241912*h_inv[0]*h_inv[0]);
+	sys.A( 1, vi + V2i(0,0), 7 ) += -(0.0267261241912*h_inv[0]*h_inv[0]);
+	sys.A( 1, vi + V2i(0,-1), 7 ) += -(0.0267261241912*h_inv[0]*h_inv[0]);
+	sys.A( 1, vi + V2i(1,0), 7 ) += (0.0267261241912*h_inv[0]*h_inv[0]);
+	sys.A( 1, vi + V2i(1,-1), 7 ) += (0.0267261241912*h_inv[0]*h_inv[0]);
+	sys.A( 2, vi + V2i(-1,0), 8 ) += (0.0267261241912*h_inv[0]*h_inv[0]);
+	sys.A( 2, vi + V2i(-2,0), 8 ) += (0.0267261241912*h_inv[0]*h_inv[0]);
+	sys.A( 2, vi + V2i(0,0), 8 ) += -(0.0267261241912*h_inv[0]*h_inv[0]);
+	sys.A( 2, vi + V2i(-1,0), 8 ) += -(0.0267261241912*h_inv[0]*h_inv[0]);
+	sys.A( 2, vi + V2i(0,0), 8 ) += -(0.0267261241912*h_inv[0]*h_inv[0]);
+	sys.A( 2, vi + V2i(-1,0), 8 ) += -(0.0267261241912*h_inv[0]*h_inv[0]);
+	sys.A( 2, vi + V2i(1,0), 8 ) += (0.0267261241912*h_inv[0]*h_inv[0]);
+	sys.A( 2, vi + V2i(0,0), 8 ) += (0.0267261241912*h_inv[0]*h_inv[0]);
 
 	// term 14 ----------------
 	sys.A( 2, vi + V2i(-1,0), 1 ) += -(std::complex<double>(0.0, 0.033333333333333326)*h_inv[1]*h_inv[0]);
 	sys.A( 2, vi + V2i(-1,1), 1 ) += (std::complex<double>(0.0, 0.033333333333333326)*h_inv[1]*h_inv[0]);
 	sys.A( 2, vi + V2i(0,0), 1 ) += (std::complex<double>(0.0, 0.033333333333333326)*h_inv[1]*h_inv[0]);
 	sys.A( 2, vi + V2i(0,1), 1 ) += -(std::complex<double>(0.0, 0.033333333333333326)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(-1,-1), 3 ) += -(std::complex<double>(0.0, 0.008748177652797066)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(-1,0), 3 ) += -(std::complex<double>(0.0, 0.008748177652797066)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,-1), 3 ) += -(std::complex<double>(0.0, 0.008748177652797066)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,0), 3 ) += -(std::complex<double>(0.0, 0.008748177652797066)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(-1,0), 3 ) += (std::complex<double>(0.0, 0.008748177652797066)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(-1,1), 3 ) += (std::complex<double>(0.0, 0.008748177652797066)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,0), 3 ) += (std::complex<double>(0.0, 0.008748177652797066)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,1), 3 ) += (std::complex<double>(0.0, 0.008748177652797066)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,-1), 3 ) += (std::complex<double>(0.0, 0.008748177652797066)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,0), 3 ) += (std::complex<double>(0.0, 0.008748177652797066)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(1,-1), 3 ) += (std::complex<double>(0.0, 0.008748177652797066)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(1,0), 3 ) += (std::complex<double>(0.0, 0.008748177652797066)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,0), 3 ) += -(std::complex<double>(0.0, 0.008748177652797066)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,1), 3 ) += -(std::complex<double>(0.0, 0.008748177652797066)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(1,0), 3 ) += -(std::complex<double>(0.0, 0.008748177652797066)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(1,1), 3 ) += -(std::complex<double>(0.0, 0.008748177652797066)*h_inv[1]*h_inv[0]);
+	sys.A( 5, vi + V2i(-1,-1), 4 ) += -(std::complex<double>(0.0, 0.008748177652797066)*h_inv[1]*h_inv[0]);
+	sys.A( 5, vi + V2i(-1,0), 4 ) += -(std::complex<double>(0.0, 0.008748177652797066)*h_inv[1]*h_inv[0]);
+	sys.A( 5, vi + V2i(0,-1), 4 ) += -(std::complex<double>(0.0, 0.008748177652797066)*h_inv[1]*h_inv[0]);
+	sys.A( 5, vi + V2i(0,0), 4 ) += -(std::complex<double>(0.0, 0.008748177652797066)*h_inv[1]*h_inv[0]);
+	sys.A( 5, vi + V2i(-1,0), 4 ) += (std::complex<double>(0.0, 0.008748177652797066)*h_inv[1]*h_inv[0]);
+	sys.A( 5, vi + V2i(-1,1), 4 ) += (std::complex<double>(0.0, 0.008748177652797066)*h_inv[1]*h_inv[0]);
+	sys.A( 5, vi + V2i(0,0), 4 ) += (std::complex<double>(0.0, 0.008748177652797066)*h_inv[1]*h_inv[0]);
+	sys.A( 5, vi + V2i(0,1), 4 ) += (std::complex<double>(0.0, 0.008748177652797066)*h_inv[1]*h_inv[0]);
+	sys.A( 5, vi + V2i(0,-1), 4 ) += (std::complex<double>(0.0, 0.008748177652797066)*h_inv[1]*h_inv[0]);
+	sys.A( 5, vi + V2i(0,0), 4 ) += (std::complex<double>(0.0, 0.008748177652797066)*h_inv[1]*h_inv[0]);
+	sys.A( 5, vi + V2i(1,-1), 4 ) += (std::complex<double>(0.0, 0.008748177652797066)*h_inv[1]*h_inv[0]);
+	sys.A( 5, vi + V2i(1,0), 4 ) += (std::complex<double>(0.0, 0.008748177652797066)*h_inv[1]*h_inv[0]);
+	sys.A( 5, vi + V2i(0,0), 4 ) += -(std::complex<double>(0.0, 0.008748177652797066)*h_inv[1]*h_inv[0]);
+	sys.A( 5, vi + V2i(0,1), 4 ) += -(std::complex<double>(0.0, 0.008748177652797066)*h_inv[1]*h_inv[0]);
+	sys.A( 5, vi + V2i(1,0), 4 ) += -(std::complex<double>(0.0, 0.008748177652797066)*h_inv[1]*h_inv[0]);
+	sys.A( 5, vi + V2i(1,1), 4 ) += -(std::complex<double>(0.0, 0.008748177652797066)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(-1,-1), 6 ) += -(std::complex<double>(0.0, 0.007684490766284558)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(-1,0), 6 ) += -(std::complex<double>(0.0, 0.007684490766284558)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,-1), 6 ) += -(std::complex<double>(0.0, 0.007684490766284558)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,0), 6 ) += -(std::complex<double>(0.0, 0.007684490766284558)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(-1,0), 6 ) += (std::complex<double>(0.0, 0.007684490766284558)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(-1,1), 6 ) += (std::complex<double>(0.0, 0.007684490766284558)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,0), 6 ) += (std::complex<double>(0.0, 0.007684490766284558)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,1), 6 ) += (std::complex<double>(0.0, 0.007684490766284558)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,-1), 6 ) += (std::complex<double>(0.0, 0.007684490766284558)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,0), 6 ) += (std::complex<double>(0.0, 0.007684490766284558)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(1,-1), 6 ) += (std::complex<double>(0.0, 0.007684490766284558)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(1,0), 6 ) += (std::complex<double>(0.0, 0.007684490766284558)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,0), 6 ) += -(std::complex<double>(0.0, 0.007684490766284558)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,1), 6 ) += -(std::complex<double>(0.0, 0.007684490766284558)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(1,0), 6 ) += -(std::complex<double>(0.0, 0.007684490766284558)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(1,1), 6 ) += -(std::complex<double>(0.0, 0.007684490766284558)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(-1,-1), 7 ) += -(std::complex<double>(0.0, 0.011904761904761902)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(-1,0), 7 ) += -(std::complex<double>(0.0, 0.011904761904761902)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,-1), 7 ) += -(std::complex<double>(0.0, 0.011904761904761902)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,0), 7 ) += -(std::complex<double>(0.0, 0.011904761904761902)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(-1,0), 7 ) += (std::complex<double>(0.0, 0.011904761904761902)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(-1,1), 7 ) += (std::complex<double>(0.0, 0.011904761904761902)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,0), 7 ) += (std::complex<double>(0.0, 0.011904761904761902)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,1), 7 ) += (std::complex<double>(0.0, 0.011904761904761902)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,-1), 7 ) += (std::complex<double>(0.0, 0.011904761904761902)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,0), 7 ) += (std::complex<double>(0.0, 0.011904761904761902)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(1,-1), 7 ) += (std::complex<double>(0.0, 0.011904761904761902)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(1,0), 7 ) += (std::complex<double>(0.0, 0.011904761904761902)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,0), 7 ) += -(std::complex<double>(0.0, 0.011904761904761902)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,1), 7 ) += -(std::complex<double>(0.0, 0.011904761904761902)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(1,0), 7 ) += -(std::complex<double>(0.0, 0.011904761904761902)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(1,1), 7 ) += -(std::complex<double>(0.0, 0.011904761904761902)*h_inv[1]*h_inv[0]);
+	sys.A( 9, vi + V2i(-1,-1), 8 ) += -(std::complex<double>(0.0, 0.007684490766284558)*h_inv[1]*h_inv[0]);
+	sys.A( 9, vi + V2i(-1,0), 8 ) += -(std::complex<double>(0.0, 0.007684490766284558)*h_inv[1]*h_inv[0]);
+	sys.A( 9, vi + V2i(0,-1), 8 ) += -(std::complex<double>(0.0, 0.007684490766284558)*h_inv[1]*h_inv[0]);
+	sys.A( 9, vi + V2i(0,0), 8 ) += -(std::complex<double>(0.0, 0.007684490766284558)*h_inv[1]*h_inv[0]);
+	sys.A( 9, vi + V2i(-1,0), 8 ) += (std::complex<double>(0.0, 0.007684490766284558)*h_inv[1]*h_inv[0]);
+	sys.A( 9, vi + V2i(-1,1), 8 ) += (std::complex<double>(0.0, 0.007684490766284558)*h_inv[1]*h_inv[0]);
+	sys.A( 9, vi + V2i(0,0), 8 ) += (std::complex<double>(0.0, 0.007684490766284558)*h_inv[1]*h_inv[0]);
+	sys.A( 9, vi + V2i(0,1), 8 ) += (std::complex<double>(0.0, 0.007684490766284558)*h_inv[1]*h_inv[0]);
+	sys.A( 9, vi + V2i(0,-1), 8 ) += (std::complex<double>(0.0, 0.007684490766284558)*h_inv[1]*h_inv[0]);
+	sys.A( 9, vi + V2i(0,0), 8 ) += (std::complex<double>(0.0, 0.007684490766284558)*h_inv[1]*h_inv[0]);
+	sys.A( 9, vi + V2i(1,-1), 8 ) += (std::complex<double>(0.0, 0.007684490766284558)*h_inv[1]*h_inv[0]);
+	sys.A( 9, vi + V2i(1,0), 8 ) += (std::complex<double>(0.0, 0.007684490766284558)*h_inv[1]*h_inv[0]);
+	sys.A( 9, vi + V2i(0,0), 8 ) += -(std::complex<double>(0.0, 0.007684490766284558)*h_inv[1]*h_inv[0]);
+	sys.A( 9, vi + V2i(0,1), 8 ) += -(std::complex<double>(0.0, 0.007684490766284558)*h_inv[1]*h_inv[0]);
+	sys.A( 9, vi + V2i(1,0), 8 ) += -(std::complex<double>(0.0, 0.007684490766284558)*h_inv[1]*h_inv[0]);
+	sys.A( 9, vi + V2i(1,1), 8 ) += -(std::complex<double>(0.0, 0.007684490766284558)*h_inv[1]*h_inv[0]);
 
 	// term 15 ----------------
+	sys.A( 0, vi + V2i(-1,-1), 3 ) += (std::complex<double>(0.0, 0.04564354645876384)*h_inv[1]*h_inv[0]);
+	sys.A( 0, vi + V2i(-1,0), 3 ) += (std::complex<double>(0.0, 0.04564354645876384)*h_inv[1]*h_inv[0]);
+	sys.A( 0, vi + V2i(0,-1), 3 ) += (std::complex<double>(0.0, 0.04564354645876384)*h_inv[1]*h_inv[0]);
+	sys.A( 0, vi + V2i(0,0), 3 ) += (std::complex<double>(0.0, 0.04564354645876384)*h_inv[1]*h_inv[0]);
+	sys.A( 0, vi + V2i(-1,0), 3 ) += -(std::complex<double>(0.0, 0.04564354645876384)*h_inv[1]*h_inv[0]);
+	sys.A( 0, vi + V2i(-1,1), 3 ) += -(std::complex<double>(0.0, 0.04564354645876384)*h_inv[1]*h_inv[0]);
+	sys.A( 0, vi + V2i(0,0), 3 ) += -(std::complex<double>(0.0, 0.04564354645876384)*h_inv[1]*h_inv[0]);
+	sys.A( 0, vi + V2i(0,1), 3 ) += -(std::complex<double>(0.0, 0.04564354645876384)*h_inv[1]*h_inv[0]);
+	sys.A( 0, vi + V2i(0,-1), 3 ) += -(std::complex<double>(0.0, 0.04564354645876384)*h_inv[1]*h_inv[0]);
+	sys.A( 0, vi + V2i(0,0), 3 ) += -(std::complex<double>(0.0, 0.04564354645876384)*h_inv[1]*h_inv[0]);
+	sys.A( 0, vi + V2i(1,-1), 3 ) += -(std::complex<double>(0.0, 0.04564354645876384)*h_inv[1]*h_inv[0]);
+	sys.A( 0, vi + V2i(1,0), 3 ) += -(std::complex<double>(0.0, 0.04564354645876384)*h_inv[1]*h_inv[0]);
+	sys.A( 0, vi + V2i(0,0), 3 ) += (std::complex<double>(0.0, 0.04564354645876384)*h_inv[1]*h_inv[0]);
+	sys.A( 0, vi + V2i(0,1), 3 ) += (std::complex<double>(0.0, 0.04564354645876384)*h_inv[1]*h_inv[0]);
+	sys.A( 0, vi + V2i(1,0), 3 ) += (std::complex<double>(0.0, 0.04564354645876384)*h_inv[1]*h_inv[0]);
+	sys.A( 0, vi + V2i(1,1), 3 ) += (std::complex<double>(0.0, 0.04564354645876384)*h_inv[1]*h_inv[0]);
+	sys.A( 1, vi + V2i(0,-1), 6 ) += (std::complex<double>(0.0, 0.10350983390135313)*h_inv[1]*h_inv[0]);
+	sys.A( 1, vi + V2i(-1,-1), 6 ) += (std::complex<double>(0.0, 0.10350983390135313)*h_inv[1]*h_inv[0]);
+	sys.A( 1, vi + V2i(0,0), 6 ) += -(std::complex<double>(0.0, 0.10350983390135313)*h_inv[1]*h_inv[0]);
+	sys.A( 1, vi + V2i(-1,0), 6 ) += -(std::complex<double>(0.0, 0.10350983390135313)*h_inv[1]*h_inv[0]);
+	sys.A( 1, vi + V2i(1,-1), 6 ) += -(std::complex<double>(0.0, 0.10350983390135313)*h_inv[1]*h_inv[0]);
+	sys.A( 1, vi + V2i(0,-1), 6 ) += -(std::complex<double>(0.0, 0.10350983390135313)*h_inv[1]*h_inv[0]);
+	sys.A( 1, vi + V2i(1,0), 6 ) += (std::complex<double>(0.0, 0.10350983390135313)*h_inv[1]*h_inv[0]);
+	sys.A( 1, vi + V2i(0,0), 6 ) += (std::complex<double>(0.0, 0.10350983390135313)*h_inv[1]*h_inv[0]);
+	sys.A( 2, vi + V2i(-1,0), 7 ) += (std::complex<double>(0.0, 0.02672612419124244)*h_inv[1]*h_inv[0]);
+	sys.A( 2, vi + V2i(-1,-1), 7 ) += (std::complex<double>(0.0, 0.02672612419124244)*h_inv[1]*h_inv[0]);
+	sys.A( 2, vi + V2i(-1,1), 7 ) += -(std::complex<double>(0.0, 0.02672612419124244)*h_inv[1]*h_inv[0]);
+	sys.A( 2, vi + V2i(-1,0), 7 ) += -(std::complex<double>(0.0, 0.02672612419124244)*h_inv[1]*h_inv[0]);
+	sys.A( 2, vi + V2i(0,0), 7 ) += -(std::complex<double>(0.0, 0.02672612419124244)*h_inv[1]*h_inv[0]);
+	sys.A( 2, vi + V2i(0,-1), 7 ) += -(std::complex<double>(0.0, 0.02672612419124244)*h_inv[1]*h_inv[0]);
+	sys.A( 2, vi + V2i(0,1), 7 ) += (std::complex<double>(0.0, 0.02672612419124244)*h_inv[1]*h_inv[0]);
+	sys.A( 2, vi + V2i(0,0), 7 ) += (std::complex<double>(0.0, 0.02672612419124244)*h_inv[1]*h_inv[0]);
 
 	// term 16 ----------------
 	sys.A( 0, vi + V2i(-1,-1), 0 ) += -(std::complex<double>(0.0, 0.041666666666666664)*h_inv[1]*h_inv[0]);
@@ -165,22 +669,226 @@ void set_system_row(PNSystem::VoxelSystem& sys,
 	sys.A( 2, vi + V2i(0,1), 2 ) += -(std::complex<double>(0.0, 0.008333333333333331)*h_inv[1]*h_inv[0]);
 	sys.A( 2, vi + V2i(1,0), 2 ) += -(std::complex<double>(0.0, 0.008333333333333331)*h_inv[1]*h_inv[0]);
 	sys.A( 2, vi + V2i(1,1), 2 ) += -(std::complex<double>(0.0, 0.008333333333333331)*h_inv[1]*h_inv[0]);
+	sys.A( 3, vi + V2i(-1,-1), 3 ) += -(std::complex<double>(0.0, 0.05357142857142857)*h_inv[1]*h_inv[0]);
+	sys.A( 3, vi + V2i(-1,0), 3 ) += -(std::complex<double>(0.0, 0.05357142857142857)*h_inv[1]*h_inv[0]);
+	sys.A( 3, vi + V2i(0,-1), 3 ) += -(std::complex<double>(0.0, 0.05357142857142857)*h_inv[1]*h_inv[0]);
+	sys.A( 3, vi + V2i(0,0), 3 ) += -(std::complex<double>(0.0, 0.05357142857142857)*h_inv[1]*h_inv[0]);
+	sys.A( 3, vi + V2i(-1,0), 3 ) += (std::complex<double>(0.0, 0.05357142857142857)*h_inv[1]*h_inv[0]);
+	sys.A( 3, vi + V2i(-1,1), 3 ) += (std::complex<double>(0.0, 0.05357142857142857)*h_inv[1]*h_inv[0]);
+	sys.A( 3, vi + V2i(0,0), 3 ) += (std::complex<double>(0.0, 0.05357142857142857)*h_inv[1]*h_inv[0]);
+	sys.A( 3, vi + V2i(0,1), 3 ) += (std::complex<double>(0.0, 0.05357142857142857)*h_inv[1]*h_inv[0]);
+	sys.A( 3, vi + V2i(0,-1), 3 ) += (std::complex<double>(0.0, 0.05357142857142857)*h_inv[1]*h_inv[0]);
+	sys.A( 3, vi + V2i(0,0), 3 ) += (std::complex<double>(0.0, 0.05357142857142857)*h_inv[1]*h_inv[0]);
+	sys.A( 3, vi + V2i(1,-1), 3 ) += (std::complex<double>(0.0, 0.05357142857142857)*h_inv[1]*h_inv[0]);
+	sys.A( 3, vi + V2i(1,0), 3 ) += (std::complex<double>(0.0, 0.05357142857142857)*h_inv[1]*h_inv[0]);
+	sys.A( 3, vi + V2i(0,0), 3 ) += -(std::complex<double>(0.0, 0.05357142857142857)*h_inv[1]*h_inv[0]);
+	sys.A( 3, vi + V2i(0,1), 3 ) += -(std::complex<double>(0.0, 0.05357142857142857)*h_inv[1]*h_inv[0]);
+	sys.A( 3, vi + V2i(1,0), 3 ) += -(std::complex<double>(0.0, 0.05357142857142857)*h_inv[1]*h_inv[0]);
+	sys.A( 3, vi + V2i(1,1), 3 ) += -(std::complex<double>(0.0, 0.05357142857142857)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(-1,-1), 4 ) += -(std::complex<double>(0.0, 0.021428571428571432)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(-1,0), 4 ) += -(std::complex<double>(0.0, 0.021428571428571432)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,-1), 4 ) += -(std::complex<double>(0.0, 0.021428571428571432)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,0), 4 ) += -(std::complex<double>(0.0, 0.021428571428571432)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(-1,0), 4 ) += (std::complex<double>(0.0, 0.021428571428571432)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(-1,1), 4 ) += (std::complex<double>(0.0, 0.021428571428571432)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,0), 4 ) += (std::complex<double>(0.0, 0.021428571428571432)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,1), 4 ) += (std::complex<double>(0.0, 0.021428571428571432)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,-1), 4 ) += (std::complex<double>(0.0, 0.021428571428571432)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,0), 4 ) += (std::complex<double>(0.0, 0.021428571428571432)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(1,-1), 4 ) += (std::complex<double>(0.0, 0.021428571428571432)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(1,0), 4 ) += (std::complex<double>(0.0, 0.021428571428571432)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,0), 4 ) += -(std::complex<double>(0.0, 0.021428571428571432)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,1), 4 ) += -(std::complex<double>(0.0, 0.021428571428571432)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(1,0), 4 ) += -(std::complex<double>(0.0, 0.021428571428571432)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(1,1), 4 ) += -(std::complex<double>(0.0, 0.021428571428571432)*h_inv[1]*h_inv[0]);
+	sys.A( 5, vi + V2i(-1,-1), 5 ) += -(std::complex<double>(0.0, 0.0035714285714285713)*h_inv[1]*h_inv[0]);
+	sys.A( 5, vi + V2i(-1,0), 5 ) += -(std::complex<double>(0.0, 0.0035714285714285713)*h_inv[1]*h_inv[0]);
+	sys.A( 5, vi + V2i(0,-1), 5 ) += -(std::complex<double>(0.0, 0.0035714285714285713)*h_inv[1]*h_inv[0]);
+	sys.A( 5, vi + V2i(0,0), 5 ) += -(std::complex<double>(0.0, 0.0035714285714285713)*h_inv[1]*h_inv[0]);
+	sys.A( 5, vi + V2i(-1,0), 5 ) += (std::complex<double>(0.0, 0.0035714285714285713)*h_inv[1]*h_inv[0]);
+	sys.A( 5, vi + V2i(-1,1), 5 ) += (std::complex<double>(0.0, 0.0035714285714285713)*h_inv[1]*h_inv[0]);
+	sys.A( 5, vi + V2i(0,0), 5 ) += (std::complex<double>(0.0, 0.0035714285714285713)*h_inv[1]*h_inv[0]);
+	sys.A( 5, vi + V2i(0,1), 5 ) += (std::complex<double>(0.0, 0.0035714285714285713)*h_inv[1]*h_inv[0]);
+	sys.A( 5, vi + V2i(0,-1), 5 ) += (std::complex<double>(0.0, 0.0035714285714285713)*h_inv[1]*h_inv[0]);
+	sys.A( 5, vi + V2i(0,0), 5 ) += (std::complex<double>(0.0, 0.0035714285714285713)*h_inv[1]*h_inv[0]);
+	sys.A( 5, vi + V2i(1,-1), 5 ) += (std::complex<double>(0.0, 0.0035714285714285713)*h_inv[1]*h_inv[0]);
+	sys.A( 5, vi + V2i(1,0), 5 ) += (std::complex<double>(0.0, 0.0035714285714285713)*h_inv[1]*h_inv[0]);
+	sys.A( 5, vi + V2i(0,0), 5 ) += -(std::complex<double>(0.0, 0.0035714285714285713)*h_inv[1]*h_inv[0]);
+	sys.A( 5, vi + V2i(0,1), 5 ) += -(std::complex<double>(0.0, 0.0035714285714285713)*h_inv[1]*h_inv[0]);
+	sys.A( 5, vi + V2i(1,0), 5 ) += -(std::complex<double>(0.0, 0.0035714285714285713)*h_inv[1]*h_inv[0]);
+	sys.A( 5, vi + V2i(1,1), 5 ) += -(std::complex<double>(0.0, 0.0035714285714285713)*h_inv[1]*h_inv[0]);
+	sys.A( 6, vi + V2i(-1,-1), 6 ) += -(std::complex<double>(0.0, 0.05555555555555555)*h_inv[1]*h_inv[0]);
+	sys.A( 6, vi + V2i(-1,0), 6 ) += -(std::complex<double>(0.0, 0.05555555555555555)*h_inv[1]*h_inv[0]);
+	sys.A( 6, vi + V2i(0,-1), 6 ) += -(std::complex<double>(0.0, 0.05555555555555555)*h_inv[1]*h_inv[0]);
+	sys.A( 6, vi + V2i(0,0), 6 ) += -(std::complex<double>(0.0, 0.05555555555555555)*h_inv[1]*h_inv[0]);
+	sys.A( 6, vi + V2i(-1,0), 6 ) += (std::complex<double>(0.0, 0.05555555555555555)*h_inv[1]*h_inv[0]);
+	sys.A( 6, vi + V2i(-1,1), 6 ) += (std::complex<double>(0.0, 0.05555555555555555)*h_inv[1]*h_inv[0]);
+	sys.A( 6, vi + V2i(0,0), 6 ) += (std::complex<double>(0.0, 0.05555555555555555)*h_inv[1]*h_inv[0]);
+	sys.A( 6, vi + V2i(0,1), 6 ) += (std::complex<double>(0.0, 0.05555555555555555)*h_inv[1]*h_inv[0]);
+	sys.A( 6, vi + V2i(0,-1), 6 ) += (std::complex<double>(0.0, 0.05555555555555555)*h_inv[1]*h_inv[0]);
+	sys.A( 6, vi + V2i(0,0), 6 ) += (std::complex<double>(0.0, 0.05555555555555555)*h_inv[1]*h_inv[0]);
+	sys.A( 6, vi + V2i(1,-1), 6 ) += (std::complex<double>(0.0, 0.05555555555555555)*h_inv[1]*h_inv[0]);
+	sys.A( 6, vi + V2i(1,0), 6 ) += (std::complex<double>(0.0, 0.05555555555555555)*h_inv[1]*h_inv[0]);
+	sys.A( 6, vi + V2i(0,0), 6 ) += -(std::complex<double>(0.0, 0.05555555555555555)*h_inv[1]*h_inv[0]);
+	sys.A( 6, vi + V2i(0,1), 6 ) += -(std::complex<double>(0.0, 0.05555555555555555)*h_inv[1]*h_inv[0]);
+	sys.A( 6, vi + V2i(1,0), 6 ) += -(std::complex<double>(0.0, 0.05555555555555555)*h_inv[1]*h_inv[0]);
+	sys.A( 6, vi + V2i(1,1), 6 ) += -(std::complex<double>(0.0, 0.05555555555555555)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(-1,-1), 7 ) += -(std::complex<double>(0.0, 0.029761904761904764)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(-1,0), 7 ) += -(std::complex<double>(0.0, 0.029761904761904764)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,-1), 7 ) += -(std::complex<double>(0.0, 0.029761904761904764)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,0), 7 ) += -(std::complex<double>(0.0, 0.029761904761904764)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(-1,0), 7 ) += (std::complex<double>(0.0, 0.029761904761904764)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(-1,1), 7 ) += (std::complex<double>(0.0, 0.029761904761904764)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,0), 7 ) += (std::complex<double>(0.0, 0.029761904761904764)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,1), 7 ) += (std::complex<double>(0.0, 0.029761904761904764)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,-1), 7 ) += (std::complex<double>(0.0, 0.029761904761904764)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,0), 7 ) += (std::complex<double>(0.0, 0.029761904761904764)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(1,-1), 7 ) += (std::complex<double>(0.0, 0.029761904761904764)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(1,0), 7 ) += (std::complex<double>(0.0, 0.029761904761904764)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,0), 7 ) += -(std::complex<double>(0.0, 0.029761904761904764)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,1), 7 ) += -(std::complex<double>(0.0, 0.029761904761904764)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(1,0), 7 ) += -(std::complex<double>(0.0, 0.029761904761904764)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(1,1), 7 ) += -(std::complex<double>(0.0, 0.029761904761904764)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(-1,-1), 8 ) += -(std::complex<double>(0.0, 0.011904761904761902)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(-1,0), 8 ) += -(std::complex<double>(0.0, 0.011904761904761902)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,-1), 8 ) += -(std::complex<double>(0.0, 0.011904761904761902)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,0), 8 ) += -(std::complex<double>(0.0, 0.011904761904761902)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(-1,0), 8 ) += (std::complex<double>(0.0, 0.011904761904761902)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(-1,1), 8 ) += (std::complex<double>(0.0, 0.011904761904761902)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,0), 8 ) += (std::complex<double>(0.0, 0.011904761904761902)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,1), 8 ) += (std::complex<double>(0.0, 0.011904761904761902)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,-1), 8 ) += (std::complex<double>(0.0, 0.011904761904761902)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,0), 8 ) += (std::complex<double>(0.0, 0.011904761904761902)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(1,-1), 8 ) += (std::complex<double>(0.0, 0.011904761904761902)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(1,0), 8 ) += (std::complex<double>(0.0, 0.011904761904761902)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,0), 8 ) += -(std::complex<double>(0.0, 0.011904761904761902)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,1), 8 ) += -(std::complex<double>(0.0, 0.011904761904761902)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(1,0), 8 ) += -(std::complex<double>(0.0, 0.011904761904761902)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(1,1), 8 ) += -(std::complex<double>(0.0, 0.011904761904761902)*h_inv[1]*h_inv[0]);
+	sys.A( 9, vi + V2i(-1,-1), 9 ) += -(std::complex<double>(0.0, 0.001984126984126984)*h_inv[1]*h_inv[0]);
+	sys.A( 9, vi + V2i(-1,0), 9 ) += -(std::complex<double>(0.0, 0.001984126984126984)*h_inv[1]*h_inv[0]);
+	sys.A( 9, vi + V2i(0,-1), 9 ) += -(std::complex<double>(0.0, 0.001984126984126984)*h_inv[1]*h_inv[0]);
+	sys.A( 9, vi + V2i(0,0), 9 ) += -(std::complex<double>(0.0, 0.001984126984126984)*h_inv[1]*h_inv[0]);
+	sys.A( 9, vi + V2i(-1,0), 9 ) += (std::complex<double>(0.0, 0.001984126984126984)*h_inv[1]*h_inv[0]);
+	sys.A( 9, vi + V2i(-1,1), 9 ) += (std::complex<double>(0.0, 0.001984126984126984)*h_inv[1]*h_inv[0]);
+	sys.A( 9, vi + V2i(0,0), 9 ) += (std::complex<double>(0.0, 0.001984126984126984)*h_inv[1]*h_inv[0]);
+	sys.A( 9, vi + V2i(0,1), 9 ) += (std::complex<double>(0.0, 0.001984126984126984)*h_inv[1]*h_inv[0]);
+	sys.A( 9, vi + V2i(0,-1), 9 ) += (std::complex<double>(0.0, 0.001984126984126984)*h_inv[1]*h_inv[0]);
+	sys.A( 9, vi + V2i(0,0), 9 ) += (std::complex<double>(0.0, 0.001984126984126984)*h_inv[1]*h_inv[0]);
+	sys.A( 9, vi + V2i(1,-1), 9 ) += (std::complex<double>(0.0, 0.001984126984126984)*h_inv[1]*h_inv[0]);
+	sys.A( 9, vi + V2i(1,0), 9 ) += (std::complex<double>(0.0, 0.001984126984126984)*h_inv[1]*h_inv[0]);
+	sys.A( 9, vi + V2i(0,0), 9 ) += -(std::complex<double>(0.0, 0.001984126984126984)*h_inv[1]*h_inv[0]);
+	sys.A( 9, vi + V2i(0,1), 9 ) += -(std::complex<double>(0.0, 0.001984126984126984)*h_inv[1]*h_inv[0]);
+	sys.A( 9, vi + V2i(1,0), 9 ) += -(std::complex<double>(0.0, 0.001984126984126984)*h_inv[1]*h_inv[0]);
+	sys.A( 9, vi + V2i(1,1), 9 ) += -(std::complex<double>(0.0, 0.001984126984126984)*h_inv[1]*h_inv[0]);
 
 	// term 17 ----------------
+	sys.A( 0, vi + V2i(-1,-1), 4 ) += (std::complex<double>(0.0, 0.018633899812498245)*h_inv[1]*h_inv[0]);
+	sys.A( 0, vi + V2i(-1,0), 4 ) += (std::complex<double>(0.0, 0.018633899812498245)*h_inv[1]*h_inv[0]);
+	sys.A( 0, vi + V2i(0,-1), 4 ) += (std::complex<double>(0.0, 0.018633899812498245)*h_inv[1]*h_inv[0]);
+	sys.A( 0, vi + V2i(0,0), 4 ) += (std::complex<double>(0.0, 0.018633899812498245)*h_inv[1]*h_inv[0]);
+	sys.A( 0, vi + V2i(-1,0), 4 ) += -(std::complex<double>(0.0, 0.018633899812498245)*h_inv[1]*h_inv[0]);
+	sys.A( 0, vi + V2i(-1,1), 4 ) += -(std::complex<double>(0.0, 0.018633899812498245)*h_inv[1]*h_inv[0]);
+	sys.A( 0, vi + V2i(0,0), 4 ) += -(std::complex<double>(0.0, 0.018633899812498245)*h_inv[1]*h_inv[0]);
+	sys.A( 0, vi + V2i(0,1), 4 ) += -(std::complex<double>(0.0, 0.018633899812498245)*h_inv[1]*h_inv[0]);
+	sys.A( 0, vi + V2i(0,-1), 4 ) += -(std::complex<double>(0.0, 0.018633899812498245)*h_inv[1]*h_inv[0]);
+	sys.A( 0, vi + V2i(0,0), 4 ) += -(std::complex<double>(0.0, 0.018633899812498245)*h_inv[1]*h_inv[0]);
+	sys.A( 0, vi + V2i(1,-1), 4 ) += -(std::complex<double>(0.0, 0.018633899812498245)*h_inv[1]*h_inv[0]);
+	sys.A( 0, vi + V2i(1,0), 4 ) += -(std::complex<double>(0.0, 0.018633899812498245)*h_inv[1]*h_inv[0]);
+	sys.A( 0, vi + V2i(0,0), 4 ) += (std::complex<double>(0.0, 0.018633899812498245)*h_inv[1]*h_inv[0]);
+	sys.A( 0, vi + V2i(0,1), 4 ) += (std::complex<double>(0.0, 0.018633899812498245)*h_inv[1]*h_inv[0]);
+	sys.A( 0, vi + V2i(1,0), 4 ) += (std::complex<double>(0.0, 0.018633899812498245)*h_inv[1]*h_inv[0]);
+	sys.A( 0, vi + V2i(1,1), 4 ) += (std::complex<double>(0.0, 0.018633899812498245)*h_inv[1]*h_inv[0]);
+	sys.A( 1, vi + V2i(0,-1), 7 ) += (std::complex<double>(0.0, 0.02672612419124244)*h_inv[1]*h_inv[0]);
+	sys.A( 1, vi + V2i(-1,-1), 7 ) += (std::complex<double>(0.0, 0.02672612419124244)*h_inv[1]*h_inv[0]);
+	sys.A( 1, vi + V2i(0,0), 7 ) += -(std::complex<double>(0.0, 0.02672612419124244)*h_inv[1]*h_inv[0]);
+	sys.A( 1, vi + V2i(-1,0), 7 ) += -(std::complex<double>(0.0, 0.02672612419124244)*h_inv[1]*h_inv[0]);
+	sys.A( 1, vi + V2i(1,-1), 7 ) += -(std::complex<double>(0.0, 0.02672612419124244)*h_inv[1]*h_inv[0]);
+	sys.A( 1, vi + V2i(0,-1), 7 ) += -(std::complex<double>(0.0, 0.02672612419124244)*h_inv[1]*h_inv[0]);
+	sys.A( 1, vi + V2i(1,0), 7 ) += (std::complex<double>(0.0, 0.02672612419124244)*h_inv[1]*h_inv[0]);
+	sys.A( 1, vi + V2i(0,0), 7 ) += (std::complex<double>(0.0, 0.02672612419124244)*h_inv[1]*h_inv[0]);
+	sys.A( 2, vi + V2i(-1,0), 8 ) += (std::complex<double>(0.0, 0.02672612419124244)*h_inv[1]*h_inv[0]);
+	sys.A( 2, vi + V2i(-1,-1), 8 ) += (std::complex<double>(0.0, 0.02672612419124244)*h_inv[1]*h_inv[0]);
+	sys.A( 2, vi + V2i(-1,1), 8 ) += -(std::complex<double>(0.0, 0.02672612419124244)*h_inv[1]*h_inv[0]);
+	sys.A( 2, vi + V2i(-1,0), 8 ) += -(std::complex<double>(0.0, 0.02672612419124244)*h_inv[1]*h_inv[0]);
+	sys.A( 2, vi + V2i(0,0), 8 ) += -(std::complex<double>(0.0, 0.02672612419124244)*h_inv[1]*h_inv[0]);
+	sys.A( 2, vi + V2i(0,-1), 8 ) += -(std::complex<double>(0.0, 0.02672612419124244)*h_inv[1]*h_inv[0]);
+	sys.A( 2, vi + V2i(0,1), 8 ) += (std::complex<double>(0.0, 0.02672612419124244)*h_inv[1]*h_inv[0]);
+	sys.A( 2, vi + V2i(0,0), 8 ) += (std::complex<double>(0.0, 0.02672612419124244)*h_inv[1]*h_inv[0]);
 
 	// term 18 ----------------
 
 	// term 19 ----------------
 
 	// term 20 ----------------
+	sys.A( 4, vi + V2i(-1,0), 0 ) += (0.07453559925*h_inv[0]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,0), 0 ) += -(0.07453559925*h_inv[0]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,0), 0 ) += -(0.07453559925*h_inv[0]*h_inv[0]);
+	sys.A( 4, vi + V2i(1,0), 0 ) += (0.07453559925*h_inv[0]*h_inv[0]);
+	sys.A( 7, vi + V2i(-1,1), 1 ) += (0.0267261241912*h_inv[0]*h_inv[0]);
+	sys.A( 7, vi + V2i(-1,0), 1 ) += (0.0267261241912*h_inv[0]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,1), 1 ) += -(0.0267261241912*h_inv[0]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,0), 1 ) += -(0.0267261241912*h_inv[0]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,1), 1 ) += -(0.0267261241912*h_inv[0]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,0), 1 ) += -(0.0267261241912*h_inv[0]*h_inv[0]);
+	sys.A( 7, vi + V2i(1,1), 1 ) += (0.0267261241912*h_inv[0]*h_inv[0]);
+	sys.A( 7, vi + V2i(1,0), 1 ) += (0.0267261241912*h_inv[0]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,0), 2 ) += (0.0267261241912*h_inv[0]*h_inv[0]);
+	sys.A( 8, vi + V2i(-1,0), 2 ) += (0.0267261241912*h_inv[0]*h_inv[0]);
+	sys.A( 8, vi + V2i(1,0), 2 ) += -(0.0267261241912*h_inv[0]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,0), 2 ) += -(0.0267261241912*h_inv[0]*h_inv[0]);
+	sys.A( 8, vi + V2i(1,0), 2 ) += -(0.0267261241912*h_inv[0]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,0), 2 ) += -(0.0267261241912*h_inv[0]*h_inv[0]);
+	sys.A( 8, vi + V2i(2,0), 2 ) += (0.0267261241912*h_inv[0]*h_inv[0]);
+	sys.A( 8, vi + V2i(1,0), 2 ) += (0.0267261241912*h_inv[0]*h_inv[0]);
 
 	// term 21 ----------------
 	sys.A( 1, vi + V2i(-1,0), 1 ) += -(0.166666666667*h_inv[0]*h_inv[0]);
 	sys.A( 1, vi + V2i(0,0), 1 ) += (0.166666666667*h_inv[0]*h_inv[0]);
 	sys.A( 1, vi + V2i(0,0), 1 ) += (0.166666666667*h_inv[0]*h_inv[0]);
 	sys.A( 1, vi + V2i(1,0), 1 ) += -(0.166666666667*h_inv[0]*h_inv[0]);
+	sys.A( 3, vi + V2i(-1,0), 3 ) += -(0.2*h_inv[0]*h_inv[0]);
+	sys.A( 3, vi + V2i(0,0), 3 ) += (0.2*h_inv[0]*h_inv[0]);
+	sys.A( 3, vi + V2i(0,0), 3 ) += (0.2*h_inv[0]*h_inv[0]);
+	sys.A( 3, vi + V2i(1,0), 3 ) += -(0.2*h_inv[0]*h_inv[0]);
+	sys.A( 4, vi + V2i(-1,0), 4 ) += -(0.0333333333333*h_inv[0]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,0), 4 ) += (0.0333333333333*h_inv[0]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,0), 4 ) += (0.0333333333333*h_inv[0]*h_inv[0]);
+	sys.A( 4, vi + V2i(1,0), 4 ) += -(0.0333333333333*h_inv[0]*h_inv[0]);
+	sys.A( 6, vi + V2i(-1,0), 6 ) += -(0.214285714286*h_inv[0]*h_inv[0]);
+	sys.A( 6, vi + V2i(0,0), 6 ) += (0.214285714286*h_inv[0]*h_inv[0]);
+	sys.A( 6, vi + V2i(0,0), 6 ) += (0.214285714286*h_inv[0]*h_inv[0]);
+	sys.A( 6, vi + V2i(1,0), 6 ) += -(0.214285714286*h_inv[0]*h_inv[0]);
+	sys.A( 7, vi + V2i(-1,0), 7 ) += -(0.0857142857143*h_inv[0]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,0), 7 ) += (0.0857142857143*h_inv[0]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,0), 7 ) += (0.0857142857143*h_inv[0]*h_inv[0]);
+	sys.A( 7, vi + V2i(1,0), 7 ) += -(0.0857142857143*h_inv[0]*h_inv[0]);
+	sys.A( 8, vi + V2i(-1,0), 8 ) += -(0.0142857142857*h_inv[0]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,0), 8 ) += (0.0142857142857*h_inv[0]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,0), 8 ) += (0.0142857142857*h_inv[0]*h_inv[0]);
+	sys.A( 8, vi + V2i(1,0), 8 ) += -(0.0142857142857*h_inv[0]*h_inv[0]);
 
 	// term 22 ----------------
+	sys.A( 3, vi + V2i(-1,0), 0 ) += -(0.182574185835*h_inv[0]*h_inv[0]);
+	sys.A( 3, vi + V2i(0,0), 0 ) += (0.182574185835*h_inv[0]*h_inv[0]);
+	sys.A( 3, vi + V2i(0,0), 0 ) += (0.182574185835*h_inv[0]*h_inv[0]);
+	sys.A( 3, vi + V2i(1,0), 0 ) += -(0.182574185835*h_inv[0]*h_inv[0]);
+	sys.A( 6, vi + V2i(-1,1), 1 ) += -(0.103509833901*h_inv[0]*h_inv[0]);
+	sys.A( 6, vi + V2i(-1,0), 1 ) += -(0.103509833901*h_inv[0]*h_inv[0]);
+	sys.A( 6, vi + V2i(0,1), 1 ) += (0.103509833901*h_inv[0]*h_inv[0]);
+	sys.A( 6, vi + V2i(0,0), 1 ) += (0.103509833901*h_inv[0]*h_inv[0]);
+	sys.A( 6, vi + V2i(0,1), 1 ) += (0.103509833901*h_inv[0]*h_inv[0]);
+	sys.A( 6, vi + V2i(0,0), 1 ) += (0.103509833901*h_inv[0]*h_inv[0]);
+	sys.A( 6, vi + V2i(1,1), 1 ) += -(0.103509833901*h_inv[0]*h_inv[0]);
+	sys.A( 6, vi + V2i(1,0), 1 ) += -(0.103509833901*h_inv[0]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,0), 2 ) += -(0.0267261241912*h_inv[0]*h_inv[0]);
+	sys.A( 7, vi + V2i(-1,0), 2 ) += -(0.0267261241912*h_inv[0]*h_inv[0]);
+	sys.A( 7, vi + V2i(1,0), 2 ) += (0.0267261241912*h_inv[0]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,0), 2 ) += (0.0267261241912*h_inv[0]*h_inv[0]);
+	sys.A( 7, vi + V2i(1,0), 2 ) += (0.0267261241912*h_inv[0]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,0), 2 ) += (0.0267261241912*h_inv[0]*h_inv[0]);
+	sys.A( 7, vi + V2i(2,0), 2 ) += -(0.0267261241912*h_inv[0]*h_inv[0]);
+	sys.A( 7, vi + V2i(1,0), 2 ) += -(0.0267261241912*h_inv[0]*h_inv[0]);
 
 	// term 23 ----------------
 	sys.A( 1, vi + V2i(-1,-1), 2 ) += (0.0416666666667*h_inv[0]*h_inv[0]);
@@ -199,8 +907,60 @@ void set_system_row(PNSystem::VoxelSystem& sys,
 	sys.A( 1, vi + V2i(1,0), 2 ) += (0.0416666666667*h_inv[0]*h_inv[0]);
 	sys.A( 1, vi + V2i(2,-1), 2 ) += (0.0416666666667*h_inv[0]*h_inv[0]);
 	sys.A( 1, vi + V2i(2,0), 2 ) += (0.0416666666667*h_inv[0]*h_inv[0]);
+	sys.A( 3, vi + V2i(-1,0), 4 ) += (0.0816496580928*h_inv[0]*h_inv[0]);
+	sys.A( 3, vi + V2i(0,0), 4 ) += -(0.0816496580928*h_inv[0]*h_inv[0]);
+	sys.A( 3, vi + V2i(0,0), 4 ) += -(0.0816496580928*h_inv[0]*h_inv[0]);
+	sys.A( 3, vi + V2i(1,0), 4 ) += (0.0816496580928*h_inv[0]*h_inv[0]);
+	sys.A( 4, vi + V2i(-1,0), 5 ) += (0.0816496580928*h_inv[0]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,0), 5 ) += -(0.0816496580928*h_inv[0]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,0), 5 ) += -(0.0816496580928*h_inv[0]*h_inv[0]);
+	sys.A( 4, vi + V2i(1,0), 5 ) += (0.0816496580928*h_inv[0]*h_inv[0]);
+	sys.A( 6, vi + V2i(-1,0), 7 ) += (0.0553283335172*h_inv[0]*h_inv[0]);
+	sys.A( 6, vi + V2i(0,0), 7 ) += -(0.0553283335172*h_inv[0]*h_inv[0]);
+	sys.A( 6, vi + V2i(0,0), 7 ) += -(0.0553283335172*h_inv[0]*h_inv[0]);
+	sys.A( 6, vi + V2i(1,0), 7 ) += (0.0553283335172*h_inv[0]*h_inv[0]);
+	sys.A( 7, vi + V2i(-1,0), 8 ) += (0.0857142857143*h_inv[0]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,0), 8 ) += -(0.0857142857143*h_inv[0]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,0), 8 ) += -(0.0857142857143*h_inv[0]*h_inv[0]);
+	sys.A( 7, vi + V2i(1,0), 8 ) += (0.0857142857143*h_inv[0]*h_inv[0]);
+	sys.A( 8, vi + V2i(-1,0), 9 ) += (0.0553283335172*h_inv[0]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,0), 9 ) += -(0.0553283335172*h_inv[0]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,0), 9 ) += -(0.0553283335172*h_inv[0]*h_inv[0]);
+	sys.A( 8, vi + V2i(1,0), 9 ) += (0.0553283335172*h_inv[0]*h_inv[0]);
 
 	// term 24 ----------------
+	sys.A( 4, vi + V2i(-1,-1), 0 ) += -(std::complex<double>(0.0, 0.018633899812498245)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(-1,0), 0 ) += -(std::complex<double>(0.0, 0.018633899812498245)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,-1), 0 ) += -(std::complex<double>(0.0, 0.018633899812498245)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,0), 0 ) += -(std::complex<double>(0.0, 0.018633899812498245)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(-1,0), 0 ) += (std::complex<double>(0.0, 0.018633899812498245)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(-1,1), 0 ) += (std::complex<double>(0.0, 0.018633899812498245)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,0), 0 ) += (std::complex<double>(0.0, 0.018633899812498245)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,1), 0 ) += (std::complex<double>(0.0, 0.018633899812498245)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,-1), 0 ) += (std::complex<double>(0.0, 0.018633899812498245)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,0), 0 ) += (std::complex<double>(0.0, 0.018633899812498245)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(1,-1), 0 ) += (std::complex<double>(0.0, 0.018633899812498245)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(1,0), 0 ) += (std::complex<double>(0.0, 0.018633899812498245)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,0), 0 ) += -(std::complex<double>(0.0, 0.018633899812498245)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,1), 0 ) += -(std::complex<double>(0.0, 0.018633899812498245)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(1,0), 0 ) += -(std::complex<double>(0.0, 0.018633899812498245)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(1,1), 0 ) += -(std::complex<double>(0.0, 0.018633899812498245)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,0), 1 ) += -(std::complex<double>(0.0, 0.02672612419124244)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(-1,0), 1 ) += -(std::complex<double>(0.0, 0.02672612419124244)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,1), 1 ) += (std::complex<double>(0.0, 0.02672612419124244)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(-1,1), 1 ) += (std::complex<double>(0.0, 0.02672612419124244)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(1,0), 1 ) += (std::complex<double>(0.0, 0.02672612419124244)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,0), 1 ) += (std::complex<double>(0.0, 0.02672612419124244)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(1,1), 1 ) += -(std::complex<double>(0.0, 0.02672612419124244)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,1), 1 ) += -(std::complex<double>(0.0, 0.02672612419124244)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,0), 2 ) += -(std::complex<double>(0.0, 0.02672612419124244)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,-1), 2 ) += -(std::complex<double>(0.0, 0.02672612419124244)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,1), 2 ) += (std::complex<double>(0.0, 0.02672612419124244)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,0), 2 ) += (std::complex<double>(0.0, 0.02672612419124244)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(1,0), 2 ) += (std::complex<double>(0.0, 0.02672612419124244)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(1,-1), 2 ) += (std::complex<double>(0.0, 0.02672612419124244)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(1,1), 2 ) += -(std::complex<double>(0.0, 0.02672612419124244)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(1,0), 2 ) += -(std::complex<double>(0.0, 0.02672612419124244)*h_inv[1]*h_inv[0]);
 
 	// term 25 ----------------
 	sys.A( 1, vi + V2i(-1,-1), 1 ) += (std::complex<double>(0.0, 0.041666666666666664)*h_inv[1]*h_inv[0]);
@@ -219,14 +979,206 @@ void set_system_row(PNSystem::VoxelSystem& sys,
 	sys.A( 1, vi + V2i(0,1), 1 ) += (std::complex<double>(0.0, 0.041666666666666664)*h_inv[1]*h_inv[0]);
 	sys.A( 1, vi + V2i(1,0), 1 ) += (std::complex<double>(0.0, 0.041666666666666664)*h_inv[1]*h_inv[0]);
 	sys.A( 1, vi + V2i(1,1), 1 ) += (std::complex<double>(0.0, 0.041666666666666664)*h_inv[1]*h_inv[0]);
+	sys.A( 3, vi + V2i(-1,-1), 3 ) += (std::complex<double>(0.0, 0.049999999999999996)*h_inv[1]*h_inv[0]);
+	sys.A( 3, vi + V2i(-1,0), 3 ) += (std::complex<double>(0.0, 0.049999999999999996)*h_inv[1]*h_inv[0]);
+	sys.A( 3, vi + V2i(0,-1), 3 ) += (std::complex<double>(0.0, 0.049999999999999996)*h_inv[1]*h_inv[0]);
+	sys.A( 3, vi + V2i(0,0), 3 ) += (std::complex<double>(0.0, 0.049999999999999996)*h_inv[1]*h_inv[0]);
+	sys.A( 3, vi + V2i(-1,0), 3 ) += -(std::complex<double>(0.0, 0.049999999999999996)*h_inv[1]*h_inv[0]);
+	sys.A( 3, vi + V2i(-1,1), 3 ) += -(std::complex<double>(0.0, 0.049999999999999996)*h_inv[1]*h_inv[0]);
+	sys.A( 3, vi + V2i(0,0), 3 ) += -(std::complex<double>(0.0, 0.049999999999999996)*h_inv[1]*h_inv[0]);
+	sys.A( 3, vi + V2i(0,1), 3 ) += -(std::complex<double>(0.0, 0.049999999999999996)*h_inv[1]*h_inv[0]);
+	sys.A( 3, vi + V2i(0,-1), 3 ) += -(std::complex<double>(0.0, 0.049999999999999996)*h_inv[1]*h_inv[0]);
+	sys.A( 3, vi + V2i(0,0), 3 ) += -(std::complex<double>(0.0, 0.049999999999999996)*h_inv[1]*h_inv[0]);
+	sys.A( 3, vi + V2i(1,-1), 3 ) += -(std::complex<double>(0.0, 0.049999999999999996)*h_inv[1]*h_inv[0]);
+	sys.A( 3, vi + V2i(1,0), 3 ) += -(std::complex<double>(0.0, 0.049999999999999996)*h_inv[1]*h_inv[0]);
+	sys.A( 3, vi + V2i(0,0), 3 ) += (std::complex<double>(0.0, 0.049999999999999996)*h_inv[1]*h_inv[0]);
+	sys.A( 3, vi + V2i(0,1), 3 ) += (std::complex<double>(0.0, 0.049999999999999996)*h_inv[1]*h_inv[0]);
+	sys.A( 3, vi + V2i(1,0), 3 ) += (std::complex<double>(0.0, 0.049999999999999996)*h_inv[1]*h_inv[0]);
+	sys.A( 3, vi + V2i(1,1), 3 ) += (std::complex<double>(0.0, 0.049999999999999996)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(-1,-1), 4 ) += (std::complex<double>(0.0, 0.008333333333333331)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(-1,0), 4 ) += (std::complex<double>(0.0, 0.008333333333333331)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,-1), 4 ) += (std::complex<double>(0.0, 0.008333333333333331)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,0), 4 ) += (std::complex<double>(0.0, 0.008333333333333331)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(-1,0), 4 ) += -(std::complex<double>(0.0, 0.008333333333333331)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(-1,1), 4 ) += -(std::complex<double>(0.0, 0.008333333333333331)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,0), 4 ) += -(std::complex<double>(0.0, 0.008333333333333331)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,1), 4 ) += -(std::complex<double>(0.0, 0.008333333333333331)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,-1), 4 ) += -(std::complex<double>(0.0, 0.008333333333333331)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,0), 4 ) += -(std::complex<double>(0.0, 0.008333333333333331)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(1,-1), 4 ) += -(std::complex<double>(0.0, 0.008333333333333331)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(1,0), 4 ) += -(std::complex<double>(0.0, 0.008333333333333331)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,0), 4 ) += (std::complex<double>(0.0, 0.008333333333333331)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,1), 4 ) += (std::complex<double>(0.0, 0.008333333333333331)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(1,0), 4 ) += (std::complex<double>(0.0, 0.008333333333333331)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(1,1), 4 ) += (std::complex<double>(0.0, 0.008333333333333331)*h_inv[1]*h_inv[0]);
+	sys.A( 6, vi + V2i(-1,-1), 6 ) += (std::complex<double>(0.0, 0.05357142857142857)*h_inv[1]*h_inv[0]);
+	sys.A( 6, vi + V2i(-1,0), 6 ) += (std::complex<double>(0.0, 0.05357142857142857)*h_inv[1]*h_inv[0]);
+	sys.A( 6, vi + V2i(0,-1), 6 ) += (std::complex<double>(0.0, 0.05357142857142857)*h_inv[1]*h_inv[0]);
+	sys.A( 6, vi + V2i(0,0), 6 ) += (std::complex<double>(0.0, 0.05357142857142857)*h_inv[1]*h_inv[0]);
+	sys.A( 6, vi + V2i(-1,0), 6 ) += -(std::complex<double>(0.0, 0.05357142857142857)*h_inv[1]*h_inv[0]);
+	sys.A( 6, vi + V2i(-1,1), 6 ) += -(std::complex<double>(0.0, 0.05357142857142857)*h_inv[1]*h_inv[0]);
+	sys.A( 6, vi + V2i(0,0), 6 ) += -(std::complex<double>(0.0, 0.05357142857142857)*h_inv[1]*h_inv[0]);
+	sys.A( 6, vi + V2i(0,1), 6 ) += -(std::complex<double>(0.0, 0.05357142857142857)*h_inv[1]*h_inv[0]);
+	sys.A( 6, vi + V2i(0,-1), 6 ) += -(std::complex<double>(0.0, 0.05357142857142857)*h_inv[1]*h_inv[0]);
+	sys.A( 6, vi + V2i(0,0), 6 ) += -(std::complex<double>(0.0, 0.05357142857142857)*h_inv[1]*h_inv[0]);
+	sys.A( 6, vi + V2i(1,-1), 6 ) += -(std::complex<double>(0.0, 0.05357142857142857)*h_inv[1]*h_inv[0]);
+	sys.A( 6, vi + V2i(1,0), 6 ) += -(std::complex<double>(0.0, 0.05357142857142857)*h_inv[1]*h_inv[0]);
+	sys.A( 6, vi + V2i(0,0), 6 ) += (std::complex<double>(0.0, 0.05357142857142857)*h_inv[1]*h_inv[0]);
+	sys.A( 6, vi + V2i(0,1), 6 ) += (std::complex<double>(0.0, 0.05357142857142857)*h_inv[1]*h_inv[0]);
+	sys.A( 6, vi + V2i(1,0), 6 ) += (std::complex<double>(0.0, 0.05357142857142857)*h_inv[1]*h_inv[0]);
+	sys.A( 6, vi + V2i(1,1), 6 ) += (std::complex<double>(0.0, 0.05357142857142857)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(-1,-1), 7 ) += (std::complex<double>(0.0, 0.021428571428571432)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(-1,0), 7 ) += (std::complex<double>(0.0, 0.021428571428571432)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,-1), 7 ) += (std::complex<double>(0.0, 0.021428571428571432)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,0), 7 ) += (std::complex<double>(0.0, 0.021428571428571432)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(-1,0), 7 ) += -(std::complex<double>(0.0, 0.021428571428571432)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(-1,1), 7 ) += -(std::complex<double>(0.0, 0.021428571428571432)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,0), 7 ) += -(std::complex<double>(0.0, 0.021428571428571432)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,1), 7 ) += -(std::complex<double>(0.0, 0.021428571428571432)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,-1), 7 ) += -(std::complex<double>(0.0, 0.021428571428571432)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,0), 7 ) += -(std::complex<double>(0.0, 0.021428571428571432)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(1,-1), 7 ) += -(std::complex<double>(0.0, 0.021428571428571432)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(1,0), 7 ) += -(std::complex<double>(0.0, 0.021428571428571432)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,0), 7 ) += (std::complex<double>(0.0, 0.021428571428571432)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,1), 7 ) += (std::complex<double>(0.0, 0.021428571428571432)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(1,0), 7 ) += (std::complex<double>(0.0, 0.021428571428571432)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(1,1), 7 ) += (std::complex<double>(0.0, 0.021428571428571432)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(-1,-1), 8 ) += (std::complex<double>(0.0, 0.0035714285714285713)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(-1,0), 8 ) += (std::complex<double>(0.0, 0.0035714285714285713)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,-1), 8 ) += (std::complex<double>(0.0, 0.0035714285714285713)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,0), 8 ) += (std::complex<double>(0.0, 0.0035714285714285713)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(-1,0), 8 ) += -(std::complex<double>(0.0, 0.0035714285714285713)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(-1,1), 8 ) += -(std::complex<double>(0.0, 0.0035714285714285713)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,0), 8 ) += -(std::complex<double>(0.0, 0.0035714285714285713)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,1), 8 ) += -(std::complex<double>(0.0, 0.0035714285714285713)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,-1), 8 ) += -(std::complex<double>(0.0, 0.0035714285714285713)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,0), 8 ) += -(std::complex<double>(0.0, 0.0035714285714285713)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(1,-1), 8 ) += -(std::complex<double>(0.0, 0.0035714285714285713)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(1,0), 8 ) += -(std::complex<double>(0.0, 0.0035714285714285713)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,0), 8 ) += (std::complex<double>(0.0, 0.0035714285714285713)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,1), 8 ) += (std::complex<double>(0.0, 0.0035714285714285713)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(1,0), 8 ) += (std::complex<double>(0.0, 0.0035714285714285713)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(1,1), 8 ) += (std::complex<double>(0.0, 0.0035714285714285713)*h_inv[1]*h_inv[0]);
 
 	// term 26 ----------------
+	sys.A( 3, vi + V2i(-1,-1), 0 ) += -(std::complex<double>(0.0, 0.04564354645876384)*h_inv[1]*h_inv[0]);
+	sys.A( 3, vi + V2i(-1,0), 0 ) += -(std::complex<double>(0.0, 0.04564354645876384)*h_inv[1]*h_inv[0]);
+	sys.A( 3, vi + V2i(0,-1), 0 ) += -(std::complex<double>(0.0, 0.04564354645876384)*h_inv[1]*h_inv[0]);
+	sys.A( 3, vi + V2i(0,0), 0 ) += -(std::complex<double>(0.0, 0.04564354645876384)*h_inv[1]*h_inv[0]);
+	sys.A( 3, vi + V2i(-1,0), 0 ) += (std::complex<double>(0.0, 0.04564354645876384)*h_inv[1]*h_inv[0]);
+	sys.A( 3, vi + V2i(-1,1), 0 ) += (std::complex<double>(0.0, 0.04564354645876384)*h_inv[1]*h_inv[0]);
+	sys.A( 3, vi + V2i(0,0), 0 ) += (std::complex<double>(0.0, 0.04564354645876384)*h_inv[1]*h_inv[0]);
+	sys.A( 3, vi + V2i(0,1), 0 ) += (std::complex<double>(0.0, 0.04564354645876384)*h_inv[1]*h_inv[0]);
+	sys.A( 3, vi + V2i(0,-1), 0 ) += (std::complex<double>(0.0, 0.04564354645876384)*h_inv[1]*h_inv[0]);
+	sys.A( 3, vi + V2i(0,0), 0 ) += (std::complex<double>(0.0, 0.04564354645876384)*h_inv[1]*h_inv[0]);
+	sys.A( 3, vi + V2i(1,-1), 0 ) += (std::complex<double>(0.0, 0.04564354645876384)*h_inv[1]*h_inv[0]);
+	sys.A( 3, vi + V2i(1,0), 0 ) += (std::complex<double>(0.0, 0.04564354645876384)*h_inv[1]*h_inv[0]);
+	sys.A( 3, vi + V2i(0,0), 0 ) += -(std::complex<double>(0.0, 0.04564354645876384)*h_inv[1]*h_inv[0]);
+	sys.A( 3, vi + V2i(0,1), 0 ) += -(std::complex<double>(0.0, 0.04564354645876384)*h_inv[1]*h_inv[0]);
+	sys.A( 3, vi + V2i(1,0), 0 ) += -(std::complex<double>(0.0, 0.04564354645876384)*h_inv[1]*h_inv[0]);
+	sys.A( 3, vi + V2i(1,1), 0 ) += -(std::complex<double>(0.0, 0.04564354645876384)*h_inv[1]*h_inv[0]);
+	sys.A( 6, vi + V2i(0,0), 1 ) += -(std::complex<double>(0.0, 0.10350983390135313)*h_inv[1]*h_inv[0]);
+	sys.A( 6, vi + V2i(-1,0), 1 ) += -(std::complex<double>(0.0, 0.10350983390135313)*h_inv[1]*h_inv[0]);
+	sys.A( 6, vi + V2i(0,1), 1 ) += (std::complex<double>(0.0, 0.10350983390135313)*h_inv[1]*h_inv[0]);
+	sys.A( 6, vi + V2i(-1,1), 1 ) += (std::complex<double>(0.0, 0.10350983390135313)*h_inv[1]*h_inv[0]);
+	sys.A( 6, vi + V2i(1,0), 1 ) += (std::complex<double>(0.0, 0.10350983390135313)*h_inv[1]*h_inv[0]);
+	sys.A( 6, vi + V2i(0,0), 1 ) += (std::complex<double>(0.0, 0.10350983390135313)*h_inv[1]*h_inv[0]);
+	sys.A( 6, vi + V2i(1,1), 1 ) += -(std::complex<double>(0.0, 0.10350983390135313)*h_inv[1]*h_inv[0]);
+	sys.A( 6, vi + V2i(0,1), 1 ) += -(std::complex<double>(0.0, 0.10350983390135313)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,0), 2 ) += -(std::complex<double>(0.0, 0.02672612419124244)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,-1), 2 ) += -(std::complex<double>(0.0, 0.02672612419124244)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,1), 2 ) += (std::complex<double>(0.0, 0.02672612419124244)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,0), 2 ) += (std::complex<double>(0.0, 0.02672612419124244)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(1,0), 2 ) += (std::complex<double>(0.0, 0.02672612419124244)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(1,-1), 2 ) += (std::complex<double>(0.0, 0.02672612419124244)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(1,1), 2 ) += -(std::complex<double>(0.0, 0.02672612419124244)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(1,0), 2 ) += -(std::complex<double>(0.0, 0.02672612419124244)*h_inv[1]*h_inv[0]);
 
 	// term 27 ----------------
 	sys.A( 1, vi + V2i(0,-1), 2 ) += (std::complex<double>(0.0, 0.16666666666666666)*h_inv[1]*h_inv[0]);
 	sys.A( 1, vi + V2i(0,0), 2 ) += -(std::complex<double>(0.0, 0.16666666666666666)*h_inv[1]*h_inv[0]);
 	sys.A( 1, vi + V2i(1,-1), 2 ) += -(std::complex<double>(0.0, 0.16666666666666666)*h_inv[1]*h_inv[0]);
 	sys.A( 1, vi + V2i(1,0), 2 ) += (std::complex<double>(0.0, 0.16666666666666666)*h_inv[1]*h_inv[0]);
+	sys.A( 3, vi + V2i(-1,-1), 4 ) += (std::complex<double>(0.0, 0.02041241452319315)*h_inv[1]*h_inv[0]);
+	sys.A( 3, vi + V2i(-1,0), 4 ) += (std::complex<double>(0.0, 0.02041241452319315)*h_inv[1]*h_inv[0]);
+	sys.A( 3, vi + V2i(0,-1), 4 ) += (std::complex<double>(0.0, 0.02041241452319315)*h_inv[1]*h_inv[0]);
+	sys.A( 3, vi + V2i(0,0), 4 ) += (std::complex<double>(0.0, 0.02041241452319315)*h_inv[1]*h_inv[0]);
+	sys.A( 3, vi + V2i(-1,0), 4 ) += -(std::complex<double>(0.0, 0.02041241452319315)*h_inv[1]*h_inv[0]);
+	sys.A( 3, vi + V2i(-1,1), 4 ) += -(std::complex<double>(0.0, 0.02041241452319315)*h_inv[1]*h_inv[0]);
+	sys.A( 3, vi + V2i(0,0), 4 ) += -(std::complex<double>(0.0, 0.02041241452319315)*h_inv[1]*h_inv[0]);
+	sys.A( 3, vi + V2i(0,1), 4 ) += -(std::complex<double>(0.0, 0.02041241452319315)*h_inv[1]*h_inv[0]);
+	sys.A( 3, vi + V2i(0,-1), 4 ) += -(std::complex<double>(0.0, 0.02041241452319315)*h_inv[1]*h_inv[0]);
+	sys.A( 3, vi + V2i(0,0), 4 ) += -(std::complex<double>(0.0, 0.02041241452319315)*h_inv[1]*h_inv[0]);
+	sys.A( 3, vi + V2i(1,-1), 4 ) += -(std::complex<double>(0.0, 0.02041241452319315)*h_inv[1]*h_inv[0]);
+	sys.A( 3, vi + V2i(1,0), 4 ) += -(std::complex<double>(0.0, 0.02041241452319315)*h_inv[1]*h_inv[0]);
+	sys.A( 3, vi + V2i(0,0), 4 ) += (std::complex<double>(0.0, 0.02041241452319315)*h_inv[1]*h_inv[0]);
+	sys.A( 3, vi + V2i(0,1), 4 ) += (std::complex<double>(0.0, 0.02041241452319315)*h_inv[1]*h_inv[0]);
+	sys.A( 3, vi + V2i(1,0), 4 ) += (std::complex<double>(0.0, 0.02041241452319315)*h_inv[1]*h_inv[0]);
+	sys.A( 3, vi + V2i(1,1), 4 ) += (std::complex<double>(0.0, 0.02041241452319315)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(-1,-1), 5 ) += (std::complex<double>(0.0, 0.02041241452319315)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(-1,0), 5 ) += (std::complex<double>(0.0, 0.02041241452319315)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,-1), 5 ) += (std::complex<double>(0.0, 0.02041241452319315)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,0), 5 ) += (std::complex<double>(0.0, 0.02041241452319315)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(-1,0), 5 ) += -(std::complex<double>(0.0, 0.02041241452319315)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(-1,1), 5 ) += -(std::complex<double>(0.0, 0.02041241452319315)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,0), 5 ) += -(std::complex<double>(0.0, 0.02041241452319315)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,1), 5 ) += -(std::complex<double>(0.0, 0.02041241452319315)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,-1), 5 ) += -(std::complex<double>(0.0, 0.02041241452319315)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,0), 5 ) += -(std::complex<double>(0.0, 0.02041241452319315)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(1,-1), 5 ) += -(std::complex<double>(0.0, 0.02041241452319315)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(1,0), 5 ) += -(std::complex<double>(0.0, 0.02041241452319315)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,0), 5 ) += (std::complex<double>(0.0, 0.02041241452319315)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,1), 5 ) += (std::complex<double>(0.0, 0.02041241452319315)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(1,0), 5 ) += (std::complex<double>(0.0, 0.02041241452319315)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(1,1), 5 ) += (std::complex<double>(0.0, 0.02041241452319315)*h_inv[1]*h_inv[0]);
+	sys.A( 6, vi + V2i(-1,-1), 7 ) += (std::complex<double>(0.0, 0.013832083379312202)*h_inv[1]*h_inv[0]);
+	sys.A( 6, vi + V2i(-1,0), 7 ) += (std::complex<double>(0.0, 0.013832083379312202)*h_inv[1]*h_inv[0]);
+	sys.A( 6, vi + V2i(0,-1), 7 ) += (std::complex<double>(0.0, 0.013832083379312202)*h_inv[1]*h_inv[0]);
+	sys.A( 6, vi + V2i(0,0), 7 ) += (std::complex<double>(0.0, 0.013832083379312202)*h_inv[1]*h_inv[0]);
+	sys.A( 6, vi + V2i(-1,0), 7 ) += -(std::complex<double>(0.0, 0.013832083379312202)*h_inv[1]*h_inv[0]);
+	sys.A( 6, vi + V2i(-1,1), 7 ) += -(std::complex<double>(0.0, 0.013832083379312202)*h_inv[1]*h_inv[0]);
+	sys.A( 6, vi + V2i(0,0), 7 ) += -(std::complex<double>(0.0, 0.013832083379312202)*h_inv[1]*h_inv[0]);
+	sys.A( 6, vi + V2i(0,1), 7 ) += -(std::complex<double>(0.0, 0.013832083379312202)*h_inv[1]*h_inv[0]);
+	sys.A( 6, vi + V2i(0,-1), 7 ) += -(std::complex<double>(0.0, 0.013832083379312202)*h_inv[1]*h_inv[0]);
+	sys.A( 6, vi + V2i(0,0), 7 ) += -(std::complex<double>(0.0, 0.013832083379312202)*h_inv[1]*h_inv[0]);
+	sys.A( 6, vi + V2i(1,-1), 7 ) += -(std::complex<double>(0.0, 0.013832083379312202)*h_inv[1]*h_inv[0]);
+	sys.A( 6, vi + V2i(1,0), 7 ) += -(std::complex<double>(0.0, 0.013832083379312202)*h_inv[1]*h_inv[0]);
+	sys.A( 6, vi + V2i(0,0), 7 ) += (std::complex<double>(0.0, 0.013832083379312202)*h_inv[1]*h_inv[0]);
+	sys.A( 6, vi + V2i(0,1), 7 ) += (std::complex<double>(0.0, 0.013832083379312202)*h_inv[1]*h_inv[0]);
+	sys.A( 6, vi + V2i(1,0), 7 ) += (std::complex<double>(0.0, 0.013832083379312202)*h_inv[1]*h_inv[0]);
+	sys.A( 6, vi + V2i(1,1), 7 ) += (std::complex<double>(0.0, 0.013832083379312202)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(-1,-1), 8 ) += (std::complex<double>(0.0, 0.021428571428571432)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(-1,0), 8 ) += (std::complex<double>(0.0, 0.021428571428571432)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,-1), 8 ) += (std::complex<double>(0.0, 0.021428571428571432)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,0), 8 ) += (std::complex<double>(0.0, 0.021428571428571432)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(-1,0), 8 ) += -(std::complex<double>(0.0, 0.021428571428571432)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(-1,1), 8 ) += -(std::complex<double>(0.0, 0.021428571428571432)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,0), 8 ) += -(std::complex<double>(0.0, 0.021428571428571432)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,1), 8 ) += -(std::complex<double>(0.0, 0.021428571428571432)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,-1), 8 ) += -(std::complex<double>(0.0, 0.021428571428571432)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,0), 8 ) += -(std::complex<double>(0.0, 0.021428571428571432)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(1,-1), 8 ) += -(std::complex<double>(0.0, 0.021428571428571432)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(1,0), 8 ) += -(std::complex<double>(0.0, 0.021428571428571432)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,0), 8 ) += (std::complex<double>(0.0, 0.021428571428571432)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,1), 8 ) += (std::complex<double>(0.0, 0.021428571428571432)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(1,0), 8 ) += (std::complex<double>(0.0, 0.021428571428571432)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(1,1), 8 ) += (std::complex<double>(0.0, 0.021428571428571432)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(-1,-1), 9 ) += (std::complex<double>(0.0, 0.013832083379312202)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(-1,0), 9 ) += (std::complex<double>(0.0, 0.013832083379312202)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,-1), 9 ) += (std::complex<double>(0.0, 0.013832083379312202)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,0), 9 ) += (std::complex<double>(0.0, 0.013832083379312202)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(-1,0), 9 ) += -(std::complex<double>(0.0, 0.013832083379312202)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(-1,1), 9 ) += -(std::complex<double>(0.0, 0.013832083379312202)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,0), 9 ) += -(std::complex<double>(0.0, 0.013832083379312202)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,1), 9 ) += -(std::complex<double>(0.0, 0.013832083379312202)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,-1), 9 ) += -(std::complex<double>(0.0, 0.013832083379312202)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,0), 9 ) += -(std::complex<double>(0.0, 0.013832083379312202)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(1,-1), 9 ) += -(std::complex<double>(0.0, 0.013832083379312202)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(1,0), 9 ) += -(std::complex<double>(0.0, 0.013832083379312202)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,0), 9 ) += (std::complex<double>(0.0, 0.013832083379312202)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,1), 9 ) += (std::complex<double>(0.0, 0.013832083379312202)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(1,0), 9 ) += (std::complex<double>(0.0, 0.013832083379312202)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(1,1), 9 ) += (std::complex<double>(0.0, 0.013832083379312202)*h_inv[1]*h_inv[0]);
 
 	// term 28 ----------------
 
@@ -245,8 +1197,56 @@ void set_system_row(PNSystem::VoxelSystem& sys,
 	sys.A( 2, vi + V2i(0,0), 2 ) += (0.2*h_inv[0]*h_inv[0]);
 	sys.A( 2, vi + V2i(0,0), 2 ) += (0.2*h_inv[0]*h_inv[0]);
 	sys.A( 2, vi + V2i(1,0), 2 ) += -(0.2*h_inv[0]*h_inv[0]);
+	sys.A( 3, vi + V2i(-1,0), 3 ) += -(0.0142857142857*h_inv[0]*h_inv[0]);
+	sys.A( 3, vi + V2i(0,0), 3 ) += (0.0142857142857*h_inv[0]*h_inv[0]);
+	sys.A( 3, vi + V2i(0,0), 3 ) += (0.0142857142857*h_inv[0]*h_inv[0]);
+	sys.A( 3, vi + V2i(1,0), 3 ) += -(0.0142857142857*h_inv[0]*h_inv[0]);
+	sys.A( 4, vi + V2i(-1,0), 4 ) += -(0.0857142857143*h_inv[0]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,0), 4 ) += (0.0857142857143*h_inv[0]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,0), 4 ) += (0.0857142857143*h_inv[0]*h_inv[0]);
+	sys.A( 4, vi + V2i(1,0), 4 ) += -(0.0857142857143*h_inv[0]*h_inv[0]);
+	sys.A( 5, vi + V2i(-1,0), 5 ) += -(0.214285714286*h_inv[0]*h_inv[0]);
+	sys.A( 5, vi + V2i(0,0), 5 ) += (0.214285714286*h_inv[0]*h_inv[0]);
+	sys.A( 5, vi + V2i(0,0), 5 ) += (0.214285714286*h_inv[0]*h_inv[0]);
+	sys.A( 5, vi + V2i(1,0), 5 ) += -(0.214285714286*h_inv[0]*h_inv[0]);
+	sys.A( 6, vi + V2i(-1,0), 6 ) += -(0.00793650793651*h_inv[0]*h_inv[0]);
+	sys.A( 6, vi + V2i(0,0), 6 ) += (0.00793650793651*h_inv[0]*h_inv[0]);
+	sys.A( 6, vi + V2i(0,0), 6 ) += (0.00793650793651*h_inv[0]*h_inv[0]);
+	sys.A( 6, vi + V2i(1,0), 6 ) += -(0.00793650793651*h_inv[0]*h_inv[0]);
+	sys.A( 7, vi + V2i(-1,0), 7 ) += -(0.047619047619*h_inv[0]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,0), 7 ) += (0.047619047619*h_inv[0]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,0), 7 ) += (0.047619047619*h_inv[0]*h_inv[0]);
+	sys.A( 7, vi + V2i(1,0), 7 ) += -(0.047619047619*h_inv[0]*h_inv[0]);
+	sys.A( 8, vi + V2i(-1,0), 8 ) += -(0.119047619048*h_inv[0]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,0), 8 ) += (0.119047619048*h_inv[0]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,0), 8 ) += (0.119047619048*h_inv[0]*h_inv[0]);
+	sys.A( 8, vi + V2i(1,0), 8 ) += -(0.119047619048*h_inv[0]*h_inv[0]);
+	sys.A( 9, vi + V2i(-1,0), 9 ) += -(0.222222222222*h_inv[0]*h_inv[0]);
+	sys.A( 9, vi + V2i(0,0), 9 ) += (0.222222222222*h_inv[0]*h_inv[0]);
+	sys.A( 9, vi + V2i(0,0), 9 ) += (0.222222222222*h_inv[0]*h_inv[0]);
+	sys.A( 9, vi + V2i(1,0), 9 ) += -(0.222222222222*h_inv[0]*h_inv[0]);
 
 	// term 31 ----------------
+	sys.A( 0, vi + V2i(-1,0), 4 ) += (0.07453559925*h_inv[0]*h_inv[0]);
+	sys.A( 0, vi + V2i(0,0), 4 ) += -(0.07453559925*h_inv[0]*h_inv[0]);
+	sys.A( 0, vi + V2i(0,0), 4 ) += -(0.07453559925*h_inv[0]*h_inv[0]);
+	sys.A( 0, vi + V2i(1,0), 4 ) += (0.07453559925*h_inv[0]*h_inv[0]);
+	sys.A( 1, vi + V2i(-1,0), 7 ) += (0.0267261241912*h_inv[0]*h_inv[0]);
+	sys.A( 1, vi + V2i(-1,-1), 7 ) += (0.0267261241912*h_inv[0]*h_inv[0]);
+	sys.A( 1, vi + V2i(0,0), 7 ) += -(0.0267261241912*h_inv[0]*h_inv[0]);
+	sys.A( 1, vi + V2i(0,-1), 7 ) += -(0.0267261241912*h_inv[0]*h_inv[0]);
+	sys.A( 1, vi + V2i(0,0), 7 ) += -(0.0267261241912*h_inv[0]*h_inv[0]);
+	sys.A( 1, vi + V2i(0,-1), 7 ) += -(0.0267261241912*h_inv[0]*h_inv[0]);
+	sys.A( 1, vi + V2i(1,0), 7 ) += (0.0267261241912*h_inv[0]*h_inv[0]);
+	sys.A( 1, vi + V2i(1,-1), 7 ) += (0.0267261241912*h_inv[0]*h_inv[0]);
+	sys.A( 2, vi + V2i(-1,0), 8 ) += (0.0267261241912*h_inv[0]*h_inv[0]);
+	sys.A( 2, vi + V2i(-2,0), 8 ) += (0.0267261241912*h_inv[0]*h_inv[0]);
+	sys.A( 2, vi + V2i(0,0), 8 ) += -(0.0267261241912*h_inv[0]*h_inv[0]);
+	sys.A( 2, vi + V2i(-1,0), 8 ) += -(0.0267261241912*h_inv[0]*h_inv[0]);
+	sys.A( 2, vi + V2i(0,0), 8 ) += -(0.0267261241912*h_inv[0]*h_inv[0]);
+	sys.A( 2, vi + V2i(-1,0), 8 ) += -(0.0267261241912*h_inv[0]*h_inv[0]);
+	sys.A( 2, vi + V2i(1,0), 8 ) += (0.0267261241912*h_inv[0]*h_inv[0]);
+	sys.A( 2, vi + V2i(0,0), 8 ) += (0.0267261241912*h_inv[0]*h_inv[0]);
 
 	// term 32 ----------------
 	sys.A( 1, vi + V2i(-1,-1), 2 ) += (0.00833333333333*h_inv[0]*h_inv[0]);
@@ -265,8 +1265,48 @@ void set_system_row(PNSystem::VoxelSystem& sys,
 	sys.A( 1, vi + V2i(1,0), 2 ) += (0.00833333333333*h_inv[0]*h_inv[0]);
 	sys.A( 1, vi + V2i(2,-1), 2 ) += (0.00833333333333*h_inv[0]*h_inv[0]);
 	sys.A( 1, vi + V2i(2,0), 2 ) += (0.00833333333333*h_inv[0]*h_inv[0]);
+	sys.A( 3, vi + V2i(-1,0), 4 ) += (0.0349927106112*h_inv[0]*h_inv[0]);
+	sys.A( 3, vi + V2i(0,0), 4 ) += -(0.0349927106112*h_inv[0]*h_inv[0]);
+	sys.A( 3, vi + V2i(0,0), 4 ) += -(0.0349927106112*h_inv[0]*h_inv[0]);
+	sys.A( 3, vi + V2i(1,0), 4 ) += (0.0349927106112*h_inv[0]*h_inv[0]);
+	sys.A( 4, vi + V2i(-1,0), 5 ) += (0.0349927106112*h_inv[0]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,0), 5 ) += -(0.0349927106112*h_inv[0]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,0), 5 ) += -(0.0349927106112*h_inv[0]*h_inv[0]);
+	sys.A( 4, vi + V2i(1,0), 5 ) += (0.0349927106112*h_inv[0]*h_inv[0]);
+	sys.A( 6, vi + V2i(-1,0), 7 ) += (0.0307379630651*h_inv[0]*h_inv[0]);
+	sys.A( 6, vi + V2i(0,0), 7 ) += -(0.0307379630651*h_inv[0]*h_inv[0]);
+	sys.A( 6, vi + V2i(0,0), 7 ) += -(0.0307379630651*h_inv[0]*h_inv[0]);
+	sys.A( 6, vi + V2i(1,0), 7 ) += (0.0307379630651*h_inv[0]*h_inv[0]);
+	sys.A( 7, vi + V2i(-1,0), 8 ) += (0.047619047619*h_inv[0]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,0), 8 ) += -(0.047619047619*h_inv[0]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,0), 8 ) += -(0.047619047619*h_inv[0]*h_inv[0]);
+	sys.A( 7, vi + V2i(1,0), 8 ) += (0.047619047619*h_inv[0]*h_inv[0]);
+	sys.A( 8, vi + V2i(-1,0), 9 ) += (0.0307379630651*h_inv[0]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,0), 9 ) += -(0.0307379630651*h_inv[0]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,0), 9 ) += -(0.0307379630651*h_inv[0]*h_inv[0]);
+	sys.A( 8, vi + V2i(1,0), 9 ) += (0.0307379630651*h_inv[0]*h_inv[0]);
 
 	// term 33 ----------------
+	sys.A( 0, vi + V2i(-1,0), 5 ) += -(0.182574185835*h_inv[0]*h_inv[0]);
+	sys.A( 0, vi + V2i(0,0), 5 ) += (0.182574185835*h_inv[0]*h_inv[0]);
+	sys.A( 0, vi + V2i(0,0), 5 ) += (0.182574185835*h_inv[0]*h_inv[0]);
+	sys.A( 0, vi + V2i(1,0), 5 ) += -(0.182574185835*h_inv[0]*h_inv[0]);
+	sys.A( 1, vi + V2i(-1,0), 8 ) += -(0.0267261241912*h_inv[0]*h_inv[0]);
+	sys.A( 1, vi + V2i(-1,-1), 8 ) += -(0.0267261241912*h_inv[0]*h_inv[0]);
+	sys.A( 1, vi + V2i(0,0), 8 ) += (0.0267261241912*h_inv[0]*h_inv[0]);
+	sys.A( 1, vi + V2i(0,-1), 8 ) += (0.0267261241912*h_inv[0]*h_inv[0]);
+	sys.A( 1, vi + V2i(0,0), 8 ) += (0.0267261241912*h_inv[0]*h_inv[0]);
+	sys.A( 1, vi + V2i(0,-1), 8 ) += (0.0267261241912*h_inv[0]*h_inv[0]);
+	sys.A( 1, vi + V2i(1,0), 8 ) += -(0.0267261241912*h_inv[0]*h_inv[0]);
+	sys.A( 1, vi + V2i(1,-1), 8 ) += -(0.0267261241912*h_inv[0]*h_inv[0]);
+	sys.A( 2, vi + V2i(-1,0), 9 ) += -(0.103509833901*h_inv[0]*h_inv[0]);
+	sys.A( 2, vi + V2i(-2,0), 9 ) += -(0.103509833901*h_inv[0]*h_inv[0]);
+	sys.A( 2, vi + V2i(0,0), 9 ) += (0.103509833901*h_inv[0]*h_inv[0]);
+	sys.A( 2, vi + V2i(-1,0), 9 ) += (0.103509833901*h_inv[0]*h_inv[0]);
+	sys.A( 2, vi + V2i(0,0), 9 ) += (0.103509833901*h_inv[0]*h_inv[0]);
+	sys.A( 2, vi + V2i(-1,0), 9 ) += (0.103509833901*h_inv[0]*h_inv[0]);
+	sys.A( 2, vi + V2i(1,0), 9 ) += -(0.103509833901*h_inv[0]*h_inv[0]);
+	sys.A( 2, vi + V2i(0,0), 9 ) += -(0.103509833901*h_inv[0]*h_inv[0]);
 
 	// term 34 ----------------
 	sys.A( 0, vi + V2i(-1,-1), 0 ) += (std::complex<double>(0.0, 0.041666666666666664)*h_inv[1]*h_inv[0]);
@@ -317,30 +1357,430 @@ void set_system_row(PNSystem::VoxelSystem& sys,
 	sys.A( 2, vi + V2i(0,1), 2 ) += (std::complex<double>(0.0, 0.049999999999999996)*h_inv[1]*h_inv[0]);
 	sys.A( 2, vi + V2i(1,0), 2 ) += (std::complex<double>(0.0, 0.049999999999999996)*h_inv[1]*h_inv[0]);
 	sys.A( 2, vi + V2i(1,1), 2 ) += (std::complex<double>(0.0, 0.049999999999999996)*h_inv[1]*h_inv[0]);
+	sys.A( 3, vi + V2i(-1,-1), 3 ) += (std::complex<double>(0.0, 0.0035714285714285713)*h_inv[1]*h_inv[0]);
+	sys.A( 3, vi + V2i(-1,0), 3 ) += (std::complex<double>(0.0, 0.0035714285714285713)*h_inv[1]*h_inv[0]);
+	sys.A( 3, vi + V2i(0,-1), 3 ) += (std::complex<double>(0.0, 0.0035714285714285713)*h_inv[1]*h_inv[0]);
+	sys.A( 3, vi + V2i(0,0), 3 ) += (std::complex<double>(0.0, 0.0035714285714285713)*h_inv[1]*h_inv[0]);
+	sys.A( 3, vi + V2i(-1,0), 3 ) += -(std::complex<double>(0.0, 0.0035714285714285713)*h_inv[1]*h_inv[0]);
+	sys.A( 3, vi + V2i(-1,1), 3 ) += -(std::complex<double>(0.0, 0.0035714285714285713)*h_inv[1]*h_inv[0]);
+	sys.A( 3, vi + V2i(0,0), 3 ) += -(std::complex<double>(0.0, 0.0035714285714285713)*h_inv[1]*h_inv[0]);
+	sys.A( 3, vi + V2i(0,1), 3 ) += -(std::complex<double>(0.0, 0.0035714285714285713)*h_inv[1]*h_inv[0]);
+	sys.A( 3, vi + V2i(0,-1), 3 ) += -(std::complex<double>(0.0, 0.0035714285714285713)*h_inv[1]*h_inv[0]);
+	sys.A( 3, vi + V2i(0,0), 3 ) += -(std::complex<double>(0.0, 0.0035714285714285713)*h_inv[1]*h_inv[0]);
+	sys.A( 3, vi + V2i(1,-1), 3 ) += -(std::complex<double>(0.0, 0.0035714285714285713)*h_inv[1]*h_inv[0]);
+	sys.A( 3, vi + V2i(1,0), 3 ) += -(std::complex<double>(0.0, 0.0035714285714285713)*h_inv[1]*h_inv[0]);
+	sys.A( 3, vi + V2i(0,0), 3 ) += (std::complex<double>(0.0, 0.0035714285714285713)*h_inv[1]*h_inv[0]);
+	sys.A( 3, vi + V2i(0,1), 3 ) += (std::complex<double>(0.0, 0.0035714285714285713)*h_inv[1]*h_inv[0]);
+	sys.A( 3, vi + V2i(1,0), 3 ) += (std::complex<double>(0.0, 0.0035714285714285713)*h_inv[1]*h_inv[0]);
+	sys.A( 3, vi + V2i(1,1), 3 ) += (std::complex<double>(0.0, 0.0035714285714285713)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(-1,-1), 4 ) += (std::complex<double>(0.0, 0.021428571428571432)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(-1,0), 4 ) += (std::complex<double>(0.0, 0.021428571428571432)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,-1), 4 ) += (std::complex<double>(0.0, 0.021428571428571432)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,0), 4 ) += (std::complex<double>(0.0, 0.021428571428571432)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(-1,0), 4 ) += -(std::complex<double>(0.0, 0.021428571428571432)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(-1,1), 4 ) += -(std::complex<double>(0.0, 0.021428571428571432)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,0), 4 ) += -(std::complex<double>(0.0, 0.021428571428571432)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,1), 4 ) += -(std::complex<double>(0.0, 0.021428571428571432)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,-1), 4 ) += -(std::complex<double>(0.0, 0.021428571428571432)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,0), 4 ) += -(std::complex<double>(0.0, 0.021428571428571432)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(1,-1), 4 ) += -(std::complex<double>(0.0, 0.021428571428571432)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(1,0), 4 ) += -(std::complex<double>(0.0, 0.021428571428571432)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,0), 4 ) += (std::complex<double>(0.0, 0.021428571428571432)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,1), 4 ) += (std::complex<double>(0.0, 0.021428571428571432)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(1,0), 4 ) += (std::complex<double>(0.0, 0.021428571428571432)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(1,1), 4 ) += (std::complex<double>(0.0, 0.021428571428571432)*h_inv[1]*h_inv[0]);
+	sys.A( 5, vi + V2i(-1,-1), 5 ) += (std::complex<double>(0.0, 0.05357142857142857)*h_inv[1]*h_inv[0]);
+	sys.A( 5, vi + V2i(-1,0), 5 ) += (std::complex<double>(0.0, 0.05357142857142857)*h_inv[1]*h_inv[0]);
+	sys.A( 5, vi + V2i(0,-1), 5 ) += (std::complex<double>(0.0, 0.05357142857142857)*h_inv[1]*h_inv[0]);
+	sys.A( 5, vi + V2i(0,0), 5 ) += (std::complex<double>(0.0, 0.05357142857142857)*h_inv[1]*h_inv[0]);
+	sys.A( 5, vi + V2i(-1,0), 5 ) += -(std::complex<double>(0.0, 0.05357142857142857)*h_inv[1]*h_inv[0]);
+	sys.A( 5, vi + V2i(-1,1), 5 ) += -(std::complex<double>(0.0, 0.05357142857142857)*h_inv[1]*h_inv[0]);
+	sys.A( 5, vi + V2i(0,0), 5 ) += -(std::complex<double>(0.0, 0.05357142857142857)*h_inv[1]*h_inv[0]);
+	sys.A( 5, vi + V2i(0,1), 5 ) += -(std::complex<double>(0.0, 0.05357142857142857)*h_inv[1]*h_inv[0]);
+	sys.A( 5, vi + V2i(0,-1), 5 ) += -(std::complex<double>(0.0, 0.05357142857142857)*h_inv[1]*h_inv[0]);
+	sys.A( 5, vi + V2i(0,0), 5 ) += -(std::complex<double>(0.0, 0.05357142857142857)*h_inv[1]*h_inv[0]);
+	sys.A( 5, vi + V2i(1,-1), 5 ) += -(std::complex<double>(0.0, 0.05357142857142857)*h_inv[1]*h_inv[0]);
+	sys.A( 5, vi + V2i(1,0), 5 ) += -(std::complex<double>(0.0, 0.05357142857142857)*h_inv[1]*h_inv[0]);
+	sys.A( 5, vi + V2i(0,0), 5 ) += (std::complex<double>(0.0, 0.05357142857142857)*h_inv[1]*h_inv[0]);
+	sys.A( 5, vi + V2i(0,1), 5 ) += (std::complex<double>(0.0, 0.05357142857142857)*h_inv[1]*h_inv[0]);
+	sys.A( 5, vi + V2i(1,0), 5 ) += (std::complex<double>(0.0, 0.05357142857142857)*h_inv[1]*h_inv[0]);
+	sys.A( 5, vi + V2i(1,1), 5 ) += (std::complex<double>(0.0, 0.05357142857142857)*h_inv[1]*h_inv[0]);
+	sys.A( 6, vi + V2i(-1,-1), 6 ) += (std::complex<double>(0.0, 0.001984126984126984)*h_inv[1]*h_inv[0]);
+	sys.A( 6, vi + V2i(-1,0), 6 ) += (std::complex<double>(0.0, 0.001984126984126984)*h_inv[1]*h_inv[0]);
+	sys.A( 6, vi + V2i(0,-1), 6 ) += (std::complex<double>(0.0, 0.001984126984126984)*h_inv[1]*h_inv[0]);
+	sys.A( 6, vi + V2i(0,0), 6 ) += (std::complex<double>(0.0, 0.001984126984126984)*h_inv[1]*h_inv[0]);
+	sys.A( 6, vi + V2i(-1,0), 6 ) += -(std::complex<double>(0.0, 0.001984126984126984)*h_inv[1]*h_inv[0]);
+	sys.A( 6, vi + V2i(-1,1), 6 ) += -(std::complex<double>(0.0, 0.001984126984126984)*h_inv[1]*h_inv[0]);
+	sys.A( 6, vi + V2i(0,0), 6 ) += -(std::complex<double>(0.0, 0.001984126984126984)*h_inv[1]*h_inv[0]);
+	sys.A( 6, vi + V2i(0,1), 6 ) += -(std::complex<double>(0.0, 0.001984126984126984)*h_inv[1]*h_inv[0]);
+	sys.A( 6, vi + V2i(0,-1), 6 ) += -(std::complex<double>(0.0, 0.001984126984126984)*h_inv[1]*h_inv[0]);
+	sys.A( 6, vi + V2i(0,0), 6 ) += -(std::complex<double>(0.0, 0.001984126984126984)*h_inv[1]*h_inv[0]);
+	sys.A( 6, vi + V2i(1,-1), 6 ) += -(std::complex<double>(0.0, 0.001984126984126984)*h_inv[1]*h_inv[0]);
+	sys.A( 6, vi + V2i(1,0), 6 ) += -(std::complex<double>(0.0, 0.001984126984126984)*h_inv[1]*h_inv[0]);
+	sys.A( 6, vi + V2i(0,0), 6 ) += (std::complex<double>(0.0, 0.001984126984126984)*h_inv[1]*h_inv[0]);
+	sys.A( 6, vi + V2i(0,1), 6 ) += (std::complex<double>(0.0, 0.001984126984126984)*h_inv[1]*h_inv[0]);
+	sys.A( 6, vi + V2i(1,0), 6 ) += (std::complex<double>(0.0, 0.001984126984126984)*h_inv[1]*h_inv[0]);
+	sys.A( 6, vi + V2i(1,1), 6 ) += (std::complex<double>(0.0, 0.001984126984126984)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(-1,-1), 7 ) += (std::complex<double>(0.0, 0.011904761904761902)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(-1,0), 7 ) += (std::complex<double>(0.0, 0.011904761904761902)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,-1), 7 ) += (std::complex<double>(0.0, 0.011904761904761902)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,0), 7 ) += (std::complex<double>(0.0, 0.011904761904761902)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(-1,0), 7 ) += -(std::complex<double>(0.0, 0.011904761904761902)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(-1,1), 7 ) += -(std::complex<double>(0.0, 0.011904761904761902)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,0), 7 ) += -(std::complex<double>(0.0, 0.011904761904761902)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,1), 7 ) += -(std::complex<double>(0.0, 0.011904761904761902)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,-1), 7 ) += -(std::complex<double>(0.0, 0.011904761904761902)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,0), 7 ) += -(std::complex<double>(0.0, 0.011904761904761902)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(1,-1), 7 ) += -(std::complex<double>(0.0, 0.011904761904761902)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(1,0), 7 ) += -(std::complex<double>(0.0, 0.011904761904761902)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,0), 7 ) += (std::complex<double>(0.0, 0.011904761904761902)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,1), 7 ) += (std::complex<double>(0.0, 0.011904761904761902)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(1,0), 7 ) += (std::complex<double>(0.0, 0.011904761904761902)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(1,1), 7 ) += (std::complex<double>(0.0, 0.011904761904761902)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(-1,-1), 8 ) += (std::complex<double>(0.0, 0.029761904761904764)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(-1,0), 8 ) += (std::complex<double>(0.0, 0.029761904761904764)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,-1), 8 ) += (std::complex<double>(0.0, 0.029761904761904764)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,0), 8 ) += (std::complex<double>(0.0, 0.029761904761904764)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(-1,0), 8 ) += -(std::complex<double>(0.0, 0.029761904761904764)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(-1,1), 8 ) += -(std::complex<double>(0.0, 0.029761904761904764)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,0), 8 ) += -(std::complex<double>(0.0, 0.029761904761904764)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,1), 8 ) += -(std::complex<double>(0.0, 0.029761904761904764)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,-1), 8 ) += -(std::complex<double>(0.0, 0.029761904761904764)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,0), 8 ) += -(std::complex<double>(0.0, 0.029761904761904764)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(1,-1), 8 ) += -(std::complex<double>(0.0, 0.029761904761904764)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(1,0), 8 ) += -(std::complex<double>(0.0, 0.029761904761904764)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,0), 8 ) += (std::complex<double>(0.0, 0.029761904761904764)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,1), 8 ) += (std::complex<double>(0.0, 0.029761904761904764)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(1,0), 8 ) += (std::complex<double>(0.0, 0.029761904761904764)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(1,1), 8 ) += (std::complex<double>(0.0, 0.029761904761904764)*h_inv[1]*h_inv[0]);
+	sys.A( 9, vi + V2i(-1,-1), 9 ) += (std::complex<double>(0.0, 0.05555555555555555)*h_inv[1]*h_inv[0]);
+	sys.A( 9, vi + V2i(-1,0), 9 ) += (std::complex<double>(0.0, 0.05555555555555555)*h_inv[1]*h_inv[0]);
+	sys.A( 9, vi + V2i(0,-1), 9 ) += (std::complex<double>(0.0, 0.05555555555555555)*h_inv[1]*h_inv[0]);
+	sys.A( 9, vi + V2i(0,0), 9 ) += (std::complex<double>(0.0, 0.05555555555555555)*h_inv[1]*h_inv[0]);
+	sys.A( 9, vi + V2i(-1,0), 9 ) += -(std::complex<double>(0.0, 0.05555555555555555)*h_inv[1]*h_inv[0]);
+	sys.A( 9, vi + V2i(-1,1), 9 ) += -(std::complex<double>(0.0, 0.05555555555555555)*h_inv[1]*h_inv[0]);
+	sys.A( 9, vi + V2i(0,0), 9 ) += -(std::complex<double>(0.0, 0.05555555555555555)*h_inv[1]*h_inv[0]);
+	sys.A( 9, vi + V2i(0,1), 9 ) += -(std::complex<double>(0.0, 0.05555555555555555)*h_inv[1]*h_inv[0]);
+	sys.A( 9, vi + V2i(0,-1), 9 ) += -(std::complex<double>(0.0, 0.05555555555555555)*h_inv[1]*h_inv[0]);
+	sys.A( 9, vi + V2i(0,0), 9 ) += -(std::complex<double>(0.0, 0.05555555555555555)*h_inv[1]*h_inv[0]);
+	sys.A( 9, vi + V2i(1,-1), 9 ) += -(std::complex<double>(0.0, 0.05555555555555555)*h_inv[1]*h_inv[0]);
+	sys.A( 9, vi + V2i(1,0), 9 ) += -(std::complex<double>(0.0, 0.05555555555555555)*h_inv[1]*h_inv[0]);
+	sys.A( 9, vi + V2i(0,0), 9 ) += (std::complex<double>(0.0, 0.05555555555555555)*h_inv[1]*h_inv[0]);
+	sys.A( 9, vi + V2i(0,1), 9 ) += (std::complex<double>(0.0, 0.05555555555555555)*h_inv[1]*h_inv[0]);
+	sys.A( 9, vi + V2i(1,0), 9 ) += (std::complex<double>(0.0, 0.05555555555555555)*h_inv[1]*h_inv[0]);
+	sys.A( 9, vi + V2i(1,1), 9 ) += (std::complex<double>(0.0, 0.05555555555555555)*h_inv[1]*h_inv[0]);
 
 	// term 35 ----------------
+	sys.A( 0, vi + V2i(-1,-1), 4 ) += -(std::complex<double>(0.0, 0.018633899812498245)*h_inv[1]*h_inv[0]);
+	sys.A( 0, vi + V2i(-1,0), 4 ) += -(std::complex<double>(0.0, 0.018633899812498245)*h_inv[1]*h_inv[0]);
+	sys.A( 0, vi + V2i(0,-1), 4 ) += -(std::complex<double>(0.0, 0.018633899812498245)*h_inv[1]*h_inv[0]);
+	sys.A( 0, vi + V2i(0,0), 4 ) += -(std::complex<double>(0.0, 0.018633899812498245)*h_inv[1]*h_inv[0]);
+	sys.A( 0, vi + V2i(-1,0), 4 ) += (std::complex<double>(0.0, 0.018633899812498245)*h_inv[1]*h_inv[0]);
+	sys.A( 0, vi + V2i(-1,1), 4 ) += (std::complex<double>(0.0, 0.018633899812498245)*h_inv[1]*h_inv[0]);
+	sys.A( 0, vi + V2i(0,0), 4 ) += (std::complex<double>(0.0, 0.018633899812498245)*h_inv[1]*h_inv[0]);
+	sys.A( 0, vi + V2i(0,1), 4 ) += (std::complex<double>(0.0, 0.018633899812498245)*h_inv[1]*h_inv[0]);
+	sys.A( 0, vi + V2i(0,-1), 4 ) += (std::complex<double>(0.0, 0.018633899812498245)*h_inv[1]*h_inv[0]);
+	sys.A( 0, vi + V2i(0,0), 4 ) += (std::complex<double>(0.0, 0.018633899812498245)*h_inv[1]*h_inv[0]);
+	sys.A( 0, vi + V2i(1,-1), 4 ) += (std::complex<double>(0.0, 0.018633899812498245)*h_inv[1]*h_inv[0]);
+	sys.A( 0, vi + V2i(1,0), 4 ) += (std::complex<double>(0.0, 0.018633899812498245)*h_inv[1]*h_inv[0]);
+	sys.A( 0, vi + V2i(0,0), 4 ) += -(std::complex<double>(0.0, 0.018633899812498245)*h_inv[1]*h_inv[0]);
+	sys.A( 0, vi + V2i(0,1), 4 ) += -(std::complex<double>(0.0, 0.018633899812498245)*h_inv[1]*h_inv[0]);
+	sys.A( 0, vi + V2i(1,0), 4 ) += -(std::complex<double>(0.0, 0.018633899812498245)*h_inv[1]*h_inv[0]);
+	sys.A( 0, vi + V2i(1,1), 4 ) += -(std::complex<double>(0.0, 0.018633899812498245)*h_inv[1]*h_inv[0]);
+	sys.A( 1, vi + V2i(0,-1), 7 ) += -(std::complex<double>(0.0, 0.02672612419124244)*h_inv[1]*h_inv[0]);
+	sys.A( 1, vi + V2i(-1,-1), 7 ) += -(std::complex<double>(0.0, 0.02672612419124244)*h_inv[1]*h_inv[0]);
+	sys.A( 1, vi + V2i(0,0), 7 ) += (std::complex<double>(0.0, 0.02672612419124244)*h_inv[1]*h_inv[0]);
+	sys.A( 1, vi + V2i(-1,0), 7 ) += (std::complex<double>(0.0, 0.02672612419124244)*h_inv[1]*h_inv[0]);
+	sys.A( 1, vi + V2i(1,-1), 7 ) += (std::complex<double>(0.0, 0.02672612419124244)*h_inv[1]*h_inv[0]);
+	sys.A( 1, vi + V2i(0,-1), 7 ) += (std::complex<double>(0.0, 0.02672612419124244)*h_inv[1]*h_inv[0]);
+	sys.A( 1, vi + V2i(1,0), 7 ) += -(std::complex<double>(0.0, 0.02672612419124244)*h_inv[1]*h_inv[0]);
+	sys.A( 1, vi + V2i(0,0), 7 ) += -(std::complex<double>(0.0, 0.02672612419124244)*h_inv[1]*h_inv[0]);
+	sys.A( 2, vi + V2i(-1,0), 8 ) += -(std::complex<double>(0.0, 0.02672612419124244)*h_inv[1]*h_inv[0]);
+	sys.A( 2, vi + V2i(-1,-1), 8 ) += -(std::complex<double>(0.0, 0.02672612419124244)*h_inv[1]*h_inv[0]);
+	sys.A( 2, vi + V2i(-1,1), 8 ) += (std::complex<double>(0.0, 0.02672612419124244)*h_inv[1]*h_inv[0]);
+	sys.A( 2, vi + V2i(-1,0), 8 ) += (std::complex<double>(0.0, 0.02672612419124244)*h_inv[1]*h_inv[0]);
+	sys.A( 2, vi + V2i(0,0), 8 ) += (std::complex<double>(0.0, 0.02672612419124244)*h_inv[1]*h_inv[0]);
+	sys.A( 2, vi + V2i(0,-1), 8 ) += (std::complex<double>(0.0, 0.02672612419124244)*h_inv[1]*h_inv[0]);
+	sys.A( 2, vi + V2i(0,1), 8 ) += -(std::complex<double>(0.0, 0.02672612419124244)*h_inv[1]*h_inv[0]);
+	sys.A( 2, vi + V2i(0,0), 8 ) += -(std::complex<double>(0.0, 0.02672612419124244)*h_inv[1]*h_inv[0]);
 
 	// term 36 ----------------
 	sys.A( 1, vi + V2i(0,-1), 2 ) += (std::complex<double>(0.0, 0.033333333333333326)*h_inv[1]*h_inv[0]);
 	sys.A( 1, vi + V2i(0,0), 2 ) += -(std::complex<double>(0.0, 0.033333333333333326)*h_inv[1]*h_inv[0]);
 	sys.A( 1, vi + V2i(1,-1), 2 ) += -(std::complex<double>(0.0, 0.033333333333333326)*h_inv[1]*h_inv[0]);
 	sys.A( 1, vi + V2i(1,0), 2 ) += (std::complex<double>(0.0, 0.033333333333333326)*h_inv[1]*h_inv[0]);
+	sys.A( 3, vi + V2i(-1,-1), 4 ) += (std::complex<double>(0.0, 0.008748177652797066)*h_inv[1]*h_inv[0]);
+	sys.A( 3, vi + V2i(-1,0), 4 ) += (std::complex<double>(0.0, 0.008748177652797066)*h_inv[1]*h_inv[0]);
+	sys.A( 3, vi + V2i(0,-1), 4 ) += (std::complex<double>(0.0, 0.008748177652797066)*h_inv[1]*h_inv[0]);
+	sys.A( 3, vi + V2i(0,0), 4 ) += (std::complex<double>(0.0, 0.008748177652797066)*h_inv[1]*h_inv[0]);
+	sys.A( 3, vi + V2i(-1,0), 4 ) += -(std::complex<double>(0.0, 0.008748177652797066)*h_inv[1]*h_inv[0]);
+	sys.A( 3, vi + V2i(-1,1), 4 ) += -(std::complex<double>(0.0, 0.008748177652797066)*h_inv[1]*h_inv[0]);
+	sys.A( 3, vi + V2i(0,0), 4 ) += -(std::complex<double>(0.0, 0.008748177652797066)*h_inv[1]*h_inv[0]);
+	sys.A( 3, vi + V2i(0,1), 4 ) += -(std::complex<double>(0.0, 0.008748177652797066)*h_inv[1]*h_inv[0]);
+	sys.A( 3, vi + V2i(0,-1), 4 ) += -(std::complex<double>(0.0, 0.008748177652797066)*h_inv[1]*h_inv[0]);
+	sys.A( 3, vi + V2i(0,0), 4 ) += -(std::complex<double>(0.0, 0.008748177652797066)*h_inv[1]*h_inv[0]);
+	sys.A( 3, vi + V2i(1,-1), 4 ) += -(std::complex<double>(0.0, 0.008748177652797066)*h_inv[1]*h_inv[0]);
+	sys.A( 3, vi + V2i(1,0), 4 ) += -(std::complex<double>(0.0, 0.008748177652797066)*h_inv[1]*h_inv[0]);
+	sys.A( 3, vi + V2i(0,0), 4 ) += (std::complex<double>(0.0, 0.008748177652797066)*h_inv[1]*h_inv[0]);
+	sys.A( 3, vi + V2i(0,1), 4 ) += (std::complex<double>(0.0, 0.008748177652797066)*h_inv[1]*h_inv[0]);
+	sys.A( 3, vi + V2i(1,0), 4 ) += (std::complex<double>(0.0, 0.008748177652797066)*h_inv[1]*h_inv[0]);
+	sys.A( 3, vi + V2i(1,1), 4 ) += (std::complex<double>(0.0, 0.008748177652797066)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(-1,-1), 5 ) += (std::complex<double>(0.0, 0.008748177652797066)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(-1,0), 5 ) += (std::complex<double>(0.0, 0.008748177652797066)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,-1), 5 ) += (std::complex<double>(0.0, 0.008748177652797066)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,0), 5 ) += (std::complex<double>(0.0, 0.008748177652797066)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(-1,0), 5 ) += -(std::complex<double>(0.0, 0.008748177652797066)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(-1,1), 5 ) += -(std::complex<double>(0.0, 0.008748177652797066)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,0), 5 ) += -(std::complex<double>(0.0, 0.008748177652797066)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,1), 5 ) += -(std::complex<double>(0.0, 0.008748177652797066)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,-1), 5 ) += -(std::complex<double>(0.0, 0.008748177652797066)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,0), 5 ) += -(std::complex<double>(0.0, 0.008748177652797066)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(1,-1), 5 ) += -(std::complex<double>(0.0, 0.008748177652797066)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(1,0), 5 ) += -(std::complex<double>(0.0, 0.008748177652797066)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,0), 5 ) += (std::complex<double>(0.0, 0.008748177652797066)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(0,1), 5 ) += (std::complex<double>(0.0, 0.008748177652797066)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(1,0), 5 ) += (std::complex<double>(0.0, 0.008748177652797066)*h_inv[1]*h_inv[0]);
+	sys.A( 4, vi + V2i(1,1), 5 ) += (std::complex<double>(0.0, 0.008748177652797066)*h_inv[1]*h_inv[0]);
+	sys.A( 6, vi + V2i(-1,-1), 7 ) += (std::complex<double>(0.0, 0.007684490766284558)*h_inv[1]*h_inv[0]);
+	sys.A( 6, vi + V2i(-1,0), 7 ) += (std::complex<double>(0.0, 0.007684490766284558)*h_inv[1]*h_inv[0]);
+	sys.A( 6, vi + V2i(0,-1), 7 ) += (std::complex<double>(0.0, 0.007684490766284558)*h_inv[1]*h_inv[0]);
+	sys.A( 6, vi + V2i(0,0), 7 ) += (std::complex<double>(0.0, 0.007684490766284558)*h_inv[1]*h_inv[0]);
+	sys.A( 6, vi + V2i(-1,0), 7 ) += -(std::complex<double>(0.0, 0.007684490766284558)*h_inv[1]*h_inv[0]);
+	sys.A( 6, vi + V2i(-1,1), 7 ) += -(std::complex<double>(0.0, 0.007684490766284558)*h_inv[1]*h_inv[0]);
+	sys.A( 6, vi + V2i(0,0), 7 ) += -(std::complex<double>(0.0, 0.007684490766284558)*h_inv[1]*h_inv[0]);
+	sys.A( 6, vi + V2i(0,1), 7 ) += -(std::complex<double>(0.0, 0.007684490766284558)*h_inv[1]*h_inv[0]);
+	sys.A( 6, vi + V2i(0,-1), 7 ) += -(std::complex<double>(0.0, 0.007684490766284558)*h_inv[1]*h_inv[0]);
+	sys.A( 6, vi + V2i(0,0), 7 ) += -(std::complex<double>(0.0, 0.007684490766284558)*h_inv[1]*h_inv[0]);
+	sys.A( 6, vi + V2i(1,-1), 7 ) += -(std::complex<double>(0.0, 0.007684490766284558)*h_inv[1]*h_inv[0]);
+	sys.A( 6, vi + V2i(1,0), 7 ) += -(std::complex<double>(0.0, 0.007684490766284558)*h_inv[1]*h_inv[0]);
+	sys.A( 6, vi + V2i(0,0), 7 ) += (std::complex<double>(0.0, 0.007684490766284558)*h_inv[1]*h_inv[0]);
+	sys.A( 6, vi + V2i(0,1), 7 ) += (std::complex<double>(0.0, 0.007684490766284558)*h_inv[1]*h_inv[0]);
+	sys.A( 6, vi + V2i(1,0), 7 ) += (std::complex<double>(0.0, 0.007684490766284558)*h_inv[1]*h_inv[0]);
+	sys.A( 6, vi + V2i(1,1), 7 ) += (std::complex<double>(0.0, 0.007684490766284558)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(-1,-1), 8 ) += (std::complex<double>(0.0, 0.011904761904761902)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(-1,0), 8 ) += (std::complex<double>(0.0, 0.011904761904761902)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,-1), 8 ) += (std::complex<double>(0.0, 0.011904761904761902)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,0), 8 ) += (std::complex<double>(0.0, 0.011904761904761902)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(-1,0), 8 ) += -(std::complex<double>(0.0, 0.011904761904761902)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(-1,1), 8 ) += -(std::complex<double>(0.0, 0.011904761904761902)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,0), 8 ) += -(std::complex<double>(0.0, 0.011904761904761902)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,1), 8 ) += -(std::complex<double>(0.0, 0.011904761904761902)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,-1), 8 ) += -(std::complex<double>(0.0, 0.011904761904761902)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,0), 8 ) += -(std::complex<double>(0.0, 0.011904761904761902)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(1,-1), 8 ) += -(std::complex<double>(0.0, 0.011904761904761902)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(1,0), 8 ) += -(std::complex<double>(0.0, 0.011904761904761902)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,0), 8 ) += (std::complex<double>(0.0, 0.011904761904761902)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(0,1), 8 ) += (std::complex<double>(0.0, 0.011904761904761902)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(1,0), 8 ) += (std::complex<double>(0.0, 0.011904761904761902)*h_inv[1]*h_inv[0]);
+	sys.A( 7, vi + V2i(1,1), 8 ) += (std::complex<double>(0.0, 0.011904761904761902)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(-1,-1), 9 ) += (std::complex<double>(0.0, 0.007684490766284558)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(-1,0), 9 ) += (std::complex<double>(0.0, 0.007684490766284558)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,-1), 9 ) += (std::complex<double>(0.0, 0.007684490766284558)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,0), 9 ) += (std::complex<double>(0.0, 0.007684490766284558)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(-1,0), 9 ) += -(std::complex<double>(0.0, 0.007684490766284558)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(-1,1), 9 ) += -(std::complex<double>(0.0, 0.007684490766284558)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,0), 9 ) += -(std::complex<double>(0.0, 0.007684490766284558)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,1), 9 ) += -(std::complex<double>(0.0, 0.007684490766284558)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,-1), 9 ) += -(std::complex<double>(0.0, 0.007684490766284558)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,0), 9 ) += -(std::complex<double>(0.0, 0.007684490766284558)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(1,-1), 9 ) += -(std::complex<double>(0.0, 0.007684490766284558)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(1,0), 9 ) += -(std::complex<double>(0.0, 0.007684490766284558)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,0), 9 ) += (std::complex<double>(0.0, 0.007684490766284558)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(0,1), 9 ) += (std::complex<double>(0.0, 0.007684490766284558)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(1,0), 9 ) += (std::complex<double>(0.0, 0.007684490766284558)*h_inv[1]*h_inv[0]);
+	sys.A( 8, vi + V2i(1,1), 9 ) += (std::complex<double>(0.0, 0.007684490766284558)*h_inv[1]*h_inv[0]);
 
 	// term 37 ----------------
+	sys.A( 0, vi + V2i(-1,-1), 5 ) += -(std::complex<double>(0.0, 0.04564354645876384)*h_inv[1]*h_inv[0]);
+	sys.A( 0, vi + V2i(-1,0), 5 ) += -(std::complex<double>(0.0, 0.04564354645876384)*h_inv[1]*h_inv[0]);
+	sys.A( 0, vi + V2i(0,-1), 5 ) += -(std::complex<double>(0.0, 0.04564354645876384)*h_inv[1]*h_inv[0]);
+	sys.A( 0, vi + V2i(0,0), 5 ) += -(std::complex<double>(0.0, 0.04564354645876384)*h_inv[1]*h_inv[0]);
+	sys.A( 0, vi + V2i(-1,0), 5 ) += (std::complex<double>(0.0, 0.04564354645876384)*h_inv[1]*h_inv[0]);
+	sys.A( 0, vi + V2i(-1,1), 5 ) += (std::complex<double>(0.0, 0.04564354645876384)*h_inv[1]*h_inv[0]);
+	sys.A( 0, vi + V2i(0,0), 5 ) += (std::complex<double>(0.0, 0.04564354645876384)*h_inv[1]*h_inv[0]);
+	sys.A( 0, vi + V2i(0,1), 5 ) += (std::complex<double>(0.0, 0.04564354645876384)*h_inv[1]*h_inv[0]);
+	sys.A( 0, vi + V2i(0,-1), 5 ) += (std::complex<double>(0.0, 0.04564354645876384)*h_inv[1]*h_inv[0]);
+	sys.A( 0, vi + V2i(0,0), 5 ) += (std::complex<double>(0.0, 0.04564354645876384)*h_inv[1]*h_inv[0]);
+	sys.A( 0, vi + V2i(1,-1), 5 ) += (std::complex<double>(0.0, 0.04564354645876384)*h_inv[1]*h_inv[0]);
+	sys.A( 0, vi + V2i(1,0), 5 ) += (std::complex<double>(0.0, 0.04564354645876384)*h_inv[1]*h_inv[0]);
+	sys.A( 0, vi + V2i(0,0), 5 ) += -(std::complex<double>(0.0, 0.04564354645876384)*h_inv[1]*h_inv[0]);
+	sys.A( 0, vi + V2i(0,1), 5 ) += -(std::complex<double>(0.0, 0.04564354645876384)*h_inv[1]*h_inv[0]);
+	sys.A( 0, vi + V2i(1,0), 5 ) += -(std::complex<double>(0.0, 0.04564354645876384)*h_inv[1]*h_inv[0]);
+	sys.A( 0, vi + V2i(1,1), 5 ) += -(std::complex<double>(0.0, 0.04564354645876384)*h_inv[1]*h_inv[0]);
+	sys.A( 1, vi + V2i(0,-1), 8 ) += -(std::complex<double>(0.0, 0.02672612419124244)*h_inv[1]*h_inv[0]);
+	sys.A( 1, vi + V2i(-1,-1), 8 ) += -(std::complex<double>(0.0, 0.02672612419124244)*h_inv[1]*h_inv[0]);
+	sys.A( 1, vi + V2i(0,0), 8 ) += (std::complex<double>(0.0, 0.02672612419124244)*h_inv[1]*h_inv[0]);
+	sys.A( 1, vi + V2i(-1,0), 8 ) += (std::complex<double>(0.0, 0.02672612419124244)*h_inv[1]*h_inv[0]);
+	sys.A( 1, vi + V2i(1,-1), 8 ) += (std::complex<double>(0.0, 0.02672612419124244)*h_inv[1]*h_inv[0]);
+	sys.A( 1, vi + V2i(0,-1), 8 ) += (std::complex<double>(0.0, 0.02672612419124244)*h_inv[1]*h_inv[0]);
+	sys.A( 1, vi + V2i(1,0), 8 ) += -(std::complex<double>(0.0, 0.02672612419124244)*h_inv[1]*h_inv[0]);
+	sys.A( 1, vi + V2i(0,0), 8 ) += -(std::complex<double>(0.0, 0.02672612419124244)*h_inv[1]*h_inv[0]);
+	sys.A( 2, vi + V2i(-1,0), 9 ) += -(std::complex<double>(0.0, 0.10350983390135313)*h_inv[1]*h_inv[0]);
+	sys.A( 2, vi + V2i(-1,-1), 9 ) += -(std::complex<double>(0.0, 0.10350983390135313)*h_inv[1]*h_inv[0]);
+	sys.A( 2, vi + V2i(-1,1), 9 ) += (std::complex<double>(0.0, 0.10350983390135313)*h_inv[1]*h_inv[0]);
+	sys.A( 2, vi + V2i(-1,0), 9 ) += (std::complex<double>(0.0, 0.10350983390135313)*h_inv[1]*h_inv[0]);
+	sys.A( 2, vi + V2i(0,0), 9 ) += (std::complex<double>(0.0, 0.10350983390135313)*h_inv[1]*h_inv[0]);
+	sys.A( 2, vi + V2i(0,-1), 9 ) += (std::complex<double>(0.0, 0.10350983390135313)*h_inv[1]*h_inv[0]);
+	sys.A( 2, vi + V2i(0,1), 9 ) += -(std::complex<double>(0.0, 0.10350983390135313)*h_inv[1]*h_inv[0]);
+	sys.A( 2, vi + V2i(0,0), 9 ) += -(std::complex<double>(0.0, 0.10350983390135313)*h_inv[1]*h_inv[0]);
 
 	// term 38 ----------------
 
 	// term 39 ----------------
 
 	// term 40 ----------------
+	sys.A( 5, vi + V2i(-1,-1), 0 ) += (std::complex<double>(0.0, 0.04564354645876384)*h_inv[0]*h_inv[1]);
+	sys.A( 5, vi + V2i(-1,0), 0 ) += (std::complex<double>(0.0, 0.04564354645876384)*h_inv[0]*h_inv[1]);
+	sys.A( 5, vi + V2i(0,-1), 0 ) += (std::complex<double>(0.0, 0.04564354645876384)*h_inv[0]*h_inv[1]);
+	sys.A( 5, vi + V2i(0,0), 0 ) += (std::complex<double>(0.0, 0.04564354645876384)*h_inv[0]*h_inv[1]);
+	sys.A( 5, vi + V2i(0,-1), 0 ) += -(std::complex<double>(0.0, 0.04564354645876384)*h_inv[0]*h_inv[1]);
+	sys.A( 5, vi + V2i(0,0), 0 ) += -(std::complex<double>(0.0, 0.04564354645876384)*h_inv[0]*h_inv[1]);
+	sys.A( 5, vi + V2i(1,-1), 0 ) += -(std::complex<double>(0.0, 0.04564354645876384)*h_inv[0]*h_inv[1]);
+	sys.A( 5, vi + V2i(1,0), 0 ) += -(std::complex<double>(0.0, 0.04564354645876384)*h_inv[0]*h_inv[1]);
+	sys.A( 5, vi + V2i(-1,0), 0 ) += -(std::complex<double>(0.0, 0.04564354645876384)*h_inv[0]*h_inv[1]);
+	sys.A( 5, vi + V2i(-1,1), 0 ) += -(std::complex<double>(0.0, 0.04564354645876384)*h_inv[0]*h_inv[1]);
+	sys.A( 5, vi + V2i(0,0), 0 ) += -(std::complex<double>(0.0, 0.04564354645876384)*h_inv[0]*h_inv[1]);
+	sys.A( 5, vi + V2i(0,1), 0 ) += -(std::complex<double>(0.0, 0.04564354645876384)*h_inv[0]*h_inv[1]);
+	sys.A( 5, vi + V2i(0,0), 0 ) += (std::complex<double>(0.0, 0.04564354645876384)*h_inv[0]*h_inv[1]);
+	sys.A( 5, vi + V2i(0,1), 0 ) += (std::complex<double>(0.0, 0.04564354645876384)*h_inv[0]*h_inv[1]);
+	sys.A( 5, vi + V2i(1,0), 0 ) += (std::complex<double>(0.0, 0.04564354645876384)*h_inv[0]*h_inv[1]);
+	sys.A( 5, vi + V2i(1,1), 0 ) += (std::complex<double>(0.0, 0.04564354645876384)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,0), 1 ) += (std::complex<double>(0.0, 0.02672612419124244)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(-1,0), 1 ) += (std::complex<double>(0.0, 0.02672612419124244)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(1,0), 1 ) += -(std::complex<double>(0.0, 0.02672612419124244)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,0), 1 ) += -(std::complex<double>(0.0, 0.02672612419124244)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,1), 1 ) += -(std::complex<double>(0.0, 0.02672612419124244)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(-1,1), 1 ) += -(std::complex<double>(0.0, 0.02672612419124244)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(1,1), 1 ) += (std::complex<double>(0.0, 0.02672612419124244)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,1), 1 ) += (std::complex<double>(0.0, 0.02672612419124244)*h_inv[0]*h_inv[1]);
+	sys.A( 9, vi + V2i(0,0), 2 ) += (std::complex<double>(0.0, 0.10350983390135313)*h_inv[0]*h_inv[1]);
+	sys.A( 9, vi + V2i(0,-1), 2 ) += (std::complex<double>(0.0, 0.10350983390135313)*h_inv[0]*h_inv[1]);
+	sys.A( 9, vi + V2i(1,0), 2 ) += -(std::complex<double>(0.0, 0.10350983390135313)*h_inv[0]*h_inv[1]);
+	sys.A( 9, vi + V2i(1,-1), 2 ) += -(std::complex<double>(0.0, 0.10350983390135313)*h_inv[0]*h_inv[1]);
+	sys.A( 9, vi + V2i(0,1), 2 ) += -(std::complex<double>(0.0, 0.10350983390135313)*h_inv[0]*h_inv[1]);
+	sys.A( 9, vi + V2i(0,0), 2 ) += -(std::complex<double>(0.0, 0.10350983390135313)*h_inv[0]*h_inv[1]);
+	sys.A( 9, vi + V2i(1,1), 2 ) += (std::complex<double>(0.0, 0.10350983390135313)*h_inv[0]*h_inv[1]);
+	sys.A( 9, vi + V2i(1,0), 2 ) += (std::complex<double>(0.0, 0.10350983390135313)*h_inv[0]*h_inv[1]);
 
 	// term 41 ----------------
 	sys.A( 2, vi + V2i(-1,0), 1 ) += -(std::complex<double>(0.0, 0.16666666666666666)*h_inv[0]*h_inv[1]);
 	sys.A( 2, vi + V2i(0,0), 1 ) += (std::complex<double>(0.0, 0.16666666666666666)*h_inv[0]*h_inv[1]);
 	sys.A( 2, vi + V2i(-1,1), 1 ) += (std::complex<double>(0.0, 0.16666666666666666)*h_inv[0]*h_inv[1]);
 	sys.A( 2, vi + V2i(0,1), 1 ) += -(std::complex<double>(0.0, 0.16666666666666666)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(-1,-1), 3 ) += -(std::complex<double>(0.0, 0.02041241452319315)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(-1,0), 3 ) += -(std::complex<double>(0.0, 0.02041241452319315)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,-1), 3 ) += -(std::complex<double>(0.0, 0.02041241452319315)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,0), 3 ) += -(std::complex<double>(0.0, 0.02041241452319315)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,-1), 3 ) += (std::complex<double>(0.0, 0.02041241452319315)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,0), 3 ) += (std::complex<double>(0.0, 0.02041241452319315)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(1,-1), 3 ) += (std::complex<double>(0.0, 0.02041241452319315)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(1,0), 3 ) += (std::complex<double>(0.0, 0.02041241452319315)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(-1,0), 3 ) += (std::complex<double>(0.0, 0.02041241452319315)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(-1,1), 3 ) += (std::complex<double>(0.0, 0.02041241452319315)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,0), 3 ) += (std::complex<double>(0.0, 0.02041241452319315)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,1), 3 ) += (std::complex<double>(0.0, 0.02041241452319315)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,0), 3 ) += -(std::complex<double>(0.0, 0.02041241452319315)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,1), 3 ) += -(std::complex<double>(0.0, 0.02041241452319315)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(1,0), 3 ) += -(std::complex<double>(0.0, 0.02041241452319315)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(1,1), 3 ) += -(std::complex<double>(0.0, 0.02041241452319315)*h_inv[0]*h_inv[1]);
+	sys.A( 5, vi + V2i(-1,-1), 4 ) += -(std::complex<double>(0.0, 0.02041241452319315)*h_inv[0]*h_inv[1]);
+	sys.A( 5, vi + V2i(-1,0), 4 ) += -(std::complex<double>(0.0, 0.02041241452319315)*h_inv[0]*h_inv[1]);
+	sys.A( 5, vi + V2i(0,-1), 4 ) += -(std::complex<double>(0.0, 0.02041241452319315)*h_inv[0]*h_inv[1]);
+	sys.A( 5, vi + V2i(0,0), 4 ) += -(std::complex<double>(0.0, 0.02041241452319315)*h_inv[0]*h_inv[1]);
+	sys.A( 5, vi + V2i(0,-1), 4 ) += (std::complex<double>(0.0, 0.02041241452319315)*h_inv[0]*h_inv[1]);
+	sys.A( 5, vi + V2i(0,0), 4 ) += (std::complex<double>(0.0, 0.02041241452319315)*h_inv[0]*h_inv[1]);
+	sys.A( 5, vi + V2i(1,-1), 4 ) += (std::complex<double>(0.0, 0.02041241452319315)*h_inv[0]*h_inv[1]);
+	sys.A( 5, vi + V2i(1,0), 4 ) += (std::complex<double>(0.0, 0.02041241452319315)*h_inv[0]*h_inv[1]);
+	sys.A( 5, vi + V2i(-1,0), 4 ) += (std::complex<double>(0.0, 0.02041241452319315)*h_inv[0]*h_inv[1]);
+	sys.A( 5, vi + V2i(-1,1), 4 ) += (std::complex<double>(0.0, 0.02041241452319315)*h_inv[0]*h_inv[1]);
+	sys.A( 5, vi + V2i(0,0), 4 ) += (std::complex<double>(0.0, 0.02041241452319315)*h_inv[0]*h_inv[1]);
+	sys.A( 5, vi + V2i(0,1), 4 ) += (std::complex<double>(0.0, 0.02041241452319315)*h_inv[0]*h_inv[1]);
+	sys.A( 5, vi + V2i(0,0), 4 ) += -(std::complex<double>(0.0, 0.02041241452319315)*h_inv[0]*h_inv[1]);
+	sys.A( 5, vi + V2i(0,1), 4 ) += -(std::complex<double>(0.0, 0.02041241452319315)*h_inv[0]*h_inv[1]);
+	sys.A( 5, vi + V2i(1,0), 4 ) += -(std::complex<double>(0.0, 0.02041241452319315)*h_inv[0]*h_inv[1]);
+	sys.A( 5, vi + V2i(1,1), 4 ) += -(std::complex<double>(0.0, 0.02041241452319315)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(-1,-1), 6 ) += -(std::complex<double>(0.0, 0.013832083379312202)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(-1,0), 6 ) += -(std::complex<double>(0.0, 0.013832083379312202)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,-1), 6 ) += -(std::complex<double>(0.0, 0.013832083379312202)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,0), 6 ) += -(std::complex<double>(0.0, 0.013832083379312202)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,-1), 6 ) += (std::complex<double>(0.0, 0.013832083379312202)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,0), 6 ) += (std::complex<double>(0.0, 0.013832083379312202)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(1,-1), 6 ) += (std::complex<double>(0.0, 0.013832083379312202)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(1,0), 6 ) += (std::complex<double>(0.0, 0.013832083379312202)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(-1,0), 6 ) += (std::complex<double>(0.0, 0.013832083379312202)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(-1,1), 6 ) += (std::complex<double>(0.0, 0.013832083379312202)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,0), 6 ) += (std::complex<double>(0.0, 0.013832083379312202)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,1), 6 ) += (std::complex<double>(0.0, 0.013832083379312202)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,0), 6 ) += -(std::complex<double>(0.0, 0.013832083379312202)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,1), 6 ) += -(std::complex<double>(0.0, 0.013832083379312202)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(1,0), 6 ) += -(std::complex<double>(0.0, 0.013832083379312202)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(1,1), 6 ) += -(std::complex<double>(0.0, 0.013832083379312202)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(-1,-1), 7 ) += -(std::complex<double>(0.0, 0.021428571428571432)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(-1,0), 7 ) += -(std::complex<double>(0.0, 0.021428571428571432)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,-1), 7 ) += -(std::complex<double>(0.0, 0.021428571428571432)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,0), 7 ) += -(std::complex<double>(0.0, 0.021428571428571432)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,-1), 7 ) += (std::complex<double>(0.0, 0.021428571428571432)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,0), 7 ) += (std::complex<double>(0.0, 0.021428571428571432)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(1,-1), 7 ) += (std::complex<double>(0.0, 0.021428571428571432)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(1,0), 7 ) += (std::complex<double>(0.0, 0.021428571428571432)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(-1,0), 7 ) += (std::complex<double>(0.0, 0.021428571428571432)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(-1,1), 7 ) += (std::complex<double>(0.0, 0.021428571428571432)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,0), 7 ) += (std::complex<double>(0.0, 0.021428571428571432)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,1), 7 ) += (std::complex<double>(0.0, 0.021428571428571432)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,0), 7 ) += -(std::complex<double>(0.0, 0.021428571428571432)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,1), 7 ) += -(std::complex<double>(0.0, 0.021428571428571432)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(1,0), 7 ) += -(std::complex<double>(0.0, 0.021428571428571432)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(1,1), 7 ) += -(std::complex<double>(0.0, 0.021428571428571432)*h_inv[0]*h_inv[1]);
+	sys.A( 9, vi + V2i(-1,-1), 8 ) += -(std::complex<double>(0.0, 0.013832083379312202)*h_inv[0]*h_inv[1]);
+	sys.A( 9, vi + V2i(-1,0), 8 ) += -(std::complex<double>(0.0, 0.013832083379312202)*h_inv[0]*h_inv[1]);
+	sys.A( 9, vi + V2i(0,-1), 8 ) += -(std::complex<double>(0.0, 0.013832083379312202)*h_inv[0]*h_inv[1]);
+	sys.A( 9, vi + V2i(0,0), 8 ) += -(std::complex<double>(0.0, 0.013832083379312202)*h_inv[0]*h_inv[1]);
+	sys.A( 9, vi + V2i(0,-1), 8 ) += (std::complex<double>(0.0, 0.013832083379312202)*h_inv[0]*h_inv[1]);
+	sys.A( 9, vi + V2i(0,0), 8 ) += (std::complex<double>(0.0, 0.013832083379312202)*h_inv[0]*h_inv[1]);
+	sys.A( 9, vi + V2i(1,-1), 8 ) += (std::complex<double>(0.0, 0.013832083379312202)*h_inv[0]*h_inv[1]);
+	sys.A( 9, vi + V2i(1,0), 8 ) += (std::complex<double>(0.0, 0.013832083379312202)*h_inv[0]*h_inv[1]);
+	sys.A( 9, vi + V2i(-1,0), 8 ) += (std::complex<double>(0.0, 0.013832083379312202)*h_inv[0]*h_inv[1]);
+	sys.A( 9, vi + V2i(-1,1), 8 ) += (std::complex<double>(0.0, 0.013832083379312202)*h_inv[0]*h_inv[1]);
+	sys.A( 9, vi + V2i(0,0), 8 ) += (std::complex<double>(0.0, 0.013832083379312202)*h_inv[0]*h_inv[1]);
+	sys.A( 9, vi + V2i(0,1), 8 ) += (std::complex<double>(0.0, 0.013832083379312202)*h_inv[0]*h_inv[1]);
+	sys.A( 9, vi + V2i(0,0), 8 ) += -(std::complex<double>(0.0, 0.013832083379312202)*h_inv[0]*h_inv[1]);
+	sys.A( 9, vi + V2i(0,1), 8 ) += -(std::complex<double>(0.0, 0.013832083379312202)*h_inv[0]*h_inv[1]);
+	sys.A( 9, vi + V2i(1,0), 8 ) += -(std::complex<double>(0.0, 0.013832083379312202)*h_inv[0]*h_inv[1]);
+	sys.A( 9, vi + V2i(1,1), 8 ) += -(std::complex<double>(0.0, 0.013832083379312202)*h_inv[0]*h_inv[1]);
 
 	// term 42 ----------------
+	sys.A( 4, vi + V2i(-1,-1), 0 ) += -(std::complex<double>(0.0, 0.018633899812498245)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(-1,0), 0 ) += -(std::complex<double>(0.0, 0.018633899812498245)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,-1), 0 ) += -(std::complex<double>(0.0, 0.018633899812498245)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,0), 0 ) += -(std::complex<double>(0.0, 0.018633899812498245)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,-1), 0 ) += (std::complex<double>(0.0, 0.018633899812498245)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,0), 0 ) += (std::complex<double>(0.0, 0.018633899812498245)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(1,-1), 0 ) += (std::complex<double>(0.0, 0.018633899812498245)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(1,0), 0 ) += (std::complex<double>(0.0, 0.018633899812498245)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(-1,0), 0 ) += (std::complex<double>(0.0, 0.018633899812498245)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(-1,1), 0 ) += (std::complex<double>(0.0, 0.018633899812498245)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,0), 0 ) += (std::complex<double>(0.0, 0.018633899812498245)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,1), 0 ) += (std::complex<double>(0.0, 0.018633899812498245)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,0), 0 ) += -(std::complex<double>(0.0, 0.018633899812498245)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,1), 0 ) += -(std::complex<double>(0.0, 0.018633899812498245)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(1,0), 0 ) += -(std::complex<double>(0.0, 0.018633899812498245)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(1,1), 0 ) += -(std::complex<double>(0.0, 0.018633899812498245)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,0), 1 ) += -(std::complex<double>(0.0, 0.02672612419124244)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(-1,0), 1 ) += -(std::complex<double>(0.0, 0.02672612419124244)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(1,0), 1 ) += (std::complex<double>(0.0, 0.02672612419124244)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,0), 1 ) += (std::complex<double>(0.0, 0.02672612419124244)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,1), 1 ) += (std::complex<double>(0.0, 0.02672612419124244)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(-1,1), 1 ) += (std::complex<double>(0.0, 0.02672612419124244)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(1,1), 1 ) += -(std::complex<double>(0.0, 0.02672612419124244)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,1), 1 ) += -(std::complex<double>(0.0, 0.02672612419124244)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,0), 2 ) += -(std::complex<double>(0.0, 0.02672612419124244)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,-1), 2 ) += -(std::complex<double>(0.0, 0.02672612419124244)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(1,0), 2 ) += (std::complex<double>(0.0, 0.02672612419124244)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(1,-1), 2 ) += (std::complex<double>(0.0, 0.02672612419124244)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,1), 2 ) += (std::complex<double>(0.0, 0.02672612419124244)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,0), 2 ) += (std::complex<double>(0.0, 0.02672612419124244)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(1,1), 2 ) += -(std::complex<double>(0.0, 0.02672612419124244)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(1,0), 2 ) += -(std::complex<double>(0.0, 0.02672612419124244)*h_inv[0]*h_inv[1]);
 
 	// term 43 ----------------
 	sys.A( 2, vi + V2i(-1,-1), 2 ) += (std::complex<double>(0.0, 0.041666666666666664)*h_inv[0]*h_inv[1]);
@@ -359,8 +1799,108 @@ void set_system_row(PNSystem::VoxelSystem& sys,
 	sys.A( 2, vi + V2i(0,1), 2 ) += (std::complex<double>(0.0, 0.041666666666666664)*h_inv[0]*h_inv[1]);
 	sys.A( 2, vi + V2i(1,0), 2 ) += (std::complex<double>(0.0, 0.041666666666666664)*h_inv[0]*h_inv[1]);
 	sys.A( 2, vi + V2i(1,1), 2 ) += (std::complex<double>(0.0, 0.041666666666666664)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(-1,-1), 4 ) += (std::complex<double>(0.0, 0.008333333333333331)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(-1,0), 4 ) += (std::complex<double>(0.0, 0.008333333333333331)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,-1), 4 ) += (std::complex<double>(0.0, 0.008333333333333331)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,0), 4 ) += (std::complex<double>(0.0, 0.008333333333333331)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,-1), 4 ) += -(std::complex<double>(0.0, 0.008333333333333331)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,0), 4 ) += -(std::complex<double>(0.0, 0.008333333333333331)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(1,-1), 4 ) += -(std::complex<double>(0.0, 0.008333333333333331)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(1,0), 4 ) += -(std::complex<double>(0.0, 0.008333333333333331)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(-1,0), 4 ) += -(std::complex<double>(0.0, 0.008333333333333331)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(-1,1), 4 ) += -(std::complex<double>(0.0, 0.008333333333333331)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,0), 4 ) += -(std::complex<double>(0.0, 0.008333333333333331)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,1), 4 ) += -(std::complex<double>(0.0, 0.008333333333333331)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,0), 4 ) += (std::complex<double>(0.0, 0.008333333333333331)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,1), 4 ) += (std::complex<double>(0.0, 0.008333333333333331)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(1,0), 4 ) += (std::complex<double>(0.0, 0.008333333333333331)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(1,1), 4 ) += (std::complex<double>(0.0, 0.008333333333333331)*h_inv[0]*h_inv[1]);
+	sys.A( 5, vi + V2i(-1,-1), 5 ) += (std::complex<double>(0.0, 0.049999999999999996)*h_inv[0]*h_inv[1]);
+	sys.A( 5, vi + V2i(-1,0), 5 ) += (std::complex<double>(0.0, 0.049999999999999996)*h_inv[0]*h_inv[1]);
+	sys.A( 5, vi + V2i(0,-1), 5 ) += (std::complex<double>(0.0, 0.049999999999999996)*h_inv[0]*h_inv[1]);
+	sys.A( 5, vi + V2i(0,0), 5 ) += (std::complex<double>(0.0, 0.049999999999999996)*h_inv[0]*h_inv[1]);
+	sys.A( 5, vi + V2i(0,-1), 5 ) += -(std::complex<double>(0.0, 0.049999999999999996)*h_inv[0]*h_inv[1]);
+	sys.A( 5, vi + V2i(0,0), 5 ) += -(std::complex<double>(0.0, 0.049999999999999996)*h_inv[0]*h_inv[1]);
+	sys.A( 5, vi + V2i(1,-1), 5 ) += -(std::complex<double>(0.0, 0.049999999999999996)*h_inv[0]*h_inv[1]);
+	sys.A( 5, vi + V2i(1,0), 5 ) += -(std::complex<double>(0.0, 0.049999999999999996)*h_inv[0]*h_inv[1]);
+	sys.A( 5, vi + V2i(-1,0), 5 ) += -(std::complex<double>(0.0, 0.049999999999999996)*h_inv[0]*h_inv[1]);
+	sys.A( 5, vi + V2i(-1,1), 5 ) += -(std::complex<double>(0.0, 0.049999999999999996)*h_inv[0]*h_inv[1]);
+	sys.A( 5, vi + V2i(0,0), 5 ) += -(std::complex<double>(0.0, 0.049999999999999996)*h_inv[0]*h_inv[1]);
+	sys.A( 5, vi + V2i(0,1), 5 ) += -(std::complex<double>(0.0, 0.049999999999999996)*h_inv[0]*h_inv[1]);
+	sys.A( 5, vi + V2i(0,0), 5 ) += (std::complex<double>(0.0, 0.049999999999999996)*h_inv[0]*h_inv[1]);
+	sys.A( 5, vi + V2i(0,1), 5 ) += (std::complex<double>(0.0, 0.049999999999999996)*h_inv[0]*h_inv[1]);
+	sys.A( 5, vi + V2i(1,0), 5 ) += (std::complex<double>(0.0, 0.049999999999999996)*h_inv[0]*h_inv[1]);
+	sys.A( 5, vi + V2i(1,1), 5 ) += (std::complex<double>(0.0, 0.049999999999999996)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(-1,-1), 7 ) += (std::complex<double>(0.0, 0.0035714285714285713)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(-1,0), 7 ) += (std::complex<double>(0.0, 0.0035714285714285713)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,-1), 7 ) += (std::complex<double>(0.0, 0.0035714285714285713)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,0), 7 ) += (std::complex<double>(0.0, 0.0035714285714285713)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,-1), 7 ) += -(std::complex<double>(0.0, 0.0035714285714285713)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,0), 7 ) += -(std::complex<double>(0.0, 0.0035714285714285713)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(1,-1), 7 ) += -(std::complex<double>(0.0, 0.0035714285714285713)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(1,0), 7 ) += -(std::complex<double>(0.0, 0.0035714285714285713)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(-1,0), 7 ) += -(std::complex<double>(0.0, 0.0035714285714285713)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(-1,1), 7 ) += -(std::complex<double>(0.0, 0.0035714285714285713)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,0), 7 ) += -(std::complex<double>(0.0, 0.0035714285714285713)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,1), 7 ) += -(std::complex<double>(0.0, 0.0035714285714285713)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,0), 7 ) += (std::complex<double>(0.0, 0.0035714285714285713)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,1), 7 ) += (std::complex<double>(0.0, 0.0035714285714285713)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(1,0), 7 ) += (std::complex<double>(0.0, 0.0035714285714285713)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(1,1), 7 ) += (std::complex<double>(0.0, 0.0035714285714285713)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(-1,-1), 8 ) += (std::complex<double>(0.0, 0.021428571428571432)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(-1,0), 8 ) += (std::complex<double>(0.0, 0.021428571428571432)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,-1), 8 ) += (std::complex<double>(0.0, 0.021428571428571432)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,0), 8 ) += (std::complex<double>(0.0, 0.021428571428571432)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,-1), 8 ) += -(std::complex<double>(0.0, 0.021428571428571432)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,0), 8 ) += -(std::complex<double>(0.0, 0.021428571428571432)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(1,-1), 8 ) += -(std::complex<double>(0.0, 0.021428571428571432)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(1,0), 8 ) += -(std::complex<double>(0.0, 0.021428571428571432)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(-1,0), 8 ) += -(std::complex<double>(0.0, 0.021428571428571432)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(-1,1), 8 ) += -(std::complex<double>(0.0, 0.021428571428571432)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,0), 8 ) += -(std::complex<double>(0.0, 0.021428571428571432)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,1), 8 ) += -(std::complex<double>(0.0, 0.021428571428571432)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,0), 8 ) += (std::complex<double>(0.0, 0.021428571428571432)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,1), 8 ) += (std::complex<double>(0.0, 0.021428571428571432)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(1,0), 8 ) += (std::complex<double>(0.0, 0.021428571428571432)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(1,1), 8 ) += (std::complex<double>(0.0, 0.021428571428571432)*h_inv[0]*h_inv[1]);
+	sys.A( 9, vi + V2i(-1,-1), 9 ) += (std::complex<double>(0.0, 0.05357142857142857)*h_inv[0]*h_inv[1]);
+	sys.A( 9, vi + V2i(-1,0), 9 ) += (std::complex<double>(0.0, 0.05357142857142857)*h_inv[0]*h_inv[1]);
+	sys.A( 9, vi + V2i(0,-1), 9 ) += (std::complex<double>(0.0, 0.05357142857142857)*h_inv[0]*h_inv[1]);
+	sys.A( 9, vi + V2i(0,0), 9 ) += (std::complex<double>(0.0, 0.05357142857142857)*h_inv[0]*h_inv[1]);
+	sys.A( 9, vi + V2i(0,-1), 9 ) += -(std::complex<double>(0.0, 0.05357142857142857)*h_inv[0]*h_inv[1]);
+	sys.A( 9, vi + V2i(0,0), 9 ) += -(std::complex<double>(0.0, 0.05357142857142857)*h_inv[0]*h_inv[1]);
+	sys.A( 9, vi + V2i(1,-1), 9 ) += -(std::complex<double>(0.0, 0.05357142857142857)*h_inv[0]*h_inv[1]);
+	sys.A( 9, vi + V2i(1,0), 9 ) += -(std::complex<double>(0.0, 0.05357142857142857)*h_inv[0]*h_inv[1]);
+	sys.A( 9, vi + V2i(-1,0), 9 ) += -(std::complex<double>(0.0, 0.05357142857142857)*h_inv[0]*h_inv[1]);
+	sys.A( 9, vi + V2i(-1,1), 9 ) += -(std::complex<double>(0.0, 0.05357142857142857)*h_inv[0]*h_inv[1]);
+	sys.A( 9, vi + V2i(0,0), 9 ) += -(std::complex<double>(0.0, 0.05357142857142857)*h_inv[0]*h_inv[1]);
+	sys.A( 9, vi + V2i(0,1), 9 ) += -(std::complex<double>(0.0, 0.05357142857142857)*h_inv[0]*h_inv[1]);
+	sys.A( 9, vi + V2i(0,0), 9 ) += (std::complex<double>(0.0, 0.05357142857142857)*h_inv[0]*h_inv[1]);
+	sys.A( 9, vi + V2i(0,1), 9 ) += (std::complex<double>(0.0, 0.05357142857142857)*h_inv[0]*h_inv[1]);
+	sys.A( 9, vi + V2i(1,0), 9 ) += (std::complex<double>(0.0, 0.05357142857142857)*h_inv[0]*h_inv[1]);
+	sys.A( 9, vi + V2i(1,1), 9 ) += (std::complex<double>(0.0, 0.05357142857142857)*h_inv[0]*h_inv[1]);
 
 	// term 44 ----------------
+	sys.A( 5, vi + V2i(0,-1), 0 ) += (0.182574185835*h_inv[1]*h_inv[1]);
+	sys.A( 5, vi + V2i(0,0), 0 ) += -(0.182574185835*h_inv[1]*h_inv[1]);
+	sys.A( 5, vi + V2i(0,0), 0 ) += -(0.182574185835*h_inv[1]*h_inv[1]);
+	sys.A( 5, vi + V2i(0,1), 0 ) += (0.182574185835*h_inv[1]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,0), 1 ) += (0.0267261241912*h_inv[1]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,-1), 1 ) += (0.0267261241912*h_inv[1]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,1), 1 ) += -(0.0267261241912*h_inv[1]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,0), 1 ) += -(0.0267261241912*h_inv[1]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,1), 1 ) += -(0.0267261241912*h_inv[1]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,0), 1 ) += -(0.0267261241912*h_inv[1]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,2), 1 ) += (0.0267261241912*h_inv[1]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,1), 1 ) += (0.0267261241912*h_inv[1]*h_inv[1]);
+	sys.A( 9, vi + V2i(1,-1), 2 ) += (0.103509833901*h_inv[1]*h_inv[1]);
+	sys.A( 9, vi + V2i(0,-1), 2 ) += (0.103509833901*h_inv[1]*h_inv[1]);
+	sys.A( 9, vi + V2i(1,0), 2 ) += -(0.103509833901*h_inv[1]*h_inv[1]);
+	sys.A( 9, vi + V2i(0,0), 2 ) += -(0.103509833901*h_inv[1]*h_inv[1]);
+	sys.A( 9, vi + V2i(1,0), 2 ) += -(0.103509833901*h_inv[1]*h_inv[1]);
+	sys.A( 9, vi + V2i(0,0), 2 ) += -(0.103509833901*h_inv[1]*h_inv[1]);
+	sys.A( 9, vi + V2i(1,1), 2 ) += (0.103509833901*h_inv[1]*h_inv[1]);
+	sys.A( 9, vi + V2i(0,1), 2 ) += (0.103509833901*h_inv[1]*h_inv[1]);
 
 	// term 45 ----------------
 	sys.A( 2, vi + V2i(-1,-1), 1 ) += -(0.0416666666667*h_inv[1]*h_inv[1]);
@@ -379,14 +1919,74 @@ void set_system_row(PNSystem::VoxelSystem& sys,
 	sys.A( 2, vi + V2i(-1,2), 1 ) += -(0.0416666666667*h_inv[1]*h_inv[1]);
 	sys.A( 2, vi + V2i(0,1), 1 ) += -(0.0416666666667*h_inv[1]*h_inv[1]);
 	sys.A( 2, vi + V2i(0,2), 1 ) += -(0.0416666666667*h_inv[1]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,-1), 3 ) += -(0.0816496580928*h_inv[1]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,0), 3 ) += (0.0816496580928*h_inv[1]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,0), 3 ) += (0.0816496580928*h_inv[1]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,1), 3 ) += -(0.0816496580928*h_inv[1]*h_inv[1]);
+	sys.A( 5, vi + V2i(0,-1), 4 ) += -(0.0816496580928*h_inv[1]*h_inv[1]);
+	sys.A( 5, vi + V2i(0,0), 4 ) += (0.0816496580928*h_inv[1]*h_inv[1]);
+	sys.A( 5, vi + V2i(0,0), 4 ) += (0.0816496580928*h_inv[1]*h_inv[1]);
+	sys.A( 5, vi + V2i(0,1), 4 ) += -(0.0816496580928*h_inv[1]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,-1), 6 ) += -(0.0553283335172*h_inv[1]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,0), 6 ) += (0.0553283335172*h_inv[1]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,0), 6 ) += (0.0553283335172*h_inv[1]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,1), 6 ) += -(0.0553283335172*h_inv[1]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,-1), 7 ) += -(0.0857142857143*h_inv[1]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,0), 7 ) += (0.0857142857143*h_inv[1]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,0), 7 ) += (0.0857142857143*h_inv[1]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,1), 7 ) += -(0.0857142857143*h_inv[1]*h_inv[1]);
+	sys.A( 9, vi + V2i(0,-1), 8 ) += -(0.0553283335172*h_inv[1]*h_inv[1]);
+	sys.A( 9, vi + V2i(0,0), 8 ) += (0.0553283335172*h_inv[1]*h_inv[1]);
+	sys.A( 9, vi + V2i(0,0), 8 ) += (0.0553283335172*h_inv[1]*h_inv[1]);
+	sys.A( 9, vi + V2i(0,1), 8 ) += -(0.0553283335172*h_inv[1]*h_inv[1]);
 
 	// term 46 ----------------
+	sys.A( 4, vi + V2i(0,-1), 0 ) += (0.07453559925*h_inv[1]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,0), 0 ) += -(0.07453559925*h_inv[1]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,0), 0 ) += -(0.07453559925*h_inv[1]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,1), 0 ) += (0.07453559925*h_inv[1]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,0), 1 ) += (0.0267261241912*h_inv[1]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,-1), 1 ) += (0.0267261241912*h_inv[1]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,1), 1 ) += -(0.0267261241912*h_inv[1]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,0), 1 ) += -(0.0267261241912*h_inv[1]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,1), 1 ) += -(0.0267261241912*h_inv[1]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,0), 1 ) += -(0.0267261241912*h_inv[1]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,2), 1 ) += (0.0267261241912*h_inv[1]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,1), 1 ) += (0.0267261241912*h_inv[1]*h_inv[1]);
+	sys.A( 8, vi + V2i(1,-1), 2 ) += (0.0267261241912*h_inv[1]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,-1), 2 ) += (0.0267261241912*h_inv[1]*h_inv[1]);
+	sys.A( 8, vi + V2i(1,0), 2 ) += -(0.0267261241912*h_inv[1]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,0), 2 ) += -(0.0267261241912*h_inv[1]*h_inv[1]);
+	sys.A( 8, vi + V2i(1,0), 2 ) += -(0.0267261241912*h_inv[1]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,0), 2 ) += -(0.0267261241912*h_inv[1]*h_inv[1]);
+	sys.A( 8, vi + V2i(1,1), 2 ) += (0.0267261241912*h_inv[1]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,1), 2 ) += (0.0267261241912*h_inv[1]*h_inv[1]);
 
 	// term 47 ----------------
 	sys.A( 2, vi + V2i(0,-1), 2 ) += -(0.166666666667*h_inv[1]*h_inv[1]);
 	sys.A( 2, vi + V2i(0,0), 2 ) += (0.166666666667*h_inv[1]*h_inv[1]);
 	sys.A( 2, vi + V2i(0,0), 2 ) += (0.166666666667*h_inv[1]*h_inv[1]);
 	sys.A( 2, vi + V2i(0,1), 2 ) += -(0.166666666667*h_inv[1]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,-1), 4 ) += -(0.0333333333333*h_inv[1]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,0), 4 ) += (0.0333333333333*h_inv[1]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,0), 4 ) += (0.0333333333333*h_inv[1]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,1), 4 ) += -(0.0333333333333*h_inv[1]*h_inv[1]);
+	sys.A( 5, vi + V2i(0,-1), 5 ) += -(0.2*h_inv[1]*h_inv[1]);
+	sys.A( 5, vi + V2i(0,0), 5 ) += (0.2*h_inv[1]*h_inv[1]);
+	sys.A( 5, vi + V2i(0,0), 5 ) += (0.2*h_inv[1]*h_inv[1]);
+	sys.A( 5, vi + V2i(0,1), 5 ) += -(0.2*h_inv[1]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,-1), 7 ) += -(0.0142857142857*h_inv[1]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,0), 7 ) += (0.0142857142857*h_inv[1]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,0), 7 ) += (0.0142857142857*h_inv[1]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,1), 7 ) += -(0.0142857142857*h_inv[1]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,-1), 8 ) += -(0.0857142857143*h_inv[1]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,0), 8 ) += (0.0857142857143*h_inv[1]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,0), 8 ) += (0.0857142857143*h_inv[1]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,1), 8 ) += -(0.0857142857143*h_inv[1]*h_inv[1]);
+	sys.A( 9, vi + V2i(0,-1), 9 ) += -(0.214285714286*h_inv[1]*h_inv[1]);
+	sys.A( 9, vi + V2i(0,0), 9 ) += (0.214285714286*h_inv[1]*h_inv[1]);
+	sys.A( 9, vi + V2i(0,0), 9 ) += (0.214285714286*h_inv[1]*h_inv[1]);
+	sys.A( 9, vi + V2i(0,1), 9 ) += -(0.214285714286*h_inv[1]*h_inv[1]);
 
 	// term 48 ----------------
 
@@ -397,8 +1997,120 @@ void set_system_row(PNSystem::VoxelSystem& sys,
 	sys.A( 2, vi + V2i(0,0), 1 ) += (std::complex<double>(0.0, 0.033333333333333326)*h_inv[0]*h_inv[1]);
 	sys.A( 2, vi + V2i(-1,1), 1 ) += (std::complex<double>(0.0, 0.033333333333333326)*h_inv[0]*h_inv[1]);
 	sys.A( 2, vi + V2i(0,1), 1 ) += -(std::complex<double>(0.0, 0.033333333333333326)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(-1,-1), 3 ) += -(std::complex<double>(0.0, 0.008748177652797066)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(-1,0), 3 ) += -(std::complex<double>(0.0, 0.008748177652797066)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,-1), 3 ) += -(std::complex<double>(0.0, 0.008748177652797066)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,0), 3 ) += -(std::complex<double>(0.0, 0.008748177652797066)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,-1), 3 ) += (std::complex<double>(0.0, 0.008748177652797066)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,0), 3 ) += (std::complex<double>(0.0, 0.008748177652797066)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(1,-1), 3 ) += (std::complex<double>(0.0, 0.008748177652797066)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(1,0), 3 ) += (std::complex<double>(0.0, 0.008748177652797066)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(-1,0), 3 ) += (std::complex<double>(0.0, 0.008748177652797066)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(-1,1), 3 ) += (std::complex<double>(0.0, 0.008748177652797066)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,0), 3 ) += (std::complex<double>(0.0, 0.008748177652797066)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,1), 3 ) += (std::complex<double>(0.0, 0.008748177652797066)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,0), 3 ) += -(std::complex<double>(0.0, 0.008748177652797066)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,1), 3 ) += -(std::complex<double>(0.0, 0.008748177652797066)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(1,0), 3 ) += -(std::complex<double>(0.0, 0.008748177652797066)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(1,1), 3 ) += -(std::complex<double>(0.0, 0.008748177652797066)*h_inv[0]*h_inv[1]);
+	sys.A( 5, vi + V2i(-1,-1), 4 ) += -(std::complex<double>(0.0, 0.008748177652797066)*h_inv[0]*h_inv[1]);
+	sys.A( 5, vi + V2i(-1,0), 4 ) += -(std::complex<double>(0.0, 0.008748177652797066)*h_inv[0]*h_inv[1]);
+	sys.A( 5, vi + V2i(0,-1), 4 ) += -(std::complex<double>(0.0, 0.008748177652797066)*h_inv[0]*h_inv[1]);
+	sys.A( 5, vi + V2i(0,0), 4 ) += -(std::complex<double>(0.0, 0.008748177652797066)*h_inv[0]*h_inv[1]);
+	sys.A( 5, vi + V2i(0,-1), 4 ) += (std::complex<double>(0.0, 0.008748177652797066)*h_inv[0]*h_inv[1]);
+	sys.A( 5, vi + V2i(0,0), 4 ) += (std::complex<double>(0.0, 0.008748177652797066)*h_inv[0]*h_inv[1]);
+	sys.A( 5, vi + V2i(1,-1), 4 ) += (std::complex<double>(0.0, 0.008748177652797066)*h_inv[0]*h_inv[1]);
+	sys.A( 5, vi + V2i(1,0), 4 ) += (std::complex<double>(0.0, 0.008748177652797066)*h_inv[0]*h_inv[1]);
+	sys.A( 5, vi + V2i(-1,0), 4 ) += (std::complex<double>(0.0, 0.008748177652797066)*h_inv[0]*h_inv[1]);
+	sys.A( 5, vi + V2i(-1,1), 4 ) += (std::complex<double>(0.0, 0.008748177652797066)*h_inv[0]*h_inv[1]);
+	sys.A( 5, vi + V2i(0,0), 4 ) += (std::complex<double>(0.0, 0.008748177652797066)*h_inv[0]*h_inv[1]);
+	sys.A( 5, vi + V2i(0,1), 4 ) += (std::complex<double>(0.0, 0.008748177652797066)*h_inv[0]*h_inv[1]);
+	sys.A( 5, vi + V2i(0,0), 4 ) += -(std::complex<double>(0.0, 0.008748177652797066)*h_inv[0]*h_inv[1]);
+	sys.A( 5, vi + V2i(0,1), 4 ) += -(std::complex<double>(0.0, 0.008748177652797066)*h_inv[0]*h_inv[1]);
+	sys.A( 5, vi + V2i(1,0), 4 ) += -(std::complex<double>(0.0, 0.008748177652797066)*h_inv[0]*h_inv[1]);
+	sys.A( 5, vi + V2i(1,1), 4 ) += -(std::complex<double>(0.0, 0.008748177652797066)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(-1,-1), 6 ) += -(std::complex<double>(0.0, 0.007684490766284558)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(-1,0), 6 ) += -(std::complex<double>(0.0, 0.007684490766284558)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,-1), 6 ) += -(std::complex<double>(0.0, 0.007684490766284558)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,0), 6 ) += -(std::complex<double>(0.0, 0.007684490766284558)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,-1), 6 ) += (std::complex<double>(0.0, 0.007684490766284558)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,0), 6 ) += (std::complex<double>(0.0, 0.007684490766284558)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(1,-1), 6 ) += (std::complex<double>(0.0, 0.007684490766284558)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(1,0), 6 ) += (std::complex<double>(0.0, 0.007684490766284558)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(-1,0), 6 ) += (std::complex<double>(0.0, 0.007684490766284558)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(-1,1), 6 ) += (std::complex<double>(0.0, 0.007684490766284558)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,0), 6 ) += (std::complex<double>(0.0, 0.007684490766284558)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,1), 6 ) += (std::complex<double>(0.0, 0.007684490766284558)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,0), 6 ) += -(std::complex<double>(0.0, 0.007684490766284558)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,1), 6 ) += -(std::complex<double>(0.0, 0.007684490766284558)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(1,0), 6 ) += -(std::complex<double>(0.0, 0.007684490766284558)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(1,1), 6 ) += -(std::complex<double>(0.0, 0.007684490766284558)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(-1,-1), 7 ) += -(std::complex<double>(0.0, 0.011904761904761902)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(-1,0), 7 ) += -(std::complex<double>(0.0, 0.011904761904761902)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,-1), 7 ) += -(std::complex<double>(0.0, 0.011904761904761902)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,0), 7 ) += -(std::complex<double>(0.0, 0.011904761904761902)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,-1), 7 ) += (std::complex<double>(0.0, 0.011904761904761902)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,0), 7 ) += (std::complex<double>(0.0, 0.011904761904761902)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(1,-1), 7 ) += (std::complex<double>(0.0, 0.011904761904761902)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(1,0), 7 ) += (std::complex<double>(0.0, 0.011904761904761902)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(-1,0), 7 ) += (std::complex<double>(0.0, 0.011904761904761902)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(-1,1), 7 ) += (std::complex<double>(0.0, 0.011904761904761902)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,0), 7 ) += (std::complex<double>(0.0, 0.011904761904761902)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,1), 7 ) += (std::complex<double>(0.0, 0.011904761904761902)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,0), 7 ) += -(std::complex<double>(0.0, 0.011904761904761902)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,1), 7 ) += -(std::complex<double>(0.0, 0.011904761904761902)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(1,0), 7 ) += -(std::complex<double>(0.0, 0.011904761904761902)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(1,1), 7 ) += -(std::complex<double>(0.0, 0.011904761904761902)*h_inv[0]*h_inv[1]);
+	sys.A( 9, vi + V2i(-1,-1), 8 ) += -(std::complex<double>(0.0, 0.007684490766284558)*h_inv[0]*h_inv[1]);
+	sys.A( 9, vi + V2i(-1,0), 8 ) += -(std::complex<double>(0.0, 0.007684490766284558)*h_inv[0]*h_inv[1]);
+	sys.A( 9, vi + V2i(0,-1), 8 ) += -(std::complex<double>(0.0, 0.007684490766284558)*h_inv[0]*h_inv[1]);
+	sys.A( 9, vi + V2i(0,0), 8 ) += -(std::complex<double>(0.0, 0.007684490766284558)*h_inv[0]*h_inv[1]);
+	sys.A( 9, vi + V2i(0,-1), 8 ) += (std::complex<double>(0.0, 0.007684490766284558)*h_inv[0]*h_inv[1]);
+	sys.A( 9, vi + V2i(0,0), 8 ) += (std::complex<double>(0.0, 0.007684490766284558)*h_inv[0]*h_inv[1]);
+	sys.A( 9, vi + V2i(1,-1), 8 ) += (std::complex<double>(0.0, 0.007684490766284558)*h_inv[0]*h_inv[1]);
+	sys.A( 9, vi + V2i(1,0), 8 ) += (std::complex<double>(0.0, 0.007684490766284558)*h_inv[0]*h_inv[1]);
+	sys.A( 9, vi + V2i(-1,0), 8 ) += (std::complex<double>(0.0, 0.007684490766284558)*h_inv[0]*h_inv[1]);
+	sys.A( 9, vi + V2i(-1,1), 8 ) += (std::complex<double>(0.0, 0.007684490766284558)*h_inv[0]*h_inv[1]);
+	sys.A( 9, vi + V2i(0,0), 8 ) += (std::complex<double>(0.0, 0.007684490766284558)*h_inv[0]*h_inv[1]);
+	sys.A( 9, vi + V2i(0,1), 8 ) += (std::complex<double>(0.0, 0.007684490766284558)*h_inv[0]*h_inv[1]);
+	sys.A( 9, vi + V2i(0,0), 8 ) += -(std::complex<double>(0.0, 0.007684490766284558)*h_inv[0]*h_inv[1]);
+	sys.A( 9, vi + V2i(0,1), 8 ) += -(std::complex<double>(0.0, 0.007684490766284558)*h_inv[0]*h_inv[1]);
+	sys.A( 9, vi + V2i(1,0), 8 ) += -(std::complex<double>(0.0, 0.007684490766284558)*h_inv[0]*h_inv[1]);
+	sys.A( 9, vi + V2i(1,1), 8 ) += -(std::complex<double>(0.0, 0.007684490766284558)*h_inv[0]*h_inv[1]);
 
 	// term 51 ----------------
+	sys.A( 0, vi + V2i(-1,-1), 3 ) += (std::complex<double>(0.0, 0.04564354645876384)*h_inv[0]*h_inv[1]);
+	sys.A( 0, vi + V2i(-1,0), 3 ) += (std::complex<double>(0.0, 0.04564354645876384)*h_inv[0]*h_inv[1]);
+	sys.A( 0, vi + V2i(0,-1), 3 ) += (std::complex<double>(0.0, 0.04564354645876384)*h_inv[0]*h_inv[1]);
+	sys.A( 0, vi + V2i(0,0), 3 ) += (std::complex<double>(0.0, 0.04564354645876384)*h_inv[0]*h_inv[1]);
+	sys.A( 0, vi + V2i(0,-1), 3 ) += -(std::complex<double>(0.0, 0.04564354645876384)*h_inv[0]*h_inv[1]);
+	sys.A( 0, vi + V2i(0,0), 3 ) += -(std::complex<double>(0.0, 0.04564354645876384)*h_inv[0]*h_inv[1]);
+	sys.A( 0, vi + V2i(1,-1), 3 ) += -(std::complex<double>(0.0, 0.04564354645876384)*h_inv[0]*h_inv[1]);
+	sys.A( 0, vi + V2i(1,0), 3 ) += -(std::complex<double>(0.0, 0.04564354645876384)*h_inv[0]*h_inv[1]);
+	sys.A( 0, vi + V2i(-1,0), 3 ) += -(std::complex<double>(0.0, 0.04564354645876384)*h_inv[0]*h_inv[1]);
+	sys.A( 0, vi + V2i(-1,1), 3 ) += -(std::complex<double>(0.0, 0.04564354645876384)*h_inv[0]*h_inv[1]);
+	sys.A( 0, vi + V2i(0,0), 3 ) += -(std::complex<double>(0.0, 0.04564354645876384)*h_inv[0]*h_inv[1]);
+	sys.A( 0, vi + V2i(0,1), 3 ) += -(std::complex<double>(0.0, 0.04564354645876384)*h_inv[0]*h_inv[1]);
+	sys.A( 0, vi + V2i(0,0), 3 ) += (std::complex<double>(0.0, 0.04564354645876384)*h_inv[0]*h_inv[1]);
+	sys.A( 0, vi + V2i(0,1), 3 ) += (std::complex<double>(0.0, 0.04564354645876384)*h_inv[0]*h_inv[1]);
+	sys.A( 0, vi + V2i(1,0), 3 ) += (std::complex<double>(0.0, 0.04564354645876384)*h_inv[0]*h_inv[1]);
+	sys.A( 0, vi + V2i(1,1), 3 ) += (std::complex<double>(0.0, 0.04564354645876384)*h_inv[0]*h_inv[1]);
+	sys.A( 1, vi + V2i(0,-1), 6 ) += (std::complex<double>(0.0, 0.10350983390135313)*h_inv[0]*h_inv[1]);
+	sys.A( 1, vi + V2i(-1,-1), 6 ) += (std::complex<double>(0.0, 0.10350983390135313)*h_inv[0]*h_inv[1]);
+	sys.A( 1, vi + V2i(1,-1), 6 ) += -(std::complex<double>(0.0, 0.10350983390135313)*h_inv[0]*h_inv[1]);
+	sys.A( 1, vi + V2i(0,-1), 6 ) += -(std::complex<double>(0.0, 0.10350983390135313)*h_inv[0]*h_inv[1]);
+	sys.A( 1, vi + V2i(0,0), 6 ) += -(std::complex<double>(0.0, 0.10350983390135313)*h_inv[0]*h_inv[1]);
+	sys.A( 1, vi + V2i(-1,0), 6 ) += -(std::complex<double>(0.0, 0.10350983390135313)*h_inv[0]*h_inv[1]);
+	sys.A( 1, vi + V2i(1,0), 6 ) += (std::complex<double>(0.0, 0.10350983390135313)*h_inv[0]*h_inv[1]);
+	sys.A( 1, vi + V2i(0,0), 6 ) += (std::complex<double>(0.0, 0.10350983390135313)*h_inv[0]*h_inv[1]);
+	sys.A( 2, vi + V2i(-1,0), 7 ) += (std::complex<double>(0.0, 0.02672612419124244)*h_inv[0]*h_inv[1]);
+	sys.A( 2, vi + V2i(-1,-1), 7 ) += (std::complex<double>(0.0, 0.02672612419124244)*h_inv[0]*h_inv[1]);
+	sys.A( 2, vi + V2i(0,0), 7 ) += -(std::complex<double>(0.0, 0.02672612419124244)*h_inv[0]*h_inv[1]);
+	sys.A( 2, vi + V2i(0,-1), 7 ) += -(std::complex<double>(0.0, 0.02672612419124244)*h_inv[0]*h_inv[1]);
+	sys.A( 2, vi + V2i(-1,1), 7 ) += -(std::complex<double>(0.0, 0.02672612419124244)*h_inv[0]*h_inv[1]);
+	sys.A( 2, vi + V2i(-1,0), 7 ) += -(std::complex<double>(0.0, 0.02672612419124244)*h_inv[0]*h_inv[1]);
+	sys.A( 2, vi + V2i(0,1), 7 ) += (std::complex<double>(0.0, 0.02672612419124244)*h_inv[0]*h_inv[1]);
+	sys.A( 2, vi + V2i(0,0), 7 ) += (std::complex<double>(0.0, 0.02672612419124244)*h_inv[0]*h_inv[1]);
 
 	// term 52 ----------------
 	sys.A( 0, vi + V2i(-1,-1), 0 ) += (std::complex<double>(0.0, 0.041666666666666664)*h_inv[0]*h_inv[1]);
@@ -449,8 +2161,152 @@ void set_system_row(PNSystem::VoxelSystem& sys,
 	sys.A( 2, vi + V2i(0,1), 2 ) += (std::complex<double>(0.0, 0.008333333333333331)*h_inv[0]*h_inv[1]);
 	sys.A( 2, vi + V2i(1,0), 2 ) += (std::complex<double>(0.0, 0.008333333333333331)*h_inv[0]*h_inv[1]);
 	sys.A( 2, vi + V2i(1,1), 2 ) += (std::complex<double>(0.0, 0.008333333333333331)*h_inv[0]*h_inv[1]);
+	sys.A( 3, vi + V2i(-1,-1), 3 ) += (std::complex<double>(0.0, 0.05357142857142857)*h_inv[0]*h_inv[1]);
+	sys.A( 3, vi + V2i(-1,0), 3 ) += (std::complex<double>(0.0, 0.05357142857142857)*h_inv[0]*h_inv[1]);
+	sys.A( 3, vi + V2i(0,-1), 3 ) += (std::complex<double>(0.0, 0.05357142857142857)*h_inv[0]*h_inv[1]);
+	sys.A( 3, vi + V2i(0,0), 3 ) += (std::complex<double>(0.0, 0.05357142857142857)*h_inv[0]*h_inv[1]);
+	sys.A( 3, vi + V2i(0,-1), 3 ) += -(std::complex<double>(0.0, 0.05357142857142857)*h_inv[0]*h_inv[1]);
+	sys.A( 3, vi + V2i(0,0), 3 ) += -(std::complex<double>(0.0, 0.05357142857142857)*h_inv[0]*h_inv[1]);
+	sys.A( 3, vi + V2i(1,-1), 3 ) += -(std::complex<double>(0.0, 0.05357142857142857)*h_inv[0]*h_inv[1]);
+	sys.A( 3, vi + V2i(1,0), 3 ) += -(std::complex<double>(0.0, 0.05357142857142857)*h_inv[0]*h_inv[1]);
+	sys.A( 3, vi + V2i(-1,0), 3 ) += -(std::complex<double>(0.0, 0.05357142857142857)*h_inv[0]*h_inv[1]);
+	sys.A( 3, vi + V2i(-1,1), 3 ) += -(std::complex<double>(0.0, 0.05357142857142857)*h_inv[0]*h_inv[1]);
+	sys.A( 3, vi + V2i(0,0), 3 ) += -(std::complex<double>(0.0, 0.05357142857142857)*h_inv[0]*h_inv[1]);
+	sys.A( 3, vi + V2i(0,1), 3 ) += -(std::complex<double>(0.0, 0.05357142857142857)*h_inv[0]*h_inv[1]);
+	sys.A( 3, vi + V2i(0,0), 3 ) += (std::complex<double>(0.0, 0.05357142857142857)*h_inv[0]*h_inv[1]);
+	sys.A( 3, vi + V2i(0,1), 3 ) += (std::complex<double>(0.0, 0.05357142857142857)*h_inv[0]*h_inv[1]);
+	sys.A( 3, vi + V2i(1,0), 3 ) += (std::complex<double>(0.0, 0.05357142857142857)*h_inv[0]*h_inv[1]);
+	sys.A( 3, vi + V2i(1,1), 3 ) += (std::complex<double>(0.0, 0.05357142857142857)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(-1,-1), 4 ) += (std::complex<double>(0.0, 0.021428571428571432)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(-1,0), 4 ) += (std::complex<double>(0.0, 0.021428571428571432)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,-1), 4 ) += (std::complex<double>(0.0, 0.021428571428571432)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,0), 4 ) += (std::complex<double>(0.0, 0.021428571428571432)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,-1), 4 ) += -(std::complex<double>(0.0, 0.021428571428571432)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,0), 4 ) += -(std::complex<double>(0.0, 0.021428571428571432)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(1,-1), 4 ) += -(std::complex<double>(0.0, 0.021428571428571432)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(1,0), 4 ) += -(std::complex<double>(0.0, 0.021428571428571432)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(-1,0), 4 ) += -(std::complex<double>(0.0, 0.021428571428571432)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(-1,1), 4 ) += -(std::complex<double>(0.0, 0.021428571428571432)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,0), 4 ) += -(std::complex<double>(0.0, 0.021428571428571432)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,1), 4 ) += -(std::complex<double>(0.0, 0.021428571428571432)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,0), 4 ) += (std::complex<double>(0.0, 0.021428571428571432)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,1), 4 ) += (std::complex<double>(0.0, 0.021428571428571432)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(1,0), 4 ) += (std::complex<double>(0.0, 0.021428571428571432)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(1,1), 4 ) += (std::complex<double>(0.0, 0.021428571428571432)*h_inv[0]*h_inv[1]);
+	sys.A( 5, vi + V2i(-1,-1), 5 ) += (std::complex<double>(0.0, 0.0035714285714285713)*h_inv[0]*h_inv[1]);
+	sys.A( 5, vi + V2i(-1,0), 5 ) += (std::complex<double>(0.0, 0.0035714285714285713)*h_inv[0]*h_inv[1]);
+	sys.A( 5, vi + V2i(0,-1), 5 ) += (std::complex<double>(0.0, 0.0035714285714285713)*h_inv[0]*h_inv[1]);
+	sys.A( 5, vi + V2i(0,0), 5 ) += (std::complex<double>(0.0, 0.0035714285714285713)*h_inv[0]*h_inv[1]);
+	sys.A( 5, vi + V2i(0,-1), 5 ) += -(std::complex<double>(0.0, 0.0035714285714285713)*h_inv[0]*h_inv[1]);
+	sys.A( 5, vi + V2i(0,0), 5 ) += -(std::complex<double>(0.0, 0.0035714285714285713)*h_inv[0]*h_inv[1]);
+	sys.A( 5, vi + V2i(1,-1), 5 ) += -(std::complex<double>(0.0, 0.0035714285714285713)*h_inv[0]*h_inv[1]);
+	sys.A( 5, vi + V2i(1,0), 5 ) += -(std::complex<double>(0.0, 0.0035714285714285713)*h_inv[0]*h_inv[1]);
+	sys.A( 5, vi + V2i(-1,0), 5 ) += -(std::complex<double>(0.0, 0.0035714285714285713)*h_inv[0]*h_inv[1]);
+	sys.A( 5, vi + V2i(-1,1), 5 ) += -(std::complex<double>(0.0, 0.0035714285714285713)*h_inv[0]*h_inv[1]);
+	sys.A( 5, vi + V2i(0,0), 5 ) += -(std::complex<double>(0.0, 0.0035714285714285713)*h_inv[0]*h_inv[1]);
+	sys.A( 5, vi + V2i(0,1), 5 ) += -(std::complex<double>(0.0, 0.0035714285714285713)*h_inv[0]*h_inv[1]);
+	sys.A( 5, vi + V2i(0,0), 5 ) += (std::complex<double>(0.0, 0.0035714285714285713)*h_inv[0]*h_inv[1]);
+	sys.A( 5, vi + V2i(0,1), 5 ) += (std::complex<double>(0.0, 0.0035714285714285713)*h_inv[0]*h_inv[1]);
+	sys.A( 5, vi + V2i(1,0), 5 ) += (std::complex<double>(0.0, 0.0035714285714285713)*h_inv[0]*h_inv[1]);
+	sys.A( 5, vi + V2i(1,1), 5 ) += (std::complex<double>(0.0, 0.0035714285714285713)*h_inv[0]*h_inv[1]);
+	sys.A( 6, vi + V2i(-1,-1), 6 ) += (std::complex<double>(0.0, 0.05555555555555555)*h_inv[0]*h_inv[1]);
+	sys.A( 6, vi + V2i(-1,0), 6 ) += (std::complex<double>(0.0, 0.05555555555555555)*h_inv[0]*h_inv[1]);
+	sys.A( 6, vi + V2i(0,-1), 6 ) += (std::complex<double>(0.0, 0.05555555555555555)*h_inv[0]*h_inv[1]);
+	sys.A( 6, vi + V2i(0,0), 6 ) += (std::complex<double>(0.0, 0.05555555555555555)*h_inv[0]*h_inv[1]);
+	sys.A( 6, vi + V2i(0,-1), 6 ) += -(std::complex<double>(0.0, 0.05555555555555555)*h_inv[0]*h_inv[1]);
+	sys.A( 6, vi + V2i(0,0), 6 ) += -(std::complex<double>(0.0, 0.05555555555555555)*h_inv[0]*h_inv[1]);
+	sys.A( 6, vi + V2i(1,-1), 6 ) += -(std::complex<double>(0.0, 0.05555555555555555)*h_inv[0]*h_inv[1]);
+	sys.A( 6, vi + V2i(1,0), 6 ) += -(std::complex<double>(0.0, 0.05555555555555555)*h_inv[0]*h_inv[1]);
+	sys.A( 6, vi + V2i(-1,0), 6 ) += -(std::complex<double>(0.0, 0.05555555555555555)*h_inv[0]*h_inv[1]);
+	sys.A( 6, vi + V2i(-1,1), 6 ) += -(std::complex<double>(0.0, 0.05555555555555555)*h_inv[0]*h_inv[1]);
+	sys.A( 6, vi + V2i(0,0), 6 ) += -(std::complex<double>(0.0, 0.05555555555555555)*h_inv[0]*h_inv[1]);
+	sys.A( 6, vi + V2i(0,1), 6 ) += -(std::complex<double>(0.0, 0.05555555555555555)*h_inv[0]*h_inv[1]);
+	sys.A( 6, vi + V2i(0,0), 6 ) += (std::complex<double>(0.0, 0.05555555555555555)*h_inv[0]*h_inv[1]);
+	sys.A( 6, vi + V2i(0,1), 6 ) += (std::complex<double>(0.0, 0.05555555555555555)*h_inv[0]*h_inv[1]);
+	sys.A( 6, vi + V2i(1,0), 6 ) += (std::complex<double>(0.0, 0.05555555555555555)*h_inv[0]*h_inv[1]);
+	sys.A( 6, vi + V2i(1,1), 6 ) += (std::complex<double>(0.0, 0.05555555555555555)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(-1,-1), 7 ) += (std::complex<double>(0.0, 0.029761904761904764)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(-1,0), 7 ) += (std::complex<double>(0.0, 0.029761904761904764)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,-1), 7 ) += (std::complex<double>(0.0, 0.029761904761904764)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,0), 7 ) += (std::complex<double>(0.0, 0.029761904761904764)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,-1), 7 ) += -(std::complex<double>(0.0, 0.029761904761904764)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,0), 7 ) += -(std::complex<double>(0.0, 0.029761904761904764)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(1,-1), 7 ) += -(std::complex<double>(0.0, 0.029761904761904764)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(1,0), 7 ) += -(std::complex<double>(0.0, 0.029761904761904764)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(-1,0), 7 ) += -(std::complex<double>(0.0, 0.029761904761904764)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(-1,1), 7 ) += -(std::complex<double>(0.0, 0.029761904761904764)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,0), 7 ) += -(std::complex<double>(0.0, 0.029761904761904764)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,1), 7 ) += -(std::complex<double>(0.0, 0.029761904761904764)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,0), 7 ) += (std::complex<double>(0.0, 0.029761904761904764)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,1), 7 ) += (std::complex<double>(0.0, 0.029761904761904764)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(1,0), 7 ) += (std::complex<double>(0.0, 0.029761904761904764)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(1,1), 7 ) += (std::complex<double>(0.0, 0.029761904761904764)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(-1,-1), 8 ) += (std::complex<double>(0.0, 0.011904761904761902)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(-1,0), 8 ) += (std::complex<double>(0.0, 0.011904761904761902)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,-1), 8 ) += (std::complex<double>(0.0, 0.011904761904761902)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,0), 8 ) += (std::complex<double>(0.0, 0.011904761904761902)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,-1), 8 ) += -(std::complex<double>(0.0, 0.011904761904761902)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,0), 8 ) += -(std::complex<double>(0.0, 0.011904761904761902)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(1,-1), 8 ) += -(std::complex<double>(0.0, 0.011904761904761902)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(1,0), 8 ) += -(std::complex<double>(0.0, 0.011904761904761902)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(-1,0), 8 ) += -(std::complex<double>(0.0, 0.011904761904761902)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(-1,1), 8 ) += -(std::complex<double>(0.0, 0.011904761904761902)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,0), 8 ) += -(std::complex<double>(0.0, 0.011904761904761902)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,1), 8 ) += -(std::complex<double>(0.0, 0.011904761904761902)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,0), 8 ) += (std::complex<double>(0.0, 0.011904761904761902)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,1), 8 ) += (std::complex<double>(0.0, 0.011904761904761902)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(1,0), 8 ) += (std::complex<double>(0.0, 0.011904761904761902)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(1,1), 8 ) += (std::complex<double>(0.0, 0.011904761904761902)*h_inv[0]*h_inv[1]);
+	sys.A( 9, vi + V2i(-1,-1), 9 ) += (std::complex<double>(0.0, 0.001984126984126984)*h_inv[0]*h_inv[1]);
+	sys.A( 9, vi + V2i(-1,0), 9 ) += (std::complex<double>(0.0, 0.001984126984126984)*h_inv[0]*h_inv[1]);
+	sys.A( 9, vi + V2i(0,-1), 9 ) += (std::complex<double>(0.0, 0.001984126984126984)*h_inv[0]*h_inv[1]);
+	sys.A( 9, vi + V2i(0,0), 9 ) += (std::complex<double>(0.0, 0.001984126984126984)*h_inv[0]*h_inv[1]);
+	sys.A( 9, vi + V2i(0,-1), 9 ) += -(std::complex<double>(0.0, 0.001984126984126984)*h_inv[0]*h_inv[1]);
+	sys.A( 9, vi + V2i(0,0), 9 ) += -(std::complex<double>(0.0, 0.001984126984126984)*h_inv[0]*h_inv[1]);
+	sys.A( 9, vi + V2i(1,-1), 9 ) += -(std::complex<double>(0.0, 0.001984126984126984)*h_inv[0]*h_inv[1]);
+	sys.A( 9, vi + V2i(1,0), 9 ) += -(std::complex<double>(0.0, 0.001984126984126984)*h_inv[0]*h_inv[1]);
+	sys.A( 9, vi + V2i(-1,0), 9 ) += -(std::complex<double>(0.0, 0.001984126984126984)*h_inv[0]*h_inv[1]);
+	sys.A( 9, vi + V2i(-1,1), 9 ) += -(std::complex<double>(0.0, 0.001984126984126984)*h_inv[0]*h_inv[1]);
+	sys.A( 9, vi + V2i(0,0), 9 ) += -(std::complex<double>(0.0, 0.001984126984126984)*h_inv[0]*h_inv[1]);
+	sys.A( 9, vi + V2i(0,1), 9 ) += -(std::complex<double>(0.0, 0.001984126984126984)*h_inv[0]*h_inv[1]);
+	sys.A( 9, vi + V2i(0,0), 9 ) += (std::complex<double>(0.0, 0.001984126984126984)*h_inv[0]*h_inv[1]);
+	sys.A( 9, vi + V2i(0,1), 9 ) += (std::complex<double>(0.0, 0.001984126984126984)*h_inv[0]*h_inv[1]);
+	sys.A( 9, vi + V2i(1,0), 9 ) += (std::complex<double>(0.0, 0.001984126984126984)*h_inv[0]*h_inv[1]);
+	sys.A( 9, vi + V2i(1,1), 9 ) += (std::complex<double>(0.0, 0.001984126984126984)*h_inv[0]*h_inv[1]);
 
 	// term 53 ----------------
+	sys.A( 0, vi + V2i(-1,-1), 4 ) += -(std::complex<double>(0.0, 0.018633899812498245)*h_inv[0]*h_inv[1]);
+	sys.A( 0, vi + V2i(-1,0), 4 ) += -(std::complex<double>(0.0, 0.018633899812498245)*h_inv[0]*h_inv[1]);
+	sys.A( 0, vi + V2i(0,-1), 4 ) += -(std::complex<double>(0.0, 0.018633899812498245)*h_inv[0]*h_inv[1]);
+	sys.A( 0, vi + V2i(0,0), 4 ) += -(std::complex<double>(0.0, 0.018633899812498245)*h_inv[0]*h_inv[1]);
+	sys.A( 0, vi + V2i(0,-1), 4 ) += (std::complex<double>(0.0, 0.018633899812498245)*h_inv[0]*h_inv[1]);
+	sys.A( 0, vi + V2i(0,0), 4 ) += (std::complex<double>(0.0, 0.018633899812498245)*h_inv[0]*h_inv[1]);
+	sys.A( 0, vi + V2i(1,-1), 4 ) += (std::complex<double>(0.0, 0.018633899812498245)*h_inv[0]*h_inv[1]);
+	sys.A( 0, vi + V2i(1,0), 4 ) += (std::complex<double>(0.0, 0.018633899812498245)*h_inv[0]*h_inv[1]);
+	sys.A( 0, vi + V2i(-1,0), 4 ) += (std::complex<double>(0.0, 0.018633899812498245)*h_inv[0]*h_inv[1]);
+	sys.A( 0, vi + V2i(-1,1), 4 ) += (std::complex<double>(0.0, 0.018633899812498245)*h_inv[0]*h_inv[1]);
+	sys.A( 0, vi + V2i(0,0), 4 ) += (std::complex<double>(0.0, 0.018633899812498245)*h_inv[0]*h_inv[1]);
+	sys.A( 0, vi + V2i(0,1), 4 ) += (std::complex<double>(0.0, 0.018633899812498245)*h_inv[0]*h_inv[1]);
+	sys.A( 0, vi + V2i(0,0), 4 ) += -(std::complex<double>(0.0, 0.018633899812498245)*h_inv[0]*h_inv[1]);
+	sys.A( 0, vi + V2i(0,1), 4 ) += -(std::complex<double>(0.0, 0.018633899812498245)*h_inv[0]*h_inv[1]);
+	sys.A( 0, vi + V2i(1,0), 4 ) += -(std::complex<double>(0.0, 0.018633899812498245)*h_inv[0]*h_inv[1]);
+	sys.A( 0, vi + V2i(1,1), 4 ) += -(std::complex<double>(0.0, 0.018633899812498245)*h_inv[0]*h_inv[1]);
+	sys.A( 1, vi + V2i(0,-1), 7 ) += -(std::complex<double>(0.0, 0.02672612419124244)*h_inv[0]*h_inv[1]);
+	sys.A( 1, vi + V2i(-1,-1), 7 ) += -(std::complex<double>(0.0, 0.02672612419124244)*h_inv[0]*h_inv[1]);
+	sys.A( 1, vi + V2i(1,-1), 7 ) += (std::complex<double>(0.0, 0.02672612419124244)*h_inv[0]*h_inv[1]);
+	sys.A( 1, vi + V2i(0,-1), 7 ) += (std::complex<double>(0.0, 0.02672612419124244)*h_inv[0]*h_inv[1]);
+	sys.A( 1, vi + V2i(0,0), 7 ) += (std::complex<double>(0.0, 0.02672612419124244)*h_inv[0]*h_inv[1]);
+	sys.A( 1, vi + V2i(-1,0), 7 ) += (std::complex<double>(0.0, 0.02672612419124244)*h_inv[0]*h_inv[1]);
+	sys.A( 1, vi + V2i(1,0), 7 ) += -(std::complex<double>(0.0, 0.02672612419124244)*h_inv[0]*h_inv[1]);
+	sys.A( 1, vi + V2i(0,0), 7 ) += -(std::complex<double>(0.0, 0.02672612419124244)*h_inv[0]*h_inv[1]);
+	sys.A( 2, vi + V2i(-1,0), 8 ) += -(std::complex<double>(0.0, 0.02672612419124244)*h_inv[0]*h_inv[1]);
+	sys.A( 2, vi + V2i(-1,-1), 8 ) += -(std::complex<double>(0.0, 0.02672612419124244)*h_inv[0]*h_inv[1]);
+	sys.A( 2, vi + V2i(0,0), 8 ) += (std::complex<double>(0.0, 0.02672612419124244)*h_inv[0]*h_inv[1]);
+	sys.A( 2, vi + V2i(0,-1), 8 ) += (std::complex<double>(0.0, 0.02672612419124244)*h_inv[0]*h_inv[1]);
+	sys.A( 2, vi + V2i(-1,1), 8 ) += (std::complex<double>(0.0, 0.02672612419124244)*h_inv[0]*h_inv[1]);
+	sys.A( 2, vi + V2i(-1,0), 8 ) += (std::complex<double>(0.0, 0.02672612419124244)*h_inv[0]*h_inv[1]);
+	sys.A( 2, vi + V2i(0,1), 8 ) += -(std::complex<double>(0.0, 0.02672612419124244)*h_inv[0]*h_inv[1]);
+	sys.A( 2, vi + V2i(0,0), 8 ) += -(std::complex<double>(0.0, 0.02672612419124244)*h_inv[0]*h_inv[1]);
 
 	// term 54 ----------------
 	sys.A( 2, vi + V2i(-1,-1), 1 ) += -(0.00833333333333*h_inv[1]*h_inv[1]);
@@ -469,8 +2325,48 @@ void set_system_row(PNSystem::VoxelSystem& sys,
 	sys.A( 2, vi + V2i(-1,2), 1 ) += -(0.00833333333333*h_inv[1]*h_inv[1]);
 	sys.A( 2, vi + V2i(0,1), 1 ) += -(0.00833333333333*h_inv[1]*h_inv[1]);
 	sys.A( 2, vi + V2i(0,2), 1 ) += -(0.00833333333333*h_inv[1]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,-1), 3 ) += -(0.0349927106112*h_inv[1]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,0), 3 ) += (0.0349927106112*h_inv[1]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,0), 3 ) += (0.0349927106112*h_inv[1]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,1), 3 ) += -(0.0349927106112*h_inv[1]*h_inv[1]);
+	sys.A( 5, vi + V2i(0,-1), 4 ) += -(0.0349927106112*h_inv[1]*h_inv[1]);
+	sys.A( 5, vi + V2i(0,0), 4 ) += (0.0349927106112*h_inv[1]*h_inv[1]);
+	sys.A( 5, vi + V2i(0,0), 4 ) += (0.0349927106112*h_inv[1]*h_inv[1]);
+	sys.A( 5, vi + V2i(0,1), 4 ) += -(0.0349927106112*h_inv[1]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,-1), 6 ) += -(0.0307379630651*h_inv[1]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,0), 6 ) += (0.0307379630651*h_inv[1]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,0), 6 ) += (0.0307379630651*h_inv[1]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,1), 6 ) += -(0.0307379630651*h_inv[1]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,-1), 7 ) += -(0.047619047619*h_inv[1]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,0), 7 ) += (0.047619047619*h_inv[1]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,0), 7 ) += (0.047619047619*h_inv[1]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,1), 7 ) += -(0.047619047619*h_inv[1]*h_inv[1]);
+	sys.A( 9, vi + V2i(0,-1), 8 ) += -(0.0307379630651*h_inv[1]*h_inv[1]);
+	sys.A( 9, vi + V2i(0,0), 8 ) += (0.0307379630651*h_inv[1]*h_inv[1]);
+	sys.A( 9, vi + V2i(0,0), 8 ) += (0.0307379630651*h_inv[1]*h_inv[1]);
+	sys.A( 9, vi + V2i(0,1), 8 ) += -(0.0307379630651*h_inv[1]*h_inv[1]);
 
 	// term 55 ----------------
+	sys.A( 0, vi + V2i(0,-1), 3 ) += (0.182574185835*h_inv[1]*h_inv[1]);
+	sys.A( 0, vi + V2i(0,0), 3 ) += -(0.182574185835*h_inv[1]*h_inv[1]);
+	sys.A( 0, vi + V2i(0,0), 3 ) += -(0.182574185835*h_inv[1]*h_inv[1]);
+	sys.A( 0, vi + V2i(0,1), 3 ) += (0.182574185835*h_inv[1]*h_inv[1]);
+	sys.A( 1, vi + V2i(0,-1), 6 ) += (0.103509833901*h_inv[1]*h_inv[1]);
+	sys.A( 1, vi + V2i(0,-2), 6 ) += (0.103509833901*h_inv[1]*h_inv[1]);
+	sys.A( 1, vi + V2i(0,0), 6 ) += -(0.103509833901*h_inv[1]*h_inv[1]);
+	sys.A( 1, vi + V2i(0,-1), 6 ) += -(0.103509833901*h_inv[1]*h_inv[1]);
+	sys.A( 1, vi + V2i(0,0), 6 ) += -(0.103509833901*h_inv[1]*h_inv[1]);
+	sys.A( 1, vi + V2i(0,-1), 6 ) += -(0.103509833901*h_inv[1]*h_inv[1]);
+	sys.A( 1, vi + V2i(0,1), 6 ) += (0.103509833901*h_inv[1]*h_inv[1]);
+	sys.A( 1, vi + V2i(0,0), 6 ) += (0.103509833901*h_inv[1]*h_inv[1]);
+	sys.A( 2, vi + V2i(0,-1), 7 ) += (0.0267261241912*h_inv[1]*h_inv[1]);
+	sys.A( 2, vi + V2i(-1,-1), 7 ) += (0.0267261241912*h_inv[1]*h_inv[1]);
+	sys.A( 2, vi + V2i(0,0), 7 ) += -(0.0267261241912*h_inv[1]*h_inv[1]);
+	sys.A( 2, vi + V2i(-1,0), 7 ) += -(0.0267261241912*h_inv[1]*h_inv[1]);
+	sys.A( 2, vi + V2i(0,0), 7 ) += -(0.0267261241912*h_inv[1]*h_inv[1]);
+	sys.A( 2, vi + V2i(-1,0), 7 ) += -(0.0267261241912*h_inv[1]*h_inv[1]);
+	sys.A( 2, vi + V2i(0,1), 7 ) += (0.0267261241912*h_inv[1]*h_inv[1]);
+	sys.A( 2, vi + V2i(-1,1), 7 ) += (0.0267261241912*h_inv[1]*h_inv[1]);
 
 	// term 56 ----------------
 	sys.A( 0, vi + V2i(0,-1), 0 ) += -(0.166666666667*h_inv[1]*h_inv[1]);
@@ -485,14 +2381,94 @@ void set_system_row(PNSystem::VoxelSystem& sys,
 	sys.A( 2, vi + V2i(0,0), 2 ) += (0.0333333333333*h_inv[1]*h_inv[1]);
 	sys.A( 2, vi + V2i(0,0), 2 ) += (0.0333333333333*h_inv[1]*h_inv[1]);
 	sys.A( 2, vi + V2i(0,1), 2 ) += -(0.0333333333333*h_inv[1]*h_inv[1]);
+	sys.A( 3, vi + V2i(0,-1), 3 ) += -(0.214285714286*h_inv[1]*h_inv[1]);
+	sys.A( 3, vi + V2i(0,0), 3 ) += (0.214285714286*h_inv[1]*h_inv[1]);
+	sys.A( 3, vi + V2i(0,0), 3 ) += (0.214285714286*h_inv[1]*h_inv[1]);
+	sys.A( 3, vi + V2i(0,1), 3 ) += -(0.214285714286*h_inv[1]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,-1), 4 ) += -(0.0857142857143*h_inv[1]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,0), 4 ) += (0.0857142857143*h_inv[1]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,0), 4 ) += (0.0857142857143*h_inv[1]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,1), 4 ) += -(0.0857142857143*h_inv[1]*h_inv[1]);
+	sys.A( 5, vi + V2i(0,-1), 5 ) += -(0.0142857142857*h_inv[1]*h_inv[1]);
+	sys.A( 5, vi + V2i(0,0), 5 ) += (0.0142857142857*h_inv[1]*h_inv[1]);
+	sys.A( 5, vi + V2i(0,0), 5 ) += (0.0142857142857*h_inv[1]*h_inv[1]);
+	sys.A( 5, vi + V2i(0,1), 5 ) += -(0.0142857142857*h_inv[1]*h_inv[1]);
+	sys.A( 6, vi + V2i(0,-1), 6 ) += -(0.222222222222*h_inv[1]*h_inv[1]);
+	sys.A( 6, vi + V2i(0,0), 6 ) += (0.222222222222*h_inv[1]*h_inv[1]);
+	sys.A( 6, vi + V2i(0,0), 6 ) += (0.222222222222*h_inv[1]*h_inv[1]);
+	sys.A( 6, vi + V2i(0,1), 6 ) += -(0.222222222222*h_inv[1]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,-1), 7 ) += -(0.119047619048*h_inv[1]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,0), 7 ) += (0.119047619048*h_inv[1]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,0), 7 ) += (0.119047619048*h_inv[1]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,1), 7 ) += -(0.119047619048*h_inv[1]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,-1), 8 ) += -(0.047619047619*h_inv[1]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,0), 8 ) += (0.047619047619*h_inv[1]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,0), 8 ) += (0.047619047619*h_inv[1]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,1), 8 ) += -(0.047619047619*h_inv[1]*h_inv[1]);
+	sys.A( 9, vi + V2i(0,-1), 9 ) += -(0.00793650793651*h_inv[1]*h_inv[1]);
+	sys.A( 9, vi + V2i(0,0), 9 ) += (0.00793650793651*h_inv[1]*h_inv[1]);
+	sys.A( 9, vi + V2i(0,0), 9 ) += (0.00793650793651*h_inv[1]*h_inv[1]);
+	sys.A( 9, vi + V2i(0,1), 9 ) += -(0.00793650793651*h_inv[1]*h_inv[1]);
 
 	// term 57 ----------------
+	sys.A( 0, vi + V2i(0,-1), 4 ) += (0.07453559925*h_inv[1]*h_inv[1]);
+	sys.A( 0, vi + V2i(0,0), 4 ) += -(0.07453559925*h_inv[1]*h_inv[1]);
+	sys.A( 0, vi + V2i(0,0), 4 ) += -(0.07453559925*h_inv[1]*h_inv[1]);
+	sys.A( 0, vi + V2i(0,1), 4 ) += (0.07453559925*h_inv[1]*h_inv[1]);
+	sys.A( 1, vi + V2i(0,-1), 7 ) += (0.0267261241912*h_inv[1]*h_inv[1]);
+	sys.A( 1, vi + V2i(0,-2), 7 ) += (0.0267261241912*h_inv[1]*h_inv[1]);
+	sys.A( 1, vi + V2i(0,0), 7 ) += -(0.0267261241912*h_inv[1]*h_inv[1]);
+	sys.A( 1, vi + V2i(0,-1), 7 ) += -(0.0267261241912*h_inv[1]*h_inv[1]);
+	sys.A( 1, vi + V2i(0,0), 7 ) += -(0.0267261241912*h_inv[1]*h_inv[1]);
+	sys.A( 1, vi + V2i(0,-1), 7 ) += -(0.0267261241912*h_inv[1]*h_inv[1]);
+	sys.A( 1, vi + V2i(0,1), 7 ) += (0.0267261241912*h_inv[1]*h_inv[1]);
+	sys.A( 1, vi + V2i(0,0), 7 ) += (0.0267261241912*h_inv[1]*h_inv[1]);
+	sys.A( 2, vi + V2i(0,-1), 8 ) += (0.0267261241912*h_inv[1]*h_inv[1]);
+	sys.A( 2, vi + V2i(-1,-1), 8 ) += (0.0267261241912*h_inv[1]*h_inv[1]);
+	sys.A( 2, vi + V2i(0,0), 8 ) += -(0.0267261241912*h_inv[1]*h_inv[1]);
+	sys.A( 2, vi + V2i(-1,0), 8 ) += -(0.0267261241912*h_inv[1]*h_inv[1]);
+	sys.A( 2, vi + V2i(0,0), 8 ) += -(0.0267261241912*h_inv[1]*h_inv[1]);
+	sys.A( 2, vi + V2i(-1,0), 8 ) += -(0.0267261241912*h_inv[1]*h_inv[1]);
+	sys.A( 2, vi + V2i(0,1), 8 ) += (0.0267261241912*h_inv[1]*h_inv[1]);
+	sys.A( 2, vi + V2i(-1,1), 8 ) += (0.0267261241912*h_inv[1]*h_inv[1]);
 
 	// term 58 ----------------
 
 	// term 59 ----------------
 
 	// term 60 ----------------
+	sys.A( 4, vi + V2i(-1,-1), 0 ) += (std::complex<double>(0.0, 0.018633899812498245)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(-1,0), 0 ) += (std::complex<double>(0.0, 0.018633899812498245)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,-1), 0 ) += (std::complex<double>(0.0, 0.018633899812498245)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,0), 0 ) += (std::complex<double>(0.0, 0.018633899812498245)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,-1), 0 ) += -(std::complex<double>(0.0, 0.018633899812498245)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,0), 0 ) += -(std::complex<double>(0.0, 0.018633899812498245)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(1,-1), 0 ) += -(std::complex<double>(0.0, 0.018633899812498245)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(1,0), 0 ) += -(std::complex<double>(0.0, 0.018633899812498245)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(-1,0), 0 ) += -(std::complex<double>(0.0, 0.018633899812498245)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(-1,1), 0 ) += -(std::complex<double>(0.0, 0.018633899812498245)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,0), 0 ) += -(std::complex<double>(0.0, 0.018633899812498245)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,1), 0 ) += -(std::complex<double>(0.0, 0.018633899812498245)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,0), 0 ) += (std::complex<double>(0.0, 0.018633899812498245)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,1), 0 ) += (std::complex<double>(0.0, 0.018633899812498245)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(1,0), 0 ) += (std::complex<double>(0.0, 0.018633899812498245)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(1,1), 0 ) += (std::complex<double>(0.0, 0.018633899812498245)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,0), 1 ) += (std::complex<double>(0.0, 0.02672612419124244)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(-1,0), 1 ) += (std::complex<double>(0.0, 0.02672612419124244)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(1,0), 1 ) += -(std::complex<double>(0.0, 0.02672612419124244)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,0), 1 ) += -(std::complex<double>(0.0, 0.02672612419124244)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,1), 1 ) += -(std::complex<double>(0.0, 0.02672612419124244)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(-1,1), 1 ) += -(std::complex<double>(0.0, 0.02672612419124244)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(1,1), 1 ) += (std::complex<double>(0.0, 0.02672612419124244)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,1), 1 ) += (std::complex<double>(0.0, 0.02672612419124244)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,0), 2 ) += (std::complex<double>(0.0, 0.02672612419124244)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,-1), 2 ) += (std::complex<double>(0.0, 0.02672612419124244)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(1,0), 2 ) += -(std::complex<double>(0.0, 0.02672612419124244)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(1,-1), 2 ) += -(std::complex<double>(0.0, 0.02672612419124244)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,1), 2 ) += -(std::complex<double>(0.0, 0.02672612419124244)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,0), 2 ) += -(std::complex<double>(0.0, 0.02672612419124244)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(1,1), 2 ) += (std::complex<double>(0.0, 0.02672612419124244)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(1,0), 2 ) += (std::complex<double>(0.0, 0.02672612419124244)*h_inv[0]*h_inv[1]);
 
 	// term 61 ----------------
 	sys.A( 1, vi + V2i(-1,-1), 1 ) += -(std::complex<double>(0.0, 0.041666666666666664)*h_inv[0]*h_inv[1]);
@@ -511,24 +2487,276 @@ void set_system_row(PNSystem::VoxelSystem& sys,
 	sys.A( 1, vi + V2i(0,1), 1 ) += -(std::complex<double>(0.0, 0.041666666666666664)*h_inv[0]*h_inv[1]);
 	sys.A( 1, vi + V2i(1,0), 1 ) += -(std::complex<double>(0.0, 0.041666666666666664)*h_inv[0]*h_inv[1]);
 	sys.A( 1, vi + V2i(1,1), 1 ) += -(std::complex<double>(0.0, 0.041666666666666664)*h_inv[0]*h_inv[1]);
+	sys.A( 3, vi + V2i(-1,-1), 3 ) += -(std::complex<double>(0.0, 0.049999999999999996)*h_inv[0]*h_inv[1]);
+	sys.A( 3, vi + V2i(-1,0), 3 ) += -(std::complex<double>(0.0, 0.049999999999999996)*h_inv[0]*h_inv[1]);
+	sys.A( 3, vi + V2i(0,-1), 3 ) += -(std::complex<double>(0.0, 0.049999999999999996)*h_inv[0]*h_inv[1]);
+	sys.A( 3, vi + V2i(0,0), 3 ) += -(std::complex<double>(0.0, 0.049999999999999996)*h_inv[0]*h_inv[1]);
+	sys.A( 3, vi + V2i(0,-1), 3 ) += (std::complex<double>(0.0, 0.049999999999999996)*h_inv[0]*h_inv[1]);
+	sys.A( 3, vi + V2i(0,0), 3 ) += (std::complex<double>(0.0, 0.049999999999999996)*h_inv[0]*h_inv[1]);
+	sys.A( 3, vi + V2i(1,-1), 3 ) += (std::complex<double>(0.0, 0.049999999999999996)*h_inv[0]*h_inv[1]);
+	sys.A( 3, vi + V2i(1,0), 3 ) += (std::complex<double>(0.0, 0.049999999999999996)*h_inv[0]*h_inv[1]);
+	sys.A( 3, vi + V2i(-1,0), 3 ) += (std::complex<double>(0.0, 0.049999999999999996)*h_inv[0]*h_inv[1]);
+	sys.A( 3, vi + V2i(-1,1), 3 ) += (std::complex<double>(0.0, 0.049999999999999996)*h_inv[0]*h_inv[1]);
+	sys.A( 3, vi + V2i(0,0), 3 ) += (std::complex<double>(0.0, 0.049999999999999996)*h_inv[0]*h_inv[1]);
+	sys.A( 3, vi + V2i(0,1), 3 ) += (std::complex<double>(0.0, 0.049999999999999996)*h_inv[0]*h_inv[1]);
+	sys.A( 3, vi + V2i(0,0), 3 ) += -(std::complex<double>(0.0, 0.049999999999999996)*h_inv[0]*h_inv[1]);
+	sys.A( 3, vi + V2i(0,1), 3 ) += -(std::complex<double>(0.0, 0.049999999999999996)*h_inv[0]*h_inv[1]);
+	sys.A( 3, vi + V2i(1,0), 3 ) += -(std::complex<double>(0.0, 0.049999999999999996)*h_inv[0]*h_inv[1]);
+	sys.A( 3, vi + V2i(1,1), 3 ) += -(std::complex<double>(0.0, 0.049999999999999996)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(-1,-1), 4 ) += -(std::complex<double>(0.0, 0.008333333333333331)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(-1,0), 4 ) += -(std::complex<double>(0.0, 0.008333333333333331)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,-1), 4 ) += -(std::complex<double>(0.0, 0.008333333333333331)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,0), 4 ) += -(std::complex<double>(0.0, 0.008333333333333331)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,-1), 4 ) += (std::complex<double>(0.0, 0.008333333333333331)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,0), 4 ) += (std::complex<double>(0.0, 0.008333333333333331)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(1,-1), 4 ) += (std::complex<double>(0.0, 0.008333333333333331)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(1,0), 4 ) += (std::complex<double>(0.0, 0.008333333333333331)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(-1,0), 4 ) += (std::complex<double>(0.0, 0.008333333333333331)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(-1,1), 4 ) += (std::complex<double>(0.0, 0.008333333333333331)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,0), 4 ) += (std::complex<double>(0.0, 0.008333333333333331)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,1), 4 ) += (std::complex<double>(0.0, 0.008333333333333331)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,0), 4 ) += -(std::complex<double>(0.0, 0.008333333333333331)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,1), 4 ) += -(std::complex<double>(0.0, 0.008333333333333331)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(1,0), 4 ) += -(std::complex<double>(0.0, 0.008333333333333331)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(1,1), 4 ) += -(std::complex<double>(0.0, 0.008333333333333331)*h_inv[0]*h_inv[1]);
+	sys.A( 6, vi + V2i(-1,-1), 6 ) += -(std::complex<double>(0.0, 0.05357142857142857)*h_inv[0]*h_inv[1]);
+	sys.A( 6, vi + V2i(-1,0), 6 ) += -(std::complex<double>(0.0, 0.05357142857142857)*h_inv[0]*h_inv[1]);
+	sys.A( 6, vi + V2i(0,-1), 6 ) += -(std::complex<double>(0.0, 0.05357142857142857)*h_inv[0]*h_inv[1]);
+	sys.A( 6, vi + V2i(0,0), 6 ) += -(std::complex<double>(0.0, 0.05357142857142857)*h_inv[0]*h_inv[1]);
+	sys.A( 6, vi + V2i(0,-1), 6 ) += (std::complex<double>(0.0, 0.05357142857142857)*h_inv[0]*h_inv[1]);
+	sys.A( 6, vi + V2i(0,0), 6 ) += (std::complex<double>(0.0, 0.05357142857142857)*h_inv[0]*h_inv[1]);
+	sys.A( 6, vi + V2i(1,-1), 6 ) += (std::complex<double>(0.0, 0.05357142857142857)*h_inv[0]*h_inv[1]);
+	sys.A( 6, vi + V2i(1,0), 6 ) += (std::complex<double>(0.0, 0.05357142857142857)*h_inv[0]*h_inv[1]);
+	sys.A( 6, vi + V2i(-1,0), 6 ) += (std::complex<double>(0.0, 0.05357142857142857)*h_inv[0]*h_inv[1]);
+	sys.A( 6, vi + V2i(-1,1), 6 ) += (std::complex<double>(0.0, 0.05357142857142857)*h_inv[0]*h_inv[1]);
+	sys.A( 6, vi + V2i(0,0), 6 ) += (std::complex<double>(0.0, 0.05357142857142857)*h_inv[0]*h_inv[1]);
+	sys.A( 6, vi + V2i(0,1), 6 ) += (std::complex<double>(0.0, 0.05357142857142857)*h_inv[0]*h_inv[1]);
+	sys.A( 6, vi + V2i(0,0), 6 ) += -(std::complex<double>(0.0, 0.05357142857142857)*h_inv[0]*h_inv[1]);
+	sys.A( 6, vi + V2i(0,1), 6 ) += -(std::complex<double>(0.0, 0.05357142857142857)*h_inv[0]*h_inv[1]);
+	sys.A( 6, vi + V2i(1,0), 6 ) += -(std::complex<double>(0.0, 0.05357142857142857)*h_inv[0]*h_inv[1]);
+	sys.A( 6, vi + V2i(1,1), 6 ) += -(std::complex<double>(0.0, 0.05357142857142857)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(-1,-1), 7 ) += -(std::complex<double>(0.0, 0.021428571428571432)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(-1,0), 7 ) += -(std::complex<double>(0.0, 0.021428571428571432)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,-1), 7 ) += -(std::complex<double>(0.0, 0.021428571428571432)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,0), 7 ) += -(std::complex<double>(0.0, 0.021428571428571432)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,-1), 7 ) += (std::complex<double>(0.0, 0.021428571428571432)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,0), 7 ) += (std::complex<double>(0.0, 0.021428571428571432)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(1,-1), 7 ) += (std::complex<double>(0.0, 0.021428571428571432)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(1,0), 7 ) += (std::complex<double>(0.0, 0.021428571428571432)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(-1,0), 7 ) += (std::complex<double>(0.0, 0.021428571428571432)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(-1,1), 7 ) += (std::complex<double>(0.0, 0.021428571428571432)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,0), 7 ) += (std::complex<double>(0.0, 0.021428571428571432)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,1), 7 ) += (std::complex<double>(0.0, 0.021428571428571432)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,0), 7 ) += -(std::complex<double>(0.0, 0.021428571428571432)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,1), 7 ) += -(std::complex<double>(0.0, 0.021428571428571432)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(1,0), 7 ) += -(std::complex<double>(0.0, 0.021428571428571432)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(1,1), 7 ) += -(std::complex<double>(0.0, 0.021428571428571432)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(-1,-1), 8 ) += -(std::complex<double>(0.0, 0.0035714285714285713)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(-1,0), 8 ) += -(std::complex<double>(0.0, 0.0035714285714285713)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,-1), 8 ) += -(std::complex<double>(0.0, 0.0035714285714285713)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,0), 8 ) += -(std::complex<double>(0.0, 0.0035714285714285713)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,-1), 8 ) += (std::complex<double>(0.0, 0.0035714285714285713)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,0), 8 ) += (std::complex<double>(0.0, 0.0035714285714285713)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(1,-1), 8 ) += (std::complex<double>(0.0, 0.0035714285714285713)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(1,0), 8 ) += (std::complex<double>(0.0, 0.0035714285714285713)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(-1,0), 8 ) += (std::complex<double>(0.0, 0.0035714285714285713)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(-1,1), 8 ) += (std::complex<double>(0.0, 0.0035714285714285713)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,0), 8 ) += (std::complex<double>(0.0, 0.0035714285714285713)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,1), 8 ) += (std::complex<double>(0.0, 0.0035714285714285713)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,0), 8 ) += -(std::complex<double>(0.0, 0.0035714285714285713)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,1), 8 ) += -(std::complex<double>(0.0, 0.0035714285714285713)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(1,0), 8 ) += -(std::complex<double>(0.0, 0.0035714285714285713)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(1,1), 8 ) += -(std::complex<double>(0.0, 0.0035714285714285713)*h_inv[0]*h_inv[1]);
 
 	// term 62 ----------------
+	sys.A( 3, vi + V2i(-1,-1), 0 ) += -(std::complex<double>(0.0, 0.04564354645876384)*h_inv[0]*h_inv[1]);
+	sys.A( 3, vi + V2i(-1,0), 0 ) += -(std::complex<double>(0.0, 0.04564354645876384)*h_inv[0]*h_inv[1]);
+	sys.A( 3, vi + V2i(0,-1), 0 ) += -(std::complex<double>(0.0, 0.04564354645876384)*h_inv[0]*h_inv[1]);
+	sys.A( 3, vi + V2i(0,0), 0 ) += -(std::complex<double>(0.0, 0.04564354645876384)*h_inv[0]*h_inv[1]);
+	sys.A( 3, vi + V2i(0,-1), 0 ) += (std::complex<double>(0.0, 0.04564354645876384)*h_inv[0]*h_inv[1]);
+	sys.A( 3, vi + V2i(0,0), 0 ) += (std::complex<double>(0.0, 0.04564354645876384)*h_inv[0]*h_inv[1]);
+	sys.A( 3, vi + V2i(1,-1), 0 ) += (std::complex<double>(0.0, 0.04564354645876384)*h_inv[0]*h_inv[1]);
+	sys.A( 3, vi + V2i(1,0), 0 ) += (std::complex<double>(0.0, 0.04564354645876384)*h_inv[0]*h_inv[1]);
+	sys.A( 3, vi + V2i(-1,0), 0 ) += (std::complex<double>(0.0, 0.04564354645876384)*h_inv[0]*h_inv[1]);
+	sys.A( 3, vi + V2i(-1,1), 0 ) += (std::complex<double>(0.0, 0.04564354645876384)*h_inv[0]*h_inv[1]);
+	sys.A( 3, vi + V2i(0,0), 0 ) += (std::complex<double>(0.0, 0.04564354645876384)*h_inv[0]*h_inv[1]);
+	sys.A( 3, vi + V2i(0,1), 0 ) += (std::complex<double>(0.0, 0.04564354645876384)*h_inv[0]*h_inv[1]);
+	sys.A( 3, vi + V2i(0,0), 0 ) += -(std::complex<double>(0.0, 0.04564354645876384)*h_inv[0]*h_inv[1]);
+	sys.A( 3, vi + V2i(0,1), 0 ) += -(std::complex<double>(0.0, 0.04564354645876384)*h_inv[0]*h_inv[1]);
+	sys.A( 3, vi + V2i(1,0), 0 ) += -(std::complex<double>(0.0, 0.04564354645876384)*h_inv[0]*h_inv[1]);
+	sys.A( 3, vi + V2i(1,1), 0 ) += -(std::complex<double>(0.0, 0.04564354645876384)*h_inv[0]*h_inv[1]);
+	sys.A( 6, vi + V2i(0,0), 1 ) += -(std::complex<double>(0.0, 0.10350983390135313)*h_inv[0]*h_inv[1]);
+	sys.A( 6, vi + V2i(-1,0), 1 ) += -(std::complex<double>(0.0, 0.10350983390135313)*h_inv[0]*h_inv[1]);
+	sys.A( 6, vi + V2i(1,0), 1 ) += (std::complex<double>(0.0, 0.10350983390135313)*h_inv[0]*h_inv[1]);
+	sys.A( 6, vi + V2i(0,0), 1 ) += (std::complex<double>(0.0, 0.10350983390135313)*h_inv[0]*h_inv[1]);
+	sys.A( 6, vi + V2i(0,1), 1 ) += (std::complex<double>(0.0, 0.10350983390135313)*h_inv[0]*h_inv[1]);
+	sys.A( 6, vi + V2i(-1,1), 1 ) += (std::complex<double>(0.0, 0.10350983390135313)*h_inv[0]*h_inv[1]);
+	sys.A( 6, vi + V2i(1,1), 1 ) += -(std::complex<double>(0.0, 0.10350983390135313)*h_inv[0]*h_inv[1]);
+	sys.A( 6, vi + V2i(0,1), 1 ) += -(std::complex<double>(0.0, 0.10350983390135313)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,0), 2 ) += -(std::complex<double>(0.0, 0.02672612419124244)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,-1), 2 ) += -(std::complex<double>(0.0, 0.02672612419124244)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(1,0), 2 ) += (std::complex<double>(0.0, 0.02672612419124244)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(1,-1), 2 ) += (std::complex<double>(0.0, 0.02672612419124244)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,1), 2 ) += (std::complex<double>(0.0, 0.02672612419124244)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,0), 2 ) += (std::complex<double>(0.0, 0.02672612419124244)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(1,1), 2 ) += -(std::complex<double>(0.0, 0.02672612419124244)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(1,0), 2 ) += -(std::complex<double>(0.0, 0.02672612419124244)*h_inv[0]*h_inv[1]);
 
 	// term 63 ----------------
 	sys.A( 1, vi + V2i(0,-1), 2 ) += (std::complex<double>(0.0, 0.16666666666666666)*h_inv[0]*h_inv[1]);
 	sys.A( 1, vi + V2i(1,-1), 2 ) += -(std::complex<double>(0.0, 0.16666666666666666)*h_inv[0]*h_inv[1]);
 	sys.A( 1, vi + V2i(0,0), 2 ) += -(std::complex<double>(0.0, 0.16666666666666666)*h_inv[0]*h_inv[1]);
 	sys.A( 1, vi + V2i(1,0), 2 ) += (std::complex<double>(0.0, 0.16666666666666666)*h_inv[0]*h_inv[1]);
+	sys.A( 3, vi + V2i(-1,-1), 4 ) += (std::complex<double>(0.0, 0.02041241452319315)*h_inv[0]*h_inv[1]);
+	sys.A( 3, vi + V2i(-1,0), 4 ) += (std::complex<double>(0.0, 0.02041241452319315)*h_inv[0]*h_inv[1]);
+	sys.A( 3, vi + V2i(0,-1), 4 ) += (std::complex<double>(0.0, 0.02041241452319315)*h_inv[0]*h_inv[1]);
+	sys.A( 3, vi + V2i(0,0), 4 ) += (std::complex<double>(0.0, 0.02041241452319315)*h_inv[0]*h_inv[1]);
+	sys.A( 3, vi + V2i(0,-1), 4 ) += -(std::complex<double>(0.0, 0.02041241452319315)*h_inv[0]*h_inv[1]);
+	sys.A( 3, vi + V2i(0,0), 4 ) += -(std::complex<double>(0.0, 0.02041241452319315)*h_inv[0]*h_inv[1]);
+	sys.A( 3, vi + V2i(1,-1), 4 ) += -(std::complex<double>(0.0, 0.02041241452319315)*h_inv[0]*h_inv[1]);
+	sys.A( 3, vi + V2i(1,0), 4 ) += -(std::complex<double>(0.0, 0.02041241452319315)*h_inv[0]*h_inv[1]);
+	sys.A( 3, vi + V2i(-1,0), 4 ) += -(std::complex<double>(0.0, 0.02041241452319315)*h_inv[0]*h_inv[1]);
+	sys.A( 3, vi + V2i(-1,1), 4 ) += -(std::complex<double>(0.0, 0.02041241452319315)*h_inv[0]*h_inv[1]);
+	sys.A( 3, vi + V2i(0,0), 4 ) += -(std::complex<double>(0.0, 0.02041241452319315)*h_inv[0]*h_inv[1]);
+	sys.A( 3, vi + V2i(0,1), 4 ) += -(std::complex<double>(0.0, 0.02041241452319315)*h_inv[0]*h_inv[1]);
+	sys.A( 3, vi + V2i(0,0), 4 ) += (std::complex<double>(0.0, 0.02041241452319315)*h_inv[0]*h_inv[1]);
+	sys.A( 3, vi + V2i(0,1), 4 ) += (std::complex<double>(0.0, 0.02041241452319315)*h_inv[0]*h_inv[1]);
+	sys.A( 3, vi + V2i(1,0), 4 ) += (std::complex<double>(0.0, 0.02041241452319315)*h_inv[0]*h_inv[1]);
+	sys.A( 3, vi + V2i(1,1), 4 ) += (std::complex<double>(0.0, 0.02041241452319315)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(-1,-1), 5 ) += (std::complex<double>(0.0, 0.02041241452319315)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(-1,0), 5 ) += (std::complex<double>(0.0, 0.02041241452319315)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,-1), 5 ) += (std::complex<double>(0.0, 0.02041241452319315)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,0), 5 ) += (std::complex<double>(0.0, 0.02041241452319315)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,-1), 5 ) += -(std::complex<double>(0.0, 0.02041241452319315)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,0), 5 ) += -(std::complex<double>(0.0, 0.02041241452319315)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(1,-1), 5 ) += -(std::complex<double>(0.0, 0.02041241452319315)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(1,0), 5 ) += -(std::complex<double>(0.0, 0.02041241452319315)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(-1,0), 5 ) += -(std::complex<double>(0.0, 0.02041241452319315)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(-1,1), 5 ) += -(std::complex<double>(0.0, 0.02041241452319315)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,0), 5 ) += -(std::complex<double>(0.0, 0.02041241452319315)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,1), 5 ) += -(std::complex<double>(0.0, 0.02041241452319315)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,0), 5 ) += (std::complex<double>(0.0, 0.02041241452319315)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,1), 5 ) += (std::complex<double>(0.0, 0.02041241452319315)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(1,0), 5 ) += (std::complex<double>(0.0, 0.02041241452319315)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(1,1), 5 ) += (std::complex<double>(0.0, 0.02041241452319315)*h_inv[0]*h_inv[1]);
+	sys.A( 6, vi + V2i(-1,-1), 7 ) += (std::complex<double>(0.0, 0.013832083379312202)*h_inv[0]*h_inv[1]);
+	sys.A( 6, vi + V2i(-1,0), 7 ) += (std::complex<double>(0.0, 0.013832083379312202)*h_inv[0]*h_inv[1]);
+	sys.A( 6, vi + V2i(0,-1), 7 ) += (std::complex<double>(0.0, 0.013832083379312202)*h_inv[0]*h_inv[1]);
+	sys.A( 6, vi + V2i(0,0), 7 ) += (std::complex<double>(0.0, 0.013832083379312202)*h_inv[0]*h_inv[1]);
+	sys.A( 6, vi + V2i(0,-1), 7 ) += -(std::complex<double>(0.0, 0.013832083379312202)*h_inv[0]*h_inv[1]);
+	sys.A( 6, vi + V2i(0,0), 7 ) += -(std::complex<double>(0.0, 0.013832083379312202)*h_inv[0]*h_inv[1]);
+	sys.A( 6, vi + V2i(1,-1), 7 ) += -(std::complex<double>(0.0, 0.013832083379312202)*h_inv[0]*h_inv[1]);
+	sys.A( 6, vi + V2i(1,0), 7 ) += -(std::complex<double>(0.0, 0.013832083379312202)*h_inv[0]*h_inv[1]);
+	sys.A( 6, vi + V2i(-1,0), 7 ) += -(std::complex<double>(0.0, 0.013832083379312202)*h_inv[0]*h_inv[1]);
+	sys.A( 6, vi + V2i(-1,1), 7 ) += -(std::complex<double>(0.0, 0.013832083379312202)*h_inv[0]*h_inv[1]);
+	sys.A( 6, vi + V2i(0,0), 7 ) += -(std::complex<double>(0.0, 0.013832083379312202)*h_inv[0]*h_inv[1]);
+	sys.A( 6, vi + V2i(0,1), 7 ) += -(std::complex<double>(0.0, 0.013832083379312202)*h_inv[0]*h_inv[1]);
+	sys.A( 6, vi + V2i(0,0), 7 ) += (std::complex<double>(0.0, 0.013832083379312202)*h_inv[0]*h_inv[1]);
+	sys.A( 6, vi + V2i(0,1), 7 ) += (std::complex<double>(0.0, 0.013832083379312202)*h_inv[0]*h_inv[1]);
+	sys.A( 6, vi + V2i(1,0), 7 ) += (std::complex<double>(0.0, 0.013832083379312202)*h_inv[0]*h_inv[1]);
+	sys.A( 6, vi + V2i(1,1), 7 ) += (std::complex<double>(0.0, 0.013832083379312202)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(-1,-1), 8 ) += (std::complex<double>(0.0, 0.021428571428571432)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(-1,0), 8 ) += (std::complex<double>(0.0, 0.021428571428571432)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,-1), 8 ) += (std::complex<double>(0.0, 0.021428571428571432)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,0), 8 ) += (std::complex<double>(0.0, 0.021428571428571432)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,-1), 8 ) += -(std::complex<double>(0.0, 0.021428571428571432)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,0), 8 ) += -(std::complex<double>(0.0, 0.021428571428571432)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(1,-1), 8 ) += -(std::complex<double>(0.0, 0.021428571428571432)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(1,0), 8 ) += -(std::complex<double>(0.0, 0.021428571428571432)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(-1,0), 8 ) += -(std::complex<double>(0.0, 0.021428571428571432)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(-1,1), 8 ) += -(std::complex<double>(0.0, 0.021428571428571432)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,0), 8 ) += -(std::complex<double>(0.0, 0.021428571428571432)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,1), 8 ) += -(std::complex<double>(0.0, 0.021428571428571432)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,0), 8 ) += (std::complex<double>(0.0, 0.021428571428571432)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,1), 8 ) += (std::complex<double>(0.0, 0.021428571428571432)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(1,0), 8 ) += (std::complex<double>(0.0, 0.021428571428571432)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(1,1), 8 ) += (std::complex<double>(0.0, 0.021428571428571432)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(-1,-1), 9 ) += (std::complex<double>(0.0, 0.013832083379312202)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(-1,0), 9 ) += (std::complex<double>(0.0, 0.013832083379312202)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,-1), 9 ) += (std::complex<double>(0.0, 0.013832083379312202)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,0), 9 ) += (std::complex<double>(0.0, 0.013832083379312202)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,-1), 9 ) += -(std::complex<double>(0.0, 0.013832083379312202)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,0), 9 ) += -(std::complex<double>(0.0, 0.013832083379312202)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(1,-1), 9 ) += -(std::complex<double>(0.0, 0.013832083379312202)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(1,0), 9 ) += -(std::complex<double>(0.0, 0.013832083379312202)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(-1,0), 9 ) += -(std::complex<double>(0.0, 0.013832083379312202)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(-1,1), 9 ) += -(std::complex<double>(0.0, 0.013832083379312202)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,0), 9 ) += -(std::complex<double>(0.0, 0.013832083379312202)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,1), 9 ) += -(std::complex<double>(0.0, 0.013832083379312202)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,0), 9 ) += (std::complex<double>(0.0, 0.013832083379312202)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,1), 9 ) += (std::complex<double>(0.0, 0.013832083379312202)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(1,0), 9 ) += (std::complex<double>(0.0, 0.013832083379312202)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(1,1), 9 ) += (std::complex<double>(0.0, 0.013832083379312202)*h_inv[0]*h_inv[1]);
 
 	// term 64 ----------------
+	sys.A( 4, vi + V2i(0,-1), 0 ) += (0.07453559925*h_inv[1]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,0), 0 ) += -(0.07453559925*h_inv[1]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,0), 0 ) += -(0.07453559925*h_inv[1]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,1), 0 ) += (0.07453559925*h_inv[1]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,0), 1 ) += (0.0267261241912*h_inv[1]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,-1), 1 ) += (0.0267261241912*h_inv[1]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,1), 1 ) += -(0.0267261241912*h_inv[1]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,0), 1 ) += -(0.0267261241912*h_inv[1]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,1), 1 ) += -(0.0267261241912*h_inv[1]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,0), 1 ) += -(0.0267261241912*h_inv[1]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,2), 1 ) += (0.0267261241912*h_inv[1]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,1), 1 ) += (0.0267261241912*h_inv[1]*h_inv[1]);
+	sys.A( 8, vi + V2i(1,-1), 2 ) += (0.0267261241912*h_inv[1]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,-1), 2 ) += (0.0267261241912*h_inv[1]*h_inv[1]);
+	sys.A( 8, vi + V2i(1,0), 2 ) += -(0.0267261241912*h_inv[1]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,0), 2 ) += -(0.0267261241912*h_inv[1]*h_inv[1]);
+	sys.A( 8, vi + V2i(1,0), 2 ) += -(0.0267261241912*h_inv[1]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,0), 2 ) += -(0.0267261241912*h_inv[1]*h_inv[1]);
+	sys.A( 8, vi + V2i(1,1), 2 ) += (0.0267261241912*h_inv[1]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,1), 2 ) += (0.0267261241912*h_inv[1]*h_inv[1]);
 
 	// term 65 ----------------
 	sys.A( 1, vi + V2i(0,-1), 1 ) += -(0.166666666667*h_inv[1]*h_inv[1]);
 	sys.A( 1, vi + V2i(0,0), 1 ) += (0.166666666667*h_inv[1]*h_inv[1]);
 	sys.A( 1, vi + V2i(0,0), 1 ) += (0.166666666667*h_inv[1]*h_inv[1]);
 	sys.A( 1, vi + V2i(0,1), 1 ) += -(0.166666666667*h_inv[1]*h_inv[1]);
+	sys.A( 3, vi + V2i(0,-1), 3 ) += -(0.2*h_inv[1]*h_inv[1]);
+	sys.A( 3, vi + V2i(0,0), 3 ) += (0.2*h_inv[1]*h_inv[1]);
+	sys.A( 3, vi + V2i(0,0), 3 ) += (0.2*h_inv[1]*h_inv[1]);
+	sys.A( 3, vi + V2i(0,1), 3 ) += -(0.2*h_inv[1]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,-1), 4 ) += -(0.0333333333333*h_inv[1]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,0), 4 ) += (0.0333333333333*h_inv[1]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,0), 4 ) += (0.0333333333333*h_inv[1]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,1), 4 ) += -(0.0333333333333*h_inv[1]*h_inv[1]);
+	sys.A( 6, vi + V2i(0,-1), 6 ) += -(0.214285714286*h_inv[1]*h_inv[1]);
+	sys.A( 6, vi + V2i(0,0), 6 ) += (0.214285714286*h_inv[1]*h_inv[1]);
+	sys.A( 6, vi + V2i(0,0), 6 ) += (0.214285714286*h_inv[1]*h_inv[1]);
+	sys.A( 6, vi + V2i(0,1), 6 ) += -(0.214285714286*h_inv[1]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,-1), 7 ) += -(0.0857142857143*h_inv[1]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,0), 7 ) += (0.0857142857143*h_inv[1]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,0), 7 ) += (0.0857142857143*h_inv[1]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,1), 7 ) += -(0.0857142857143*h_inv[1]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,-1), 8 ) += -(0.0142857142857*h_inv[1]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,0), 8 ) += (0.0142857142857*h_inv[1]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,0), 8 ) += (0.0142857142857*h_inv[1]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,1), 8 ) += -(0.0142857142857*h_inv[1]*h_inv[1]);
 
 	// term 66 ----------------
+	sys.A( 3, vi + V2i(0,-1), 0 ) += (0.182574185835*h_inv[1]*h_inv[1]);
+	sys.A( 3, vi + V2i(0,0), 0 ) += -(0.182574185835*h_inv[1]*h_inv[1]);
+	sys.A( 3, vi + V2i(0,0), 0 ) += -(0.182574185835*h_inv[1]*h_inv[1]);
+	sys.A( 3, vi + V2i(0,1), 0 ) += (0.182574185835*h_inv[1]*h_inv[1]);
+	sys.A( 6, vi + V2i(0,0), 1 ) += (0.103509833901*h_inv[1]*h_inv[1]);
+	sys.A( 6, vi + V2i(0,-1), 1 ) += (0.103509833901*h_inv[1]*h_inv[1]);
+	sys.A( 6, vi + V2i(0,1), 1 ) += -(0.103509833901*h_inv[1]*h_inv[1]);
+	sys.A( 6, vi + V2i(0,0), 1 ) += -(0.103509833901*h_inv[1]*h_inv[1]);
+	sys.A( 6, vi + V2i(0,1), 1 ) += -(0.103509833901*h_inv[1]*h_inv[1]);
+	sys.A( 6, vi + V2i(0,0), 1 ) += -(0.103509833901*h_inv[1]*h_inv[1]);
+	sys.A( 6, vi + V2i(0,2), 1 ) += (0.103509833901*h_inv[1]*h_inv[1]);
+	sys.A( 6, vi + V2i(0,1), 1 ) += (0.103509833901*h_inv[1]*h_inv[1]);
+	sys.A( 7, vi + V2i(1,-1), 2 ) += (0.0267261241912*h_inv[1]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,-1), 2 ) += (0.0267261241912*h_inv[1]*h_inv[1]);
+	sys.A( 7, vi + V2i(1,0), 2 ) += -(0.0267261241912*h_inv[1]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,0), 2 ) += -(0.0267261241912*h_inv[1]*h_inv[1]);
+	sys.A( 7, vi + V2i(1,0), 2 ) += -(0.0267261241912*h_inv[1]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,0), 2 ) += -(0.0267261241912*h_inv[1]*h_inv[1]);
+	sys.A( 7, vi + V2i(1,1), 2 ) += (0.0267261241912*h_inv[1]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,1), 2 ) += (0.0267261241912*h_inv[1]*h_inv[1]);
 
 	// term 67 ----------------
 	sys.A( 1, vi + V2i(0,-2), 2 ) += -(0.0416666666667*h_inv[1]*h_inv[1]);
@@ -547,6 +2775,26 @@ void set_system_row(PNSystem::VoxelSystem& sys,
 	sys.A( 1, vi + V2i(0,1), 2 ) += -(0.0416666666667*h_inv[1]*h_inv[1]);
 	sys.A( 1, vi + V2i(1,0), 2 ) += -(0.0416666666667*h_inv[1]*h_inv[1]);
 	sys.A( 1, vi + V2i(1,1), 2 ) += -(0.0416666666667*h_inv[1]*h_inv[1]);
+	sys.A( 3, vi + V2i(0,-1), 4 ) += -(0.0816496580928*h_inv[1]*h_inv[1]);
+	sys.A( 3, vi + V2i(0,0), 4 ) += (0.0816496580928*h_inv[1]*h_inv[1]);
+	sys.A( 3, vi + V2i(0,0), 4 ) += (0.0816496580928*h_inv[1]*h_inv[1]);
+	sys.A( 3, vi + V2i(0,1), 4 ) += -(0.0816496580928*h_inv[1]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,-1), 5 ) += -(0.0816496580928*h_inv[1]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,0), 5 ) += (0.0816496580928*h_inv[1]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,0), 5 ) += (0.0816496580928*h_inv[1]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,1), 5 ) += -(0.0816496580928*h_inv[1]*h_inv[1]);
+	sys.A( 6, vi + V2i(0,-1), 7 ) += -(0.0553283335172*h_inv[1]*h_inv[1]);
+	sys.A( 6, vi + V2i(0,0), 7 ) += (0.0553283335172*h_inv[1]*h_inv[1]);
+	sys.A( 6, vi + V2i(0,0), 7 ) += (0.0553283335172*h_inv[1]*h_inv[1]);
+	sys.A( 6, vi + V2i(0,1), 7 ) += -(0.0553283335172*h_inv[1]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,-1), 8 ) += -(0.0857142857143*h_inv[1]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,0), 8 ) += (0.0857142857143*h_inv[1]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,0), 8 ) += (0.0857142857143*h_inv[1]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,1), 8 ) += -(0.0857142857143*h_inv[1]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,-1), 9 ) += -(0.0553283335172*h_inv[1]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,0), 9 ) += (0.0553283335172*h_inv[1]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,0), 9 ) += (0.0553283335172*h_inv[1]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,1), 9 ) += -(0.0553283335172*h_inv[1]*h_inv[1]);
 
 	// term 68 ----------------
 
@@ -601,16 +2849,272 @@ void set_system_row(PNSystem::VoxelSystem& sys,
 	sys.A( 2, vi + V2i(0,1), 2 ) += -(std::complex<double>(0.0, 0.049999999999999996)*h_inv[0]*h_inv[1]);
 	sys.A( 2, vi + V2i(1,0), 2 ) += -(std::complex<double>(0.0, 0.049999999999999996)*h_inv[0]*h_inv[1]);
 	sys.A( 2, vi + V2i(1,1), 2 ) += -(std::complex<double>(0.0, 0.049999999999999996)*h_inv[0]*h_inv[1]);
+	sys.A( 3, vi + V2i(-1,-1), 3 ) += -(std::complex<double>(0.0, 0.0035714285714285713)*h_inv[0]*h_inv[1]);
+	sys.A( 3, vi + V2i(-1,0), 3 ) += -(std::complex<double>(0.0, 0.0035714285714285713)*h_inv[0]*h_inv[1]);
+	sys.A( 3, vi + V2i(0,-1), 3 ) += -(std::complex<double>(0.0, 0.0035714285714285713)*h_inv[0]*h_inv[1]);
+	sys.A( 3, vi + V2i(0,0), 3 ) += -(std::complex<double>(0.0, 0.0035714285714285713)*h_inv[0]*h_inv[1]);
+	sys.A( 3, vi + V2i(0,-1), 3 ) += (std::complex<double>(0.0, 0.0035714285714285713)*h_inv[0]*h_inv[1]);
+	sys.A( 3, vi + V2i(0,0), 3 ) += (std::complex<double>(0.0, 0.0035714285714285713)*h_inv[0]*h_inv[1]);
+	sys.A( 3, vi + V2i(1,-1), 3 ) += (std::complex<double>(0.0, 0.0035714285714285713)*h_inv[0]*h_inv[1]);
+	sys.A( 3, vi + V2i(1,0), 3 ) += (std::complex<double>(0.0, 0.0035714285714285713)*h_inv[0]*h_inv[1]);
+	sys.A( 3, vi + V2i(-1,0), 3 ) += (std::complex<double>(0.0, 0.0035714285714285713)*h_inv[0]*h_inv[1]);
+	sys.A( 3, vi + V2i(-1,1), 3 ) += (std::complex<double>(0.0, 0.0035714285714285713)*h_inv[0]*h_inv[1]);
+	sys.A( 3, vi + V2i(0,0), 3 ) += (std::complex<double>(0.0, 0.0035714285714285713)*h_inv[0]*h_inv[1]);
+	sys.A( 3, vi + V2i(0,1), 3 ) += (std::complex<double>(0.0, 0.0035714285714285713)*h_inv[0]*h_inv[1]);
+	sys.A( 3, vi + V2i(0,0), 3 ) += -(std::complex<double>(0.0, 0.0035714285714285713)*h_inv[0]*h_inv[1]);
+	sys.A( 3, vi + V2i(0,1), 3 ) += -(std::complex<double>(0.0, 0.0035714285714285713)*h_inv[0]*h_inv[1]);
+	sys.A( 3, vi + V2i(1,0), 3 ) += -(std::complex<double>(0.0, 0.0035714285714285713)*h_inv[0]*h_inv[1]);
+	sys.A( 3, vi + V2i(1,1), 3 ) += -(std::complex<double>(0.0, 0.0035714285714285713)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(-1,-1), 4 ) += -(std::complex<double>(0.0, 0.021428571428571432)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(-1,0), 4 ) += -(std::complex<double>(0.0, 0.021428571428571432)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,-1), 4 ) += -(std::complex<double>(0.0, 0.021428571428571432)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,0), 4 ) += -(std::complex<double>(0.0, 0.021428571428571432)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,-1), 4 ) += (std::complex<double>(0.0, 0.021428571428571432)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,0), 4 ) += (std::complex<double>(0.0, 0.021428571428571432)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(1,-1), 4 ) += (std::complex<double>(0.0, 0.021428571428571432)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(1,0), 4 ) += (std::complex<double>(0.0, 0.021428571428571432)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(-1,0), 4 ) += (std::complex<double>(0.0, 0.021428571428571432)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(-1,1), 4 ) += (std::complex<double>(0.0, 0.021428571428571432)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,0), 4 ) += (std::complex<double>(0.0, 0.021428571428571432)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,1), 4 ) += (std::complex<double>(0.0, 0.021428571428571432)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,0), 4 ) += -(std::complex<double>(0.0, 0.021428571428571432)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,1), 4 ) += -(std::complex<double>(0.0, 0.021428571428571432)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(1,0), 4 ) += -(std::complex<double>(0.0, 0.021428571428571432)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(1,1), 4 ) += -(std::complex<double>(0.0, 0.021428571428571432)*h_inv[0]*h_inv[1]);
+	sys.A( 5, vi + V2i(-1,-1), 5 ) += -(std::complex<double>(0.0, 0.05357142857142857)*h_inv[0]*h_inv[1]);
+	sys.A( 5, vi + V2i(-1,0), 5 ) += -(std::complex<double>(0.0, 0.05357142857142857)*h_inv[0]*h_inv[1]);
+	sys.A( 5, vi + V2i(0,-1), 5 ) += -(std::complex<double>(0.0, 0.05357142857142857)*h_inv[0]*h_inv[1]);
+	sys.A( 5, vi + V2i(0,0), 5 ) += -(std::complex<double>(0.0, 0.05357142857142857)*h_inv[0]*h_inv[1]);
+	sys.A( 5, vi + V2i(0,-1), 5 ) += (std::complex<double>(0.0, 0.05357142857142857)*h_inv[0]*h_inv[1]);
+	sys.A( 5, vi + V2i(0,0), 5 ) += (std::complex<double>(0.0, 0.05357142857142857)*h_inv[0]*h_inv[1]);
+	sys.A( 5, vi + V2i(1,-1), 5 ) += (std::complex<double>(0.0, 0.05357142857142857)*h_inv[0]*h_inv[1]);
+	sys.A( 5, vi + V2i(1,0), 5 ) += (std::complex<double>(0.0, 0.05357142857142857)*h_inv[0]*h_inv[1]);
+	sys.A( 5, vi + V2i(-1,0), 5 ) += (std::complex<double>(0.0, 0.05357142857142857)*h_inv[0]*h_inv[1]);
+	sys.A( 5, vi + V2i(-1,1), 5 ) += (std::complex<double>(0.0, 0.05357142857142857)*h_inv[0]*h_inv[1]);
+	sys.A( 5, vi + V2i(0,0), 5 ) += (std::complex<double>(0.0, 0.05357142857142857)*h_inv[0]*h_inv[1]);
+	sys.A( 5, vi + V2i(0,1), 5 ) += (std::complex<double>(0.0, 0.05357142857142857)*h_inv[0]*h_inv[1]);
+	sys.A( 5, vi + V2i(0,0), 5 ) += -(std::complex<double>(0.0, 0.05357142857142857)*h_inv[0]*h_inv[1]);
+	sys.A( 5, vi + V2i(0,1), 5 ) += -(std::complex<double>(0.0, 0.05357142857142857)*h_inv[0]*h_inv[1]);
+	sys.A( 5, vi + V2i(1,0), 5 ) += -(std::complex<double>(0.0, 0.05357142857142857)*h_inv[0]*h_inv[1]);
+	sys.A( 5, vi + V2i(1,1), 5 ) += -(std::complex<double>(0.0, 0.05357142857142857)*h_inv[0]*h_inv[1]);
+	sys.A( 6, vi + V2i(-1,-1), 6 ) += -(std::complex<double>(0.0, 0.001984126984126984)*h_inv[0]*h_inv[1]);
+	sys.A( 6, vi + V2i(-1,0), 6 ) += -(std::complex<double>(0.0, 0.001984126984126984)*h_inv[0]*h_inv[1]);
+	sys.A( 6, vi + V2i(0,-1), 6 ) += -(std::complex<double>(0.0, 0.001984126984126984)*h_inv[0]*h_inv[1]);
+	sys.A( 6, vi + V2i(0,0), 6 ) += -(std::complex<double>(0.0, 0.001984126984126984)*h_inv[0]*h_inv[1]);
+	sys.A( 6, vi + V2i(0,-1), 6 ) += (std::complex<double>(0.0, 0.001984126984126984)*h_inv[0]*h_inv[1]);
+	sys.A( 6, vi + V2i(0,0), 6 ) += (std::complex<double>(0.0, 0.001984126984126984)*h_inv[0]*h_inv[1]);
+	sys.A( 6, vi + V2i(1,-1), 6 ) += (std::complex<double>(0.0, 0.001984126984126984)*h_inv[0]*h_inv[1]);
+	sys.A( 6, vi + V2i(1,0), 6 ) += (std::complex<double>(0.0, 0.001984126984126984)*h_inv[0]*h_inv[1]);
+	sys.A( 6, vi + V2i(-1,0), 6 ) += (std::complex<double>(0.0, 0.001984126984126984)*h_inv[0]*h_inv[1]);
+	sys.A( 6, vi + V2i(-1,1), 6 ) += (std::complex<double>(0.0, 0.001984126984126984)*h_inv[0]*h_inv[1]);
+	sys.A( 6, vi + V2i(0,0), 6 ) += (std::complex<double>(0.0, 0.001984126984126984)*h_inv[0]*h_inv[1]);
+	sys.A( 6, vi + V2i(0,1), 6 ) += (std::complex<double>(0.0, 0.001984126984126984)*h_inv[0]*h_inv[1]);
+	sys.A( 6, vi + V2i(0,0), 6 ) += -(std::complex<double>(0.0, 0.001984126984126984)*h_inv[0]*h_inv[1]);
+	sys.A( 6, vi + V2i(0,1), 6 ) += -(std::complex<double>(0.0, 0.001984126984126984)*h_inv[0]*h_inv[1]);
+	sys.A( 6, vi + V2i(1,0), 6 ) += -(std::complex<double>(0.0, 0.001984126984126984)*h_inv[0]*h_inv[1]);
+	sys.A( 6, vi + V2i(1,1), 6 ) += -(std::complex<double>(0.0, 0.001984126984126984)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(-1,-1), 7 ) += -(std::complex<double>(0.0, 0.011904761904761902)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(-1,0), 7 ) += -(std::complex<double>(0.0, 0.011904761904761902)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,-1), 7 ) += -(std::complex<double>(0.0, 0.011904761904761902)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,0), 7 ) += -(std::complex<double>(0.0, 0.011904761904761902)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,-1), 7 ) += (std::complex<double>(0.0, 0.011904761904761902)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,0), 7 ) += (std::complex<double>(0.0, 0.011904761904761902)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(1,-1), 7 ) += (std::complex<double>(0.0, 0.011904761904761902)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(1,0), 7 ) += (std::complex<double>(0.0, 0.011904761904761902)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(-1,0), 7 ) += (std::complex<double>(0.0, 0.011904761904761902)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(-1,1), 7 ) += (std::complex<double>(0.0, 0.011904761904761902)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,0), 7 ) += (std::complex<double>(0.0, 0.011904761904761902)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,1), 7 ) += (std::complex<double>(0.0, 0.011904761904761902)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,0), 7 ) += -(std::complex<double>(0.0, 0.011904761904761902)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,1), 7 ) += -(std::complex<double>(0.0, 0.011904761904761902)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(1,0), 7 ) += -(std::complex<double>(0.0, 0.011904761904761902)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(1,1), 7 ) += -(std::complex<double>(0.0, 0.011904761904761902)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(-1,-1), 8 ) += -(std::complex<double>(0.0, 0.029761904761904764)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(-1,0), 8 ) += -(std::complex<double>(0.0, 0.029761904761904764)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,-1), 8 ) += -(std::complex<double>(0.0, 0.029761904761904764)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,0), 8 ) += -(std::complex<double>(0.0, 0.029761904761904764)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,-1), 8 ) += (std::complex<double>(0.0, 0.029761904761904764)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,0), 8 ) += (std::complex<double>(0.0, 0.029761904761904764)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(1,-1), 8 ) += (std::complex<double>(0.0, 0.029761904761904764)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(1,0), 8 ) += (std::complex<double>(0.0, 0.029761904761904764)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(-1,0), 8 ) += (std::complex<double>(0.0, 0.029761904761904764)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(-1,1), 8 ) += (std::complex<double>(0.0, 0.029761904761904764)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,0), 8 ) += (std::complex<double>(0.0, 0.029761904761904764)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,1), 8 ) += (std::complex<double>(0.0, 0.029761904761904764)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,0), 8 ) += -(std::complex<double>(0.0, 0.029761904761904764)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,1), 8 ) += -(std::complex<double>(0.0, 0.029761904761904764)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(1,0), 8 ) += -(std::complex<double>(0.0, 0.029761904761904764)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(1,1), 8 ) += -(std::complex<double>(0.0, 0.029761904761904764)*h_inv[0]*h_inv[1]);
+	sys.A( 9, vi + V2i(-1,-1), 9 ) += -(std::complex<double>(0.0, 0.05555555555555555)*h_inv[0]*h_inv[1]);
+	sys.A( 9, vi + V2i(-1,0), 9 ) += -(std::complex<double>(0.0, 0.05555555555555555)*h_inv[0]*h_inv[1]);
+	sys.A( 9, vi + V2i(0,-1), 9 ) += -(std::complex<double>(0.0, 0.05555555555555555)*h_inv[0]*h_inv[1]);
+	sys.A( 9, vi + V2i(0,0), 9 ) += -(std::complex<double>(0.0, 0.05555555555555555)*h_inv[0]*h_inv[1]);
+	sys.A( 9, vi + V2i(0,-1), 9 ) += (std::complex<double>(0.0, 0.05555555555555555)*h_inv[0]*h_inv[1]);
+	sys.A( 9, vi + V2i(0,0), 9 ) += (std::complex<double>(0.0, 0.05555555555555555)*h_inv[0]*h_inv[1]);
+	sys.A( 9, vi + V2i(1,-1), 9 ) += (std::complex<double>(0.0, 0.05555555555555555)*h_inv[0]*h_inv[1]);
+	sys.A( 9, vi + V2i(1,0), 9 ) += (std::complex<double>(0.0, 0.05555555555555555)*h_inv[0]*h_inv[1]);
+	sys.A( 9, vi + V2i(-1,0), 9 ) += (std::complex<double>(0.0, 0.05555555555555555)*h_inv[0]*h_inv[1]);
+	sys.A( 9, vi + V2i(-1,1), 9 ) += (std::complex<double>(0.0, 0.05555555555555555)*h_inv[0]*h_inv[1]);
+	sys.A( 9, vi + V2i(0,0), 9 ) += (std::complex<double>(0.0, 0.05555555555555555)*h_inv[0]*h_inv[1]);
+	sys.A( 9, vi + V2i(0,1), 9 ) += (std::complex<double>(0.0, 0.05555555555555555)*h_inv[0]*h_inv[1]);
+	sys.A( 9, vi + V2i(0,0), 9 ) += -(std::complex<double>(0.0, 0.05555555555555555)*h_inv[0]*h_inv[1]);
+	sys.A( 9, vi + V2i(0,1), 9 ) += -(std::complex<double>(0.0, 0.05555555555555555)*h_inv[0]*h_inv[1]);
+	sys.A( 9, vi + V2i(1,0), 9 ) += -(std::complex<double>(0.0, 0.05555555555555555)*h_inv[0]*h_inv[1]);
+	sys.A( 9, vi + V2i(1,1), 9 ) += -(std::complex<double>(0.0, 0.05555555555555555)*h_inv[0]*h_inv[1]);
 
 	// term 71 ----------------
+	sys.A( 0, vi + V2i(-1,-1), 4 ) += (std::complex<double>(0.0, 0.018633899812498245)*h_inv[0]*h_inv[1]);
+	sys.A( 0, vi + V2i(-1,0), 4 ) += (std::complex<double>(0.0, 0.018633899812498245)*h_inv[0]*h_inv[1]);
+	sys.A( 0, vi + V2i(0,-1), 4 ) += (std::complex<double>(0.0, 0.018633899812498245)*h_inv[0]*h_inv[1]);
+	sys.A( 0, vi + V2i(0,0), 4 ) += (std::complex<double>(0.0, 0.018633899812498245)*h_inv[0]*h_inv[1]);
+	sys.A( 0, vi + V2i(0,-1), 4 ) += -(std::complex<double>(0.0, 0.018633899812498245)*h_inv[0]*h_inv[1]);
+	sys.A( 0, vi + V2i(0,0), 4 ) += -(std::complex<double>(0.0, 0.018633899812498245)*h_inv[0]*h_inv[1]);
+	sys.A( 0, vi + V2i(1,-1), 4 ) += -(std::complex<double>(0.0, 0.018633899812498245)*h_inv[0]*h_inv[1]);
+	sys.A( 0, vi + V2i(1,0), 4 ) += -(std::complex<double>(0.0, 0.018633899812498245)*h_inv[0]*h_inv[1]);
+	sys.A( 0, vi + V2i(-1,0), 4 ) += -(std::complex<double>(0.0, 0.018633899812498245)*h_inv[0]*h_inv[1]);
+	sys.A( 0, vi + V2i(-1,1), 4 ) += -(std::complex<double>(0.0, 0.018633899812498245)*h_inv[0]*h_inv[1]);
+	sys.A( 0, vi + V2i(0,0), 4 ) += -(std::complex<double>(0.0, 0.018633899812498245)*h_inv[0]*h_inv[1]);
+	sys.A( 0, vi + V2i(0,1), 4 ) += -(std::complex<double>(0.0, 0.018633899812498245)*h_inv[0]*h_inv[1]);
+	sys.A( 0, vi + V2i(0,0), 4 ) += (std::complex<double>(0.0, 0.018633899812498245)*h_inv[0]*h_inv[1]);
+	sys.A( 0, vi + V2i(0,1), 4 ) += (std::complex<double>(0.0, 0.018633899812498245)*h_inv[0]*h_inv[1]);
+	sys.A( 0, vi + V2i(1,0), 4 ) += (std::complex<double>(0.0, 0.018633899812498245)*h_inv[0]*h_inv[1]);
+	sys.A( 0, vi + V2i(1,1), 4 ) += (std::complex<double>(0.0, 0.018633899812498245)*h_inv[0]*h_inv[1]);
+	sys.A( 1, vi + V2i(0,-1), 7 ) += (std::complex<double>(0.0, 0.02672612419124244)*h_inv[0]*h_inv[1]);
+	sys.A( 1, vi + V2i(-1,-1), 7 ) += (std::complex<double>(0.0, 0.02672612419124244)*h_inv[0]*h_inv[1]);
+	sys.A( 1, vi + V2i(1,-1), 7 ) += -(std::complex<double>(0.0, 0.02672612419124244)*h_inv[0]*h_inv[1]);
+	sys.A( 1, vi + V2i(0,-1), 7 ) += -(std::complex<double>(0.0, 0.02672612419124244)*h_inv[0]*h_inv[1]);
+	sys.A( 1, vi + V2i(0,0), 7 ) += -(std::complex<double>(0.0, 0.02672612419124244)*h_inv[0]*h_inv[1]);
+	sys.A( 1, vi + V2i(-1,0), 7 ) += -(std::complex<double>(0.0, 0.02672612419124244)*h_inv[0]*h_inv[1]);
+	sys.A( 1, vi + V2i(1,0), 7 ) += (std::complex<double>(0.0, 0.02672612419124244)*h_inv[0]*h_inv[1]);
+	sys.A( 1, vi + V2i(0,0), 7 ) += (std::complex<double>(0.0, 0.02672612419124244)*h_inv[0]*h_inv[1]);
+	sys.A( 2, vi + V2i(-1,0), 8 ) += (std::complex<double>(0.0, 0.02672612419124244)*h_inv[0]*h_inv[1]);
+	sys.A( 2, vi + V2i(-1,-1), 8 ) += (std::complex<double>(0.0, 0.02672612419124244)*h_inv[0]*h_inv[1]);
+	sys.A( 2, vi + V2i(0,0), 8 ) += -(std::complex<double>(0.0, 0.02672612419124244)*h_inv[0]*h_inv[1]);
+	sys.A( 2, vi + V2i(0,-1), 8 ) += -(std::complex<double>(0.0, 0.02672612419124244)*h_inv[0]*h_inv[1]);
+	sys.A( 2, vi + V2i(-1,1), 8 ) += -(std::complex<double>(0.0, 0.02672612419124244)*h_inv[0]*h_inv[1]);
+	sys.A( 2, vi + V2i(-1,0), 8 ) += -(std::complex<double>(0.0, 0.02672612419124244)*h_inv[0]*h_inv[1]);
+	sys.A( 2, vi + V2i(0,1), 8 ) += (std::complex<double>(0.0, 0.02672612419124244)*h_inv[0]*h_inv[1]);
+	sys.A( 2, vi + V2i(0,0), 8 ) += (std::complex<double>(0.0, 0.02672612419124244)*h_inv[0]*h_inv[1]);
 
 	// term 72 ----------------
 	sys.A( 1, vi + V2i(0,-1), 2 ) += (std::complex<double>(0.0, 0.033333333333333326)*h_inv[0]*h_inv[1]);
 	sys.A( 1, vi + V2i(1,-1), 2 ) += -(std::complex<double>(0.0, 0.033333333333333326)*h_inv[0]*h_inv[1]);
 	sys.A( 1, vi + V2i(0,0), 2 ) += -(std::complex<double>(0.0, 0.033333333333333326)*h_inv[0]*h_inv[1]);
 	sys.A( 1, vi + V2i(1,0), 2 ) += (std::complex<double>(0.0, 0.033333333333333326)*h_inv[0]*h_inv[1]);
+	sys.A( 3, vi + V2i(-1,-1), 4 ) += (std::complex<double>(0.0, 0.008748177652797066)*h_inv[0]*h_inv[1]);
+	sys.A( 3, vi + V2i(-1,0), 4 ) += (std::complex<double>(0.0, 0.008748177652797066)*h_inv[0]*h_inv[1]);
+	sys.A( 3, vi + V2i(0,-1), 4 ) += (std::complex<double>(0.0, 0.008748177652797066)*h_inv[0]*h_inv[1]);
+	sys.A( 3, vi + V2i(0,0), 4 ) += (std::complex<double>(0.0, 0.008748177652797066)*h_inv[0]*h_inv[1]);
+	sys.A( 3, vi + V2i(0,-1), 4 ) += -(std::complex<double>(0.0, 0.008748177652797066)*h_inv[0]*h_inv[1]);
+	sys.A( 3, vi + V2i(0,0), 4 ) += -(std::complex<double>(0.0, 0.008748177652797066)*h_inv[0]*h_inv[1]);
+	sys.A( 3, vi + V2i(1,-1), 4 ) += -(std::complex<double>(0.0, 0.008748177652797066)*h_inv[0]*h_inv[1]);
+	sys.A( 3, vi + V2i(1,0), 4 ) += -(std::complex<double>(0.0, 0.008748177652797066)*h_inv[0]*h_inv[1]);
+	sys.A( 3, vi + V2i(-1,0), 4 ) += -(std::complex<double>(0.0, 0.008748177652797066)*h_inv[0]*h_inv[1]);
+	sys.A( 3, vi + V2i(-1,1), 4 ) += -(std::complex<double>(0.0, 0.008748177652797066)*h_inv[0]*h_inv[1]);
+	sys.A( 3, vi + V2i(0,0), 4 ) += -(std::complex<double>(0.0, 0.008748177652797066)*h_inv[0]*h_inv[1]);
+	sys.A( 3, vi + V2i(0,1), 4 ) += -(std::complex<double>(0.0, 0.008748177652797066)*h_inv[0]*h_inv[1]);
+	sys.A( 3, vi + V2i(0,0), 4 ) += (std::complex<double>(0.0, 0.008748177652797066)*h_inv[0]*h_inv[1]);
+	sys.A( 3, vi + V2i(0,1), 4 ) += (std::complex<double>(0.0, 0.008748177652797066)*h_inv[0]*h_inv[1]);
+	sys.A( 3, vi + V2i(1,0), 4 ) += (std::complex<double>(0.0, 0.008748177652797066)*h_inv[0]*h_inv[1]);
+	sys.A( 3, vi + V2i(1,1), 4 ) += (std::complex<double>(0.0, 0.008748177652797066)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(-1,-1), 5 ) += (std::complex<double>(0.0, 0.008748177652797066)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(-1,0), 5 ) += (std::complex<double>(0.0, 0.008748177652797066)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,-1), 5 ) += (std::complex<double>(0.0, 0.008748177652797066)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,0), 5 ) += (std::complex<double>(0.0, 0.008748177652797066)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,-1), 5 ) += -(std::complex<double>(0.0, 0.008748177652797066)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,0), 5 ) += -(std::complex<double>(0.0, 0.008748177652797066)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(1,-1), 5 ) += -(std::complex<double>(0.0, 0.008748177652797066)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(1,0), 5 ) += -(std::complex<double>(0.0, 0.008748177652797066)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(-1,0), 5 ) += -(std::complex<double>(0.0, 0.008748177652797066)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(-1,1), 5 ) += -(std::complex<double>(0.0, 0.008748177652797066)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,0), 5 ) += -(std::complex<double>(0.0, 0.008748177652797066)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,1), 5 ) += -(std::complex<double>(0.0, 0.008748177652797066)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,0), 5 ) += (std::complex<double>(0.0, 0.008748177652797066)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,1), 5 ) += (std::complex<double>(0.0, 0.008748177652797066)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(1,0), 5 ) += (std::complex<double>(0.0, 0.008748177652797066)*h_inv[0]*h_inv[1]);
+	sys.A( 4, vi + V2i(1,1), 5 ) += (std::complex<double>(0.0, 0.008748177652797066)*h_inv[0]*h_inv[1]);
+	sys.A( 6, vi + V2i(-1,-1), 7 ) += (std::complex<double>(0.0, 0.007684490766284558)*h_inv[0]*h_inv[1]);
+	sys.A( 6, vi + V2i(-1,0), 7 ) += (std::complex<double>(0.0, 0.007684490766284558)*h_inv[0]*h_inv[1]);
+	sys.A( 6, vi + V2i(0,-1), 7 ) += (std::complex<double>(0.0, 0.007684490766284558)*h_inv[0]*h_inv[1]);
+	sys.A( 6, vi + V2i(0,0), 7 ) += (std::complex<double>(0.0, 0.007684490766284558)*h_inv[0]*h_inv[1]);
+	sys.A( 6, vi + V2i(0,-1), 7 ) += -(std::complex<double>(0.0, 0.007684490766284558)*h_inv[0]*h_inv[1]);
+	sys.A( 6, vi + V2i(0,0), 7 ) += -(std::complex<double>(0.0, 0.007684490766284558)*h_inv[0]*h_inv[1]);
+	sys.A( 6, vi + V2i(1,-1), 7 ) += -(std::complex<double>(0.0, 0.007684490766284558)*h_inv[0]*h_inv[1]);
+	sys.A( 6, vi + V2i(1,0), 7 ) += -(std::complex<double>(0.0, 0.007684490766284558)*h_inv[0]*h_inv[1]);
+	sys.A( 6, vi + V2i(-1,0), 7 ) += -(std::complex<double>(0.0, 0.007684490766284558)*h_inv[0]*h_inv[1]);
+	sys.A( 6, vi + V2i(-1,1), 7 ) += -(std::complex<double>(0.0, 0.007684490766284558)*h_inv[0]*h_inv[1]);
+	sys.A( 6, vi + V2i(0,0), 7 ) += -(std::complex<double>(0.0, 0.007684490766284558)*h_inv[0]*h_inv[1]);
+	sys.A( 6, vi + V2i(0,1), 7 ) += -(std::complex<double>(0.0, 0.007684490766284558)*h_inv[0]*h_inv[1]);
+	sys.A( 6, vi + V2i(0,0), 7 ) += (std::complex<double>(0.0, 0.007684490766284558)*h_inv[0]*h_inv[1]);
+	sys.A( 6, vi + V2i(0,1), 7 ) += (std::complex<double>(0.0, 0.007684490766284558)*h_inv[0]*h_inv[1]);
+	sys.A( 6, vi + V2i(1,0), 7 ) += (std::complex<double>(0.0, 0.007684490766284558)*h_inv[0]*h_inv[1]);
+	sys.A( 6, vi + V2i(1,1), 7 ) += (std::complex<double>(0.0, 0.007684490766284558)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(-1,-1), 8 ) += (std::complex<double>(0.0, 0.011904761904761902)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(-1,0), 8 ) += (std::complex<double>(0.0, 0.011904761904761902)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,-1), 8 ) += (std::complex<double>(0.0, 0.011904761904761902)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,0), 8 ) += (std::complex<double>(0.0, 0.011904761904761902)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,-1), 8 ) += -(std::complex<double>(0.0, 0.011904761904761902)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,0), 8 ) += -(std::complex<double>(0.0, 0.011904761904761902)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(1,-1), 8 ) += -(std::complex<double>(0.0, 0.011904761904761902)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(1,0), 8 ) += -(std::complex<double>(0.0, 0.011904761904761902)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(-1,0), 8 ) += -(std::complex<double>(0.0, 0.011904761904761902)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(-1,1), 8 ) += -(std::complex<double>(0.0, 0.011904761904761902)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,0), 8 ) += -(std::complex<double>(0.0, 0.011904761904761902)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,1), 8 ) += -(std::complex<double>(0.0, 0.011904761904761902)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,0), 8 ) += (std::complex<double>(0.0, 0.011904761904761902)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,1), 8 ) += (std::complex<double>(0.0, 0.011904761904761902)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(1,0), 8 ) += (std::complex<double>(0.0, 0.011904761904761902)*h_inv[0]*h_inv[1]);
+	sys.A( 7, vi + V2i(1,1), 8 ) += (std::complex<double>(0.0, 0.011904761904761902)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(-1,-1), 9 ) += (std::complex<double>(0.0, 0.007684490766284558)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(-1,0), 9 ) += (std::complex<double>(0.0, 0.007684490766284558)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,-1), 9 ) += (std::complex<double>(0.0, 0.007684490766284558)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,0), 9 ) += (std::complex<double>(0.0, 0.007684490766284558)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,-1), 9 ) += -(std::complex<double>(0.0, 0.007684490766284558)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,0), 9 ) += -(std::complex<double>(0.0, 0.007684490766284558)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(1,-1), 9 ) += -(std::complex<double>(0.0, 0.007684490766284558)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(1,0), 9 ) += -(std::complex<double>(0.0, 0.007684490766284558)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(-1,0), 9 ) += -(std::complex<double>(0.0, 0.007684490766284558)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(-1,1), 9 ) += -(std::complex<double>(0.0, 0.007684490766284558)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,0), 9 ) += -(std::complex<double>(0.0, 0.007684490766284558)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,1), 9 ) += -(std::complex<double>(0.0, 0.007684490766284558)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,0), 9 ) += (std::complex<double>(0.0, 0.007684490766284558)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,1), 9 ) += (std::complex<double>(0.0, 0.007684490766284558)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(1,0), 9 ) += (std::complex<double>(0.0, 0.007684490766284558)*h_inv[0]*h_inv[1]);
+	sys.A( 8, vi + V2i(1,1), 9 ) += (std::complex<double>(0.0, 0.007684490766284558)*h_inv[0]*h_inv[1]);
 
 	// term 73 ----------------
+	sys.A( 0, vi + V2i(-1,-1), 5 ) += -(std::complex<double>(0.0, 0.04564354645876384)*h_inv[0]*h_inv[1]);
+	sys.A( 0, vi + V2i(-1,0), 5 ) += -(std::complex<double>(0.0, 0.04564354645876384)*h_inv[0]*h_inv[1]);
+	sys.A( 0, vi + V2i(0,-1), 5 ) += -(std::complex<double>(0.0, 0.04564354645876384)*h_inv[0]*h_inv[1]);
+	sys.A( 0, vi + V2i(0,0), 5 ) += -(std::complex<double>(0.0, 0.04564354645876384)*h_inv[0]*h_inv[1]);
+	sys.A( 0, vi + V2i(0,-1), 5 ) += (std::complex<double>(0.0, 0.04564354645876384)*h_inv[0]*h_inv[1]);
+	sys.A( 0, vi + V2i(0,0), 5 ) += (std::complex<double>(0.0, 0.04564354645876384)*h_inv[0]*h_inv[1]);
+	sys.A( 0, vi + V2i(1,-1), 5 ) += (std::complex<double>(0.0, 0.04564354645876384)*h_inv[0]*h_inv[1]);
+	sys.A( 0, vi + V2i(1,0), 5 ) += (std::complex<double>(0.0, 0.04564354645876384)*h_inv[0]*h_inv[1]);
+	sys.A( 0, vi + V2i(-1,0), 5 ) += (std::complex<double>(0.0, 0.04564354645876384)*h_inv[0]*h_inv[1]);
+	sys.A( 0, vi + V2i(-1,1), 5 ) += (std::complex<double>(0.0, 0.04564354645876384)*h_inv[0]*h_inv[1]);
+	sys.A( 0, vi + V2i(0,0), 5 ) += (std::complex<double>(0.0, 0.04564354645876384)*h_inv[0]*h_inv[1]);
+	sys.A( 0, vi + V2i(0,1), 5 ) += (std::complex<double>(0.0, 0.04564354645876384)*h_inv[0]*h_inv[1]);
+	sys.A( 0, vi + V2i(0,0), 5 ) += -(std::complex<double>(0.0, 0.04564354645876384)*h_inv[0]*h_inv[1]);
+	sys.A( 0, vi + V2i(0,1), 5 ) += -(std::complex<double>(0.0, 0.04564354645876384)*h_inv[0]*h_inv[1]);
+	sys.A( 0, vi + V2i(1,0), 5 ) += -(std::complex<double>(0.0, 0.04564354645876384)*h_inv[0]*h_inv[1]);
+	sys.A( 0, vi + V2i(1,1), 5 ) += -(std::complex<double>(0.0, 0.04564354645876384)*h_inv[0]*h_inv[1]);
+	sys.A( 1, vi + V2i(0,-1), 8 ) += -(std::complex<double>(0.0, 0.02672612419124244)*h_inv[0]*h_inv[1]);
+	sys.A( 1, vi + V2i(-1,-1), 8 ) += -(std::complex<double>(0.0, 0.02672612419124244)*h_inv[0]*h_inv[1]);
+	sys.A( 1, vi + V2i(1,-1), 8 ) += (std::complex<double>(0.0, 0.02672612419124244)*h_inv[0]*h_inv[1]);
+	sys.A( 1, vi + V2i(0,-1), 8 ) += (std::complex<double>(0.0, 0.02672612419124244)*h_inv[0]*h_inv[1]);
+	sys.A( 1, vi + V2i(0,0), 8 ) += (std::complex<double>(0.0, 0.02672612419124244)*h_inv[0]*h_inv[1]);
+	sys.A( 1, vi + V2i(-1,0), 8 ) += (std::complex<double>(0.0, 0.02672612419124244)*h_inv[0]*h_inv[1]);
+	sys.A( 1, vi + V2i(1,0), 8 ) += -(std::complex<double>(0.0, 0.02672612419124244)*h_inv[0]*h_inv[1]);
+	sys.A( 1, vi + V2i(0,0), 8 ) += -(std::complex<double>(0.0, 0.02672612419124244)*h_inv[0]*h_inv[1]);
+	sys.A( 2, vi + V2i(-1,0), 9 ) += -(std::complex<double>(0.0, 0.10350983390135313)*h_inv[0]*h_inv[1]);
+	sys.A( 2, vi + V2i(-1,-1), 9 ) += -(std::complex<double>(0.0, 0.10350983390135313)*h_inv[0]*h_inv[1]);
+	sys.A( 2, vi + V2i(0,0), 9 ) += (std::complex<double>(0.0, 0.10350983390135313)*h_inv[0]*h_inv[1]);
+	sys.A( 2, vi + V2i(0,-1), 9 ) += (std::complex<double>(0.0, 0.10350983390135313)*h_inv[0]*h_inv[1]);
+	sys.A( 2, vi + V2i(-1,1), 9 ) += (std::complex<double>(0.0, 0.10350983390135313)*h_inv[0]*h_inv[1]);
+	sys.A( 2, vi + V2i(-1,0), 9 ) += (std::complex<double>(0.0, 0.10350983390135313)*h_inv[0]*h_inv[1]);
+	sys.A( 2, vi + V2i(0,1), 9 ) += -(std::complex<double>(0.0, 0.10350983390135313)*h_inv[0]*h_inv[1]);
+	sys.A( 2, vi + V2i(0,0), 9 ) += -(std::complex<double>(0.0, 0.10350983390135313)*h_inv[0]*h_inv[1]);
 
 	// term 74 ----------------
 	sys.A( 0, vi + V2i(0,-1), 0 ) += -(0.166666666667*h_inv[1]*h_inv[1]);
@@ -625,8 +3129,56 @@ void set_system_row(PNSystem::VoxelSystem& sys,
 	sys.A( 2, vi + V2i(0,0), 2 ) += (0.2*h_inv[1]*h_inv[1]);
 	sys.A( 2, vi + V2i(0,0), 2 ) += (0.2*h_inv[1]*h_inv[1]);
 	sys.A( 2, vi + V2i(0,1), 2 ) += -(0.2*h_inv[1]*h_inv[1]);
+	sys.A( 3, vi + V2i(0,-1), 3 ) += -(0.0142857142857*h_inv[1]*h_inv[1]);
+	sys.A( 3, vi + V2i(0,0), 3 ) += (0.0142857142857*h_inv[1]*h_inv[1]);
+	sys.A( 3, vi + V2i(0,0), 3 ) += (0.0142857142857*h_inv[1]*h_inv[1]);
+	sys.A( 3, vi + V2i(0,1), 3 ) += -(0.0142857142857*h_inv[1]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,-1), 4 ) += -(0.0857142857143*h_inv[1]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,0), 4 ) += (0.0857142857143*h_inv[1]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,0), 4 ) += (0.0857142857143*h_inv[1]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,1), 4 ) += -(0.0857142857143*h_inv[1]*h_inv[1]);
+	sys.A( 5, vi + V2i(0,-1), 5 ) += -(0.214285714286*h_inv[1]*h_inv[1]);
+	sys.A( 5, vi + V2i(0,0), 5 ) += (0.214285714286*h_inv[1]*h_inv[1]);
+	sys.A( 5, vi + V2i(0,0), 5 ) += (0.214285714286*h_inv[1]*h_inv[1]);
+	sys.A( 5, vi + V2i(0,1), 5 ) += -(0.214285714286*h_inv[1]*h_inv[1]);
+	sys.A( 6, vi + V2i(0,-1), 6 ) += -(0.00793650793651*h_inv[1]*h_inv[1]);
+	sys.A( 6, vi + V2i(0,0), 6 ) += (0.00793650793651*h_inv[1]*h_inv[1]);
+	sys.A( 6, vi + V2i(0,0), 6 ) += (0.00793650793651*h_inv[1]*h_inv[1]);
+	sys.A( 6, vi + V2i(0,1), 6 ) += -(0.00793650793651*h_inv[1]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,-1), 7 ) += -(0.047619047619*h_inv[1]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,0), 7 ) += (0.047619047619*h_inv[1]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,0), 7 ) += (0.047619047619*h_inv[1]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,1), 7 ) += -(0.047619047619*h_inv[1]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,-1), 8 ) += -(0.119047619048*h_inv[1]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,0), 8 ) += (0.119047619048*h_inv[1]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,0), 8 ) += (0.119047619048*h_inv[1]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,1), 8 ) += -(0.119047619048*h_inv[1]*h_inv[1]);
+	sys.A( 9, vi + V2i(0,-1), 9 ) += -(0.222222222222*h_inv[1]*h_inv[1]);
+	sys.A( 9, vi + V2i(0,0), 9 ) += (0.222222222222*h_inv[1]*h_inv[1]);
+	sys.A( 9, vi + V2i(0,0), 9 ) += (0.222222222222*h_inv[1]*h_inv[1]);
+	sys.A( 9, vi + V2i(0,1), 9 ) += -(0.222222222222*h_inv[1]*h_inv[1]);
 
 	// term 75 ----------------
+	sys.A( 0, vi + V2i(0,-1), 4 ) += (0.07453559925*h_inv[1]*h_inv[1]);
+	sys.A( 0, vi + V2i(0,0), 4 ) += -(0.07453559925*h_inv[1]*h_inv[1]);
+	sys.A( 0, vi + V2i(0,0), 4 ) += -(0.07453559925*h_inv[1]*h_inv[1]);
+	sys.A( 0, vi + V2i(0,1), 4 ) += (0.07453559925*h_inv[1]*h_inv[1]);
+	sys.A( 1, vi + V2i(0,-1), 7 ) += (0.0267261241912*h_inv[1]*h_inv[1]);
+	sys.A( 1, vi + V2i(0,-2), 7 ) += (0.0267261241912*h_inv[1]*h_inv[1]);
+	sys.A( 1, vi + V2i(0,0), 7 ) += -(0.0267261241912*h_inv[1]*h_inv[1]);
+	sys.A( 1, vi + V2i(0,-1), 7 ) += -(0.0267261241912*h_inv[1]*h_inv[1]);
+	sys.A( 1, vi + V2i(0,0), 7 ) += -(0.0267261241912*h_inv[1]*h_inv[1]);
+	sys.A( 1, vi + V2i(0,-1), 7 ) += -(0.0267261241912*h_inv[1]*h_inv[1]);
+	sys.A( 1, vi + V2i(0,1), 7 ) += (0.0267261241912*h_inv[1]*h_inv[1]);
+	sys.A( 1, vi + V2i(0,0), 7 ) += (0.0267261241912*h_inv[1]*h_inv[1]);
+	sys.A( 2, vi + V2i(0,-1), 8 ) += (0.0267261241912*h_inv[1]*h_inv[1]);
+	sys.A( 2, vi + V2i(-1,-1), 8 ) += (0.0267261241912*h_inv[1]*h_inv[1]);
+	sys.A( 2, vi + V2i(0,0), 8 ) += -(0.0267261241912*h_inv[1]*h_inv[1]);
+	sys.A( 2, vi + V2i(-1,0), 8 ) += -(0.0267261241912*h_inv[1]*h_inv[1]);
+	sys.A( 2, vi + V2i(0,0), 8 ) += -(0.0267261241912*h_inv[1]*h_inv[1]);
+	sys.A( 2, vi + V2i(-1,0), 8 ) += -(0.0267261241912*h_inv[1]*h_inv[1]);
+	sys.A( 2, vi + V2i(0,1), 8 ) += (0.0267261241912*h_inv[1]*h_inv[1]);
+	sys.A( 2, vi + V2i(-1,1), 8 ) += (0.0267261241912*h_inv[1]*h_inv[1]);
 
 	// term 76 ----------------
 	sys.A( 1, vi + V2i(0,-2), 2 ) += -(0.00833333333333*h_inv[1]*h_inv[1]);
@@ -645,8 +3197,48 @@ void set_system_row(PNSystem::VoxelSystem& sys,
 	sys.A( 1, vi + V2i(0,1), 2 ) += -(0.00833333333333*h_inv[1]*h_inv[1]);
 	sys.A( 1, vi + V2i(1,0), 2 ) += -(0.00833333333333*h_inv[1]*h_inv[1]);
 	sys.A( 1, vi + V2i(1,1), 2 ) += -(0.00833333333333*h_inv[1]*h_inv[1]);
+	sys.A( 3, vi + V2i(0,-1), 4 ) += -(0.0349927106112*h_inv[1]*h_inv[1]);
+	sys.A( 3, vi + V2i(0,0), 4 ) += (0.0349927106112*h_inv[1]*h_inv[1]);
+	sys.A( 3, vi + V2i(0,0), 4 ) += (0.0349927106112*h_inv[1]*h_inv[1]);
+	sys.A( 3, vi + V2i(0,1), 4 ) += -(0.0349927106112*h_inv[1]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,-1), 5 ) += -(0.0349927106112*h_inv[1]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,0), 5 ) += (0.0349927106112*h_inv[1]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,0), 5 ) += (0.0349927106112*h_inv[1]*h_inv[1]);
+	sys.A( 4, vi + V2i(0,1), 5 ) += -(0.0349927106112*h_inv[1]*h_inv[1]);
+	sys.A( 6, vi + V2i(0,-1), 7 ) += -(0.0307379630651*h_inv[1]*h_inv[1]);
+	sys.A( 6, vi + V2i(0,0), 7 ) += (0.0307379630651*h_inv[1]*h_inv[1]);
+	sys.A( 6, vi + V2i(0,0), 7 ) += (0.0307379630651*h_inv[1]*h_inv[1]);
+	sys.A( 6, vi + V2i(0,1), 7 ) += -(0.0307379630651*h_inv[1]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,-1), 8 ) += -(0.047619047619*h_inv[1]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,0), 8 ) += (0.047619047619*h_inv[1]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,0), 8 ) += (0.047619047619*h_inv[1]*h_inv[1]);
+	sys.A( 7, vi + V2i(0,1), 8 ) += -(0.047619047619*h_inv[1]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,-1), 9 ) += -(0.0307379630651*h_inv[1]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,0), 9 ) += (0.0307379630651*h_inv[1]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,0), 9 ) += (0.0307379630651*h_inv[1]*h_inv[1]);
+	sys.A( 8, vi + V2i(0,1), 9 ) += -(0.0307379630651*h_inv[1]*h_inv[1]);
 
 	// term 77 ----------------
+	sys.A( 0, vi + V2i(0,-1), 5 ) += (0.182574185835*h_inv[1]*h_inv[1]);
+	sys.A( 0, vi + V2i(0,0), 5 ) += -(0.182574185835*h_inv[1]*h_inv[1]);
+	sys.A( 0, vi + V2i(0,0), 5 ) += -(0.182574185835*h_inv[1]*h_inv[1]);
+	sys.A( 0, vi + V2i(0,1), 5 ) += (0.182574185835*h_inv[1]*h_inv[1]);
+	sys.A( 1, vi + V2i(0,-1), 8 ) += (0.0267261241912*h_inv[1]*h_inv[1]);
+	sys.A( 1, vi + V2i(0,-2), 8 ) += (0.0267261241912*h_inv[1]*h_inv[1]);
+	sys.A( 1, vi + V2i(0,0), 8 ) += -(0.0267261241912*h_inv[1]*h_inv[1]);
+	sys.A( 1, vi + V2i(0,-1), 8 ) += -(0.0267261241912*h_inv[1]*h_inv[1]);
+	sys.A( 1, vi + V2i(0,0), 8 ) += -(0.0267261241912*h_inv[1]*h_inv[1]);
+	sys.A( 1, vi + V2i(0,-1), 8 ) += -(0.0267261241912*h_inv[1]*h_inv[1]);
+	sys.A( 1, vi + V2i(0,1), 8 ) += (0.0267261241912*h_inv[1]*h_inv[1]);
+	sys.A( 1, vi + V2i(0,0), 8 ) += (0.0267261241912*h_inv[1]*h_inv[1]);
+	sys.A( 2, vi + V2i(0,-1), 9 ) += (0.103509833901*h_inv[1]*h_inv[1]);
+	sys.A( 2, vi + V2i(-1,-1), 9 ) += (0.103509833901*h_inv[1]*h_inv[1]);
+	sys.A( 2, vi + V2i(0,0), 9 ) += -(0.103509833901*h_inv[1]*h_inv[1]);
+	sys.A( 2, vi + V2i(-1,0), 9 ) += -(0.103509833901*h_inv[1]*h_inv[1]);
+	sys.A( 2, vi + V2i(0,0), 9 ) += -(0.103509833901*h_inv[1]*h_inv[1]);
+	sys.A( 2, vi + V2i(-1,0), 9 ) += -(0.103509833901*h_inv[1]*h_inv[1]);
+	sys.A( 2, vi + V2i(0,1), 9 ) += (0.103509833901*h_inv[1]*h_inv[1]);
+	sys.A( 2, vi + V2i(-1,1), 9 ) += (0.103509833901*h_inv[1]*h_inv[1]);
 
 	// term 78 ----------------
 
@@ -697,11 +3289,39 @@ void set_system_row(PNSystem::VoxelSystem& sys,
 			(h_inv[0]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5))))));
 	sys.A( 2, vi + V2i(-1,0), 0 ) += (0.204124145232*(-(h_inv[0]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(-0.5, 0.5))))+
 			(h_inv[0]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5))))));
+	sys.A( 4, vi + V2i(0,1), 1 ) += (0.0912870929175*(-(h_inv[0]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5))))+
+			(h_inv[0]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(1.0, 0.5))))));
+	sys.A( 4, vi + V2i(0,0), 1 ) += (0.0912870929175*(-(h_inv[0]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5))))+
+			(h_inv[0]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(1.0, 0.5))))));
+	sys.A( 5, vi + V2i(1,0), 2 ) += (0.22360679775*(-(h_inv[0]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5))))+
+			(h_inv[0]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(1.0, 0.5))))));
+	sys.A( 5, vi + V2i(0,0), 2 ) += (0.22360679775*(-(h_inv[0]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5))))+
+			(h_inv[0]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(1.0, 0.5))))));
+	sys.A( 7, vi + V2i(0,0), 3 ) += (0.119522860933*(-(h_inv[0]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5))))+
+			(h_inv[0]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(1.0, 0.5))))));
+	sys.A( 8, vi + V2i(0,0), 4 ) += (0.292770021885*(-(h_inv[0]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5))))+
+			(h_inv[0]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(1.0, 0.5))))));
+	sys.A( 9, vi + V2i(0,0), 5 ) += (0.462910049886*(-(h_inv[0]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5))))+
+			(h_inv[0]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(1.0, 0.5))))));
 
 	// term 101 ----------------
 	sys.A( 0, vi + V2i(0,1), 1 ) += -(0.204124145232*(-(h_inv[0]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5))))+
 			(h_inv[0]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(1.0, 0.5))))));
 	sys.A( 0, vi + V2i(0,0), 1 ) += -(0.204124145232*(-(h_inv[0]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5))))+
+			(h_inv[0]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(1.0, 0.5))))));
+	sys.A( 1, vi + V2i(0,0), 3 ) += -(0.22360679775*(-(h_inv[0]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.0, 0.0))))+
+			(h_inv[0]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(1.0, 0.0))))));
+	sys.A( 1, vi + V2i(0,-1), 3 ) += -(0.22360679775*(-(h_inv[0]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.0, 0.0))))+
+			(h_inv[0]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(1.0, 0.0))))));
+	sys.A( 2, vi + V2i(0,0), 4 ) += -(0.0912870929175*(-(h_inv[0]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(-0.5, 0.5))))+
+			(h_inv[0]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5))))));
+	sys.A( 2, vi + V2i(-1,0), 4 ) += -(0.0912870929175*(-(h_inv[0]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(-0.5, 0.5))))+
+			(h_inv[0]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5))))));
+	sys.A( 3, vi + V2i(0,0), 6 ) += -(0.462910049886*(-(h_inv[0]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5))))+
+			(h_inv[0]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(1.0, 0.5))))));
+	sys.A( 4, vi + V2i(0,0), 7 ) += -(0.292770021885*(-(h_inv[0]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5))))+
+			(h_inv[0]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(1.0, 0.5))))));
+	sys.A( 5, vi + V2i(0,0), 8 ) += -(0.119522860933*(-(h_inv[0]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5))))+
 			(h_inv[0]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(1.0, 0.5))))));
 
 	// term 102 ----------------
@@ -709,11 +3329,39 @@ void set_system_row(PNSystem::VoxelSystem& sys,
 			(h_inv[0]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(1.0, 0.0))))));
 	sys.A( 1, vi + V2i(0,-1), 0 ) += -(0.204124145232*(-(h_inv[0]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.0, 0.0))))+
 			(h_inv[0]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(1.0, 0.0))))));
+	sys.A( 3, vi + V2i(0,1), 1 ) += -(0.22360679775*(-(h_inv[0]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5))))+
+			(h_inv[0]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(1.0, 0.5))))));
+	sys.A( 3, vi + V2i(0,0), 1 ) += -(0.22360679775*(-(h_inv[0]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5))))+
+			(h_inv[0]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(1.0, 0.5))))));
+	sys.A( 4, vi + V2i(1,0), 2 ) += -(0.0912870929175*(-(h_inv[0]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5))))+
+			(h_inv[0]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(1.0, 0.5))))));
+	sys.A( 4, vi + V2i(0,0), 2 ) += -(0.0912870929175*(-(h_inv[0]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5))))+
+			(h_inv[0]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(1.0, 0.5))))));
+	sys.A( 6, vi + V2i(0,0), 3 ) += -(0.462910049886*(-(h_inv[0]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5))))+
+			(h_inv[0]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(1.0, 0.5))))));
+	sys.A( 7, vi + V2i(0,0), 4 ) += -(0.292770021885*(-(h_inv[0]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5))))+
+			(h_inv[0]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(1.0, 0.5))))));
+	sys.A( 8, vi + V2i(0,0), 5 ) += -(0.119522860933*(-(h_inv[0]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5))))+
+			(h_inv[0]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(1.0, 0.5))))));
 
 	// term 103 ----------------
 	sys.A( 0, vi + V2i(1,0), 2 ) += (0.204124145232*(-(h_inv[0]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5))))+
 			(h_inv[0]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(1.0, 0.5))))));
 	sys.A( 0, vi + V2i(0,0), 2 ) += (0.204124145232*(-(h_inv[0]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5))))+
+			(h_inv[0]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(1.0, 0.5))))));
+	sys.A( 1, vi + V2i(0,0), 4 ) += (0.0912870929175*(-(h_inv[0]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.0, 0.0))))+
+			(h_inv[0]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(1.0, 0.0))))));
+	sys.A( 1, vi + V2i(0,-1), 4 ) += (0.0912870929175*(-(h_inv[0]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.0, 0.0))))+
+			(h_inv[0]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(1.0, 0.0))))));
+	sys.A( 2, vi + V2i(0,0), 5 ) += (0.22360679775*(-(h_inv[0]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(-0.5, 0.5))))+
+			(h_inv[0]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5))))));
+	sys.A( 2, vi + V2i(-1,0), 5 ) += (0.22360679775*(-(h_inv[0]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(-0.5, 0.5))))+
+			(h_inv[0]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5))))));
+	sys.A( 3, vi + V2i(0,0), 7 ) += (0.119522860933*(-(h_inv[0]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5))))+
+			(h_inv[0]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(1.0, 0.5))))));
+	sys.A( 4, vi + V2i(0,0), 8 ) += (0.292770021885*(-(h_inv[0]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5))))+
+			(h_inv[0]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(1.0, 0.5))))));
+	sys.A( 5, vi + V2i(0,0), 9 ) += (0.462910049886*(-(h_inv[0]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5))))+
 			(h_inv[0]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(1.0, 0.5))))));
 
 	// term 104 ----------------
@@ -721,11 +3369,39 @@ void set_system_row(PNSystem::VoxelSystem& sys,
 			(h_inv[1]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.0, 1.0))))));
 	sys.A( 2, vi + V2i(-1,0), 0 ) += -(std::complex<double>(0.0, 0.2041241452319315)*(-(h_inv[1]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.0, 0.0))))+
 			(h_inv[1]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.0, 1.0))))));
+	sys.A( 4, vi + V2i(0,1), 1 ) += -(std::complex<double>(0.0, 0.09128709291752768)*(-(h_inv[1]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0))))+
+			(h_inv[1]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 1.0))))));
+	sys.A( 4, vi + V2i(0,0), 1 ) += -(std::complex<double>(0.0, 0.09128709291752768)*(-(h_inv[1]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0))))+
+			(h_inv[1]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 1.0))))));
+	sys.A( 5, vi + V2i(1,0), 2 ) += -(std::complex<double>(0.0, 0.22360679774997896)*(-(h_inv[1]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0))))+
+			(h_inv[1]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 1.0))))));
+	sys.A( 5, vi + V2i(0,0), 2 ) += -(std::complex<double>(0.0, 0.22360679774997896)*(-(h_inv[1]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0))))+
+			(h_inv[1]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 1.0))))));
+	sys.A( 7, vi + V2i(0,0), 3 ) += -(std::complex<double>(0.0, 0.11952286093343936)*(-(h_inv[1]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0))))+
+			(h_inv[1]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 1.0))))));
+	sys.A( 8, vi + V2i(0,0), 4 ) += -(std::complex<double>(0.0, 0.29277002188455997)*(-(h_inv[1]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0))))+
+			(h_inv[1]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 1.0))))));
+	sys.A( 9, vi + V2i(0,0), 5 ) += -(std::complex<double>(0.0, 0.4629100498862757)*(-(h_inv[1]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0))))+
+			(h_inv[1]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 1.0))))));
 
 	// term 105 ----------------
 	sys.A( 0, vi + V2i(0,1), 1 ) += (std::complex<double>(0.0, 0.2041241452319315)*(-(h_inv[1]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0))))+
 			(h_inv[1]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 1.0))))));
 	sys.A( 0, vi + V2i(0,0), 1 ) += (std::complex<double>(0.0, 0.2041241452319315)*(-(h_inv[1]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0))))+
+			(h_inv[1]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 1.0))))));
+	sys.A( 1, vi + V2i(0,0), 3 ) += (std::complex<double>(0.0, 0.22360679774997896)*(-(h_inv[1]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, -0.5))))+
+			(h_inv[1]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5))))));
+	sys.A( 1, vi + V2i(0,-1), 3 ) += (std::complex<double>(0.0, 0.22360679774997896)*(-(h_inv[1]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, -0.5))))+
+			(h_inv[1]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5))))));
+	sys.A( 2, vi + V2i(0,0), 4 ) += (std::complex<double>(0.0, 0.09128709291752768)*(-(h_inv[1]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.0, 0.0))))+
+			(h_inv[1]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.0, 1.0))))));
+	sys.A( 2, vi + V2i(-1,0), 4 ) += (std::complex<double>(0.0, 0.09128709291752768)*(-(h_inv[1]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.0, 0.0))))+
+			(h_inv[1]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.0, 1.0))))));
+	sys.A( 3, vi + V2i(0,0), 6 ) += (std::complex<double>(0.0, 0.4629100498862757)*(-(h_inv[1]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0))))+
+			(h_inv[1]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 1.0))))));
+	sys.A( 4, vi + V2i(0,0), 7 ) += (std::complex<double>(0.0, 0.29277002188455997)*(-(h_inv[1]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0))))+
+			(h_inv[1]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 1.0))))));
+	sys.A( 5, vi + V2i(0,0), 8 ) += (std::complex<double>(0.0, 0.11952286093343936)*(-(h_inv[1]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0))))+
 			(h_inv[1]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 1.0))))));
 
 	// term 106 ----------------
@@ -733,11 +3409,39 @@ void set_system_row(PNSystem::VoxelSystem& sys,
 			(h_inv[1]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5))))));
 	sys.A( 1, vi + V2i(0,-1), 0 ) += -(std::complex<double>(0.0, 0.2041241452319315)*(-(h_inv[1]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, -0.5))))+
 			(h_inv[1]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5))))));
+	sys.A( 3, vi + V2i(0,1), 1 ) += -(std::complex<double>(0.0, 0.22360679774997896)*(-(h_inv[1]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0))))+
+			(h_inv[1]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 1.0))))));
+	sys.A( 3, vi + V2i(0,0), 1 ) += -(std::complex<double>(0.0, 0.22360679774997896)*(-(h_inv[1]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0))))+
+			(h_inv[1]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 1.0))))));
+	sys.A( 4, vi + V2i(1,0), 2 ) += -(std::complex<double>(0.0, 0.09128709291752768)*(-(h_inv[1]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0))))+
+			(h_inv[1]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 1.0))))));
+	sys.A( 4, vi + V2i(0,0), 2 ) += -(std::complex<double>(0.0, 0.09128709291752768)*(-(h_inv[1]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0))))+
+			(h_inv[1]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 1.0))))));
+	sys.A( 6, vi + V2i(0,0), 3 ) += -(std::complex<double>(0.0, 0.4629100498862757)*(-(h_inv[1]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0))))+
+			(h_inv[1]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 1.0))))));
+	sys.A( 7, vi + V2i(0,0), 4 ) += -(std::complex<double>(0.0, 0.29277002188455997)*(-(h_inv[1]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0))))+
+			(h_inv[1]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 1.0))))));
+	sys.A( 8, vi + V2i(0,0), 5 ) += -(std::complex<double>(0.0, 0.11952286093343936)*(-(h_inv[1]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0))))+
+			(h_inv[1]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 1.0))))));
 
 	// term 107 ----------------
 	sys.A( 0, vi + V2i(1,0), 2 ) += (std::complex<double>(0.0, 0.2041241452319315)*(-(h_inv[1]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0))))+
 			(h_inv[1]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 1.0))))));
 	sys.A( 0, vi + V2i(0,0), 2 ) += (std::complex<double>(0.0, 0.2041241452319315)*(-(h_inv[1]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0))))+
+			(h_inv[1]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 1.0))))));
+	sys.A( 1, vi + V2i(0,0), 4 ) += (std::complex<double>(0.0, 0.09128709291752768)*(-(h_inv[1]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, -0.5))))+
+			(h_inv[1]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5))))));
+	sys.A( 1, vi + V2i(0,-1), 4 ) += (std::complex<double>(0.0, 0.09128709291752768)*(-(h_inv[1]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, -0.5))))+
+			(h_inv[1]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5))))));
+	sys.A( 2, vi + V2i(0,0), 5 ) += (std::complex<double>(0.0, 0.22360679774997896)*(-(h_inv[1]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.0, 0.0))))+
+			(h_inv[1]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.0, 1.0))))));
+	sys.A( 2, vi + V2i(-1,0), 5 ) += (std::complex<double>(0.0, 0.22360679774997896)*(-(h_inv[1]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.0, 0.0))))+
+			(h_inv[1]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.0, 1.0))))));
+	sys.A( 3, vi + V2i(0,0), 7 ) += (std::complex<double>(0.0, 0.11952286093343936)*(-(h_inv[1]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0))))+
+			(h_inv[1]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 1.0))))));
+	sys.A( 4, vi + V2i(0,0), 8 ) += (std::complex<double>(0.0, 0.29277002188455997)*(-(h_inv[1]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0))))+
+			(h_inv[1]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 1.0))))));
+	sys.A( 5, vi + V2i(0,0), 9 ) += (std::complex<double>(0.0, 0.4629100498862757)*(-(h_inv[1]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0))))+
 			(h_inv[1]*fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 1.0))))));
 
 	// term 108 ----------------
@@ -748,34 +3452,119 @@ void set_system_row(PNSystem::VoxelSystem& sys,
 	sys.A( 0, vi + V2i(0,0), 0 ) += std::pow(fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5))), 2);
 	sys.A( 1, vi + V2i(0,0), 1 ) += std::pow(fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0))), 2);
 	sys.A( 2, vi + V2i(0,0), 2 ) += std::pow(fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5))), 2);
+	sys.A( 3, vi + V2i(0,0), 3 ) += std::pow(fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5))), 2);
+	sys.A( 4, vi + V2i(0,0), 4 ) += std::pow(fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5))), 2);
+	sys.A( 5, vi + V2i(0,0), 5 ) += std::pow(fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5))), 2);
+	sys.A( 6, vi + V2i(0,0), 6 ) += std::pow(fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5))), 2);
+	sys.A( 7, vi + V2i(0,0), 7 ) += std::pow(fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5))), 2);
+	sys.A( 8, vi + V2i(0,0), 8 ) += std::pow(fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5))), 2);
+	sys.A( 9, vi + V2i(0,0), 9 ) += std::pow(fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5))), 2);
 
 	// term 111 ----------------
 	sys.A( 2, vi + V2i(0,0), 0 ) += -(0.204124145232*(-(h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(-0.5, 0.5))))+
 			(h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))))*fields.f_p->eval(0, 0, sys.voxelToWorld(vd+V2d(0.0, 0.5))));
 	sys.A( 2, vi + V2i(-1,0), 0 ) += -(0.204124145232*(-(h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(-0.5, 0.5))))+
 			(h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))))*fields.f_p->eval(0, 0, sys.voxelToWorld(vd+V2d(0.0, 0.5))));
+	sys.A( 4, vi + V2i(0,1), 1 ) += -(0.0912870929175*(-(h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5))))+
+			(h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(1.0, 0.5)))))*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 4, vi + V2i(0,0), 1 ) += -(0.0912870929175*(-(h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5))))+
+			(h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(1.0, 0.5)))))*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 5, vi + V2i(1,0), 2 ) += -(0.22360679775*(-(h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5))))+
+			(h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(1.0, 0.5)))))*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 5, vi + V2i(0,0), 2 ) += -(0.22360679775*(-(h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5))))+
+			(h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(1.0, 0.5)))))*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 7, vi + V2i(0,0), 3 ) += -(0.119522860933*(-(h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5))))+
+			(h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(1.0, 0.5)))))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 8, vi + V2i(0,0), 4 ) += -(0.292770021885*(-(h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5))))+
+			(h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(1.0, 0.5)))))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 9, vi + V2i(0,0), 5 ) += -(0.462910049886*(-(h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5))))+
+			(h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(1.0, 0.5)))))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
 
 	// term 112 ----------------
 	sys.A( 2, vi + V2i(0,0), 0 ) += -(0.204124145232*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5)))*(-(h_inv[0]*fields.f_p->eval(0, 0, sys.voxelToWorld(vd+V2d(-0.5, 0.5))))+
 			(h_inv[0]*fields.f_p->eval(0, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))))));
 	sys.A( 2, vi + V2i(-1,0), 0 ) += -(0.204124145232*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5)))*(-(h_inv[0]*fields.f_p->eval(0, 0, sys.voxelToWorld(vd+V2d(-0.5, 0.5))))+
 			(h_inv[0]*fields.f_p->eval(0, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))))));
+	sys.A( 4, vi + V2i(0,1), 1 ) += -(0.0912870929175*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*(-(h_inv[0]*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.0, 0.5))))+
+			(h_inv[0]*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(1.0, 0.5))))));
+	sys.A( 4, vi + V2i(0,0), 1 ) += -(0.0912870929175*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*(-(h_inv[0]*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.0, 0.5))))+
+			(h_inv[0]*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(1.0, 0.5))))));
+	sys.A( 5, vi + V2i(1,0), 2 ) += -(0.22360679775*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*(-(h_inv[0]*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.0, 0.5))))+
+			(h_inv[0]*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(1.0, 0.5))))));
+	sys.A( 5, vi + V2i(0,0), 2 ) += -(0.22360679775*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*(-(h_inv[0]*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.0, 0.5))))+
+			(h_inv[0]*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(1.0, 0.5))))));
+	sys.A( 7, vi + V2i(0,0), 3 ) += -(0.119522860933*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*(-(h_inv[0]*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.0, 0.5))))+
+			(h_inv[0]*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(1.0, 0.5))))));
+	sys.A( 8, vi + V2i(0,0), 4 ) += -(0.292770021885*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*(-(h_inv[0]*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.0, 0.5))))+
+			(h_inv[0]*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(1.0, 0.5))))));
+	sys.A( 9, vi + V2i(0,0), 5 ) += -(0.462910049886*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*(-(h_inv[0]*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.0, 0.5))))+
+			(h_inv[0]*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(1.0, 0.5))))));
 
 	// term 113 ----------------
 	sys.A( 2, vi + V2i(-1,0), 0 ) += (0.408248290464*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5)))*fields.f_p->eval(0, 0, sys.voxelToWorld(vd+V2d(0.0, 0.5))));
 	sys.A( 2, vi + V2i(0,0), 0 ) += -(0.408248290464*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5)))*fields.f_p->eval(0, 0, sys.voxelToWorld(vd+V2d(0.0, 0.5))));
+	sys.A( 4, vi + V2i(-1,0), 1 ) += (0.0456435464588*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 4, vi + V2i(-1,1), 1 ) += (0.0456435464588*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 4, vi + V2i(0,0), 1 ) += (0.0456435464588*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 4, vi + V2i(0,1), 1 ) += (0.0456435464588*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 4, vi + V2i(0,0), 1 ) += -(0.0456435464588*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 4, vi + V2i(0,1), 1 ) += -(0.0456435464588*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 4, vi + V2i(1,0), 1 ) += -(0.0456435464588*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 4, vi + V2i(1,1), 1 ) += -(0.0456435464588*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 5, vi + V2i(0,0), 2 ) += (0.4472135955*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 5, vi + V2i(1,0), 2 ) += -(0.4472135955*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 7, vi + V2i(0,0), 3 ) += (0.0597614304667*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 7, vi + V2i(-1,0), 3 ) += (0.0597614304667*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 7, vi + V2i(1,0), 3 ) += -(0.0597614304667*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 7, vi + V2i(0,0), 3 ) += -(0.0597614304667*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 8, vi + V2i(0,0), 4 ) += (0.146385010942*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 8, vi + V2i(-1,0), 4 ) += (0.146385010942*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 8, vi + V2i(1,0), 4 ) += -(0.146385010942*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 8, vi + V2i(0,0), 4 ) += -(0.146385010942*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 9, vi + V2i(0,0), 5 ) += (0.231455024943*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 9, vi + V2i(-1,0), 5 ) += (0.231455024943*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 9, vi + V2i(1,0), 5 ) += -(0.231455024943*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 9, vi + V2i(0,0), 5 ) += -(0.231455024943*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
 
 	// term 114 ----------------
 	sys.A( 0, vi + V2i(0,1), 1 ) += (0.204124145232*(-(h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5))))+
 			(h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(1.0, 0.5)))))*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
 	sys.A( 0, vi + V2i(0,0), 1 ) += (0.204124145232*(-(h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5))))+
 			(h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(1.0, 0.5)))))*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 1, vi + V2i(0,0), 3 ) += (0.22360679775*(-(h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.0, 0.0))))+
+			(h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(1.0, 0.0)))))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.0))));
+	sys.A( 1, vi + V2i(0,-1), 3 ) += (0.22360679775*(-(h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.0, 0.0))))+
+			(h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(1.0, 0.0)))))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.0))));
+	sys.A( 2, vi + V2i(0,0), 4 ) += (0.0912870929175*(-(h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(-0.5, 0.5))))+
+			(h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.0, 0.5))));
+	sys.A( 2, vi + V2i(-1,0), 4 ) += (0.0912870929175*(-(h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(-0.5, 0.5))))+
+			(h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.0, 0.5))));
+	sys.A( 3, vi + V2i(0,0), 6 ) += (0.462910049886*(-(h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5))))+
+			(h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(1.0, 0.5)))))*fields.f_p->eval(3, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 4, vi + V2i(0,0), 7 ) += (0.292770021885*(-(h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5))))+
+			(h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(1.0, 0.5)))))*fields.f_p->eval(3, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 5, vi + V2i(0,0), 8 ) += (0.119522860933*(-(h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5))))+
+			(h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(1.0, 0.5)))))*fields.f_p->eval(3, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
 
 	// term 115 ----------------
 	sys.A( 0, vi + V2i(0,1), 1 ) += (0.204124145232*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*(-(h_inv[0]*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.0, 0.5))))+
 			(h_inv[0]*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(1.0, 0.5))))));
 	sys.A( 0, vi + V2i(0,0), 1 ) += (0.204124145232*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*(-(h_inv[0]*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.0, 0.5))))+
 			(h_inv[0]*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(1.0, 0.5))))));
+	sys.A( 1, vi + V2i(0,0), 3 ) += (0.22360679775*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0)))*(-(h_inv[0]*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.0, 0.0))))+
+			(h_inv[0]*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(1.0, 0.0))))));
+	sys.A( 1, vi + V2i(0,-1), 3 ) += (0.22360679775*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0)))*(-(h_inv[0]*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.0, 0.0))))+
+			(h_inv[0]*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(1.0, 0.0))))));
+	sys.A( 2, vi + V2i(0,0), 4 ) += (0.0912870929175*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5)))*(-(h_inv[0]*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(-0.5, 0.5))))+
+			(h_inv[0]*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))))));
+	sys.A( 2, vi + V2i(-1,0), 4 ) += (0.0912870929175*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5)))*(-(h_inv[0]*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(-0.5, 0.5))))+
+			(h_inv[0]*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))))));
+	sys.A( 3, vi + V2i(0,0), 6 ) += (0.462910049886*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*(-(h_inv[0]*fields.f_p->eval(3, 0, sys.voxelToWorld(vd+V2d(0.0, 0.5))))+
+			(h_inv[0]*fields.f_p->eval(3, 0, sys.voxelToWorld(vd+V2d(1.0, 0.5))))));
+	sys.A( 4, vi + V2i(0,0), 7 ) += (0.292770021885*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*(-(h_inv[0]*fields.f_p->eval(3, 0, sys.voxelToWorld(vd+V2d(0.0, 0.5))))+
+			(h_inv[0]*fields.f_p->eval(3, 0, sys.voxelToWorld(vd+V2d(1.0, 0.5))))));
+	sys.A( 5, vi + V2i(0,0), 8 ) += (0.119522860933*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*(-(h_inv[0]*fields.f_p->eval(3, 0, sys.voxelToWorld(vd+V2d(0.0, 0.5))))+
+			(h_inv[0]*fields.f_p->eval(3, 0, sys.voxelToWorld(vd+V2d(1.0, 0.5))))));
 
 	// term 116 ----------------
 	sys.A( 0, vi + V2i(-1,0), 1 ) += -(0.102062072616*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
@@ -786,18 +3575,68 @@ void set_system_row(PNSystem::VoxelSystem& sys,
 	sys.A( 0, vi + V2i(0,1), 1 ) += (0.102062072616*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
 	sys.A( 0, vi + V2i(1,0), 1 ) += (0.102062072616*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
 	sys.A( 0, vi + V2i(1,1), 1 ) += (0.102062072616*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 1, vi + V2i(-1,-1), 3 ) += -(0.111803398875*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0)))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.0))));
+	sys.A( 1, vi + V2i(-1,0), 3 ) += -(0.111803398875*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0)))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.0))));
+	sys.A( 1, vi + V2i(0,-1), 3 ) += -(0.111803398875*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0)))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.0))));
+	sys.A( 1, vi + V2i(0,0), 3 ) += -(0.111803398875*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0)))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.0))));
+	sys.A( 1, vi + V2i(0,-1), 3 ) += (0.111803398875*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0)))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.0))));
+	sys.A( 1, vi + V2i(0,0), 3 ) += (0.111803398875*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0)))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.0))));
+	sys.A( 1, vi + V2i(1,-1), 3 ) += (0.111803398875*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0)))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.0))));
+	sys.A( 1, vi + V2i(1,0), 3 ) += (0.111803398875*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0)))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.0))));
+	sys.A( 2, vi + V2i(-1,0), 4 ) += -(0.182574185835*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5)))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.0, 0.5))));
+	sys.A( 2, vi + V2i(0,0), 4 ) += (0.182574185835*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5)))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.0, 0.5))));
+	sys.A( 3, vi + V2i(0,0), 6 ) += -(0.231455024943*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(3, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 3, vi + V2i(-1,0), 6 ) += -(0.231455024943*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(3, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 3, vi + V2i(1,0), 6 ) += (0.231455024943*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(3, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 3, vi + V2i(0,0), 6 ) += (0.231455024943*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(3, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 4, vi + V2i(0,0), 7 ) += -(0.146385010942*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(3, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 4, vi + V2i(-1,0), 7 ) += -(0.146385010942*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(3, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 4, vi + V2i(1,0), 7 ) += (0.146385010942*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(3, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 4, vi + V2i(0,0), 7 ) += (0.146385010942*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(3, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 5, vi + V2i(0,0), 8 ) += -(0.0597614304667*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(3, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 5, vi + V2i(-1,0), 8 ) += -(0.0597614304667*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(3, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 5, vi + V2i(1,0), 8 ) += (0.0597614304667*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(3, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 5, vi + V2i(0,0), 8 ) += (0.0597614304667*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(3, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
 
 	// term 117 ----------------
 	sys.A( 1, vi + V2i(0,0), 0 ) += (0.204124145232*(-(h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.0, 0.0))))+
 			(h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(1.0, 0.0)))))*fields.f_p->eval(0, 0, sys.voxelToWorld(vd+V2d(0.5, 0.0))));
 	sys.A( 1, vi + V2i(0,-1), 0 ) += (0.204124145232*(-(h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.0, 0.0))))+
 			(h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(1.0, 0.0)))))*fields.f_p->eval(0, 0, sys.voxelToWorld(vd+V2d(0.5, 0.0))));
+	sys.A( 3, vi + V2i(0,1), 1 ) += (0.22360679775*(-(h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5))))+
+			(h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(1.0, 0.5)))))*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 3, vi + V2i(0,0), 1 ) += (0.22360679775*(-(h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5))))+
+			(h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(1.0, 0.5)))))*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 4, vi + V2i(1,0), 2 ) += (0.0912870929175*(-(h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5))))+
+			(h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(1.0, 0.5)))))*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 4, vi + V2i(0,0), 2 ) += (0.0912870929175*(-(h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5))))+
+			(h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(1.0, 0.5)))))*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 6, vi + V2i(0,0), 3 ) += (0.462910049886*(-(h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5))))+
+			(h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(1.0, 0.5)))))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 7, vi + V2i(0,0), 4 ) += (0.292770021885*(-(h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5))))+
+			(h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(1.0, 0.5)))))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 8, vi + V2i(0,0), 5 ) += (0.119522860933*(-(h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5))))+
+			(h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(1.0, 0.5)))))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
 
 	// term 118 ----------------
 	sys.A( 1, vi + V2i(0,0), 0 ) += (0.204124145232*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0)))*(-(h_inv[0]*fields.f_p->eval(0, 0, sys.voxelToWorld(vd+V2d(0.0, 0.0))))+
 			(h_inv[0]*fields.f_p->eval(0, 0, sys.voxelToWorld(vd+V2d(1.0, 0.0))))));
 	sys.A( 1, vi + V2i(0,-1), 0 ) += (0.204124145232*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0)))*(-(h_inv[0]*fields.f_p->eval(0, 0, sys.voxelToWorld(vd+V2d(0.0, 0.0))))+
 			(h_inv[0]*fields.f_p->eval(0, 0, sys.voxelToWorld(vd+V2d(1.0, 0.0))))));
+	sys.A( 3, vi + V2i(0,1), 1 ) += (0.22360679775*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*(-(h_inv[0]*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.0, 0.5))))+
+			(h_inv[0]*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(1.0, 0.5))))));
+	sys.A( 3, vi + V2i(0,0), 1 ) += (0.22360679775*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*(-(h_inv[0]*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.0, 0.5))))+
+			(h_inv[0]*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(1.0, 0.5))))));
+	sys.A( 4, vi + V2i(1,0), 2 ) += (0.0912870929175*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*(-(h_inv[0]*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.0, 0.5))))+
+			(h_inv[0]*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(1.0, 0.5))))));
+	sys.A( 4, vi + V2i(0,0), 2 ) += (0.0912870929175*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*(-(h_inv[0]*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.0, 0.5))))+
+			(h_inv[0]*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(1.0, 0.5))))));
+	sys.A( 6, vi + V2i(0,0), 3 ) += (0.462910049886*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*(-(h_inv[0]*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.0, 0.5))))+
+			(h_inv[0]*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(1.0, 0.5))))));
+	sys.A( 7, vi + V2i(0,0), 4 ) += (0.292770021885*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*(-(h_inv[0]*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.0, 0.5))))+
+			(h_inv[0]*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(1.0, 0.5))))));
+	sys.A( 8, vi + V2i(0,0), 5 ) += (0.119522860933*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*(-(h_inv[0]*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.0, 0.5))))+
+			(h_inv[0]*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(1.0, 0.5))))));
 
 	// term 119 ----------------
 	sys.A( 1, vi + V2i(-1,-1), 0 ) += -(0.102062072616*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0)))*fields.f_p->eval(0, 0, sys.voxelToWorld(vd+V2d(0.5, 0.0))));
@@ -808,34 +3647,134 @@ void set_system_row(PNSystem::VoxelSystem& sys,
 	sys.A( 1, vi + V2i(0,0), 0 ) += (0.102062072616*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0)))*fields.f_p->eval(0, 0, sys.voxelToWorld(vd+V2d(0.5, 0.0))));
 	sys.A( 1, vi + V2i(1,-1), 0 ) += (0.102062072616*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0)))*fields.f_p->eval(0, 0, sys.voxelToWorld(vd+V2d(0.5, 0.0))));
 	sys.A( 1, vi + V2i(1,0), 0 ) += (0.102062072616*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0)))*fields.f_p->eval(0, 0, sys.voxelToWorld(vd+V2d(0.5, 0.0))));
+	sys.A( 3, vi + V2i(-1,0), 1 ) += -(0.111803398875*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 3, vi + V2i(-1,1), 1 ) += -(0.111803398875*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 3, vi + V2i(0,0), 1 ) += -(0.111803398875*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 3, vi + V2i(0,1), 1 ) += -(0.111803398875*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 3, vi + V2i(0,0), 1 ) += (0.111803398875*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 3, vi + V2i(0,1), 1 ) += (0.111803398875*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 3, vi + V2i(1,0), 1 ) += (0.111803398875*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 3, vi + V2i(1,1), 1 ) += (0.111803398875*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 4, vi + V2i(0,0), 2 ) += -(0.182574185835*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 4, vi + V2i(1,0), 2 ) += (0.182574185835*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 6, vi + V2i(0,0), 3 ) += -(0.231455024943*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 6, vi + V2i(-1,0), 3 ) += -(0.231455024943*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 6, vi + V2i(1,0), 3 ) += (0.231455024943*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 6, vi + V2i(0,0), 3 ) += (0.231455024943*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 7, vi + V2i(0,0), 4 ) += -(0.146385010942*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 7, vi + V2i(-1,0), 4 ) += -(0.146385010942*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 7, vi + V2i(1,0), 4 ) += (0.146385010942*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 7, vi + V2i(0,0), 4 ) += (0.146385010942*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 8, vi + V2i(0,0), 5 ) += -(0.0597614304667*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 8, vi + V2i(-1,0), 5 ) += -(0.0597614304667*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 8, vi + V2i(1,0), 5 ) += (0.0597614304667*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 8, vi + V2i(0,0), 5 ) += (0.0597614304667*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
 
 	// term 120 ----------------
 	sys.A( 0, vi + V2i(1,0), 2 ) += -(0.204124145232*(-(h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5))))+
 			(h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(1.0, 0.5)))))*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
 	sys.A( 0, vi + V2i(0,0), 2 ) += -(0.204124145232*(-(h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5))))+
 			(h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(1.0, 0.5)))))*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 1, vi + V2i(0,0), 4 ) += -(0.0912870929175*(-(h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.0, 0.0))))+
+			(h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(1.0, 0.0)))))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.0))));
+	sys.A( 1, vi + V2i(0,-1), 4 ) += -(0.0912870929175*(-(h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.0, 0.0))))+
+			(h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(1.0, 0.0)))))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.0))));
+	sys.A( 2, vi + V2i(0,0), 5 ) += -(0.22360679775*(-(h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(-0.5, 0.5))))+
+			(h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.0, 0.5))));
+	sys.A( 2, vi + V2i(-1,0), 5 ) += -(0.22360679775*(-(h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(-0.5, 0.5))))+
+			(h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.0, 0.5))));
+	sys.A( 3, vi + V2i(0,0), 7 ) += -(0.119522860933*(-(h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5))))+
+			(h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(1.0, 0.5)))))*fields.f_p->eval(3, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 4, vi + V2i(0,0), 8 ) += -(0.292770021885*(-(h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5))))+
+			(h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(1.0, 0.5)))))*fields.f_p->eval(3, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 5, vi + V2i(0,0), 9 ) += -(0.462910049886*(-(h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5))))+
+			(h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(1.0, 0.5)))))*fields.f_p->eval(3, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
 
 	// term 121 ----------------
 	sys.A( 0, vi + V2i(1,0), 2 ) += -(0.204124145232*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*(-(h_inv[0]*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.0, 0.5))))+
 			(h_inv[0]*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(1.0, 0.5))))));
 	sys.A( 0, vi + V2i(0,0), 2 ) += -(0.204124145232*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*(-(h_inv[0]*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.0, 0.5))))+
 			(h_inv[0]*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(1.0, 0.5))))));
+	sys.A( 1, vi + V2i(0,0), 4 ) += -(0.0912870929175*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0)))*(-(h_inv[0]*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.0, 0.0))))+
+			(h_inv[0]*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(1.0, 0.0))))));
+	sys.A( 1, vi + V2i(0,-1), 4 ) += -(0.0912870929175*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0)))*(-(h_inv[0]*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.0, 0.0))))+
+			(h_inv[0]*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(1.0, 0.0))))));
+	sys.A( 2, vi + V2i(0,0), 5 ) += -(0.22360679775*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5)))*(-(h_inv[0]*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(-0.5, 0.5))))+
+			(h_inv[0]*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))))));
+	sys.A( 2, vi + V2i(-1,0), 5 ) += -(0.22360679775*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5)))*(-(h_inv[0]*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(-0.5, 0.5))))+
+			(h_inv[0]*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))))));
+	sys.A( 3, vi + V2i(0,0), 7 ) += -(0.119522860933*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*(-(h_inv[0]*fields.f_p->eval(3, 0, sys.voxelToWorld(vd+V2d(0.0, 0.5))))+
+			(h_inv[0]*fields.f_p->eval(3, 0, sys.voxelToWorld(vd+V2d(1.0, 0.5))))));
+	sys.A( 4, vi + V2i(0,0), 8 ) += -(0.292770021885*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*(-(h_inv[0]*fields.f_p->eval(3, 0, sys.voxelToWorld(vd+V2d(0.0, 0.5))))+
+			(h_inv[0]*fields.f_p->eval(3, 0, sys.voxelToWorld(vd+V2d(1.0, 0.5))))));
+	sys.A( 5, vi + V2i(0,0), 9 ) += -(0.462910049886*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*(-(h_inv[0]*fields.f_p->eval(3, 0, sys.voxelToWorld(vd+V2d(0.0, 0.5))))+
+			(h_inv[0]*fields.f_p->eval(3, 0, sys.voxelToWorld(vd+V2d(1.0, 0.5))))));
 
 	// term 122 ----------------
 	sys.A( 0, vi + V2i(0,0), 2 ) += (0.408248290464*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
 	sys.A( 0, vi + V2i(1,0), 2 ) += -(0.408248290464*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 1, vi + V2i(-1,-1), 4 ) += (0.0456435464588*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0)))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.0))));
+	sys.A( 1, vi + V2i(-1,0), 4 ) += (0.0456435464588*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0)))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.0))));
+	sys.A( 1, vi + V2i(0,-1), 4 ) += (0.0456435464588*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0)))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.0))));
+	sys.A( 1, vi + V2i(0,0), 4 ) += (0.0456435464588*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0)))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.0))));
+	sys.A( 1, vi + V2i(0,-1), 4 ) += -(0.0456435464588*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0)))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.0))));
+	sys.A( 1, vi + V2i(0,0), 4 ) += -(0.0456435464588*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0)))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.0))));
+	sys.A( 1, vi + V2i(1,-1), 4 ) += -(0.0456435464588*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0)))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.0))));
+	sys.A( 1, vi + V2i(1,0), 4 ) += -(0.0456435464588*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0)))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.0))));
+	sys.A( 2, vi + V2i(-1,0), 5 ) += (0.4472135955*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5)))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.0, 0.5))));
+	sys.A( 2, vi + V2i(0,0), 5 ) += -(0.4472135955*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5)))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.0, 0.5))));
+	sys.A( 3, vi + V2i(0,0), 7 ) += (0.0597614304667*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(3, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 3, vi + V2i(-1,0), 7 ) += (0.0597614304667*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(3, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 3, vi + V2i(1,0), 7 ) += -(0.0597614304667*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(3, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 3, vi + V2i(0,0), 7 ) += -(0.0597614304667*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(3, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 4, vi + V2i(0,0), 8 ) += (0.146385010942*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(3, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 4, vi + V2i(-1,0), 8 ) += (0.146385010942*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(3, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 4, vi + V2i(1,0), 8 ) += -(0.146385010942*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(3, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 4, vi + V2i(0,0), 8 ) += -(0.146385010942*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(3, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 5, vi + V2i(0,0), 9 ) += (0.231455024943*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(3, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 5, vi + V2i(-1,0), 9 ) += (0.231455024943*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(3, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 5, vi + V2i(1,0), 9 ) += -(0.231455024943*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(3, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 5, vi + V2i(0,0), 9 ) += -(0.231455024943*h_inv[0]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(3, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
 
 	// term 123 ----------------
 	sys.A( 2, vi + V2i(0,0), 0 ) += (std::complex<double>(0.0, 0.2041241452319315)*(-(h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.0, 0.0))))+
 			(h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.0, 1.0)))))*fields.f_p->eval(0, 0, sys.voxelToWorld(vd+V2d(0.0, 0.5))));
 	sys.A( 2, vi + V2i(-1,0), 0 ) += (std::complex<double>(0.0, 0.2041241452319315)*(-(h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.0, 0.0))))+
 			(h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.0, 1.0)))))*fields.f_p->eval(0, 0, sys.voxelToWorld(vd+V2d(0.0, 0.5))));
+	sys.A( 4, vi + V2i(0,1), 1 ) += (std::complex<double>(0.0, 0.09128709291752768)*(-(h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0))))+
+			(h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 1.0)))))*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 4, vi + V2i(0,0), 1 ) += (std::complex<double>(0.0, 0.09128709291752768)*(-(h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0))))+
+			(h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 1.0)))))*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 5, vi + V2i(1,0), 2 ) += (std::complex<double>(0.0, 0.22360679774997896)*(-(h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0))))+
+			(h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 1.0)))))*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 5, vi + V2i(0,0), 2 ) += (std::complex<double>(0.0, 0.22360679774997896)*(-(h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0))))+
+			(h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 1.0)))))*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 7, vi + V2i(0,0), 3 ) += (std::complex<double>(0.0, 0.11952286093343936)*(-(h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0))))+
+			(h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 1.0)))))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 8, vi + V2i(0,0), 4 ) += (std::complex<double>(0.0, 0.29277002188455997)*(-(h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0))))+
+			(h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 1.0)))))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 9, vi + V2i(0,0), 5 ) += (std::complex<double>(0.0, 0.4629100498862757)*(-(h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0))))+
+			(h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 1.0)))))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
 
 	// term 124 ----------------
 	sys.A( 2, vi + V2i(0,0), 0 ) += (std::complex<double>(0.0, 0.2041241452319315)*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5)))*(-(h_inv[1]*fields.f_p->eval(0, 0, sys.voxelToWorld(vd+V2d(0.0, 0.0))))+
 			(h_inv[1]*fields.f_p->eval(0, 0, sys.voxelToWorld(vd+V2d(0.0, 1.0))))));
 	sys.A( 2, vi + V2i(-1,0), 0 ) += (std::complex<double>(0.0, 0.2041241452319315)*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5)))*(-(h_inv[1]*fields.f_p->eval(0, 0, sys.voxelToWorld(vd+V2d(0.0, 0.0))))+
 			(h_inv[1]*fields.f_p->eval(0, 0, sys.voxelToWorld(vd+V2d(0.0, 1.0))))));
+	sys.A( 4, vi + V2i(0,1), 1 ) += (std::complex<double>(0.0, 0.09128709291752768)*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*(-(h_inv[1]*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 0.0))))+
+			(h_inv[1]*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 1.0))))));
+	sys.A( 4, vi + V2i(0,0), 1 ) += (std::complex<double>(0.0, 0.09128709291752768)*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*(-(h_inv[1]*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 0.0))))+
+			(h_inv[1]*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 1.0))))));
+	sys.A( 5, vi + V2i(1,0), 2 ) += (std::complex<double>(0.0, 0.22360679774997896)*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*(-(h_inv[1]*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 0.0))))+
+			(h_inv[1]*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 1.0))))));
+	sys.A( 5, vi + V2i(0,0), 2 ) += (std::complex<double>(0.0, 0.22360679774997896)*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*(-(h_inv[1]*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 0.0))))+
+			(h_inv[1]*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 1.0))))));
+	sys.A( 7, vi + V2i(0,0), 3 ) += (std::complex<double>(0.0, 0.11952286093343936)*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*(-(h_inv[1]*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.0))))+
+			(h_inv[1]*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 1.0))))));
+	sys.A( 8, vi + V2i(0,0), 4 ) += (std::complex<double>(0.0, 0.29277002188455997)*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*(-(h_inv[1]*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.0))))+
+			(h_inv[1]*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 1.0))))));
+	sys.A( 9, vi + V2i(0,0), 5 ) += (std::complex<double>(0.0, 0.4629100498862757)*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*(-(h_inv[1]*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.0))))+
+			(h_inv[1]*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 1.0))))));
 
 	// term 125 ----------------
 	sys.A( 2, vi + V2i(-1,-1), 0 ) += -(std::complex<double>(0.0, 0.10206207261596575)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5)))*fields.f_p->eval(0, 0, sys.voxelToWorld(vd+V2d(0.0, 0.5))));
@@ -846,50 +3785,200 @@ void set_system_row(PNSystem::VoxelSystem& sys,
 	sys.A( 2, vi + V2i(-1,1), 0 ) += (std::complex<double>(0.0, 0.10206207261596575)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5)))*fields.f_p->eval(0, 0, sys.voxelToWorld(vd+V2d(0.0, 0.5))));
 	sys.A( 2, vi + V2i(0,0), 0 ) += (std::complex<double>(0.0, 0.10206207261596575)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5)))*fields.f_p->eval(0, 0, sys.voxelToWorld(vd+V2d(0.0, 0.5))));
 	sys.A( 2, vi + V2i(0,1), 0 ) += (std::complex<double>(0.0, 0.10206207261596575)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5)))*fields.f_p->eval(0, 0, sys.voxelToWorld(vd+V2d(0.0, 0.5))));
+	sys.A( 4, vi + V2i(0,0), 1 ) += -(std::complex<double>(0.0, 0.18257418583505536)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 4, vi + V2i(0,1), 1 ) += (std::complex<double>(0.0, 0.18257418583505536)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 5, vi + V2i(0,-1), 2 ) += -(std::complex<double>(0.0, 0.11180339887498948)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 5, vi + V2i(0,0), 2 ) += -(std::complex<double>(0.0, 0.11180339887498948)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 5, vi + V2i(1,-1), 2 ) += -(std::complex<double>(0.0, 0.11180339887498948)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 5, vi + V2i(1,0), 2 ) += -(std::complex<double>(0.0, 0.11180339887498948)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 5, vi + V2i(0,0), 2 ) += (std::complex<double>(0.0, 0.11180339887498948)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 5, vi + V2i(0,1), 2 ) += (std::complex<double>(0.0, 0.11180339887498948)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 5, vi + V2i(1,0), 2 ) += (std::complex<double>(0.0, 0.11180339887498948)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 5, vi + V2i(1,1), 2 ) += (std::complex<double>(0.0, 0.11180339887498948)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 7, vi + V2i(0,0), 3 ) += -(std::complex<double>(0.0, 0.05976143046671968)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 7, vi + V2i(0,-1), 3 ) += -(std::complex<double>(0.0, 0.05976143046671968)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 7, vi + V2i(0,1), 3 ) += (std::complex<double>(0.0, 0.05976143046671968)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 7, vi + V2i(0,0), 3 ) += (std::complex<double>(0.0, 0.05976143046671968)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 8, vi + V2i(0,0), 4 ) += -(std::complex<double>(0.0, 0.14638501094227999)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 8, vi + V2i(0,-1), 4 ) += -(std::complex<double>(0.0, 0.14638501094227999)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 8, vi + V2i(0,1), 4 ) += (std::complex<double>(0.0, 0.14638501094227999)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 8, vi + V2i(0,0), 4 ) += (std::complex<double>(0.0, 0.14638501094227999)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 9, vi + V2i(0,0), 5 ) += -(std::complex<double>(0.0, 0.23145502494313785)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 9, vi + V2i(0,-1), 5 ) += -(std::complex<double>(0.0, 0.23145502494313785)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 9, vi + V2i(0,1), 5 ) += (std::complex<double>(0.0, 0.23145502494313785)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 9, vi + V2i(0,0), 5 ) += (std::complex<double>(0.0, 0.23145502494313785)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
 
 	// term 126 ----------------
 	sys.A( 0, vi + V2i(0,1), 1 ) += -(std::complex<double>(0.0, 0.2041241452319315)*(-(h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0))))+
 			(h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 1.0)))))*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
 	sys.A( 0, vi + V2i(0,0), 1 ) += -(std::complex<double>(0.0, 0.2041241452319315)*(-(h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0))))+
 			(h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 1.0)))))*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 1, vi + V2i(0,0), 3 ) += -(std::complex<double>(0.0, 0.22360679774997896)*(-(h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, -0.5))))+
+			(h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.0))));
+	sys.A( 1, vi + V2i(0,-1), 3 ) += -(std::complex<double>(0.0, 0.22360679774997896)*(-(h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, -0.5))))+
+			(h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.0))));
+	sys.A( 2, vi + V2i(0,0), 4 ) += -(std::complex<double>(0.0, 0.09128709291752768)*(-(h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.0, 0.0))))+
+			(h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.0, 1.0)))))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.0, 0.5))));
+	sys.A( 2, vi + V2i(-1,0), 4 ) += -(std::complex<double>(0.0, 0.09128709291752768)*(-(h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.0, 0.0))))+
+			(h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.0, 1.0)))))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.0, 0.5))));
+	sys.A( 3, vi + V2i(0,0), 6 ) += -(std::complex<double>(0.0, 0.4629100498862757)*(-(h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0))))+
+			(h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 1.0)))))*fields.f_p->eval(3, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 4, vi + V2i(0,0), 7 ) += -(std::complex<double>(0.0, 0.29277002188455997)*(-(h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0))))+
+			(h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 1.0)))))*fields.f_p->eval(3, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 5, vi + V2i(0,0), 8 ) += -(std::complex<double>(0.0, 0.11952286093343936)*(-(h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0))))+
+			(h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 1.0)))))*fields.f_p->eval(3, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
 
 	// term 127 ----------------
 	sys.A( 0, vi + V2i(0,1), 1 ) += -(std::complex<double>(0.0, 0.2041241452319315)*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*(-(h_inv[1]*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 0.0))))+
 			(h_inv[1]*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 1.0))))));
 	sys.A( 0, vi + V2i(0,0), 1 ) += -(std::complex<double>(0.0, 0.2041241452319315)*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*(-(h_inv[1]*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 0.0))))+
 			(h_inv[1]*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 1.0))))));
+	sys.A( 1, vi + V2i(0,0), 3 ) += -(std::complex<double>(0.0, 0.22360679774997896)*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0)))*(-(h_inv[1]*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, -0.5))))+
+			(h_inv[1]*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))))));
+	sys.A( 1, vi + V2i(0,-1), 3 ) += -(std::complex<double>(0.0, 0.22360679774997896)*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0)))*(-(h_inv[1]*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, -0.5))))+
+			(h_inv[1]*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))))));
+	sys.A( 2, vi + V2i(0,0), 4 ) += -(std::complex<double>(0.0, 0.09128709291752768)*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5)))*(-(h_inv[1]*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.0, 0.0))))+
+			(h_inv[1]*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.0, 1.0))))));
+	sys.A( 2, vi + V2i(-1,0), 4 ) += -(std::complex<double>(0.0, 0.09128709291752768)*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5)))*(-(h_inv[1]*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.0, 0.0))))+
+			(h_inv[1]*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.0, 1.0))))));
+	sys.A( 3, vi + V2i(0,0), 6 ) += -(std::complex<double>(0.0, 0.4629100498862757)*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*(-(h_inv[1]*fields.f_p->eval(3, 0, sys.voxelToWorld(vd+V2d(0.5, 0.0))))+
+			(h_inv[1]*fields.f_p->eval(3, 0, sys.voxelToWorld(vd+V2d(0.5, 1.0))))));
+	sys.A( 4, vi + V2i(0,0), 7 ) += -(std::complex<double>(0.0, 0.29277002188455997)*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*(-(h_inv[1]*fields.f_p->eval(3, 0, sys.voxelToWorld(vd+V2d(0.5, 0.0))))+
+			(h_inv[1]*fields.f_p->eval(3, 0, sys.voxelToWorld(vd+V2d(0.5, 1.0))))));
+	sys.A( 5, vi + V2i(0,0), 8 ) += -(std::complex<double>(0.0, 0.11952286093343936)*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*(-(h_inv[1]*fields.f_p->eval(3, 0, sys.voxelToWorld(vd+V2d(0.5, 0.0))))+
+			(h_inv[1]*fields.f_p->eval(3, 0, sys.voxelToWorld(vd+V2d(0.5, 1.0))))));
 
 	// term 128 ----------------
 	sys.A( 0, vi + V2i(0,0), 1 ) += (std::complex<double>(0.0, 0.408248290463863)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
 	sys.A( 0, vi + V2i(0,1), 1 ) += -(std::complex<double>(0.0, 0.408248290463863)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 1, vi + V2i(0,-1), 3 ) += (std::complex<double>(0.0, 0.4472135954999579)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0)))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.0))));
+	sys.A( 1, vi + V2i(0,0), 3 ) += -(std::complex<double>(0.0, 0.4472135954999579)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0)))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.0))));
+	sys.A( 2, vi + V2i(-1,-1), 4 ) += (std::complex<double>(0.0, 0.04564354645876384)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5)))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.0, 0.5))));
+	sys.A( 2, vi + V2i(-1,0), 4 ) += (std::complex<double>(0.0, 0.04564354645876384)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5)))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.0, 0.5))));
+	sys.A( 2, vi + V2i(0,-1), 4 ) += (std::complex<double>(0.0, 0.04564354645876384)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5)))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.0, 0.5))));
+	sys.A( 2, vi + V2i(0,0), 4 ) += (std::complex<double>(0.0, 0.04564354645876384)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5)))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.0, 0.5))));
+	sys.A( 2, vi + V2i(-1,0), 4 ) += -(std::complex<double>(0.0, 0.04564354645876384)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5)))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.0, 0.5))));
+	sys.A( 2, vi + V2i(-1,1), 4 ) += -(std::complex<double>(0.0, 0.04564354645876384)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5)))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.0, 0.5))));
+	sys.A( 2, vi + V2i(0,0), 4 ) += -(std::complex<double>(0.0, 0.04564354645876384)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5)))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.0, 0.5))));
+	sys.A( 2, vi + V2i(0,1), 4 ) += -(std::complex<double>(0.0, 0.04564354645876384)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5)))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.0, 0.5))));
+	sys.A( 3, vi + V2i(0,0), 6 ) += (std::complex<double>(0.0, 0.23145502494313785)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(3, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 3, vi + V2i(0,-1), 6 ) += (std::complex<double>(0.0, 0.23145502494313785)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(3, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 3, vi + V2i(0,1), 6 ) += -(std::complex<double>(0.0, 0.23145502494313785)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(3, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 3, vi + V2i(0,0), 6 ) += -(std::complex<double>(0.0, 0.23145502494313785)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(3, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 4, vi + V2i(0,0), 7 ) += (std::complex<double>(0.0, 0.14638501094227999)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(3, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 4, vi + V2i(0,-1), 7 ) += (std::complex<double>(0.0, 0.14638501094227999)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(3, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 4, vi + V2i(0,1), 7 ) += -(std::complex<double>(0.0, 0.14638501094227999)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(3, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 4, vi + V2i(0,0), 7 ) += -(std::complex<double>(0.0, 0.14638501094227999)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(3, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 5, vi + V2i(0,0), 8 ) += (std::complex<double>(0.0, 0.05976143046671968)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(3, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 5, vi + V2i(0,-1), 8 ) += (std::complex<double>(0.0, 0.05976143046671968)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(3, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 5, vi + V2i(0,1), 8 ) += -(std::complex<double>(0.0, 0.05976143046671968)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(3, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 5, vi + V2i(0,0), 8 ) += -(std::complex<double>(0.0, 0.05976143046671968)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(3, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
 
 	// term 129 ----------------
 	sys.A( 1, vi + V2i(0,0), 0 ) += (std::complex<double>(0.0, 0.2041241452319315)*(-(h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, -0.5))))+
 			(h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))))*fields.f_p->eval(0, 0, sys.voxelToWorld(vd+V2d(0.5, 0.0))));
 	sys.A( 1, vi + V2i(0,-1), 0 ) += (std::complex<double>(0.0, 0.2041241452319315)*(-(h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, -0.5))))+
 			(h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))))*fields.f_p->eval(0, 0, sys.voxelToWorld(vd+V2d(0.5, 0.0))));
+	sys.A( 3, vi + V2i(0,1), 1 ) += (std::complex<double>(0.0, 0.22360679774997896)*(-(h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0))))+
+			(h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 1.0)))))*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 3, vi + V2i(0,0), 1 ) += (std::complex<double>(0.0, 0.22360679774997896)*(-(h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0))))+
+			(h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 1.0)))))*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 4, vi + V2i(1,0), 2 ) += (std::complex<double>(0.0, 0.09128709291752768)*(-(h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0))))+
+			(h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 1.0)))))*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 4, vi + V2i(0,0), 2 ) += (std::complex<double>(0.0, 0.09128709291752768)*(-(h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0))))+
+			(h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 1.0)))))*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 6, vi + V2i(0,0), 3 ) += (std::complex<double>(0.0, 0.4629100498862757)*(-(h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0))))+
+			(h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 1.0)))))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 7, vi + V2i(0,0), 4 ) += (std::complex<double>(0.0, 0.29277002188455997)*(-(h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0))))+
+			(h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 1.0)))))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 8, vi + V2i(0,0), 5 ) += (std::complex<double>(0.0, 0.11952286093343936)*(-(h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0))))+
+			(h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 1.0)))))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
 
 	// term 130 ----------------
 	sys.A( 1, vi + V2i(0,0), 0 ) += (std::complex<double>(0.0, 0.2041241452319315)*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0)))*(-(h_inv[1]*fields.f_p->eval(0, 0, sys.voxelToWorld(vd+V2d(0.5, -0.5))))+
 			(h_inv[1]*fields.f_p->eval(0, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))))));
 	sys.A( 1, vi + V2i(0,-1), 0 ) += (std::complex<double>(0.0, 0.2041241452319315)*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0)))*(-(h_inv[1]*fields.f_p->eval(0, 0, sys.voxelToWorld(vd+V2d(0.5, -0.5))))+
 			(h_inv[1]*fields.f_p->eval(0, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))))));
+	sys.A( 3, vi + V2i(0,1), 1 ) += (std::complex<double>(0.0, 0.22360679774997896)*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*(-(h_inv[1]*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 0.0))))+
+			(h_inv[1]*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 1.0))))));
+	sys.A( 3, vi + V2i(0,0), 1 ) += (std::complex<double>(0.0, 0.22360679774997896)*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*(-(h_inv[1]*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 0.0))))+
+			(h_inv[1]*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 1.0))))));
+	sys.A( 4, vi + V2i(1,0), 2 ) += (std::complex<double>(0.0, 0.09128709291752768)*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*(-(h_inv[1]*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 0.0))))+
+			(h_inv[1]*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 1.0))))));
+	sys.A( 4, vi + V2i(0,0), 2 ) += (std::complex<double>(0.0, 0.09128709291752768)*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*(-(h_inv[1]*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 0.0))))+
+			(h_inv[1]*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 1.0))))));
+	sys.A( 6, vi + V2i(0,0), 3 ) += (std::complex<double>(0.0, 0.4629100498862757)*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*(-(h_inv[1]*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.0))))+
+			(h_inv[1]*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 1.0))))));
+	sys.A( 7, vi + V2i(0,0), 4 ) += (std::complex<double>(0.0, 0.29277002188455997)*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*(-(h_inv[1]*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.0))))+
+			(h_inv[1]*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 1.0))))));
+	sys.A( 8, vi + V2i(0,0), 5 ) += (std::complex<double>(0.0, 0.11952286093343936)*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*(-(h_inv[1]*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.0))))+
+			(h_inv[1]*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 1.0))))));
 
 	// term 131 ----------------
 	sys.A( 1, vi + V2i(0,-1), 0 ) += -(std::complex<double>(0.0, 0.408248290463863)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0)))*fields.f_p->eval(0, 0, sys.voxelToWorld(vd+V2d(0.5, 0.0))));
 	sys.A( 1, vi + V2i(0,0), 0 ) += (std::complex<double>(0.0, 0.408248290463863)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0)))*fields.f_p->eval(0, 0, sys.voxelToWorld(vd+V2d(0.5, 0.0))));
+	sys.A( 3, vi + V2i(0,0), 1 ) += -(std::complex<double>(0.0, 0.4472135954999579)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 3, vi + V2i(0,1), 1 ) += (std::complex<double>(0.0, 0.4472135954999579)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 4, vi + V2i(0,-1), 2 ) += -(std::complex<double>(0.0, 0.04564354645876384)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 4, vi + V2i(0,0), 2 ) += -(std::complex<double>(0.0, 0.04564354645876384)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 4, vi + V2i(1,-1), 2 ) += -(std::complex<double>(0.0, 0.04564354645876384)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 4, vi + V2i(1,0), 2 ) += -(std::complex<double>(0.0, 0.04564354645876384)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 4, vi + V2i(0,0), 2 ) += (std::complex<double>(0.0, 0.04564354645876384)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 4, vi + V2i(0,1), 2 ) += (std::complex<double>(0.0, 0.04564354645876384)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 4, vi + V2i(1,0), 2 ) += (std::complex<double>(0.0, 0.04564354645876384)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 4, vi + V2i(1,1), 2 ) += (std::complex<double>(0.0, 0.04564354645876384)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 6, vi + V2i(0,0), 3 ) += -(std::complex<double>(0.0, 0.23145502494313785)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 6, vi + V2i(0,-1), 3 ) += -(std::complex<double>(0.0, 0.23145502494313785)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 6, vi + V2i(0,1), 3 ) += (std::complex<double>(0.0, 0.23145502494313785)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 6, vi + V2i(0,0), 3 ) += (std::complex<double>(0.0, 0.23145502494313785)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 7, vi + V2i(0,0), 4 ) += -(std::complex<double>(0.0, 0.14638501094227999)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 7, vi + V2i(0,-1), 4 ) += -(std::complex<double>(0.0, 0.14638501094227999)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 7, vi + V2i(0,1), 4 ) += (std::complex<double>(0.0, 0.14638501094227999)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 7, vi + V2i(0,0), 4 ) += (std::complex<double>(0.0, 0.14638501094227999)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 8, vi + V2i(0,0), 5 ) += -(std::complex<double>(0.0, 0.05976143046671968)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 8, vi + V2i(0,-1), 5 ) += -(std::complex<double>(0.0, 0.05976143046671968)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 8, vi + V2i(0,1), 5 ) += (std::complex<double>(0.0, 0.05976143046671968)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 8, vi + V2i(0,0), 5 ) += (std::complex<double>(0.0, 0.05976143046671968)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
 
 	// term 132 ----------------
 	sys.A( 0, vi + V2i(1,0), 2 ) += -(std::complex<double>(0.0, 0.2041241452319315)*(-(h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0))))+
 			(h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 1.0)))))*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
 	sys.A( 0, vi + V2i(0,0), 2 ) += -(std::complex<double>(0.0, 0.2041241452319315)*(-(h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0))))+
 			(h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 1.0)))))*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 1, vi + V2i(0,0), 4 ) += -(std::complex<double>(0.0, 0.09128709291752768)*(-(h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, -0.5))))+
+			(h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.0))));
+	sys.A( 1, vi + V2i(0,-1), 4 ) += -(std::complex<double>(0.0, 0.09128709291752768)*(-(h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, -0.5))))+
+			(h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.0))));
+	sys.A( 2, vi + V2i(0,0), 5 ) += -(std::complex<double>(0.0, 0.22360679774997896)*(-(h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.0, 0.0))))+
+			(h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.0, 1.0)))))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.0, 0.5))));
+	sys.A( 2, vi + V2i(-1,0), 5 ) += -(std::complex<double>(0.0, 0.22360679774997896)*(-(h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.0, 0.0))))+
+			(h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.0, 1.0)))))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.0, 0.5))));
+	sys.A( 3, vi + V2i(0,0), 7 ) += -(std::complex<double>(0.0, 0.11952286093343936)*(-(h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0))))+
+			(h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 1.0)))))*fields.f_p->eval(3, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 4, vi + V2i(0,0), 8 ) += -(std::complex<double>(0.0, 0.29277002188455997)*(-(h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0))))+
+			(h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 1.0)))))*fields.f_p->eval(3, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 5, vi + V2i(0,0), 9 ) += -(std::complex<double>(0.0, 0.4629100498862757)*(-(h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0))))+
+			(h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 1.0)))))*fields.f_p->eval(3, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
 
 	// term 133 ----------------
 	sys.A( 0, vi + V2i(1,0), 2 ) += -(std::complex<double>(0.0, 0.2041241452319315)*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*(-(h_inv[1]*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 0.0))))+
 			(h_inv[1]*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 1.0))))));
 	sys.A( 0, vi + V2i(0,0), 2 ) += -(std::complex<double>(0.0, 0.2041241452319315)*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*(-(h_inv[1]*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 0.0))))+
 			(h_inv[1]*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 1.0))))));
+	sys.A( 1, vi + V2i(0,0), 4 ) += -(std::complex<double>(0.0, 0.09128709291752768)*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0)))*(-(h_inv[1]*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, -0.5))))+
+			(h_inv[1]*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))))));
+	sys.A( 1, vi + V2i(0,-1), 4 ) += -(std::complex<double>(0.0, 0.09128709291752768)*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0)))*(-(h_inv[1]*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, -0.5))))+
+			(h_inv[1]*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))))));
+	sys.A( 2, vi + V2i(0,0), 5 ) += -(std::complex<double>(0.0, 0.22360679774997896)*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5)))*(-(h_inv[1]*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.0, 0.0))))+
+			(h_inv[1]*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.0, 1.0))))));
+	sys.A( 2, vi + V2i(-1,0), 5 ) += -(std::complex<double>(0.0, 0.22360679774997896)*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5)))*(-(h_inv[1]*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.0, 0.0))))+
+			(h_inv[1]*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.0, 1.0))))));
+	sys.A( 3, vi + V2i(0,0), 7 ) += -(std::complex<double>(0.0, 0.11952286093343936)*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*(-(h_inv[1]*fields.f_p->eval(3, 0, sys.voxelToWorld(vd+V2d(0.5, 0.0))))+
+			(h_inv[1]*fields.f_p->eval(3, 0, sys.voxelToWorld(vd+V2d(0.5, 1.0))))));
+	sys.A( 4, vi + V2i(0,0), 8 ) += -(std::complex<double>(0.0, 0.29277002188455997)*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*(-(h_inv[1]*fields.f_p->eval(3, 0, sys.voxelToWorld(vd+V2d(0.5, 0.0))))+
+			(h_inv[1]*fields.f_p->eval(3, 0, sys.voxelToWorld(vd+V2d(0.5, 1.0))))));
+	sys.A( 5, vi + V2i(0,0), 9 ) += -(std::complex<double>(0.0, 0.4629100498862757)*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*(-(h_inv[1]*fields.f_p->eval(3, 0, sys.voxelToWorld(vd+V2d(0.5, 0.0))))+
+			(h_inv[1]*fields.f_p->eval(3, 0, sys.voxelToWorld(vd+V2d(0.5, 1.0))))));
 
 	// term 134 ----------------
 	sys.A( 0, vi + V2i(0,-1), 2 ) += (std::complex<double>(0.0, 0.10206207261596575)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
@@ -900,6 +3989,28 @@ void set_system_row(PNSystem::VoxelSystem& sys,
 	sys.A( 0, vi + V2i(0,1), 2 ) += -(std::complex<double>(0.0, 0.10206207261596575)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
 	sys.A( 0, vi + V2i(1,0), 2 ) += -(std::complex<double>(0.0, 0.10206207261596575)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
 	sys.A( 0, vi + V2i(1,1), 2 ) += -(std::complex<double>(0.0, 0.10206207261596575)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 1, vi + V2i(0,-1), 4 ) += (std::complex<double>(0.0, 0.18257418583505536)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0)))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.0))));
+	sys.A( 1, vi + V2i(0,0), 4 ) += -(std::complex<double>(0.0, 0.18257418583505536)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0)))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.0))));
+	sys.A( 2, vi + V2i(-1,-1), 5 ) += (std::complex<double>(0.0, 0.11180339887498948)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5)))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.0, 0.5))));
+	sys.A( 2, vi + V2i(-1,0), 5 ) += (std::complex<double>(0.0, 0.11180339887498948)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5)))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.0, 0.5))));
+	sys.A( 2, vi + V2i(0,-1), 5 ) += (std::complex<double>(0.0, 0.11180339887498948)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5)))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.0, 0.5))));
+	sys.A( 2, vi + V2i(0,0), 5 ) += (std::complex<double>(0.0, 0.11180339887498948)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5)))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.0, 0.5))));
+	sys.A( 2, vi + V2i(-1,0), 5 ) += -(std::complex<double>(0.0, 0.11180339887498948)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5)))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.0, 0.5))));
+	sys.A( 2, vi + V2i(-1,1), 5 ) += -(std::complex<double>(0.0, 0.11180339887498948)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5)))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.0, 0.5))));
+	sys.A( 2, vi + V2i(0,0), 5 ) += -(std::complex<double>(0.0, 0.11180339887498948)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5)))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.0, 0.5))));
+	sys.A( 2, vi + V2i(0,1), 5 ) += -(std::complex<double>(0.0, 0.11180339887498948)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5)))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.0, 0.5))));
+	sys.A( 3, vi + V2i(0,0), 7 ) += (std::complex<double>(0.0, 0.05976143046671968)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(3, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 3, vi + V2i(0,-1), 7 ) += (std::complex<double>(0.0, 0.05976143046671968)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(3, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 3, vi + V2i(0,1), 7 ) += -(std::complex<double>(0.0, 0.05976143046671968)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(3, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 3, vi + V2i(0,0), 7 ) += -(std::complex<double>(0.0, 0.05976143046671968)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(3, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 4, vi + V2i(0,0), 8 ) += (std::complex<double>(0.0, 0.14638501094227999)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(3, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 4, vi + V2i(0,-1), 8 ) += (std::complex<double>(0.0, 0.14638501094227999)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(3, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 4, vi + V2i(0,1), 8 ) += -(std::complex<double>(0.0, 0.14638501094227999)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(3, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 4, vi + V2i(0,0), 8 ) += -(std::complex<double>(0.0, 0.14638501094227999)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(3, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 5, vi + V2i(0,0), 9 ) += (std::complex<double>(0.0, 0.23145502494313785)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(3, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 5, vi + V2i(0,-1), 9 ) += (std::complex<double>(0.0, 0.23145502494313785)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(3, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 5, vi + V2i(0,1), 9 ) += -(std::complex<double>(0.0, 0.23145502494313785)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(3, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 5, vi + V2i(0,0), 9 ) += -(std::complex<double>(0.0, 0.23145502494313785)*h_inv[1]*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(3, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
 
 	// term 135 ----------------
 
@@ -917,38 +4028,125 @@ void set_system_row(PNSystem::VoxelSystem& sys,
 	sys.A( 0, vi + V2i(0,0), 0 ) += -(fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(0, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
 	sys.A( 1, vi + V2i(0,0), 1 ) += -(fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0)))*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0)))*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 0.0))));
 	sys.A( 2, vi + V2i(0,0), 2 ) += -(fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5)))*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5)))*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.0, 0.5))));
+	sys.A( 3, vi + V2i(0,0), 3 ) += -(fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 4, vi + V2i(0,0), 4 ) += -(fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 5, vi + V2i(0,0), 5 ) += -(fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 6, vi + V2i(0,0), 6 ) += -(fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(3, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 7, vi + V2i(0,0), 7 ) += -(fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(3, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 8, vi + V2i(0,0), 8 ) += -(fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(3, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.A( 9, vi + V2i(0,0), 9 ) += -(fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(3, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
 
 	// term 142 ----------------
 	sys.b(2) += (0.5*0.816496580928*((-h_inv[0]*fields.q->eval(0, 0, sys.voxelToWorld(vd+V2d(-0.5, 0.5))))+
 			(h_inv[0]*fields.q->eval(0, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))))));
+	sys.b(4) += (0.5*0.36514837167*((-h_inv[0]*fields.q->eval(1, -1, sys.voxelToWorld(vd+V2d(0.0, 0.5))))+
+			(h_inv[0]*fields.q->eval(1, -1, sys.voxelToWorld(vd+V2d(1.0, 0.5))))));
+	sys.b(5) += (0.5*0.894427191*((-h_inv[0]*fields.q->eval(1, 1, sys.voxelToWorld(vd+V2d(0.0, 0.5))))+
+			(h_inv[0]*fields.q->eval(1, 1, sys.voxelToWorld(vd+V2d(1.0, 0.5))))));
+	sys.b(7) += (0.5*0.239045721867*((-h_inv[0]*fields.q->eval(2, -2, sys.voxelToWorld(vd+V2d(0.0, 0.5))))+
+			(h_inv[0]*fields.q->eval(2, -2, sys.voxelToWorld(vd+V2d(1.0, 0.5))))));
+	sys.b(8) += (0.5*0.585540043769*((-h_inv[0]*fields.q->eval(2, 0, sys.voxelToWorld(vd+V2d(0.0, 0.5))))+
+			(h_inv[0]*fields.q->eval(2, 0, sys.voxelToWorld(vd+V2d(1.0, 0.5))))));
+	sys.b(9) += (0.5*0.925820099773*((-h_inv[0]*fields.q->eval(2, 2, sys.voxelToWorld(vd+V2d(0.0, 0.5))))+
+			(h_inv[0]*fields.q->eval(2, 2, sys.voxelToWorld(vd+V2d(1.0, 0.5))))));
 
 	// term 143 ----------------
 	sys.b(0) += -(0.5*0.816496580928*((-h_inv[0]*fields.q->eval(1, -1, sys.voxelToWorld(vd+V2d(0.0, 0.5))))+
 			(h_inv[0]*fields.q->eval(1, -1, sys.voxelToWorld(vd+V2d(1.0, 0.5))))));
+	sys.b(1) += -(0.5*0.894427191*((-h_inv[0]*fields.q->eval(2, -2, sys.voxelToWorld(vd+V2d(0.0, 0.0))))+
+			(h_inv[0]*fields.q->eval(2, -2, sys.voxelToWorld(vd+V2d(1.0, 0.0))))));
+	sys.b(2) += -(0.5*0.36514837167*((-h_inv[0]*fields.q->eval(2, 0, sys.voxelToWorld(vd+V2d(-0.5, 0.5))))+
+			(h_inv[0]*fields.q->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))))));
+	sys.b(3) += -(0.5*0.925820099773*((-h_inv[0]*fields.q->eval(3, -3, sys.voxelToWorld(vd+V2d(0.0, 0.5))))+
+			(h_inv[0]*fields.q->eval(3, -3, sys.voxelToWorld(vd+V2d(1.0, 0.5))))));
+	sys.b(4) += -(0.5*0.585540043769*((-h_inv[0]*fields.q->eval(3, -1, sys.voxelToWorld(vd+V2d(0.0, 0.5))))+
+			(h_inv[0]*fields.q->eval(3, -1, sys.voxelToWorld(vd+V2d(1.0, 0.5))))));
+	sys.b(5) += -(0.5*0.239045721867*((-h_inv[0]*fields.q->eval(3, 1, sys.voxelToWorld(vd+V2d(0.0, 0.5))))+
+			(h_inv[0]*fields.q->eval(3, 1, sys.voxelToWorld(vd+V2d(1.0, 0.5))))));
 
 	// term 144 ----------------
 	sys.b(1) += -(0.5*0.816496580928*((-h_inv[0]*fields.q->eval(0, 0, sys.voxelToWorld(vd+V2d(0.0, 0.0))))+
 			(h_inv[0]*fields.q->eval(0, 0, sys.voxelToWorld(vd+V2d(1.0, 0.0))))));
+	sys.b(3) += -(0.5*0.894427191*((-h_inv[0]*fields.q->eval(1, -1, sys.voxelToWorld(vd+V2d(0.0, 0.5))))+
+			(h_inv[0]*fields.q->eval(1, -1, sys.voxelToWorld(vd+V2d(1.0, 0.5))))));
+	sys.b(4) += -(0.5*0.36514837167*((-h_inv[0]*fields.q->eval(1, 1, sys.voxelToWorld(vd+V2d(0.0, 0.5))))+
+			(h_inv[0]*fields.q->eval(1, 1, sys.voxelToWorld(vd+V2d(1.0, 0.5))))));
+	sys.b(6) += -(0.5*0.925820099773*((-h_inv[0]*fields.q->eval(2, -2, sys.voxelToWorld(vd+V2d(0.0, 0.5))))+
+			(h_inv[0]*fields.q->eval(2, -2, sys.voxelToWorld(vd+V2d(1.0, 0.5))))));
+	sys.b(7) += -(0.5*0.585540043769*((-h_inv[0]*fields.q->eval(2, 0, sys.voxelToWorld(vd+V2d(0.0, 0.5))))+
+			(h_inv[0]*fields.q->eval(2, 0, sys.voxelToWorld(vd+V2d(1.0, 0.5))))));
+	sys.b(8) += -(0.5*0.239045721867*((-h_inv[0]*fields.q->eval(2, 2, sys.voxelToWorld(vd+V2d(0.0, 0.5))))+
+			(h_inv[0]*fields.q->eval(2, 2, sys.voxelToWorld(vd+V2d(1.0, 0.5))))));
 
 	// term 145 ----------------
 	sys.b(0) += (0.5*0.816496580928*((-h_inv[0]*fields.q->eval(1, 1, sys.voxelToWorld(vd+V2d(0.0, 0.5))))+
 			(h_inv[0]*fields.q->eval(1, 1, sys.voxelToWorld(vd+V2d(1.0, 0.5))))));
+	sys.b(1) += (0.5*0.36514837167*((-h_inv[0]*fields.q->eval(2, 0, sys.voxelToWorld(vd+V2d(0.0, 0.0))))+
+			(h_inv[0]*fields.q->eval(2, 0, sys.voxelToWorld(vd+V2d(1.0, 0.0))))));
+	sys.b(2) += (0.5*0.894427191*((-h_inv[0]*fields.q->eval(2, 2, sys.voxelToWorld(vd+V2d(-0.5, 0.5))))+
+			(h_inv[0]*fields.q->eval(2, 2, sys.voxelToWorld(vd+V2d(0.5, 0.5))))));
+	sys.b(3) += (0.5*0.239045721867*((-h_inv[0]*fields.q->eval(3, -1, sys.voxelToWorld(vd+V2d(0.0, 0.5))))+
+			(h_inv[0]*fields.q->eval(3, -1, sys.voxelToWorld(vd+V2d(1.0, 0.5))))));
+	sys.b(4) += (0.5*0.585540043769*((-h_inv[0]*fields.q->eval(3, 1, sys.voxelToWorld(vd+V2d(0.0, 0.5))))+
+			(h_inv[0]*fields.q->eval(3, 1, sys.voxelToWorld(vd+V2d(1.0, 0.5))))));
+	sys.b(5) += (0.5*0.925820099773*((-h_inv[0]*fields.q->eval(3, 3, sys.voxelToWorld(vd+V2d(0.0, 0.5))))+
+			(h_inv[0]*fields.q->eval(3, 3, sys.voxelToWorld(vd+V2d(1.0, 0.5))))));
 
 	// term 146 ----------------
 	sys.b(2) += -(std::complex<double>(0.0, 0.5)*0.816496580928*((-h_inv[1]*fields.q->eval(0, 0, sys.voxelToWorld(vd+V2d(0.0, 0.0))))+
 			(h_inv[1]*fields.q->eval(0, 0, sys.voxelToWorld(vd+V2d(0.0, 1.0))))));
+	sys.b(4) += -(std::complex<double>(0.0, 0.5)*0.36514837167*((-h_inv[1]*fields.q->eval(1, -1, sys.voxelToWorld(vd+V2d(0.5, 0.0))))+
+			(h_inv[1]*fields.q->eval(1, -1, sys.voxelToWorld(vd+V2d(0.5, 1.0))))));
+	sys.b(5) += -(std::complex<double>(0.0, 0.5)*0.894427191*((-h_inv[1]*fields.q->eval(1, 1, sys.voxelToWorld(vd+V2d(0.5, 0.0))))+
+			(h_inv[1]*fields.q->eval(1, 1, sys.voxelToWorld(vd+V2d(0.5, 1.0))))));
+	sys.b(7) += -(std::complex<double>(0.0, 0.5)*0.239045721867*((-h_inv[1]*fields.q->eval(2, -2, sys.voxelToWorld(vd+V2d(0.5, 0.0))))+
+			(h_inv[1]*fields.q->eval(2, -2, sys.voxelToWorld(vd+V2d(0.5, 1.0))))));
+	sys.b(8) += -(std::complex<double>(0.0, 0.5)*0.585540043769*((-h_inv[1]*fields.q->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.0))))+
+			(h_inv[1]*fields.q->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 1.0))))));
+	sys.b(9) += -(std::complex<double>(0.0, 0.5)*0.925820099773*((-h_inv[1]*fields.q->eval(2, 2, sys.voxelToWorld(vd+V2d(0.5, 0.0))))+
+			(h_inv[1]*fields.q->eval(2, 2, sys.voxelToWorld(vd+V2d(0.5, 1.0))))));
 
 	// term 147 ----------------
 	sys.b(0) += (std::complex<double>(0.0, 0.5)*0.816496580928*((-h_inv[1]*fields.q->eval(1, -1, sys.voxelToWorld(vd+V2d(0.5, 0.0))))+
 			(h_inv[1]*fields.q->eval(1, -1, sys.voxelToWorld(vd+V2d(0.5, 1.0))))));
+	sys.b(1) += (std::complex<double>(0.0, 0.5)*0.894427191*((-h_inv[1]*fields.q->eval(2, -2, sys.voxelToWorld(vd+V2d(0.5, -0.5))))+
+			(h_inv[1]*fields.q->eval(2, -2, sys.voxelToWorld(vd+V2d(0.5, 0.5))))));
+	sys.b(2) += (std::complex<double>(0.0, 0.5)*0.36514837167*((-h_inv[1]*fields.q->eval(2, 0, sys.voxelToWorld(vd+V2d(0.0, 0.0))))+
+			(h_inv[1]*fields.q->eval(2, 0, sys.voxelToWorld(vd+V2d(0.0, 1.0))))));
+	sys.b(3) += (std::complex<double>(0.0, 0.5)*0.925820099773*((-h_inv[1]*fields.q->eval(3, -3, sys.voxelToWorld(vd+V2d(0.5, 0.0))))+
+			(h_inv[1]*fields.q->eval(3, -3, sys.voxelToWorld(vd+V2d(0.5, 1.0))))));
+	sys.b(4) += (std::complex<double>(0.0, 0.5)*0.585540043769*((-h_inv[1]*fields.q->eval(3, -1, sys.voxelToWorld(vd+V2d(0.5, 0.0))))+
+			(h_inv[1]*fields.q->eval(3, -1, sys.voxelToWorld(vd+V2d(0.5, 1.0))))));
+	sys.b(5) += (std::complex<double>(0.0, 0.5)*0.239045721867*((-h_inv[1]*fields.q->eval(3, 1, sys.voxelToWorld(vd+V2d(0.5, 0.0))))+
+			(h_inv[1]*fields.q->eval(3, 1, sys.voxelToWorld(vd+V2d(0.5, 1.0))))));
 
 	// term 148 ----------------
 	sys.b(1) += -(std::complex<double>(0.0, 0.5)*0.816496580928*((-h_inv[1]*fields.q->eval(0, 0, sys.voxelToWorld(vd+V2d(0.5, -0.5))))+
 			(h_inv[1]*fields.q->eval(0, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))))));
+	sys.b(3) += -(std::complex<double>(0.0, 0.5)*0.894427191*((-h_inv[1]*fields.q->eval(1, -1, sys.voxelToWorld(vd+V2d(0.5, 0.0))))+
+			(h_inv[1]*fields.q->eval(1, -1, sys.voxelToWorld(vd+V2d(0.5, 1.0))))));
+	sys.b(4) += -(std::complex<double>(0.0, 0.5)*0.36514837167*((-h_inv[1]*fields.q->eval(1, 1, sys.voxelToWorld(vd+V2d(0.5, 0.0))))+
+			(h_inv[1]*fields.q->eval(1, 1, sys.voxelToWorld(vd+V2d(0.5, 1.0))))));
+	sys.b(6) += -(std::complex<double>(0.0, 0.5)*0.925820099773*((-h_inv[1]*fields.q->eval(2, -2, sys.voxelToWorld(vd+V2d(0.5, 0.0))))+
+			(h_inv[1]*fields.q->eval(2, -2, sys.voxelToWorld(vd+V2d(0.5, 1.0))))));
+	sys.b(7) += -(std::complex<double>(0.0, 0.5)*0.585540043769*((-h_inv[1]*fields.q->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.0))))+
+			(h_inv[1]*fields.q->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 1.0))))));
+	sys.b(8) += -(std::complex<double>(0.0, 0.5)*0.239045721867*((-h_inv[1]*fields.q->eval(2, 2, sys.voxelToWorld(vd+V2d(0.5, 0.0))))+
+			(h_inv[1]*fields.q->eval(2, 2, sys.voxelToWorld(vd+V2d(0.5, 1.0))))));
 
 	// term 149 ----------------
 	sys.b(0) += (std::complex<double>(0.0, 0.5)*0.816496580928*((-h_inv[1]*fields.q->eval(1, 1, sys.voxelToWorld(vd+V2d(0.5, 0.0))))+
 			(h_inv[1]*fields.q->eval(1, 1, sys.voxelToWorld(vd+V2d(0.5, 1.0))))));
+	sys.b(1) += (std::complex<double>(0.0, 0.5)*0.36514837167*((-h_inv[1]*fields.q->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, -0.5))))+
+			(h_inv[1]*fields.q->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))))));
+	sys.b(2) += (std::complex<double>(0.0, 0.5)*0.894427191*((-h_inv[1]*fields.q->eval(2, 2, sys.voxelToWorld(vd+V2d(0.0, 0.0))))+
+			(h_inv[1]*fields.q->eval(2, 2, sys.voxelToWorld(vd+V2d(0.0, 1.0))))));
+	sys.b(3) += (std::complex<double>(0.0, 0.5)*0.239045721867*((-h_inv[1]*fields.q->eval(3, -1, sys.voxelToWorld(vd+V2d(0.5, 0.0))))+
+			(h_inv[1]*fields.q->eval(3, -1, sys.voxelToWorld(vd+V2d(0.5, 1.0))))));
+	sys.b(4) += (std::complex<double>(0.0, 0.5)*0.585540043769*((-h_inv[1]*fields.q->eval(3, 1, sys.voxelToWorld(vd+V2d(0.5, 0.0))))+
+			(h_inv[1]*fields.q->eval(3, 1, sys.voxelToWorld(vd+V2d(0.5, 1.0))))));
+	sys.b(5) += (std::complex<double>(0.0, 0.5)*0.925820099773*((-h_inv[1]*fields.q->eval(3, 3, sys.voxelToWorld(vd+V2d(0.5, 0.0))))+
+			(h_inv[1]*fields.q->eval(3, 3, sys.voxelToWorld(vd+V2d(0.5, 1.0))))));
 
 	// term 150 ----------------
 
@@ -958,4 +4156,11 @@ void set_system_row(PNSystem::VoxelSystem& sys,
 	sys.b(0) += (fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.q->eval(0, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
 	sys.b(1) += (fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0)))*fields.q->eval(1, -1, sys.voxelToWorld(vd+V2d(0.5, 0.0))));
 	sys.b(2) += (fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5)))*fields.q->eval(1, 1, sys.voxelToWorld(vd+V2d(0.0, 0.5))));
+	sys.b(3) += (fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.q->eval(2, -2, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.b(4) += (fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.q->eval(2, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.b(5) += (fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.q->eval(2, 2, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.b(6) += (fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.q->eval(3, -3, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.b(7) += (fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.q->eval(3, -1, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.b(8) += (fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.q->eval(3, 1, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
+	sys.b(9) += (fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.q->eval(3, 3, sys.voxelToWorld(vd+V2d(0.5, 0.5))));
 }

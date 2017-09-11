@@ -629,7 +629,7 @@ class fopn(object):
 		expr = meh.apply_recursive(expr, meh.SHOrthogonalityProperty())
 		expr = meh.apply_recursive(expr, meh.SummationOverKronecker())
 
-		print_expr(expr)
+		#meh.print_expr(expr)
 		return expr
 
 	@staticmethod
@@ -703,6 +703,18 @@ class fopn(object):
 
 
 
+def splitAddition( terms ):
+	final_terms = []
+	for term in terms:
+		if term.__class__ == meh.Addition:
+			#for i in range(0,5):
+			#print(term.numOperands())
+			for i in range(term.numOperands()):
+			#for i in range(0,1):
+				final_terms.append(term.getOperand(i))
+		else:
+			final_terms.append(term)
+	return final_terms
 
 
 

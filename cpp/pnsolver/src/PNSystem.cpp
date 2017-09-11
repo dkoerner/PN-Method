@@ -2,6 +2,7 @@
 #include <field/Function.h>
 
 #include<Eigen/IterativeLinearSolvers>
+#include<Eigen/SparseLU>
 //#include<Eigen/SparseCholesky>
 
 
@@ -25,6 +26,59 @@ PNSystem::PNSystem(const Domain& domain)
 	m_b_complex = ComplexVector(domain.numVoxels()*m_numCoeffs, 1);
 	m_A_real = RealMatrix(domain.numVoxels()*m_numCoeffs, domain.numVoxels()*m_numCoeffs);
 	m_b_real = RealVector(domain.numVoxels()*m_numCoeffs, 1);
+
+
+	// temp: boundary test ---
+	m_numBoundaryVoxels = (domain.resolution()[0]+4)*(domain.resolution()[1]+4) - domain.numVoxels();
+	m_boundary_A_complex = ComplexMatrix((domain.numVoxels()+m_numBoundaryVoxels)*m_numCoeffs, (domain.numVoxels()+m_numBoundaryVoxels)*m_numCoeffs);
+	m_boundary_b_complex = ComplexVector((domain.numVoxels()+m_numBoundaryVoxels)*m_numCoeffs, 1);
+	m_boundary_A_real = RealMatrix((domain.numVoxels()+m_numBoundaryVoxels)*m_numCoeffs, (domain.numVoxels()+m_numBoundaryVoxels)*m_numCoeffs);
+	m_boundary_b_real = RealVector((domain.numVoxels()+m_numBoundaryVoxels)*m_numCoeffs, 1);
+
+	//std::map<std::pair<int,int>, int> voxel_to_global_boundary_index;
+
+	V2i current(-1,-1);
+	V2i step(0, 1);
+
+	//V2i res(4,4);
+	//int numBoundaryVoxels = (res[0]+4)*(res[1]+4) - res[0]*res[1];
+	V2i res = domain.resolution();
+	int numBoundaryVoxels = m_numBoundaryVoxels;
+	int layer = 0;
+	int count = 0;
+	int sidecount = 0;
+	int direction = 0;
+
+
+	for( int i=0;i<numBoundaryVoxels;++i,++count )
+	{
+		m_voxel_to_global_boundary_index[std::make_pair(current[0], current[1])] = i;
+
+		//std::cout << "index=" << i << " current=" << current[0] << " " << current[1] <<  " count=" << count << std::endl;
+
+		if( count == res[direction] + layer*2 + 1 )
+		{
+			// rotate clockwise
+			step = V2i(step[1], -step[0]);
+			direction = !direction;
+			count = 0;
+			++sidecount;
+		}
+
+		if( (count == res[direction] + layer*2)&&
+			(sidecount==3))
+		{
+			count = -1;
+			sidecount = 0;
+			++layer;
+			current = V2i( -layer - 1, -layer - 1 );
+			step = V2i(step [1], -step [0]);
+		}else
+			current += step;
+	}
+	// end of temp
+
+
 	build_S();
 
 	debugVoxel = V2i(-1, -1);
@@ -146,6 +200,16 @@ void PNSystem::setDebugVoxel(const V2i &dv)
 
 }
 
+PNSystem::RealMatrix &PNSystem::get_boundary_A_real()
+{
+	return m_boundary_A_real;
+}
+
+PNSystem::RealMatrix &PNSystem::get_boundary_b_real()
+{
+	return m_boundary_b_real;
+}
+
 
 void PNSystem::build_S()
 {
@@ -222,6 +286,22 @@ void PNSystem::build_S()
 	}
 	m_S.setFromTriplets(triplets_S_big.begin(), triplets_S_big.end());
 	m_S_inv.setFromTriplets(triplets_S_inv_big.begin(), triplets_S_inv_big.end());
+
+	// boundary condition test ------------
+	// here we add the triplets for the boundary section to the lists we used above
+	for( int i=0;i<m_numBoundaryVoxels;++i )
+	{
+		int global_i = (numVoxels+i)*m_numCoeffs;
+		int global_j = (numVoxels+i)*m_numCoeffs;
+		for( auto t : triplets_S )
+			triplets_S_big.push_back( ComplexTriplet(global_i+t.row(), global_j+t.col(), t.value()) );
+		for( auto t : triplets_S_inv )
+			triplets_S_inv_big.push_back( ComplexTriplet(global_i+t.row(), global_j+t.col(), t.value()) );
+	}
+	m_boundary_S = ComplexMatrix(m_numCoeffs*(numVoxels+m_numBoundaryVoxels), m_numCoeffs*(numVoxels+m_numBoundaryVoxels));
+	m_boundary_S_inv = ComplexMatrix(m_numCoeffs*(numVoxels+m_numBoundaryVoxels), m_numCoeffs*(numVoxels+m_numBoundaryVoxels));
+	m_boundary_S.setFromTriplets(triplets_S_big.begin(), triplets_S_big.end());
+	m_boundary_S_inv.setFromTriplets(triplets_S_inv_big.begin(), triplets_S_inv_big.end());
 }
 
 int PNSystem::getGlobalIndex( V2i voxel, int coeff )const
@@ -271,11 +351,43 @@ int PNSystem::getNumVoxels()const
 	return m_domain.numVoxels();
 }
 
+int PNSystem::getOrder() const
+{
+	return g_order;
+}
+
+int PNSystem::getGlobalBoundaryIndex( const V2i boundaryVoxel, int coeff )
+{
+	auto it = m_voxel_to_global_boundary_index.find(std::make_pair(boundaryVoxel[0], boundaryVoxel[1]));
+	if( it != m_voxel_to_global_boundary_index.end() )
+		return (m_domain.numVoxels()+it->second)*m_numCoeffs + coeff;
+	std::cout << "boundaryVoxel=" << boundaryVoxel[0] << " " << boundaryVoxel[1] << std::endl;
+	throw std::runtime_error("out of bound access of boundary voxels");
+	return -1;
+}
+
 PNSystem::MatrixAccessHelper PNSystem::A( V2i voxel_i,
 										  int coefficient_i,
 										  V2i voxel_j,
 										  int coefficient_j )
 {
+	// boundary test ----
+	bool boundary_i = !m_domain.contains_voxel(voxel_i);
+	bool boundary_j = !m_domain.contains_voxel(voxel_j);
+
+	if(boundary_i)
+		throw std::runtime_error("voxel_i is boundary which is unexpected");
+
+	if(boundary_j)
+	{
+		MatrixAccessHelper mah(&m_boundary_triplets_A);
+		mah.m_global_i = getGlobalIndex(voxel_i, coefficient_i);
+		mah.m_global_j = getGlobalBoundaryIndex(voxel_j, coefficient_j);
+		return mah;
+	}
+
+
+	/*
 	if( !m_domain.contains_voxel(voxel_i) ||
 		!m_domain.contains_voxel(voxel_j) )
 	{
@@ -284,6 +396,7 @@ PNSystem::MatrixAccessHelper PNSystem::A( V2i voxel_i,
 		// triplet list. All modifications/operations will have no effect.
 		return MatrixAccessHelper(0);
 	}
+	*/
 
 	MatrixAccessHelper mah(&m_triplets_A);
 	mah.m_global_i = getGlobalIndex(voxel_i, coefficient_i);
@@ -338,6 +451,194 @@ void PNSystem::build()
 	// convert from complex to real valued system
 	m_A_real = (m_S*m_A_complex*m_S_inv).real();
 	m_b_real = (m_S*m_b_complex).real();
+
+
+	// boundary test --------------
+
+	// consider the following layout of Ax=b in blockmatrix form:
+	//
+	// |          |     |     |   |
+	// |    A     |  C  |     | b |
+	// |          |     |     |   |
+	//  ---------------- *x =  ---
+	// |          .  D  |     |   |   <- equations for boundary voxels
+	// |          .     |     |   |
+	//
+	// The blockmatrix A and b are the original system which are embedded
+	// into a larger system now.
+	// The section below the seperator line is being added and consists
+	// of linear equations which describe the boundary voxels.
+	// The blockmatrix with the label C is also been added and contains
+	// the coefficients which describe dependency of interior voxels on
+	// boundary voxels.
+	// In case of dirichlet BC, the sections below the seperator line
+	// would be zero except the blockmatrix D, which would be the identity.
+
+	// What we do is, we add the triplets for the extended BC sections
+	// to the list of triplets for the original section
+	for( auto t:m_boundary_triplets_A )
+		m_triplets_A.push_back(t);
+
+	/*
+	// Dirichlet BC ---
+	int numVoxels = m_domain.numVoxels();
+	for( int i=0;i<m_numBoundaryVoxels;++i )
+	{
+		int global_i = (numVoxels+i)*m_numCoeffs;
+		int global_j = (numVoxels+i)*m_numCoeffs;
+		for( int j=0;j<m_numCoeffs;++j )
+			m_triplets_A.push_back( ComplexTriplet(global_i+j, global_j+j, 1.0) );
+	}
+	*/
+
+	bool neumann = false;
+
+	for( int c=0;c<m_numCoeffs;++c )
+	{
+		V2i res = m_domain.resolution();
+		int global_boundary_i = 0;
+		for( int layer=1;layer<=2;++layer )
+		{
+			for( int i=0;i<res[0];++i )
+			{
+				// Dirichlet BC ---
+				// For dirichlet BC, we will set D to be the identity matrix.
+				global_boundary_i=getGlobalBoundaryIndex(V2i(i, -layer), c);
+				ComplexTriplet t_min( global_boundary_i,
+									  global_boundary_i,
+									  1.0 );
+				m_triplets_A.push_back( t_min );
+
+				if(neumann)
+				{
+					// Neumann BC ---
+					// For neumann BC, we will identify the outer voxel with the closest interior voxel.
+					ComplexTriplet t_min2( global_boundary_i,
+										  getGlobalIndex(V2i(i, 0), c),
+										  -1.0 );
+					m_triplets_A.push_back( t_min2 );
+				}
+
+				// Dirichlet BC ---
+				global_boundary_i=getGlobalBoundaryIndex(V2i(i, res[0]-1+layer), c);
+				ComplexTriplet t_max( global_boundary_i,
+									  global_boundary_i,
+									  1.0 );
+				m_triplets_A.push_back( t_max );
+
+				if(neumann)
+				{
+					// Neumann BC ---
+					// For neumann BC, we will identify the outer voxel with the closest interior voxel.
+					ComplexTriplet t_max2( global_boundary_i,
+										  getGlobalIndex(V2i(i, res[0]-1), c),
+										  -1.0 );
+					m_triplets_A.push_back( t_max2 );
+				}
+			} // res[0]
+			for( int j=0;j<res[1];++j )
+			{
+				// Dirichlet BC ---
+				// For dirichlet BC, we will set D to be the identity matrix.
+				global_boundary_i=getGlobalBoundaryIndex(V2i(-layer, j), c);
+				ComplexTriplet t_min( global_boundary_i,
+									  global_boundary_i,
+									  1.0 );
+				m_triplets_A.push_back( t_min );
+
+
+				if(neumann)
+				{
+					// Neumann BC ---
+					// For neumann BC, we will identify the outer voxel with the closest interior voxel.
+					ComplexTriplet t_min2( global_boundary_i,
+										  getGlobalIndex(V2i(0, j), c),
+										  -1.0 );
+					m_triplets_A.push_back( t_min2 );
+				}
+
+
+				global_boundary_i=getGlobalBoundaryIndex(V2i(res[1]-1+layer, j), c);
+				ComplexTriplet t_max( global_boundary_i,
+									  global_boundary_i,
+									  1.0 );
+				m_triplets_A.push_back( t_max );
+
+				if(neumann)
+				{
+					// Neumann BC ---
+					// For neumann BC, we will identify the outer voxel with the closest interior voxel.
+					ComplexTriplet t_max2( global_boundary_i,
+										  getGlobalIndex(V2i(res[1]-1, j), c),
+										  -1.0 );
+					m_triplets_A.push_back( t_max2 );
+				}
+			} // res[1]
+
+		} // layer
+
+		// corner boundary voxels are defined through
+		// linear interpolation between boundary voxels
+		V2i local_x(-1, 0);
+		V2i local_y(0, -1);
+		V2i corners[4] = {V2i(0,0),
+						  V2i(0,res[1]-1),
+						  V2i(res[0]-1, res[1]-1),
+						  V2i(res[0]-1, 0) };
+		for( int i=0;i<4;++i )
+		{
+			V2i corner = corners[i];
+
+			// layer 1
+			{
+				global_boundary_i = getGlobalBoundaryIndex(corner+local_x+local_y, c);
+				m_triplets_A.push_back( ComplexTriplet(global_boundary_i,
+													   global_boundary_i, 1.0 ) );
+				m_triplets_A.push_back( ComplexTriplet(global_boundary_i,
+													   getGlobalBoundaryIndex(corner+local_x, c), -0.25 ) );
+				m_triplets_A.push_back( ComplexTriplet(global_boundary_i,
+													   getGlobalBoundaryIndex(corner+local_y, c), -0.25 ) );
+				m_triplets_A.push_back( ComplexTriplet(global_boundary_i,
+													   getGlobalBoundaryIndex(corner+2*local_x+local_y, c), -0.25 ) );
+				m_triplets_A.push_back( ComplexTriplet(global_boundary_i,
+													   getGlobalBoundaryIndex(corner+local_x+2*local_y, c), -0.25 ) );
+			}
+
+			// layer 2
+			{
+				global_boundary_i = getGlobalBoundaryIndex(corner+2*local_x+2*local_y, c);
+				m_triplets_A.push_back( ComplexTriplet(global_boundary_i, global_boundary_i, 1.0 ) );
+				m_triplets_A.push_back( ComplexTriplet(global_boundary_i, getGlobalBoundaryIndex(corner+2*local_x+local_y, c), -0.5 ) );
+				m_triplets_A.push_back( ComplexTriplet(global_boundary_i, getGlobalBoundaryIndex(corner+local_x+2*local_y, c), -0.5 ) );
+
+				global_boundary_i = getGlobalBoundaryIndex(corner+2*local_x+local_y, c);
+				m_triplets_A.push_back( ComplexTriplet(global_boundary_i, global_boundary_i, 1.0 ) );
+				m_triplets_A.push_back( ComplexTriplet(global_boundary_i, getGlobalBoundaryIndex(corner+2*local_x, c), -0.33333 ) );
+				m_triplets_A.push_back( ComplexTriplet(global_boundary_i, getGlobalBoundaryIndex(corner+2*local_x+2*local_y, c), -0.33333 ) );
+				m_triplets_A.push_back( ComplexTriplet(global_boundary_i, getGlobalBoundaryIndex(corner+local_x+local_y, c), -0.33333 ) );
+
+				global_boundary_i = getGlobalBoundaryIndex(corner+local_x+2*local_y, c);
+				m_triplets_A.push_back( ComplexTriplet(global_boundary_i, global_boundary_i, 1.0 ) );
+				m_triplets_A.push_back( ComplexTriplet(global_boundary_i, getGlobalBoundaryIndex(corner+2*local_y, c), -0.33333 ) );
+				m_triplets_A.push_back( ComplexTriplet(global_boundary_i, getGlobalBoundaryIndex(corner+2*local_y+2*local_x, c), -0.33333 ) );
+				m_triplets_A.push_back( ComplexTriplet(global_boundary_i, getGlobalBoundaryIndex(corner+local_y+local_x, c), -0.33333 ) );
+			}
+
+
+			// rotate
+			local_x = V2i(local_x[1], -local_x[0]);
+			local_y = V2i(local_y[1], -local_y[0]);
+		} // corners
+	} // coefficients
+
+
+	// now we create the bigger system from triplets
+	m_boundary_A_complex.setFromTriplets(m_triplets_A.begin(), m_triplets_A.end());
+	m_boundary_b_complex.setFromTriplets(m_triplets_b.begin(), m_triplets_b.end());
+
+	// convert from complex to real valued system
+	m_boundary_A_real = (m_boundary_S*m_boundary_A_complex*m_boundary_S_inv).real();
+	m_boundary_b_real = (m_boundary_S*m_boundary_b_complex).real();
 }
 
 PNSystem::RealVector PNSystem::solve()
@@ -345,13 +646,38 @@ PNSystem::RealVector PNSystem::solve()
 	std::cout << "PNSystem::solve solving for x...\n";
 
 	//Eigen::ConjugateGradient<Eigen::SparseMatrix<double> > solver;
-	Eigen::BiCGSTAB<Eigen::SparseMatrix<double> > solver;
+	//Eigen::BiCGSTAB<Eigen::SparseMatrix<double> > solver;
+	Eigen::SparseLU<Eigen::SparseMatrix<double> > solver;
+	//solver.setMaxIterations(100000);
 	solver.compute(get_A_real());
 	if(solver.info()!=Eigen::Success)
 	{
 		throw std::runtime_error("PNSystem::solve decomposition failed");
 	}
 	RealVector x = solver.solve(get_b_real());
+	//std::cout << "iterations=" << solver.iterations() << std::endl;
+	if(solver.info()!=Eigen::Success)
+	{
+		throw std::runtime_error("PNSystem::solve solve failed");
+	}
+
+	return x;
+
+}
+
+PNSystem::RealVector PNSystem::solve_boundary()
+{
+	std::cout << "PNSystem::solve solving for x...\n";
+
+	// temp: boundary test:
+	//Eigen::ConjugateGradient<Eigen::SparseMatrix<double> > solver;
+	Eigen::BiCGSTAB<Eigen::SparseMatrix<double> > solver;
+	solver.compute(get_boundary_A_real());
+	if(solver.info()!=Eigen::Success)
+	{
+		throw std::runtime_error("PNSystem::solve decomposition failed");
+	}
+	RealVector x = solver.solve(get_boundary_b_real());
 	if(solver.info()!=Eigen::Success)
 	{
 		throw std::runtime_error("PNSystem::solve solve failed");

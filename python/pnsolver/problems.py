@@ -5,7 +5,7 @@ import numpy as np
 import pnsolver
 import util
 
-#from scipy.ndimage.filters import gaussian_filter
+from scipy.ndimage.filters import gaussian_filter
 
 
 # This is the problem from the starmap paper. An emitting square at the center, surrounded by
@@ -21,6 +21,7 @@ def checkerboard():
 		if np.ceil((x+y)/2.0)*2.0 == (cx+cy) and cx > 1.0 and cx < 7.0 and cy > 1.0 and cy-2.0*np.abs(cx-4.0) < 4:
 			g = 1
 		return (1.0-g)*0 + g*10
+		#return 0.0
 
 	def sigma_s( pWS ):
 		x = pWS[0]
@@ -31,6 +32,8 @@ def checkerboard():
 		if np.ceil((x+y)/2.0)*2.0 == (cx+cy) and cx > 1.0 and cx < 7.0 and cy > 1.0 and cy-2.0*np.abs(cx-4.0) < 4:
 			g = 1
 		return (1.0-g)*1 + g*0
+		#return 0.0
+		#return 10.0 - sigma_a(pWS) # constant sigma_t
 
 
 	def phase_shcoeffs( l, m, pWS ):
@@ -44,6 +47,7 @@ def checkerboard():
 			y = pWS[1]
 			if x > 3.0 and x < 4.0 and y > 3.0 and y < 4.0:
 				return 1.0
+				#return 100.0
 			return 0.0
 		return 0.0
 
@@ -71,27 +75,35 @@ def checkerboard():
 
 
 
-'''
+
 # This basically takes an arbitrary problem and blurs it.
 def blurred( problem, stddev = 1.0 ):
 
 	domain = problem["domain"]
+	offset = np.array([0.5, 0.5])
 
 	problem["id"] = "{}_blur{}".format(problem["id"], stddev)
 
-	sigma_a_voxels = util.rasterize(problem["\\sigma_a"], domain)
-	sigma_s_voxels = util.rasterize(problem["\\sigma_s"], domain)
+	albedo = lambda pWS : np.real(problem["sigma_s"](pWS))/np.real(problem["sigma_t"](pWS))
+	albedo_voxels = util.rasterize(albedo, domain)
+	sigma_t = lambda pWS : np.real(problem["sigma_t"](pWS))
+	sigma_t_voxels = util.rasterize(sigma_t, domain)
 
-	# blur voxels
-	sigma_a_voxels = gaussian_filter(sigma_a_voxels, stddev)
-	sigma_s_voxels = gaussian_filter(sigma_s_voxels, stddev)
+	# blur albedo and sigma_t voxels
+	albedo_blurred = pnsolver.VoxelGrid(gaussian_filter(albedo_voxels, stddev).astype(complex), domain, offset)
+	sigma_t_blurred = pnsolver.VoxelGrid(gaussian_filter(sigma_t_voxels, stddev).astype(complex), domain, offset)
 
-	problem["\\sigma_a"] = field.VoxelGrid(sigma_a_voxels, domain)
-	problem["\\sigma_s"] = field.VoxelGrid(sigma_s_voxels, domain)
+	# reconstruct sigma_s and sigma_a from blurred albedo and sigma_t
+	sigma_s_blurred = lambda pWS: albedo_blurred(pWS)*sigma_t_blurred(pWS)
+	sigma_a_blurred = lambda pWS: (1.0-albedo_blurred(pWS))*sigma_t_blurred(pWS)
+
+	problem["sigma_a"] = pnsolver.VoxelGrid(util.rasterize(sigma_a_blurred, domain, dtype=complex), domain, offset)
+	problem["sigma_s"] = pnsolver.VoxelGrid(util.rasterize(sigma_s_blurred, domain, dtype=complex), domain, offset)
+	problem["sigma_t"] = pnsolver.VoxelGrid(util.rasterize(sigma_t_blurred, domain, dtype=complex), domain, offset)
 
 
 	# fade to zero near border ----------------------------
-
+	'''
 	# fade out sigma_a and sigma_s near the border
 	def fade(pWS):
 		d0 = np.abs(pWS[0] - domain.bound_min[0])
@@ -112,13 +124,12 @@ def blurred( problem, stddev = 1.0 ):
 	fade_field = domain.rasterize(fade)
 	problem["\\sigma_a"].voxels *= fade_field
 	problem["\\sigma_s"].voxels *= fade_field
+	'''
 
-
-
-	problem["\\sigma_t"] = field.VoxelGrid(sigma_a_voxels+sigma_s_voxels, domain)
+	#problem["\\sigma_t"] = field.VoxelGrid(sigma_a_voxels+sigma_s_voxels, domain)
 
 	return problem
-'''
+
 if __name__ == "__main__":
 	pass
 

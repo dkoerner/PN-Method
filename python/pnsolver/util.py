@@ -146,10 +146,16 @@ def write_pn_system(filename, sys, problem, x=None):
 	domain = problem["domain"]
 	A = sys.get_A_real()
 	b = sys.get_b_real()
-	#A = sys.get_A_complex()
-	#b = sys.get_b_complex()
+	#A = sys.get_boundary_A_real()
+	#b = sys.get_boundary_b_real()
+
+	info = {}
+	info["order"] = sys.getOrder()
+	info["numCoeffs"] = sys.getNumCoefficients()
+	info["resolution"] = domain.resolution()
 
 	data = {}
+	data["info"] = info
 	if not A is None:
 		data['A'] = A
 	if not b is None:
@@ -157,10 +163,10 @@ def write_pn_system(filename, sys, problem, x=None):
 	if not x is None:
 		data['x'] = x
 
-	data['sigma_s'] = rasterize(problem["sigma_s"], domain, dtype=complex)
-	data['sigma_a'] = rasterize(problem["sigma_a"], domain, dtype=complex)
-	data['sigma_t'] = rasterize(problem["sigma_t"], domain, dtype=complex)
-	#data['q']       = rasterize(lambda pWS: problem['q'](0,0,pWS), pnb.domain)
+	data['sigma_s'] = rasterize(lambda pWS: np.real(problem["sigma_s"](pWS)), domain)
+	data['sigma_a'] = rasterize(lambda pWS: np.real(problem["sigma_a"](pWS)), domain)
+	data['sigma_t'] = rasterize(lambda pWS: np.real(problem["sigma_t"](pWS)), domain)
+	data['q00']     = rasterize(lambda pWS: np.real(problem['q'][0](pWS)), domain)
 
 	print("writing PN system to {}".format(filename))
 	scipy.io.savemat(filename, data)

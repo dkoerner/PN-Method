@@ -11,6 +11,8 @@ if __name__ == "__main__":
 	# define problem ----------------------------
 	problem = problems.checkerboard()
 
+	#problem = problems.blurred(problem, 1.0)
+
 	# initialize the solver -----------------------------------
 	# NB: the truncation order has been baked into the cpp code as it is linked directly with the stencil
 	sys = pnsolver.PNSystem(problem["domain"])
@@ -52,10 +54,19 @@ if __name__ == "__main__":
 	x = sys.solve()
 
 	# write the result to disk for visualization ---------------
-	path = "C:/projects/epfl/epfl17/python/pnsolver/results/terms_new"
+	#path = "C:/projects/epfl/epfl17/python/pnsolver/results/terms_new"
+	path = "C:/projects/epfl/epfl17/python/pnsolver/results/studies"
+	#postfix = ""
+	#postfix = "_allvacuum"
+	#postfix = "_sigmas=0"
+	#postfix = "_sigmat=const"
+	#postfix = "_blurred"
 	postfix = ""
 	#postfix = "_nonrasterized"
 	#postfix = "_not3"
+	postfix = "_p1"
+	#postfix = "_p2"
+	#postfix = "_p3"
 	filename = "{}/{}{}.mat".format(path, problem["id"], postfix)
 	util.write_pn_system(filename, sys, problem, x)
 

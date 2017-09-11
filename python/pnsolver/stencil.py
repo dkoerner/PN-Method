@@ -658,26 +658,26 @@ if __name__ == "__main__":
 	staggered = True
 	filename = "c:/projects/epfl/epfl17/cpp/pnsolver/src/stencil.cpp"
 
-	lspn_terms = []
-	lspn_terms.append(rte_terms.lspn.term0_projected_expr())
-	lspn_terms.append(rte_terms.lspn.term1_projected_expr())
-	lspn_terms.append(rte_terms.lspn.term2_projected_expr())
-	lspn_terms.append(rte_terms.lspn.term3_projected_expr())
-	lspn_terms.append(rte_terms.lspn.term4_projected_expr())
-	lspn_terms.append(rte_terms.lspn.term5_projected_expr())
-	lspn_terms.append(rte_terms.lspn.term6_projected_expr())
-
 	terms = []
-	for term in lspn_terms:
-		if term.__class__ == meh.Addition:
-			#for i in range(0,5):
-			#print(term.numOperands())
-			for i in range(term.numOperands()):
-			#for i in range(0,1):
-				terms.append(term.getOperand(i))
-		else:
-			terms.append(term)
+	#'''
+	terms.append(rte_terms.lspn.term0_projected_expr())
+	terms.append(rte_terms.lspn.term1_projected_expr())
+	terms.append(rte_terms.lspn.term2_projected_expr())
+	terms.append(rte_terms.lspn.term3_projected_expr())
+	terms.append(rte_terms.lspn.term4_projected_expr())
+	terms.append(rte_terms.lspn.term5_projected_expr())
+	terms.append(rte_terms.lspn.term6_projected_expr())
+	#'''
 
+	'''
+	terms.append(rte_terms.fopn.transport_term())
+	terms.append(rte_terms.fopn.collision_term())
+	terms.append(rte_terms.fopn.scattering_term())
+	terms.append(rte_terms.fopn.source_term())
+	'''
+
+
+	terms = rte_terms.splitAddition( terms )
 
 
 	generate( terms, order, filename, staggered )

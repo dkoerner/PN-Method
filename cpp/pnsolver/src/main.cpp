@@ -48,14 +48,18 @@ PYBIND11_MODULE(pnsolver, m)
 	})
 	.def("getNumCoefficients", &PNSystem::getNumCoefficients )
 	.def("getNumVoxels", &PNSystem::getNumVoxels )
+	.def("getOrder", &PNSystem::getOrder )
 	.def("build", &PNSystem::build )
 	.def("solve", &PNSystem::solve )
+	.def("solve_boundary", &PNSystem::solve_boundary )
 	.def("setField", &PNSystem::setField )
 	.def("get_A_complex", &PNSystem::get_A_complex )
 	.def("get_b_complex", &PNSystem::get_b_complex )
 	.def("get_A_real", &PNSystem::get_A_real )
 	.def("get_b_real", &PNSystem::get_b_real )
 	.def("setDebugVoxel", &PNSystem::setDebugVoxel )
+	.def("get_boundary_A_real", &PNSystem::get_boundary_A_real )
+	.def("get_boundary_b_real", &PNSystem::get_boundary_b_real )
 	;
 
 	// Domain ============================================================

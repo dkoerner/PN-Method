@@ -52,6 +52,7 @@ if __name__ == "__main__":
 	# solve for x -------------------
 	x = None
 	x = sys.solve()
+	#x = sys.solve2()
 
 	# write the result to disk for visualization ---------------
 	#path = "C:/projects/epfl/epfl17/python/pnsolver/results/terms_new"
@@ -61,12 +62,12 @@ if __name__ == "__main__":
 	#postfix = "_sigmas=0"
 	#postfix = "_sigmat=const"
 	#postfix = "_blurred"
-	postfix = ""
+	#postfix = ""
 	#postfix = "_nonrasterized"
 	#postfix = "_not3"
-	postfix = "_p1"
+	#postfix = "_p1_complex_sg"
 	#postfix = "_p2"
-	#postfix = "_p3"
+	postfix = "_sg_u"
 	filename = "{}/{}{}.mat".format(path, problem["id"], postfix)
 	util.write_pn_system(filename, sys, problem, x)
 

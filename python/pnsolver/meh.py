@@ -267,9 +267,8 @@ class Function( Expression ):
 	def getBody(self):
 		return self.body2
 
-
-	#def getFunctionBody(self):
-	#	return self.body_expr
+	def setBody(self, body):
+		self.body2 = body
 
 	#def setFunctionBody( self, body_expr, *arg_symbols ):
 	#	if len(arg_symbols) != self.numChildren():
@@ -772,6 +771,10 @@ def fun( symbol, *args, **kwargs ):
 	if 'arglevel' in kwargs:
 		if kwargs['arglevel'] == -1:
 			f.setAllSubScripts()
+		elif kwargs['arglevel'] == 1:
+			f.setAllSuperScripts()
+	if 'body' in kwargs:
+		f.setBody(kwargs["body"])
 	return f
 
 def add( *args ):
@@ -824,15 +827,16 @@ def grad( expr ):
 
 def div( expr ):
 	return Divergence(expr)
-'''
-def nabla_new( expr = None ):
-	n = Tensor( "\\nabla", rank=1, dimension=3 )
-	n.setComponent(0, deriv(expr, var("x"), is_partial = True))
-	n.setComponent(1, deriv(expr, var("y"), is_partial = True))
-	n.setComponent(2, deriv(expr, var("z"), is_partial = True))
-	#n.collapsed = True
-	return n
-'''
+
+def vector( symbol, symbol_x, symbol_y, symbol_z ):
+	x = tensor(symbol, rank=1, dimension=3)
+	x.setComponent(0, var(symbol_x))
+	x.setComponent(1, var(symbol_y))
+	x.setComponent(2, var(symbol_z))
+	x.collapsed = True
+	return x
+
+
 def dot(left, right):
 	return DotProduct(left, right)
 
@@ -855,6 +859,10 @@ def print_expr(expr):
 	print("\n----------------------------\n")
 	print("$$\n" + latex(expr) + "\n$$")
 
+def print_tree(expr):
+	print("\n----------------------------\n")
+	print(tree_str(expr))
+	print("\n")
 
 
 def tree_str(expr, level=0):

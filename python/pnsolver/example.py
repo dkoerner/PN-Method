@@ -67,7 +67,7 @@ if __name__ == "__main__":
 	#postfix = "_not3"
 	#postfix = "_p1_complex_sg"
 	#postfix = "_p2"
-	postfix = "_sg_u"
+	postfix = "_sg_u3"
 	filename = "{}/{}{}.mat".format(path, problem["id"], postfix)
 	util.write_pn_system(filename, sys, problem, x)
 

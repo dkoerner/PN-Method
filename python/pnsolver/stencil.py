@@ -226,7 +226,10 @@ def eval_term( expr, info, level=0 ):
 					return 0.0
 
 			# else keep and return the function expression
-			return meh.fun( expr.getSymbol(), *args)
+			new_fun = meh.fun( expr.getSymbol(), *args)
+			for i in range(numArgs):
+				new_fun.setLatexArgumentPosition( i, expr.getLatexArgumentPosition(i) )
+			return new_fun
 
 		if info.debug == True:
 			print("{}result={}".format(meh.indent_string(level), str(result)))
@@ -325,7 +328,7 @@ def eval_term( expr, info, level=0 ):
 		raise ValueError("unable to handle expression of type {}".format(expr.__class__.__name__))
 
 
-def to_cpp( expr, level=0 ):
+def to_cpp( expr, info, level=0 ):
 	istr = meh.indent_string(level)
 	#print("{}{}".format(istr, expr.__class__.__name__))
 	if expr.__class__ == meh.Number:
@@ -336,29 +339,14 @@ def to_cpp( expr, level=0 ):
 			return "std::complex<double>({}, {})".format(np.real(expr_value), np.imag(expr_value))
 		return str(expr_value)
 	elif expr.__class__ == meh.Negate:
-		return str( "-{}".format(to_cpp(expr.getExpr(), level+1) ))
+		return str( "-{}".format(to_cpp(expr.getExpr(), info, level+1) ))
 	elif expr.__class__ == meh.Variable:
 		# this variable could not be resolved at stencil generation time
 		# therefore we directly pass it along to the cpp code and
 		# expect the user/client code to deal with it
 		return expr.getSymbol()
 	elif isinstance(expr, meh.Function):
-		numArgs = expr.numArguments()
-		# turn all arguments into cpp
-		arg_str = ""
-		for i in range(numArgs):
-			arg_str += to_cpp(expr.getArgument(i), level+1)
-			if i < numArgs-1:
-				arg_str += ", "
-
-		field_id = expr.getSymbol()
-		if field_id == "\\sigma_t":
-			field_id = "sigma_t"
-		elif field_id == "\\sigma_a":
-			field_id = "sigma_a"
-		elif field_id == "\\sigma_s":
-			field_id = "sigma_s"
-		return "fields.{}->eval({})".format(field_id, arg_str)
+		return info.fun_to_cpp(expr, info, level)
 	elif expr.__class__ == GridLocation2D:
 		return "sys.voxelToWorld(vd+V2d({}, {}))".format(expr.getVoxel()[0]+expr.getOffset()[0]*0.5, expr.getVoxel()[1]+expr.getOffset()[1]*0.5 )
 	elif expr.__class__ == meh.Derivation:
@@ -368,7 +356,7 @@ def to_cpp( expr, level=0 ):
 		cpp_ops = []
 		max_str_le = 0
 		for i in range(numOperands):
-			cpp_op = to_cpp(expr.getOperand(i), level+1)
+			cpp_op = to_cpp(expr.getOperand(i), info, level+1)
 			cpp_ops.append(cpp_op)
 			max_str_le = max(max_str_le, len(cpp_op))
 
@@ -386,15 +374,15 @@ def to_cpp( expr, level=0 ):
 		result = "("
 		for i in range(numOperands):
 			op = expr.getOperand(i)
-			op_cpp = to_cpp(op, level+1)
+			op_cpp = to_cpp(op, info, level+1)
 			result += op_cpp
 			if i<numOperands-1:
 				result+= "*"
 		result += ")"
 		return result
 	elif expr.__class__ == meh.Power:
-		base_cpp = to_cpp(expr.getBase())
-		exponent_cpp = to_cpp(expr.getExponent())
+		base_cpp = to_cpp(expr.getBase(), info)
+		exponent_cpp = to_cpp(expr.getExponent(), info)
 		result = "std::pow({}, {})".format(base_cpp, exponent_cpp)
 		#result = "std::pow({}, 1.0)".format(base_cpp, exponent_cpp)
 		return result
@@ -485,6 +473,8 @@ class PNInfo2D(object):
 					self.lm_to_index[(l,m)] = len(self.index_to_lm)-1
 		self.numCoeffs = len(self.index_to_lm)
 
+		self.build_S()
+
 		# the following dictionaries help mapping lm to uindex and vice versa ---
 		# NB: u_index refers to the real-valued coefficient of the solution vector u which
 		# represents real and imaginary part (both are real numbers) of sh coefficients lm with m>=0
@@ -534,6 +524,46 @@ class PNInfo2D(object):
 			self.place_unknown( 2, (1,0) )
 			self.stencil_half_steps = 1
 
+
+	def build_S(self):
+		'''builds the S matrix, which converts from complex-valued to real valued coefficients'''
+		# build S matrix ( we iterate over l, m to make sure that the order is correct)
+
+		self.S = np.zeros((self.numCoeffs, self.numCoeffs),dtype=complex)
+		count = 0
+		for l in range(0, self.order+1):
+			for m in range(l, -1, -1):
+				# in 2D, we skip coefficients for which l+m is odd
+				if (l+m) % 2 != 0:
+					continue
+				
+				# build S matrix, which converts solution from complex to real values
+
+				# computes the real part coefficients for a row (defined by l,m) in the S matrix
+				# (see bottom of p.5 in the starmap paper)
+				if m == 0:
+					self.S[count, self.lm_to_index[(l,m)]] = 1.0
+				else:
+					self.S[count, self.lm_to_index[(l,m)]] = np.power(-1.0, m)/np.sqrt(2)
+					if (l,-m) in self.lm_to_index:
+						self.S[count, self.lm_to_index[(l,-m)]] = np.power(-1.0, 2.0*m)/np.sqrt(2)
+				count+=1
+
+				# computes the imaginary part coefficients for a row (defined by l,m) in the S matrix
+				# (see bottom of p.5 in the starmap paper)
+				if m > 0:
+					self.S[count, self.lm_to_index[(l,m)]] = np.power(-1.0, m)/np.sqrt(2)*1j
+					if (l,-m) in self.lm_to_index:
+						self.S[count, self.lm_to_index[(l,-m)]] = -np.power(-1.0, 2*m)/np.sqrt(2)*1j
+					count+=1
+		self.S_inv = np.linalg.inv(self.S)
+
+	def getS(self):
+		return self.S
+
+	def getSInv(self):
+		return self.S_inv
+
 	def num_coeffs(self):
 		return self.numCoeffs
 
@@ -547,8 +577,6 @@ class PNInfo2D(object):
 	def lmp_index(self, coeff_index):
 		return self.u_index_to_lm[coeff_index]
 
-
-	'''
 	def sh_index(self, l, m):
 		key = (l,m)
 		#NB: we dont use l(l+1)+m because in 2d, we skipp odd (l+m) entries, which changes the sequence.
@@ -558,7 +586,6 @@ class PNInfo2D(object):
 
 	def lm_index(self, coeff_index):
 		return self.index_to_lm[coeff_index]
-	'''
 
 
 	def place_unknown( self, coeff_index, grid_id ):
@@ -954,12 +981,457 @@ def generate2( order, filename, staggered = True ):
 
 
 
+class MatrixExpression(object):
+	pass
+
+
+class UnknownVector(MatrixExpression):
+	def __init__(self, expr):
+		self.expr = expr
+	def getExpr(self):
+		return self.expr
+	#def setDimensions( shape ):
+	#	pass
+	def getClassId(self):
+		return self.expr.getSymbol()
+
+class DerivationOperator(MatrixExpression):
+	def __init__(self, child, variable_symbol):
+		self.variable_symbol = variable_symbol
+		self.child = child
+	#def setDimensions( shape ):
+	#	pass
+	def getSymbol(self):
+		return self.variable_symbol
+
+	def getClassId(self):
+		return "d{}{}".format(self.variable_symbol, self.child.getId())
+
+class CoefficientMatrix(MatrixExpression):
+	def __init__(self, expr, symbol = "C"):
+		self.symbol = symbol
+		self.expr = expr
+
+		#self.shape = None
+		self.coeff_terms = {}
+		#self.coeff_terms = {} # maps coefficient indices (l,m) to expressions
+		#self.terms = []
+
+	#def setDimensions( shape ):
+	#	self.shape = shape
+	#	#self.coeff_terms = [[None for j in shape[1] ] for i in shape[0]]
+
+
+	def addCoefficientTerm(self, i, j, term ):
+		key = (i,j)
+		new_term = None
+		if not key in self.coeff_terms:
+			new_term = term
+		else:
+			current_term = self.coeff_terms[key]
+			if current_term.__class__ != meh.Addition:
+				new_term = meh.add(current_term, term)
+			else:
+				new_term = meh.Addition( current_term.getOperands() + [term] )
+		self.coeff_terms[key] = new_term
+
+	def getCoefficientTerm( self, i, j ):
+		key = (i,j)
+		if not key in self.coeff_terms:
+			return None
+		return self.coeff_terms[key]
+
+	def derive(self, variable_symbol):
+		print("warning: CoefficientMatrix::derive not implemented yet")
+		return self
+	def getClassId(self):
+		return self.symbol
+	def __str__(self):
+		result = self.getClassId() + "\n"
+		for key, expr in self.coeff_terms.items():
+			result += "i={} j={} expr=\n{}\n".format(key[0], key[1], meh.latex(expr))
+		return result
+
+class MatrixVectorProduct(MatrixExpression):
+	def __init__(self, A, B):
+		self.A = A
+		self.B = B
+	def getClassId(self):
+		return "{}*{}".format(str(self.A), str(self.B))
+
+class TermClass(object):
+	def __init__( self, root ):
+		self.root = root
+		self.factors = None
+		self.pni = None
+
+	def merge( self, other, debug = False ):
+		# first as a sanity check make sure factors are identical
+		numFactors = len(self.factors)
+		if numFactors != len(other.factors):
+			raise ValueError("factors should be identical")
+		for i in range(numFactors):
+			if self.factors[i].__class__ != other.factors[i].__class__:
+				raise ValueError("factors should be identical")
+			if self.factors[i].__class__ == DerivationOperator and self.factors[i].variable_symbol !=  other.factors[i].variable_symbol:
+				raise ValueError("factors should be identical")
+
+		# now iterate all factors and merge coefficient matrix expressions into self
+		for i in range(numFactors):
+			if self.factors[i].__class__ == CoefficientMatrix:
+				# Now we instantiate the unknown and its coefficient term for every possible l,m,
+				# therefore iterating over all rows of the coefficient matrix.
+				# The unknown index will change and place the term at some column in this matrix
+				for coeff_index in range(self.pni.num_coeffs()):
+
+					# find the l, m which are associated with the current coefficient index
+					(l,m) = pni.lm_index(coeff_index)
+
+					# we take the term from the other coefficientmatrix
+					term = other.factors[i].expr.deep_copy()
+
+					# replace l,m in that given term to instantiate it for the current row in the system
+					term = meh.apply_recursive(term, meh.Substitute(meh.var("l'"), meh.num(l)))
+					term = meh.apply_recursive(term, meh.Substitute(meh.var("m'"), meh.num(m)))
+					term = meh.apply_recursive(term, meh.FoldConstants())
+
+
+					# if the other term class belongs to the LHS (by having an unknown as a factor),
+					# then we derive the column from the coefficient index of that particular unknown
+					col = None
+					if other.isLHS():
+						# We take the unknown with which the other coefficient matrix is associated.
+						# This is something like L^(l+1, m-1) and it determines the column at which
+						# the term will be placed in the coefficient matrix.
+						u_expr = other.getUnknownExpr().deep_copy()
+
+						# replace l,m in the unknown
+						u_expr = meh.apply_recursive(u_expr, meh.Substitute(meh.var("l'"), meh.num(l)))
+						u_expr = meh.apply_recursive(u_expr, meh.Substitute(meh.var("m'"), meh.num(m)))
+						u_expr = meh.apply_recursive(u_expr, meh.FoldConstants())
+
+						# Extract l,m indices from the unknownexpression. This is needed to find the
+						# column in the coefficient matrix
+
+						# currently we assume arg[0]->l arg[1]->m
+						args = u_expr.getArguments()
+						l_expr = args[0]
+						m_expr = args[1]
+
+						if not l_expr.canEvaluate():
+							raise ValueError("expected expression for l to be able to evaluate")
+						if not m_expr.canEvaluate():
+							raise ValueError("expected expression for m to be able to evaluate")
+
+						#print( "L l={} m={}".format(coeff_index, col) )
+
+						col = self.pni.sh_index(l_expr.evaluate(), m_expr.evaluate())
+
+						#print( "matrix i={} j={}".format(coeff_index, col) )
+
+						# check bounds
+						if col == None or col>=self.pni.num_coeffs():
+							# the current term can not be placed within the coefficient matrix
+							continue
+					else:
+						# term is a RHS term, there is just a single column
+						col = 0
+
+
+					# finally we can place the term (in which l,m have been replaced) in the matrix
+					# if the matrix already contains a term at this position, it will be added.
+					self.factors[i].addCoefficientTerm( coeff_index, col, term )
+
+
+
+
+
+	def getUnknownExpr(self):
+		if self.factors is None:
+			raise ValueError("must first call finalize")
+		for f in self.factors:
+			if f.__class__ == UnknownVector:
+				return f.getExpr()
+		return None
+
+	def isLHS(self):
+		if self.getUnknownExpr() is None:
+			return False
+		return True
+
+	def finalize(self, pni):
+		self.factors = self.flatten(self.root)
+		self.pni = pni
+
+		if not self.isLHS():
+			# sanity check
+			if len(self.factors) != 1 or self.factors[0].__class__ != CoefficientMatrix:
+				raise ValueError("did expect a single factor for RHS term of type CoefficientMatrix")
+			#self.factors[0].setDimensions((pni.num_coeffs(), 1))
+		else:
+			pass
+			#for i in range(numFactors):
+			#	if self.factors[i].__class__ == CoefficientMatrix:
+			#		self.factors[i].setDimensions((pni.num_coeffs(), pni.num_coeffs()))
+
+	def flatten(self, ct):
+		if ct.__class__ == MatrixVectorProduct:
+			return self.flatten(ct.A) + self.flatten(ct.B)
+		elif ct.__class__ == CoefficientMatrix:
+			return [ct]
+		elif ct.__class__ == DerivationOperator:
+			return [ct] + self.flatten(ct.child)
+		elif ct.__class__ == UnknownVector:
+			return [ct]
+		else:
+			raise ValueError("unable to handle class {}".format(ct.__class__.__name__))
+
+	def getId(self):
+		if self.factors is None:
+			items = self.flatten(self.root)
+		else:
+			items = self.factors
+		result = ""
+		for f in items :
+			f_str = None
+			if f.__class__ == MatrixVectorProduct:
+				raise ValueError("unexpected MatrixVectorProduct")
+			elif f.__class__ == CoefficientMatrix:
+				f_str = f.getClassId()
+			elif f.__class__ == DerivationOperator:
+				f_str = "d{}".format(f.variable_symbol)
+			elif f.__class__ == UnknownVector:
+				f_str = f.getClassId()
+			else:
+				raise ValueError("unable to handle class {}".format(ct.__class__.__name__))
+
+			result += f_str
+		return "{}".format(result)
+
+	def __str__(self):
+		if self.factors is None:
+			items = self.flatten(self.root)
+		else:
+			items = self.factors
+
+		result = ""
+		for item in items:
+			result += str(item)
+
+
+		return result
+
+# classify_term will parse the term and create a string which identifies the term structure
+#
+def classify_term_recursive( expr, unknown_symbol, level=0 ):
+	istr = meh.indent_string(level)
+
+	if expr.__class__ == meh.Number:
+		if level == 0:
+			return TermClass(CoefficientMatrix(expr))
+		else:
+			return CoefficientMatrix(expr)
+	elif expr.__class__ == meh.Negate:
+		ct = classify_term_recursive(expr.getExpr(), unknown_symbol, level+1)
+		if ct.__class__ == CoefficientMatrix:
+			result = CoefficientMatrix(meh.neg(ct.expr))
+		elif ct.__class__ == MatrixVectorProduct:
+			if ct.A.__class__ == CoefficientMatrix and ct.B.__class__ != CoefficientMatrix:
+				ct.A = CoefficientMatrix(meh.neg(ct.A.expr))
+				result = ct
+			else:
+				raise ValueError("we currently assume that A is a CoefficientMatrix and the unknown vector is always B")
+		else:
+			result = MatrixVectorProduct( CoefficientMatrix(meh.Number(-1)), ct )
+		if level == 0:
+			return TermClass(result)
+		else:
+			return result
+	elif isinstance(expr, meh.Variable):
+		#print(expr.getSymbol())
+		#raise ValueError("work out negate")
+		return CoefficientMatrix(expr)
+	elif isinstance(expr, meh.Function):
+		fun_class = None
+		if expr.getSymbol() == unknown_symbol:
+			fun_class = UnknownVector(expr)
+		else:
+			fun_class = CoefficientMatrix( expr )
+		if level == 0:
+			return TermClass(fun_class)
+		else:
+			return fun_class
+
+	elif expr.__class__ == meh.Derivation:
+		ct = classify_term_recursive(expr.getExpr(), unknown_symbol, level+1)
+		if ct.__class__ == CoefficientMatrix:
+			return ct.derive( expr.getVariable().getSymbol() )
+		else:
+			return DerivationOperator(ct, expr.getVariable().getSymbol() )
+	elif expr.__class__ == meh.Multiplication:
+		numOperands = expr.numOperands()
+		constant = None
+		other = None
+		for i in range(numOperands):
+			ct = classify_term_recursive(expr.getOperand(i), unknown_symbol, level+1)
+			if ct.__class__ == CoefficientMatrix:
+				if constant == None:
+					constant = ct
+				else:
+					if ct.expr.__class__ == meh.Multiplication:
+						constant.expr = meh.Multiplication( [constant.expr] + ct.expr.getOperands() )
+					else:
+						constant.expr = meh.mul( constant.expr, ct.expr )
+
+			elif ct.__class__ != CoefficientMatrix and other is None:
+				other = ct
+			elif ct.__class__ != CoefficientMatrix:
+				raise ValueError("expected only one operand which is not a coefficientmatrix")
+
+		result = None
+		if other is None and not constant is None:
+			result = constant
+		elif constant is None and not other is None:
+			result = other
+		else:
+			result = MatrixVectorProduct(constant, other)
+		
+		if level == 0:
+			return TermClass(result)
+		else:
+			return result
+	elif expr.__class__ == meh.Addition:
+		numOperands = expr.numOperands()
+		result = []
+		for i in range(numOperands):
+			result.append(eval_term(expr.getOperand(i), unknown_symbol, level+1))
+		if len(result) <= 1:
+			raise ValueError("expected at least two operands")
+		return meh.Addition(result)
+	elif expr.__class__ == meh.Power:
+		base_expr = eval_term(expr.getBase(), unknown_symbol, level+1)
+		exponent_expr = eval_term(expr.getExponent(), unknown_symbol, level+1)
+		return meh.Power( base_expr, exponent_expr )
+	elif expr.__class__ == meh.Quotient:
+		num_ct = classify_term_recursive(expr.getNumerator(), unknown_symbol, level+1)
+		denom_ct = classify_term_recursive(expr.getDenominator(), unknown_symbol, level+1)
+		if num_ct.__class__ == CoefficientMatrix and denom_ct.__class__ == CoefficientMatrix:
+			return CoefficientMatrix( meh.frac(num_ct.expr, denom_ct.expr) )
+		else:
+			raise ValueError("sadsadsad")
+	else:
+		raise ValueError("unable to handle expression of type {}".format(expr.__class__.__name__))
+
+def a_lm( l, m ):
+	base = (l-m+1)*(l+m+1)/((2*l+3)*(2*l+1))
+	if base < 0.0:
+		return np.nan
+	return np.sqrt(base)
+def b_lm( l, m ):
+	base = (l-m)*(l+m)/((2*l+1)*(2*l-1))
+	if base < 0.0:
+		return np.nan
+	return np.sqrt(base)
+def c_lm( l, m ):
+	base = (l+m+1)*(l+m+2)/((2*l+3)*(2*l+1))
+	if base < 0.0:
+		return np.nan
+	return np.sqrt(base)
+def d_lm( l, m ):
+	base = (l-m)*(l-m-1)/((2*l+1)*(2*l-1))
+	if base < 0.0:
+		return np.nan
+	return np.sqrt(base)
+def e_lm( l, m ):
+	base = (l-m+1)*(l-m+2)/((2*l+3)*(2*l+1))
+	if base < 0.0:
+		return np.nan
+	return np.sqrt(base)
+def f_lm( l, m ):
+	base = (l+m)*(l+m-1)/((2*l+1)*(2*l-1))
+	if base < 0.0:
+		return np.nan
+	return np.sqrt(base)
+
+
+
+
+
+class ReplaceCoefficientMatrixComponents(object):
+	def __init__(self, coefficient_matrix_register):
+		self.coefficient_matrix_register = coefficient_matrix_register
+	def visit_Function( self, expr ):
+		if expr.getSymbol() == "M":
+			global_index = expr.getArgument(0).evaluate()
+			i = expr.getArgument(1).evaluate()
+			j = expr.getArgument(2).evaluate()
+
+			f = self.coefficient_matrix_register[global_index]
+			if hasattr(f, "M_real"):
+				return meh.num(f.M_real[i, j])
+			elif f.getCoefficientTerm(i, j) == None:
+				# if there is no coefficient term for the given i,j index
+				# then we return zero (which allows better pruning)
+				return meh.num(0)
+			else:
+				return expr
+		else:
+			return expr
+
+
+
+def fun_to_cpp( expr, info, level ):
+	numArgs = expr.numArguments()
+	# turn all arguments into cpp
+	arg_str = ""
+	for i in range(numArgs):
+		arg_str += to_cpp(expr.getArgument(i), info, level+1)
+		if i < numArgs-1:
+			arg_str += ", "
+
+	symbol = expr.getSymbol()
+	if symbol == "M":
+		# we reference a coefficient matrix
+		# the first argument is the global matrix index
+		global_index = expr.getArgument(0).evaluate()
+		# second and third argument are the row and column indices
+		i = expr.getArgument(1).evaluate()
+		j = expr.getArgument(2).evaluate()
+
+		# now get the CoefficientMatrix object behind
+		f = info.coefficient_matrix_register[global_index]
+
+		# if the real matrix exists, we can use the constant value diretly
+		if hasattr(f, "M_real"):
+			return str(f.M_real[i, j])
+		else:
+			# we assume that a matrix f.id+"_real" has been created in code
+			return "{}_real.coeffRef({}, {})".format(f.id, i, j)
+	elif symbol == "\\sigma_t":
+		return "fields.{}->eval({})".format("sigma_t", arg_str)
+	elif symbol == "\\sigma_a":
+		return "fields.{}->eval({})".format("sigma_a", arg_str)
+	elif symbol == "\\sigma_s":
+		return "fields.{}->eval({})".format("sigma_s", arg_str)
+	elif symbol == "q":
+		return "fields.{}->eval({})".format("q", arg_str)
+	elif symbol == "f_p":
+		return "fields.{}->eval({})".format("f_p", arg_str)
+	else:
+		raise ValueError("unable to convert function {} to c++ code.".format(symbol))
+
+
 if __name__ == "__main__":
 	order = 1
 	staggered = True
 	filename = "c:/projects/epfl/epfl17/cpp/pnsolver/src/stencil.cpp"
 
-	#terms = []
+
+	pni = PNInfo2D(order, staggered)
+
+
+
+	terms = []
 	'''
 	terms.append(rte_terms.lspn.term0_projected_expr())
 	terms.append(rte_terms.lspn.term1_projected_expr())
@@ -971,17 +1443,448 @@ if __name__ == "__main__":
 	'''
 
 	#'''
-	#terms.append(rte_terms.fopn.transport_term())
-	#terms.append(rte_terms.fopn.collision_term())
-	#terms.append(rte_terms.fopn.scattering_term())
-	#terms.append(rte_terms.fopn.source_term())
+	terms.append(rte_terms.fopn.transport_term())
+	terms.append(rte_terms.fopn.collision_term())
+	terms.append(rte_terms.fopn.scattering_term())
+	terms.append(rte_terms.fopn.source_term())
 	#'''
 
 	#meh.print_expr(rte_terms.fopn.source_term())
 	#meh.print_expr( rte_terms.fopn.transport_term() )
 
 
-	#terms = rte_terms.splitAddition( terms )
+	terms = rte_terms.splitAddition( terms )
 
 
-	generate2( order, filename, staggered )
+	#generate2( order, filename, staggered )
+
+
+
+	'''
+	omega = meh.tensor("\\omega", rank=1, dimension=3)
+	omega_x = omega.getComponent(0)
+	omega_y = omega.getComponent(1)
+	omega_z = omega.getComponent(2)
+
+	x = meh.tensor("\\vec{x}", rank=1, dimension=3)
+	x.setComponent(0, meh.var("x"))
+	x.setComponent(1, meh.var("y"))
+	x.setComponent(2, meh.var("z"))
+	x.collapsed = True
+
+	u = meh.fun( "L", meh.var("i"), x)
+	dx_u = meh.deriv( u, x.getComponent(0), is_partial=True )
+	sigma_t = meh.fun("sigma_t")
+	dx_sigma_t = meh.deriv( sigma_t, x.getComponent(0), is_partial=True )
+
+	#term = u
+	#term = sigma_t
+	#term = dx_sigma_t
+	#term = meh.num(2)
+	#term = meh.mul(meh.num(1), meh.num(2), meh.num(2), u)
+	#term = meh.mul(dx_sigma_t, meh.num(3), meh.num(2), u)
+	#term = dx_u
+
+
+	#info = EvalInfo()
+	#info.unknown_symbol = "L"
+	#term_class = classify_term(term, info)
+	#print(term_class)
+
+
+	'''
+
+	#term = terms[0]
+
+	#meh.print_expr(term)
+	#meh.print_tree(term)
+
+
+
+
+
+
+	# source file
+	file = open(filename, "w")
+
+	file.write("// This file was generated by {}\n\n".format(__file__))
+	file.write("#include <PNSystem.h>\n\n")
+
+	file.write("// truncation order is directly linked to the generated stencil\n")
+	file.write("int PNSystem::g_order = {};\n\n".format(order))
+	
+
+	arg_sys = "PNSystem::VoxelSystem& sys"
+	arg_fields = "PNSystem::Fields& fields"
+	prototype = "void set_system_row({},\n\t\t\t\t\t{})\n".format(arg_sys, arg_fields)
+	file.write( prototype )
+	file.write( "{\n" )
+	file.write( "\tV2i vi = sys.getVoxel();\n" )
+	file.write( "\tV2d vd = sys.getVoxel().cast<double>();\n" )
+	file.write( "\tV2d h_inv( 1.0/({}*sys.getVoxelSize()[0]), 1.0/({}*sys.getVoxelSize()[1]) );\n".format(pni.stencil_half_steps, pni.stencil_half_steps) )
+	file.write( "\n" )
+
+	file.write( "\tEigen::Matrix<std::complex<double>, {}, {}> S;\n".format(pni.getS().shape[0], pni.getS().shape[1]) )
+	for i in range(pni.getS().shape[0]):
+		for j in range(pni.getS().shape[1]):
+			value = pni.getS()[i,j]
+			file.write("\tS.coeffRef({}, {}) = std::complex<double>({}, {});\n".format(i, j, np.real(value), np.imag(value)))
+	file.write( "\tEigen::Matrix<std::complex<double>, {}, {}> SInv;\n".format(pni.getS().shape[0], pni.getS().shape[1]) )
+	for i in range(pni.getS().shape[0]):
+		for j in range(pni.getS().shape[1]):
+			value = pni.getSInv()[i,j]
+			file.write("\tSInv.coeffRef({}, {}) = std::complex<double>({}, {});\n".format(i, j, np.real(value), np.imag(value)))
+
+	file.write( "\n" )
+
+
+
+
+
+
+
+
+	term_classes = {}
+
+	for term in terms:
+	#for term in [terms[0]]:
+		
+		#meh.print_tree(term)
+		term_class = classify_term_recursive(term, "L")
+		term_class.finalize(pni)
+
+		key = term_class.getId()
+
+		if not key in term_classes:
+			term_classes[key] = term_class
+
+		# now accumulate the expression in term_class 
+		#print("merging key={} expr={}".format(key, meh.latex(term_class.factors[0].expr)))
+		term_classes[key].merge(term_class)
+
+
+		#print(term_class)
+		#meh.print_expr(term_class.root.A.expr)
+
+	# Now we have factorized the whole discretized RTE into matrix form. The next step is to generate
+	# the c++ stencil code for setting the different (complex-valued) matrix components.
+
+
+	# Produce stencil code for generating complex-valued coefficient matrices =========================
+
+	# To do this, we iterate over all classes and for each class we iterate over all
+	# coefficient matrices. If all its terms can be evaluated (and therefore dont depend
+	# on any RTE parameter), we will evaluate them immediately and just set the constant value in c++.
+	# If they cant be evaluated, we will generate stencil code to construct the
+	# complex-valued coefficient matrix per voxel (using RTE parameter fields)
+	coefficient_matrix_register = []
+	counter = 0
+	for key, value in term_classes.items():
+		for f in value.factors:
+			if f.__class__ == CoefficientMatrix:
+
+				# the variable name, which will be used in generated c++ code
+				f.global_index = counter
+				f.id = "M_{}".format(counter)
+				coefficient_matrix_register.append(f)
+				counter += 1
+
+				file.write( "\t//{} =============\n".format(f.id) )
+
+				# find out if the matrix is constant
+				is_constant = True
+				for key, expr in f.coeff_terms.items():
+					if not expr.canEvaluate():
+						is_constant = False
+						break
+						
+
+				f.numRows = pni.num_coeffs()
+				f.numCols = None
+				if value.isLHS():
+					f.numCols = pni.num_coeffs()
+				else:
+					f.numCols = 1
+
+
+				if is_constant and f.coeff_terms:
+					# evaluate complex valued matrix straight away
+					f.M_complex = np.zeros((f.numRows, f.numCols), dtype=complex)
+					for key, expr in f.coeff_terms.items():
+						f.M_complex[key[0], key[1]] = expr.evaluate()
+
+					# If M_complex is constant and has already been computed, then we perform the transformation straight away
+					# and use the resulting constants directly.
+					f.M_real = np.real(pni.getS().dot(f.M_complex.dot(pni.getSInv())))
+				else:
+					# generate c++ code for building the matrix in our stencil function per voxel
+					file.write( "\tEigen::Matrix<std::complex<double>, {}, {}> {};\n".format(f.numRows, f.numCols, f.id) )
+
+					# now generate c++ code for generating the coefficient matrix
+					# this is done by calling eval_term on each coefficient term (in order to get constant folding
+					# and discretization of differential operators) and converting the result to cpp code expressions.
+					for i in range(f.numRows):
+						for j in range(f.numCols):
+							term = f.getCoefficientTerm(i,j)
+							if term is None:
+								continue
+
+							# now we run eval_term in order to discretize the differential operators
+							info = EvalInfo()
+							#info.debug = True
+							info.unknown_symbol = "u"
+							info.pni = pni
+							info.location = pni.getLocation( np.array([0,0]), i )
+							info.vars = {}
+							# TODO: get rid of info.location alltogether and just use vec{x} ?
+							info.vars["\\vec{x}"] = info.location
+
+
+							result = eval_term(term, info)
+							#print(result)
+							#meh.print_expr(result)
+							
+
+							# terms vanishes in 2d if (l+m)%2 == 1
+							# or if l,m indices are out of bounds
+							if info.term_vanishes == True:
+								#print("term vanishes coeff_index={}".format(coeff_index))
+								continue
+
+							# sanity check
+							if result.__class__ == UnknownSet:
+								raise ValueError( "no unknown expected in coefficient term" )
+
+							# Here we check if the coefficient is reduced to zero. This happens alot.
+							if result.canEvaluate() and np.abs(result.evaluate()) < 1.0e-8:
+								# coefficient is vanishes
+								continue
+
+							# convert to cpp
+							info = EvalInfo()
+							info.fun_to_cpp = fun_to_cpp
+							expr_cpp = to_cpp(result, info)
+
+							#
+							file.write( "\t{}({}, {}) = {};\n".format( f.id, i, j, expr_cpp ) )
+
+					# Produce stencil code for converting from complex-valued system to real valued system =================
+					# convert the matrix to real valued matrix
+					if f.numCols == 1:
+						file.write( "\tEigen::Matrix<double, {}, {}> {}_real = (S*{}).real();\n".format(f.numRows, f.numCols, f.id, f.id) )
+					else:
+						file.write( "\tEigen::Matrix<double, {}, {}> {}_real = (S*{}*SInv).real();\n".format(f.numRows, f.numCols, f.id, f.id) )
+
+				file.write("\n")
+
+
+
+
+	
+
+
+	# Now we have the system in matrix form where all terms are real-valued. What remains to be done
+	# is to discretize the differential operators dx, dy, dz. This is done using our expression evaluation
+	# function. It is able to create correct stencils for first and second order derivatives including
+	# RTE parameters (or their gradients) as factors.
+
+	# Produce stencil code for computing the final coefficients of the global matrix A =====
+	# TODO: do matrix product and iterate over all occuring terms (including discretization). build terms using meh and run eval_term
+	# note: we now have u as unknowns
+
+	file.write( "\t// Assembling global system =============\n" )
+	# for every term class
+	# 
+	x = meh.tensor("\\vec{x}", rank=1, dimension=3)
+	x.setComponent(0, meh.var("x"))
+	x.setComponent(1, meh.var("y"))
+	x.setComponent(2, meh.var("z"))
+	x.collapsed = True
+	for key, tc in term_classes.items():
+		print( "term {} ------------".format(key) )
+
+		#if key != "CdyL":
+		#	continue
+
+		numFactors = len(tc.factors)
+		variable_names = ["i", "j", "k", "l", "m"]
+		next_free_variable = 0
+
+		# We generate terms which represent the Matrix-vector products in einstein summation convention.
+		# For staggered grids, we need to know to which row of the global system each terms belongs,
+		# this is identified in einstein summation convention by the free independent variable which
+		# can not be contracted.
+		unbound_variable_index = None
+
+		# just make sure the last factor is the unknown if there is one
+		if tc.isLHS() and not tc.factors[numFactors-1].__class__ == UnknownVector:
+			raise ValueError("currently we expect the unknown to be the last item in a LHS term classification")
+
+		generic_term = None
+		# we iterate over all factors backwards and construct a term which we can use
+		# to generate code for the whole matrix vector product (including differntial operators)
+		for f in reversed(tc.factors):
+			if f.__class__ == UnknownVector:
+				generic_term = meh.fun( "u", meh.var(variable_names[next_free_variable]) )
+				generic_term.setAllSubScripts()
+				unbound_variable_index = next_free_variable
+				next_free_variable += 1
+			elif f.__class__ == CoefficientMatrix:
+				#M_ij = meh.fun("M", meh.num(f.global_index), meh.var(variable_names[next_free_variable-1]), meh.var(variable_names[next_free_variable]))
+				row_index = meh.var(variable_names[next_free_variable])
+				unbound_variable_index = next_free_variable
+				if tc.isLHS():
+					col_index = meh.var(variable_names[next_free_variable-1])
+				else:
+					col_index = meh.num(0)
+				M_ij = meh.fun("M", meh.num(f.global_index), row_index, col_index )
+				M_ij.setAllSubScripts()
+				if generic_term is None:
+					# happens for RHS terms
+					generic_term = M_ij
+				else:
+					generic_term = meh.mul( M_ij, generic_term )
+				next_free_variable += 1
+			elif f.__class__ == DerivationOperator:
+				component = {"x":0, "y":1, "z":2}[f.getSymbol()]
+				generic_term = meh.deriv( generic_term, x.getComponent(component), is_partial=True )
+
+		# The factor is given in einstein summation convention. We can generate all the different
+		# terms by iterating over all combinations of free variables. From these individual terms,
+		# we generate the code to set the global coefficient matrix.
+		#
+		# We take into account of purely constant matrices have already been computed and use their
+		# values directly, instead of refering to a variable in c++
+		numVariables = next_free_variable
+		offset_combinations = itertools.product(*[range(pni.num_coeffs()) for d in range(numVariables)])
+		for var_values in offset_combinations:
+
+			#if var_values != (1,0):
+			#	continue
+
+			# For staggered grids and for assignment in the global matrix A, we need to know
+			# to which row of the local(voxel) system each terms belongs to.
+			# This also determines the location at which the term is being evaluated for staggered
+			# grids.
+			coeff_index = var_values[unbound_variable_index]
+
+			# instantiate the term
+			term = generic_term.deep_copy()
+
+			# and replace all the indices by their numbers
+			for var_index in range(len(var_values)):
+				var_value = var_values[var_index]
+				term = meh.apply_recursive(term, meh.Substitute(meh.var(variable_names[var_index]), meh.num(var_value)))
+
+			location = pni.getLocation( np.array([0,0]), coeff_index )
+
+			# now we run eval_term in order to discretize the differential operators
+			info = EvalInfo()
+			#info.debug = True
+			info.unknown_symbol = "u"
+			def getUnknownIndex( args ):
+				# args[0] -> j (== coefficient index)
+				coeff_index_expr = args[0]
+
+				if not coeff_index_expr.__class__ == meh.Number and not coeff_index_expr.__class__ == meh.Negate:
+					raise ValueError("expected i to be of expression type meh.Number or meh.Negate")
+
+				# TODO: do we need sure to have ints here?
+				coeff_index = coeff_index_expr.evaluate()
+
+				# check bounds
+				if coeff_index == None or coeff_index >=info.pni.num_coeffs():
+					return None
+
+				return coeff_index
+			info.getUnknownIndex = getUnknownIndex
+			info.pni = pni
+			info.location = location
+			info.vars = {}
+			# TODO: get rid of info.location alltogether and just use vec{x} ?
+			info.vars["\\vec{x}"] = info.location
+
+			#meh.print_expr(term)
+
+			result = eval_term( term, info )
+
+			# terms vanishes in 2d if (l+m)%2 == 1
+			# or if l,m indices are out of bounds
+			if info.term_vanishes == True:
+				#print("term vanishes coeff_index={}".format(coeff_index))
+				continue
+
+			# This visitor is applied to the expression tree. It will collapse the unknownsets in Multiplications
+			# and Additions. The result is a final unknownset where each unknown weight is an expression tree,
+			# or an expression itsself, if no unknowns are present (RHS terms)
+			result = meh.apply_recursive(result, FactorizeUnknowns())
+
+			if result.__class__ == UnknownSet:
+				# the result of term evaluation is a list of unknowns (including voxel and l,m)
+				# for each unknown coefficient in A, we have an expression which we can more easily translate
+				# into cpp
+				for u in result.unknowns:
+					
+					if u.weight_expr is None:
+						expr = meh.num(1.0)
+					else:
+						expr = u.weight_expr.deep_copy()
+
+					# here we make sure that we collapse numbers 
+					expr = meh.apply_recursive(expr, meh.CleanupSigns())
+					expr = meh.apply_recursive(expr, meh.FoldConstants())
+					# TODO: explain...
+					expr = meh.apply_recursive(expr, ReplaceCoefficientMatrixComponents(coefficient_matrix_register))
+
+					# Here we check if the coefficient is reduced to zero. This happens alot.
+					if expr.canEvaluate() and np.abs(expr.evaluate()) < 1.0e-8:
+						# coefficient is vanishes
+						continue
+
+					#meh.print_expr(expr)
+
+					# the expression consists of function calls or numerical values
+					# these are very easily translated into cpp code
+					# the to_cpp function parses the expression tree and replaces all meh expression nodes
+					# with a string of cpp code
+					#print(meh.tree_str(expr))
+					info = EvalInfo()
+					info.coefficient_matrix_register = coefficient_matrix_register
+					info.fun_to_cpp = fun_to_cpp
+					expr_cpp = to_cpp(expr, info)
+
+					file.write( "\tsys.coeff_A( {}, vi + V2i({},{}), {} ) += {};\n".format(coeff_index, u.voxel[0], u.voxel[1], u.coeff_index, expr_cpp) )
+					#file.write("\n")
+			else:
+				expr = meh.apply_recursive(result, ReplaceCoefficientMatrixComponents(coefficient_matrix_register))
+
+				# Here we check if the coefficient is reduced to zero. This happens alot.
+				if expr.canEvaluate() and np.abs(expr.evaluate()) < 1.0e-8:
+					# coefficient is vanishes
+					continue
+
+				#meh.print_expr(expr)
+
+				# the expression consists of function calls or numerical values
+				# these are very easily translated into cpp code
+				# the to_cpp function parses the expression tree and replaces all meh expression nodes
+				# with a string of cpp code
+				#print(meh.tree_str(expr))
+				info = EvalInfo()
+				info.coefficient_matrix_register = coefficient_matrix_register
+				info.fun_to_cpp = fun_to_cpp
+				expr_cpp = to_cpp(expr, info)
+
+				file.write( "\tsys.coeff_b( {} ) += {};\n".format(coeff_index, expr_cpp) )
+
+				
+			#meh.print_expr(generic_term)
+
+	file.write( "}\n" )
+
+	file.close()
+
+
+
+
+

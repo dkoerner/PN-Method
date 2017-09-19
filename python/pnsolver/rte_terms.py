@@ -698,6 +698,8 @@ class fopn(object):
 		x.collapsed = True
 
 		q = meh.fun( "q", meh.var("l'"), meh.var("m'"), x)
+		q.setLatexArgumentPosition(0, -1)
+		q.setLatexArgumentPosition(1, -1)
 		expr = q
 		return expr
 

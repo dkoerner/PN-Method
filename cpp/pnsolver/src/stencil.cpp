@@ -12,18 +12,65 @@ void set_system_row(PNSystem::VoxelSystem& sys,
 	V2d vd = sys.getVoxel().cast<double>();
 	V2d h_inv( 1.0/(1*sys.getVoxelSize()[0]), 1.0/(1*sys.getVoxelSize()[1]) );
 
+	Eigen::Matrix<std::complex<double>, 3, 3> S;
+	S.coeffRef(0, 0) = std::complex<double>(1.0, 0.0);
+	S.coeffRef(0, 1) = std::complex<double>(0.0, 0.0);
+	S.coeffRef(0, 2) = std::complex<double>(0.0, 0.0);
+	S.coeffRef(1, 0) = std::complex<double>(0.0, 0.0);
+	S.coeffRef(1, 1) = std::complex<double>(0.7071067811865475, 0.0);
+	S.coeffRef(1, 2) = std::complex<double>(-0.7071067811865475, 0.0);
+	S.coeffRef(2, 0) = std::complex<double>(0.0, 0.0);
+	S.coeffRef(2, 1) = std::complex<double>(-0.0, -0.7071067811865475);
+	S.coeffRef(2, 2) = std::complex<double>(-0.0, -0.7071067811865475);
+	Eigen::Matrix<std::complex<double>, 3, 3> SInv;
+	SInv.coeffRef(0, 0) = std::complex<double>(1.0, 0.0);
+	SInv.coeffRef(0, 1) = std::complex<double>(0.0, 0.0);
+	SInv.coeffRef(0, 2) = std::complex<double>(0.0, 0.0);
+	SInv.coeffRef(1, 0) = std::complex<double>(0.0, 0.0);
+	SInv.coeffRef(1, 1) = std::complex<double>(0.7071067811865476, 0.0);
+	SInv.coeffRef(1, 2) = std::complex<double>(0.0, 0.7071067811865476);
+	SInv.coeffRef(2, 0) = std::complex<double>(0.0, 0.0);
+	SInv.coeffRef(2, 1) = std::complex<double>(-0.7071067811865476, 0.0);
+	SInv.coeffRef(2, 2) = std::complex<double>(-0.0, 0.7071067811865476);
 
-	sys.coeff_b(0) += fields.q->eval(0,0, sys.voxelToWorld(vd+V2d(0.5, 0.5))).real();
-	sys.coeff_A(0, vi, 0) += -fields.sigma_s->eval( sys.voxelToWorld(vd+V2d(0.5, 0.5)) ).real()*fields.f_p->eval( 0, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5)) ).real();
-	sys.coeff_A(0, vi, 0) += fields.sigma_t->eval( sys.voxelToWorld(vd+V2d(0.5, 0.5)) ).real();
-	sys.coeff_A( 0, vi + V2i(0,0), 1 ) += -(0.57735027*h_inv[0]);
-	sys.coeff_A( 0, vi + V2i(1,0), 1 ) += (0.57735027*h_inv[0]);
-	sys.coeff_A( 0, vi + V2i(0,0), 2 ) += -(0.57735027*h_inv[1]);
-	sys.coeff_A( 0, vi + V2i(0,1), 2 ) += (0.57735027*h_inv[1]);
-	sys.coeff_A(1, vi, 1) += fields.sigma_t->eval( sys.voxelToWorld(vd+V2d(0.0, 0.5)) ).real();
-	sys.coeff_A( 1, vi + V2i(-1,0), 0 ) += -(0.57735027*h_inv[0]);
-	sys.coeff_A( 1, vi + V2i(0,0), 0 ) += (0.57735027*h_inv[0]);
-	sys.coeff_A(2, vi, 2) += fields.sigma_t->eval( sys.voxelToWorld(vd+V2d(0.5, 0.0)) ).real();
-	sys.coeff_A( 2, vi + V2i(0,-1), 0 ) += -(0.57735027*h_inv[1]);
-	sys.coeff_A( 2, vi + V2i(0,0), 0 ) += (0.57735027*h_inv[1]);
+	//M_0 =============
+
+	//M_1 =============
+
+	//M_2 =============
+	Eigen::Matrix<std::complex<double>, 3, 3> M_2;
+	Eigen::Matrix<double, 3, 3> M_2_real = (S*M_2*SInv).real();
+
+	//M_3 =============
+	Eigen::Matrix<std::complex<double>, 3, 3> M_3;
+	M_3(0, 0) = (fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))+
+			-(fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.5)))*fields.f_p->eval(0, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5)))));
+	M_3(1, 1) = (fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5)))+
+			-(fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.0, 0.5)))*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.0, 0.5)))));
+	M_3(2, 2) = (fields.sigma_t->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0)))+
+			-(fields.sigma_s->eval(sys.voxelToWorld(vd+V2d(0.5, 0.0)))*fields.f_p->eval(1, 0, sys.voxelToWorld(vd+V2d(0.5, 0.0)))));
+	Eigen::Matrix<double, 3, 3> M_3_real = (S*M_3*SInv).real();
+
+	//M_4 =============
+	Eigen::Matrix<std::complex<double>, 3, 1> M_4;
+	M_4(0, 0) = fields.q->eval(0, 0, sys.voxelToWorld(vd+V2d(0.5, 0.5)));
+	M_4(1, 0) = fields.q->eval(1, -1, sys.voxelToWorld(vd+V2d(0.0, 0.5)));
+	M_4(2, 0) = fields.q->eval(1, 1, sys.voxelToWorld(vd+V2d(0.5, 0.0)));
+	Eigen::Matrix<double, 3, 1> M_4_real = (S*M_4).real();
+
+	// Assembling global system =============
+	sys.coeff_A( 1, vi + V2i(-1,0), 0 ) += -(h_inv[0]*0.57735026919);
+	sys.coeff_A( 1, vi + V2i(0,0), 0 ) += (h_inv[0]*0.57735026919);
+	sys.coeff_A( 0, vi + V2i(0,0), 1 ) += -(h_inv[0]*0.57735026919);
+	sys.coeff_A( 0, vi + V2i(1,0), 1 ) += (h_inv[0]*0.57735026919);
+	sys.coeff_A( 2, vi + V2i(0,-1), 0 ) += -(h_inv[1]*0.57735026919);
+	sys.coeff_A( 2, vi + V2i(0,0), 0 ) += (h_inv[1]*0.57735026919);
+	sys.coeff_A( 0, vi + V2i(0,0), 2 ) += -(h_inv[1]*0.57735026919);
+	sys.coeff_A( 0, vi + V2i(0,1), 2 ) += (h_inv[1]*0.57735026919);
+	sys.coeff_A( 0, vi + V2i(0,0), 0 ) += M_3_real.coeffRef(0, 0);
+	sys.coeff_A( 1, vi + V2i(0,0), 1 ) += M_3_real.coeffRef(1, 1);
+	sys.coeff_A( 2, vi + V2i(0,0), 2 ) += M_3_real.coeffRef(2, 2);
+	sys.coeff_b( 0 ) += M_4_real.coeffRef(0, 0);
+	sys.coeff_b( 1 ) += M_4_real.coeffRef(1, 0);
+	sys.coeff_b( 2 ) += M_4_real.coeffRef(2, 0);
 }

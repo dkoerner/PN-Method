@@ -49,7 +49,7 @@ class Expression(object):
 	def __eq__(self, other):
 		return False
 
-	def canEvaluate(self):
+	def canEvaluate(self, debug = False):
 		return False
 
 	def evaluate(self):
@@ -71,7 +71,7 @@ class Number(Expression):
 	def deep_copy(self):
 		return Number(self.getValue())
 
-	def canEvaluate(self):
+	def canEvaluate(self, debug = False):
 		return True
 
 	def evaluate(self):
@@ -119,7 +119,7 @@ class ImaginaryUnit(Variable):
 	def __init__(self):
 		super().__init__("i")
 
-	def canEvaluate(self):
+	def canEvaluate(self, debug = False):
 		return True
 
 	def evaluate(self):
@@ -297,6 +297,10 @@ class Function( Expression ):
 		# level=1: argument is a superscript
 		self.latexArgumentPositions[index] = level
 
+	def getLatexArgumentPosition( self, index):
+		return self.latexArgumentPositions[index]
+
+
 	def setAllSuperScripts(self):
 		self.latexArgumentPositions = [1 for arg in self.getArguments()]
 
@@ -370,6 +374,21 @@ class Function( Expression ):
 			if other.getSymbol() == self.getSymbol() and other.numArguments() == self.numArguments():
 				return True
 		return False
+
+	def canEvaluate(self, debug = False):
+		if self.body2 is None:
+			return False
+
+		args = self.getArguments()
+		for arg in args:
+			if not arg.canEvaluate():
+				return False
+		return True
+	def evaluate(self):
+		args = self.getArguments()
+		args_evaluated = [arg.evaluate() for arg in args]
+		return self.body2(*args_evaluated)
+
 		
 
 
@@ -458,7 +477,7 @@ class Negate( Operator ):
 		return self.getOperand(0)
 	def setExpr(self, expr):
 		self.setOperand(0, expr)
-	def canEvaluate(self):
+	def canEvaluate(self, debug = False):
 		return self.getExpr().canEvaluate()
 	def evaluate(self):
 		return -self.getExpr().evaluate()
@@ -500,7 +519,7 @@ class Power(Operator):
 class Addition( Operator ):
 	def __init__(self, operands):
 		flattened = []
-		# here we flatten nested Multiplications
+		# here we flatten nested Additions
 		for op in operands:
 			if op.__class__ == Addition:
 				for i in range(op.numOperands()):
@@ -532,6 +551,21 @@ class Addition( Operator ):
 				else:
 					result+=expr.toLatex()
 		return result
+
+	def canEvaluate(self, debug = False):
+		ops = self.getOperands()
+		for op in ops:
+			if not op.canEvaluate():
+				return False
+		return True
+	def evaluate(self):
+		ops = self.getOperands()
+		result = 0
+		for op in ops:
+			result += op.evaluate()
+		return result
+
+
 
 
 
@@ -576,6 +610,28 @@ class Multiplication( Operator ):
 			else:
 				result += op.toLatex()
 		return result
+	def canEvaluate(self, debug = False):
+		# here we are a bit more elaborate. We check if any of the operators which can be evaluated
+		# evaluates to zero. If it does, than we know that the whole multiplication evaluates to zero
+		# and then we still return true, even if some terms cant evaluate.
+		ops = self.getOperands()
+		all_can_evaluate = True
+		evaluates_to_zero = False
+		for op in ops:
+			if not op.canEvaluate():
+				all_can_evaluate = False
+			else:
+				if np.abs(op.evaluate()) < 1.0e-8:
+					evaluates_to_zero = True
+
+		return evaluates_to_zero or all_can_evaluate
+	def evaluate(self):
+		ops = self.getOperands()
+		result = 1
+		for op in ops:
+			if op.canEvaluate():
+				result *= op.evaluate()
+		return result
 
 class Quotient(Operator):
 	def __init__( self, numerator, denominator ):
@@ -588,6 +644,12 @@ class Quotient(Operator):
 		return Quotient(self.getNumerator().deep_copy(), self.getDenominator().deep_copy())
 	def toLatex(self):
 		return "\\frac{{{}}}{{{}}}".format(self.getNumerator().toLatex(),self.getDenominator().toLatex())
+	def canEvaluate(self, debug = False):
+		return self.getNumerator().canEvaluate() and self.getDenominator().canEvaluate()
+	def evaluate(self):
+		return self.getNumerator().evaluate()/self.getDenominator().evaluate()
+
+
 
 class Integration( Operator ):
 	def __init__( self, integrand, variable ):
@@ -856,13 +918,13 @@ def eval(expr, variables, functions):
 	return None
 
 def print_expr(expr):
-	print("\n----------------------------\n")
-	print("$$\n" + latex(expr) + "\n$$")
+	if expr is None:
+		print("None")
+	else:
+		print("$$\n" + latex(expr) + "\n$$")
 
 def print_tree(expr):
-	print("\n----------------------------\n")
 	print(tree_str(expr))
-	print("\n")
 
 
 def tree_str(expr, level=0):

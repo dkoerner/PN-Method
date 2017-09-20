@@ -940,6 +940,13 @@ class FoldConstants(object):
 	def __init__(self, debug = False):
 		self.debug = debug
 
+
+	def visit_Function(self, expr):
+		if expr.canEvaluate():
+			return num(expr.evaluate())
+		else:
+			return expr
+
 	def visit_Addition(self, expr):
 		sum = None # the number which all number terms will be folded into
 		other_childs = [] # all terms which cant be folded into a number
@@ -1076,6 +1083,12 @@ class FoldConstants(object):
 			# double negation
 			return arg.getOperand(0)
 		return expr
+
+	def visit_Quotient(self, expr):
+		if expr.canEvaluate():
+			return num(expr.evaluate())
+		else:
+			return expr
 
 class ImaginaryUnitProperty(object):
 	def visit_Multiplication(self, expr):

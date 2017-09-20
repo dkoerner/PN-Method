@@ -148,7 +148,7 @@ def eval_term( expr, info, level=0 ):
 
 			if coeff_index is None:
 				info.term_vanishes = True
-				return 0.0
+				return meh.num(0)
 
 			numDimensions = 2
 
@@ -223,7 +223,7 @@ def eval_term( expr, info, level=0 ):
 
 				if l < 0 or l > info.pni.order or m < -l or m > l:
 					info.term_vanishes = True
-					return 0.0
+					return meh.num(0)
 
 			# else keep and return the function expression
 			new_fun = meh.fun( expr.getSymbol(), *args)
@@ -254,7 +254,7 @@ def eval_term( expr, info, level=0 ):
 		if dimension >= max_dimension:
 			# we have a derivative in z although we only work in 2d domain
 			info.term_vanishes = True
-			return 0.0	
+			return meh.num(0)
 
 		# stepsize determines the stepsize of the stencil in number of half-voxels
 		stepsize = info.pni.stencil_half_steps
@@ -305,17 +305,29 @@ def eval_term( expr, info, level=0 ):
 			raise ValueError("expected at least two operands")
 		return meh.Multiplication(result)
 	elif expr.__class__ == meh.Addition:
+		term_vanishes = info.term_vanishes
 		if info.debug == True:
 			print("{}eval_term::Addition".format(meh.indent_string(level)))
 		numOperands = expr.numOperands()
 		result = []
 		for i in range(numOperands):
-			result.append(eval_term(expr.getOperand(i), info, level+1))
+			info.term_vanishes = False
+			evaluated = eval_term(expr.getOperand(i), info, level+1)
+			if evaluated.canEvaluate() and np.abs(evaluated.evaluate())<1.0e-8:
+				# term is zero, we dont add it to the result list then
+				pass
+			else:
+				result.append(evaluated)
 		if info.debug == True:
 			print("{}result={}".format(meh.indent_string(level), str(result)))
-		if len(result) <= 1:
-			raise ValueError("expected at least two operands")
-		return meh.Addition(result)
+		info.term_vanishes = term_vanishes
+		if len(result) == 0:
+			info.term_vanishes = True
+			return meh.num(0)
+		elif len(result) == 1:
+			return result[0]
+		else:
+			return meh.Addition(result)
 	elif expr.__class__ == meh.Power:
 		base_expr = eval_term(expr.getBase(), info, level+1)
 		exponent_expr = eval_term(expr.getExponent(), info, level+1)
@@ -362,7 +374,7 @@ def to_cpp( expr, info, level=0 ):
 
 		result = "("
 		for i in range(numOperands):
-			result +=  cpp_ops[i]
+			result += cpp_ops[i]
 			if i<numOperands-1:
 				result+= "+"
 				if max_str_le > 20:
@@ -386,6 +398,11 @@ def to_cpp( expr, info, level=0 ):
 		result = "std::pow({}, {})".format(base_cpp, exponent_cpp)
 		#result = "std::pow({}, 1.0)".format(base_cpp, exponent_cpp)
 		return result
+	#elif expr.__class__ == meh.Quotient:
+	#	num_cpp = to_cpp(expr.getNumerator(), info)
+	#	denom_cpp = to_cpp(expr.getDenominator(), info)
+	#	result = "({}/{})".format(num_cpp, denom_cpp)
+	#	return result
 	else:
 		#pass
 		raise ValueError("unable to handle expression of type {}".format(expr.__class__.__name__))
@@ -1075,6 +1092,8 @@ class TermClass(object):
 				raise ValueError("factors should be identical")
 			if self.factors[i].__class__ == DerivationOperator and self.factors[i].variable_symbol !=  other.factors[i].variable_symbol:
 				raise ValueError("factors should be identical")
+		if not other.isLHS() and numFactors != 1:
+			raise ValueError("merging RHS term with more than one factor")
 
 		# now iterate all factors and merge coefficient matrix expressions into self
 		for i in range(numFactors):
@@ -1137,9 +1156,16 @@ class TermClass(object):
 						# term is a RHS term, there is just a single column
 						col = 0
 
+						# just a quick sanity check
+
+
 
 					# finally we can place the term (in which l,m have been replaced) in the matrix
 					# if the matrix already contains a term at this position, it will be added.
+					if debug == True:
+						print("TermClass::merge adding term at {} {}:".format(coeff_index, col))
+						meh.print_expr(term)
+
 					self.factors[i].addCoefficientTerm( coeff_index, col, term )
 
 
@@ -1265,8 +1291,9 @@ def classify_term_recursive( expr, unknown_symbol, level=0 ):
 	elif expr.__class__ == meh.Derivation:
 		ct = classify_term_recursive(expr.getExpr(), unknown_symbol, level+1)
 		if ct.__class__ == CoefficientMatrix:
-			return ct.derive( expr.getVariable().getSymbol() )
+			return CoefficientMatrix( meh.deriv(ct.expr, expr.getVariable(), is_partial=True)  )
 		else:
+			# assuming unknownvector or a DerivationOperator aplied to an unknown vector
 			return DerivationOperator(ct, expr.getVariable().getSymbol() )
 	elif expr.__class__ == meh.Multiplication:
 		numOperands = expr.numOperands()
@@ -1309,9 +1336,12 @@ def classify_term_recursive( expr, unknown_symbol, level=0 ):
 			raise ValueError("expected at least two operands")
 		return meh.Addition(result)
 	elif expr.__class__ == meh.Power:
-		base_expr = eval_term(expr.getBase(), unknown_symbol, level+1)
-		exponent_expr = eval_term(expr.getExponent(), unknown_symbol, level+1)
-		return meh.Power( base_expr, exponent_expr )
+		base_ct = classify_term_recursive(expr.getBase(), unknown_symbol, level+1)
+		exponent_ct = classify_term_recursive(expr.getExponent(), unknown_symbol, level+1)
+		if base_ct.__class__ == CoefficientMatrix and exponent_ct.__class__ == CoefficientMatrix:
+			return CoefficientMatrix( meh.pow(base_ct.expr, exponent_ct.expr) )
+		else:
+			raise ValueError("handling of unknowns or derivatives in nominator or denominator not implemented yet.")
 	elif expr.__class__ == meh.Quotient:
 		num_ct = classify_term_recursive(expr.getNumerator(), unknown_symbol, level+1)
 		denom_ct = classify_term_recursive(expr.getDenominator(), unknown_symbol, level+1)
@@ -1432,22 +1462,22 @@ if __name__ == "__main__":
 
 
 	terms = []
-	'''
-	terms.append(rte_terms.lspn.term0_projected_expr())
-	terms.append(rte_terms.lspn.term1_projected_expr())
-	terms.append(rte_terms.lspn.term2_projected_expr())
-	terms.append(rte_terms.lspn.term3_projected_expr())
-	terms.append(rte_terms.lspn.term4_projected_expr())
-	terms.append(rte_terms.lspn.term5_projected_expr())
-	terms.append(rte_terms.lspn.term6_projected_expr())
-	'''
-
 	#'''
+	terms.append(rte_terms.lspn.term0_projected_expr()) #check
+	terms.append(rte_terms.lspn.term1_projected_expr()) #check
+	terms.append(rte_terms.lspn.term2_projected_expr()) #check
+	terms.append(rte_terms.lspn.term3_projected_expr()) #check
+	terms.append(rte_terms.lspn.term4_projected_expr()) #check
+	terms.append(rte_terms.lspn.term5_projected_expr()) #check
+	terms.append(rte_terms.lspn.term6_projected_expr()) #check
+	#'''
+
+	'''
 	terms.append(rte_terms.fopn.transport_term())
 	terms.append(rte_terms.fopn.collision_term())
 	terms.append(rte_terms.fopn.scattering_term())
 	terms.append(rte_terms.fopn.source_term())
-	#'''
+	'''
 
 	#meh.print_expr(rte_terms.fopn.source_term())
 	#meh.print_expr( rte_terms.fopn.transport_term() )
@@ -1539,16 +1569,17 @@ if __name__ == "__main__":
 
 
 
-
-
-
-
-
 	term_classes = {}
 
+	#print(len(terms))
+	#for term in terms:
+	#	meh.print_expr(term)
+
 	for term in terms:
+	#for term in [terms[i] for i in range(2)]:
 	#for term in [terms[0]]:
 		
+		#meh.print_expr(term)
 		#meh.print_tree(term)
 		term_class = classify_term_recursive(term, "L")
 		term_class.finalize(pni)
@@ -1558,14 +1589,25 @@ if __name__ == "__main__":
 		if not key in term_classes:
 			term_classes[key] = term_class
 
+		#print("merging in:")
+		#meh.print_expr(term_class.factors[0].expr)
+
 		# now accumulate the expression in term_class 
 		#print("merging key={} expr={}".format(key, meh.latex(term_class.factors[0].expr)))
 		term_classes[key].merge(term_class)
+
+		#print("after merge:")
+		#meh.print_expr(term_classes["C"].factors[0].expr)
 
 
 		#print(term_class)
 		#meh.print_expr(term_class.root.A.expr)
 
+	#print(term_classes)
+	#meh.print_expr(term_classes["C"].factors[0].getCoefficientTerm(0,0))
+	#meh.print_expr(term_classes["C"].factors[0].getCoefficientTerm(1,0))
+	#meh.print_expr(term_classes["C"].factors[0].getCoefficientTerm(2,0))
+	#exit(1)
 	# Now we have factorized the whole discretized RTE into matrix form. The next step is to generate
 	# the c++ stencil code for setting the different (complex-valued) matrix components.
 
@@ -1608,6 +1650,7 @@ if __name__ == "__main__":
 
 
 				if is_constant and f.coeff_terms:
+
 					# evaluate complex valued matrix straight away
 					f.M_complex = np.zeros((f.numRows, f.numCols), dtype=complex)
 					for key, expr in f.coeff_terms.items():
@@ -1617,8 +1660,12 @@ if __name__ == "__main__":
 					# and use the resulting constants directly.
 					f.M_real = np.real(pni.getS().dot(f.M_complex.dot(pni.getSInv())))
 				else:
-					# generate c++ code for building the matrix in our stencil function per voxel
-					file.write( "\tEigen::Matrix<std::complex<double>, {}, {}> {};\n".format(f.numRows, f.numCols, f.id) )
+					matrix_written = False
+
+					# We later will generate c++ code for converting complex-valued matrices to real-valued ones.
+					# For 2d, some of these matrices will come out as zero-matrices in which case we
+					# can skip the conversion step. This makes our code easier to read and avoids wasting compute.
+					skip_conversion_step = True
 
 					# now generate c++ code for generating the coefficient matrix
 					# this is done by calling eval_term on each coefficient term (in order to get constant folding
@@ -1628,6 +1675,8 @@ if __name__ == "__main__":
 							term = f.getCoefficientTerm(i,j)
 							if term is None:
 								continue
+
+							#meh.print_expr(term)
 
 							# now we run eval_term in order to discretize the differential operators
 							info = EvalInfo()
@@ -1639,17 +1688,21 @@ if __name__ == "__main__":
 							# TODO: get rid of info.location alltogether and just use vec{x} ?
 							info.vars["\\vec{x}"] = info.location
 
-
+							#print("-----------------")
+							#meh.print_expr(term)
 							result = eval_term(term, info)
-							#print(result)
-							#meh.print_expr(result)
-							
 
 							# terms vanishes in 2d if (l+m)%2 == 1
 							# or if l,m indices are out of bounds
 							if info.term_vanishes == True:
-								#print("term vanishes coeff_index={}".format(coeff_index))
+								#print("term vanishes at matrix component={} {}".format(i,j))
 								continue
+							else:
+								# At least one term does not vanish and therefore will have to do 
+								# the conversion from complex-valued to real-valued matrices
+								skip_conversion_step = False
+
+							#meh.print_expr(result)
 
 							# sanity check
 							if result.__class__ == UnknownSet:
@@ -1660,20 +1713,33 @@ if __name__ == "__main__":
 								# coefficient is vanishes
 								continue
 
+							#print(result)
+							#meh.print_tree(result)
+							#meh.print_expr(result)
+
 							# convert to cpp
 							info = EvalInfo()
 							info.fun_to_cpp = fun_to_cpp
 							expr_cpp = to_cpp(result, info)
 
+							if not matrix_written:
+								matrix_written = True
+								# generate c++ code for building the matrix in our stencil function per voxel
+								file.write( "\tEigen::Matrix<std::complex<double>, {}, {}> {};\n".format(f.numRows, f.numCols, f.id) )
+
+
 							#
 							file.write( "\t{}({}, {}) = {};\n".format( f.id, i, j, expr_cpp ) )
 
-					# Produce stencil code for converting from complex-valued system to real valued system =================
-					# convert the matrix to real valued matrix
-					if f.numCols == 1:
-						file.write( "\tEigen::Matrix<double, {}, {}> {}_real = (S*{}).real();\n".format(f.numRows, f.numCols, f.id, f.id) )
-					else:
-						file.write( "\tEigen::Matrix<double, {}, {}> {}_real = (S*{}*SInv).real();\n".format(f.numRows, f.numCols, f.id, f.id) )
+
+
+					if skip_conversion_step == False:
+						# Produce stencil code for converting from complex-valued system to real valued system =================
+						# convert the matrix to real valued matrix
+						if f.numCols == 1:
+							file.write( "\tEigen::Matrix<double, {}, {}> {}_real = (S*{}).real();\n".format(f.numRows, f.numCols, f.id, f.id) )
+						else:
+							file.write( "\tEigen::Matrix<double, {}, {}> {}_real = (S*{}*SInv).real();\n".format(f.numRows, f.numCols, f.id, f.id) )
 
 				file.write("\n")
 

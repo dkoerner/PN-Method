@@ -130,6 +130,25 @@ def sphericalDirection( theta, phi ):
 	cosPhi = np.cos(phi)
 	return np.array([sinTheta * cosPhi, sinTheta * sinPhi, cosTheta])
 
+
+def compare_matrices( A0, A1, id0, id1 ):
+    if A0.shape != A1.shape:
+        raise ValueError("unmatched shape")
+
+    if A0.dtype != A1.dtype:
+        raise ValueError("unmatched dtype")
+
+    diff = A0-A1
+    abs_real_diff = np.abs(np.real(diff))
+    abs_imag_diff = np.abs(np.imag(diff))
+
+    max_index = np.unravel_index(np.argmax(abs_real_diff), abs_real_diff.shape)
+    mm = abs_real_diff[max_index]
+    print("real: max={} max element=({}, {})".format(mm,max_index[0], max_index[1]))
+    max_index = np.unravel_index(np.argmax(abs_imag_diff), abs_imag_diff.shape)
+    mm = abs_imag_diff[max_index]
+    print("imag: max={} max element=({}, {})".format(mm,max_index[0], max_index[1]))
+
 # I/O related =====================================================
 def rasterize( fun, domain, offset = np.array([0.5, 0.5]), dtype=float ):
 	res = domain.resolution()
@@ -173,6 +192,34 @@ def write_pn_system(filename, sys, problem, x=None):
 
 
 def load_pn_system( filename ):
-	print("loading PN system from {}".format(filename))
-	data = scipy.io.loadmat(filename)
-	raise ValueError("loading pn system not fully implemented yet")
+    print("loading PN solution from {}".format(filename))
+    data = scipy.io.loadmat(filename)
+   
+    result = {}
+    if "sigma_t" in data:
+        result["sigma_t"] = data["sigma_t"]
+    if "sigma_a" in data:
+        result["sigma_a"] = data["sigma_a"]
+    if "sigma_s" in data:
+        result["sigma_s"] = data["sigma_s"]
+    if "q00" in data:
+        result["q00"] = data["q00"]
+    if "x" in data:
+        result["x"] = data["x"]
+    if "b" in data:
+        result["b"] = data["b"]
+    if "A" in data:
+        result["A"] = data["A"]
+    if "info" in data:
+        info = data["info"]
+        result["order"] = info["order"][0][0][0][0]
+        result["numCoeffs"] = info["numCoeffs"][0][0][0][0]
+        result["resolution"] = np.array(info["resolution"][0][0][0])
+    else:
+        result["order"] = 1
+        result["numCoeffs"] = 3
+        result["resolution"] = np.array([70, 70])
+        
+    print("\torder={}  numCoeffs={}  resolution={} {}".format(result["order"], result["numCoeffs"], result["resolution"][0], result["resolution"][1]))
+        
+    return result

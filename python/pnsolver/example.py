@@ -52,7 +52,6 @@ if __name__ == "__main__":
 	# solve for x -------------------
 	x = None
 	x = sys.solve()
-	#x = sys.solve2()
 
 	# write the result to disk for visualization ---------------
 	#path = "C:/projects/epfl/epfl17/python/pnsolver/results/terms_new"
@@ -64,12 +63,25 @@ if __name__ == "__main__":
 	#postfix = "_blurred"
 	#postfix = ""
 	#postfix = "_nonrasterized"
-	#postfix = "_not3"
+	#postfix = "_sopn_cg"
+	#postfix = "_sopn_sg_u_not13"
+	postfix = "_sopn_sg_u"
 	#postfix = "_p1_complex_sg"
 	#postfix = "_p2"
-	postfix = "_sg_u3"
+	#postfix = "_cg_u"
 	filename = "{}/{}{}.mat".format(path, problem["id"], postfix)
 	util.write_pn_system(filename, sys, problem, x)
+
+	'''
+	# compare matrices A
+	#filename = "c:/projects/epfl/epfl17/python/pnsolver/results/terms_original/checkerboard_sopn_cg_term1.mat"
+	filename = "c:/projects/epfl/epfl17/python/pnsolver/results/terms_original/checkerboard_sopn_cg.mat"
+	data = util.load_pn_system(filename)
+	print("comparing A ----")
+	util.compare_matrices( sys.get_A_real(), data["A"], "new", "original" )
+	print("comparing b ----")
+	util.compare_matrices( sys.get_b_real(), data["b"], "new", "original" )
+	'''
 
 
 

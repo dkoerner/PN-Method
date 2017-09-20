@@ -1161,10 +1161,10 @@ if __name__ == "__main__":
 	#self.offsets[1][0] = (0.0,0.5)
 	#self.offsets[1][1] = (0.0,0.0)
 
-	for i in range(2):
-		for j in range(2):
-			print("i={} j={}".format(i, j))
-			print(sm.sga.get_grid_components(i, j))
+	#for i in range(2):
+	#	for j in range(2):
+	#		print("i={} j={}".format(i, j))
+	#		print(sm.sga.get_grid_components(i, j))
 
 
 

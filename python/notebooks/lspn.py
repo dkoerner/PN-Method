@@ -889,6 +889,12 @@ if __name__ == "__main__":
 	#pnb.add_terms(fo_scattering_term()) 
 	#pnb.add_terms(fo_source_term())
 
+	#lspn_terms = []
+	#lspn_terms.append(fo_transport_term())
+	#lspn_terms.append(fo_collision_term())
+	#lspn_terms.append(fo_scattering_term())
+	#lspn_terms.append(fo_source_term())
+
 	# second order form ---
 	#pnb.add_terms(lspn_sotransport_term())
 
@@ -900,13 +906,13 @@ if __name__ == "__main__":
 	#term = lspn_directional_derivative_source_term()
 	#term = lspn_extinction_source_term()
 	lspn_terms = []
-	#lspn_terms.append(lspn_sotransport_term())
-	#lspn_terms.append(lspn_extinction_directional_derivative_term())
-	#lspn_terms.append(lspn_squared_extinction_term()) # <-----
-	#lspn_terms.append(lspn_directional_derivative_scattering_term()) # <-----
-	#lspn_terms.append(lspn_extinction_scattering_term())
+	lspn_terms.append(lspn_sotransport_term())
+	lspn_terms.append(lspn_extinction_directional_derivative_term())
+	lspn_terms.append(lspn_squared_extinction_term()) # <-----
+	lspn_terms.append(lspn_directional_derivative_scattering_term()) # <-----
+	lspn_terms.append(lspn_extinction_scattering_term())
 	lspn_terms.append(lspn_directional_derivative_source_term())
-	#lspn_terms.append(lspn_extinction_source_term())
+	lspn_terms.append(lspn_extinction_source_term())
 
 
 
@@ -956,7 +962,7 @@ if __name__ == "__main__":
 	b = None
 	(A,b) = pnb.build_global( problem )
 
-	write_pn_system( pnb, problem, A, b, "_term5" )
+	write_pn_system( pnb, problem, A, b, "_sopn_sg" )
 	#write_pn_system( pnb, problem, pnb.A_complex, pnb.b_complex, "_term5" )
 	#'''
 

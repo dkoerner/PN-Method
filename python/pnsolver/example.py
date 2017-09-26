@@ -5,26 +5,10 @@ import numpy as np
 import problems
 import util
 import pnsolver
+import itertools
 
 
-if __name__ == "__main__":
-	# define problem ----------------------------
-	problem = problems.checkerboard()
-
-	#problem = problems.blurred(problem, 1.0)
-
-	# initialize the solver -----------------------------------
-	# NB: the truncation order has been baked into the cpp code as it is linked directly with the stencil
-	sys = pnsolver.PNSystem(problem["domain"])
-
-	#index = 6392
-	#(voxel, coeff) = sys.getVoxelAndCoefficient(index)
-	#(l,m) = sys.getLM(coeff)
-	#print("index={} voxel={} {} coeff={} (l={} m={})".format(index, voxel[0], voxel[1], coeff, l, m))
-	#sys.setDebugVoxel(voxel)
-
-
-	# set the RTE parameter fields ---------------------------------------------
+def setProblem( sys, problem ):
 	sys.setField( "sigma_t", problem["sigma_t"] )
 	sys.setField( "sigma_a", problem["sigma_a"] )
 	sys.setField( "sigma_s", problem["sigma_s"] )
@@ -46,16 +30,80 @@ if __name__ == "__main__":
 		raise ValueError("no higher order source functions supported yet")
 
 
+def solve( stencil_name, problem, filename ):
+	# initialize the solver -----------------------------------
+	# NB: the truncation order has been baked into the cpp code as it is linked directly with the stencil
+	sys = pnsolver.PNSystem(stencil_name, problem["domain"])
+
+	# set the RTE parameter fields ---------------------------------------------
+	setProblem(sys, problem)
+
 	# build the system Ax=b using the cpp stencil -------------------
 	sys.build()
 
 	# solve for x -------------------
 	x = None
-	x = sys.solve()
+
+	try:
+		x = sys.solve()
+	except:
+		print("Solve failed...")
 
 	# write the result to disk for visualization ---------------
-	#path = "C:/projects/epfl/epfl17/python/pnsolver/results/terms_new"
+	util.write_pn_system(filename, sys, problem, x)
+
+def groundtruth( problem, numSamples, filename ):
+	stencil_name = "noop"
+	sys = pnsolver.PNSystem(stencil_name, problem["domain"])
+
+	# set the RTE parameter fields ---------------------------------------------
+	setProblem(sys, problem)
+
+	# compute groundtruth ---------------------
+	x = sys.computeGroundtruth(numSamples);
+
+	# xport ---------------------
+	util.write_pn_system(filename, sys, problem, x)
+
+
+
+
+
+if __name__ == "__main__":
 	path = "C:/projects/epfl/epfl17/python/pnsolver/results/studies"
+
+	# define problem ----------------------------
+	problem = problems.checkerboard()
+	#problem = problems.vacuum()
+
+	
+	filename = "{}/{}_groundtruth.mat".format(path, problem["id"] )
+	groundtruth( problem, 8000000, filename )
+
+
+	'''
+	rte_forms = ["fopn", "sopn"]
+	order = [0,1,2,3,4,5]
+	staggered = ["sg", "cg"]
+
+	#rte_forms = ["sopn"]
+	#order = [1]
+	#staggered = ["sg"]
+
+	test = itertools.product(rte_forms, order, staggered)
+	for c in test:
+		rte_form_name = c[0]
+		order = c[1]
+		staggered_id = c[2]
+
+
+		stencil_name = "stencil_{}_p{}_{}".format(rte_form_name, order, staggered_id )
+		
+		filename = "{}/{}{}.mat".format(path, problem["id"], stencil_name)
+		solve(stencil_name, problem, filename)
+	'''
+
+
 	#postfix = ""
 	#postfix = "_allvacuum"
 	#postfix = "_sigmas=0"
@@ -64,13 +112,49 @@ if __name__ == "__main__":
 	#postfix = ""
 	#postfix = "_nonrasterized"
 	#postfix = "_sopn_cg"
-	#postfix = "_sopn_sg_u_not13"
-	postfix = "_sopn_sg_u"
+	#postfix = "_sopn_sg_x0"
+	#postfix = "_sopn_sg_vacuum2"
+	#postfix = "_sopn_sg_u"
+	#postfix = "_fopn_sg_u"
 	#postfix = "_p1_complex_sg"
-	#postfix = "_p2"
+
+	#postfix = "_sopn_p0_sg"
+	#postfix = "_sopn_p1_sg"
+	#postfix = "_sopn_p2_sg"
+	#postfix = "_sopn_p3_sg"
+
+	#postfix = "_fopn_p0_sg"
+	#postfix = "_fopn_p1_sg"
+	#postfix = "_fopn_p2_sg"
+	#postfix = "_fopn_p3_sg"
+	#postfix = "_fopn_p4_sg"
+	#postfix = "_fopn_p5_sg"
+
+	#postfix = "_fopn_p1_sg1"
+	#postfix = "_fopn_p2_sg1"
+	#postfix = "_fopn_p3_sg1"
+	#postfix = "_fopn_p4_sg1"
+
+	#postfix = "_fopn_p1_cg"
+	#postfix = "_fopn_p2_cg"
+	#postfix = "_fopn_p3_cg"
+	#postfix = "_fopn_p4_cg"
+	#postfix = "_fopn_p5_cg"
+
+
+	#postfix = "_fopn_p3_sg1"
+	#postfix = "_fopn_p1"
+	#postfix = "_fopn_p2"
+	#postfix = "_fopn_p3"
+	#postfix = "_fopn_p4"
+	#postfix = "_fopn_p5"
+	#postfix = "_sopn_p1"
+	#postfix = "_sopn_p1_not13"
+	#postfix = "_sopn_p2"
+	#postfix = "_sopn_p3"
 	#postfix = "_cg_u"
-	filename = "{}/{}{}.mat".format(path, problem["id"], postfix)
-	util.write_pn_system(filename, sys, problem, x)
+	
+	
 
 	'''
 	# compare matrices A

@@ -133,7 +133,7 @@ def sphericalDirection( theta, phi ):
 
 def compare_matrices( A0, A1, id0, id1 ):
     if A0.shape != A1.shape:
-        raise ValueError("unmatched shape")
+        raise ValueError("unmatched shape {}={} {}={}".format(id0, str(A0.shape), id1, str(A1.shape)))
 
     if A0.dtype != A1.dtype:
         raise ValueError("unmatched dtype")
@@ -174,6 +174,9 @@ def write_pn_system(filename, sys, problem, x=None):
 	info["resolution"] = domain.resolution()
 
 	data = {}
+
+	data["id"] = problem["id"]
+
 	data["info"] = info
 	if not A is None:
 		data['A'] = A
@@ -192,7 +195,7 @@ def write_pn_system(filename, sys, problem, x=None):
 
 
 def load_pn_system( filename ):
-    print("loading PN solution from {}".format(filename))
+    #print("loading PN solution from {}".format(filename))
     data = scipy.io.loadmat(filename)
    
     result = {}
@@ -220,6 +223,21 @@ def load_pn_system( filename ):
         result["numCoeffs"] = 3
         result["resolution"] = np.array([70, 70])
         
-    print("\torder={}  numCoeffs={}  resolution={} {}".format(result["order"], result["numCoeffs"], result["resolution"][0], result["resolution"][1]))
+    #print("\torder={}  numCoeffs={}  resolution={} {}".format(result["order"], result["numCoeffs"], result["resolution"][0], result["resolution"][1]))
         
     return result
+
+
+
+def extract_coefficient_field( x, res, numCoeffs, coeff = 0 ):
+	# returns 2d array containing the value for a specific coefficient
+	# out of the solution vector
+	res_x = res[0]
+	res_y = res[1]
+
+	u0 = np.zeros( (res_x, res_y), dtype=x.dtype )
+	for voxel_i in range(res_x):
+		for voxel_j in range(res_y):
+			i = (voxel_j*res_x + voxel_i)*numCoeffs + coeff
+			u0[voxel_i, voxel_j] = x[i, 0]
+	return u0

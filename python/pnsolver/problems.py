@@ -55,7 +55,11 @@ def checkerboard():
 
 	# here we set some general parameters 
 	size = 7.0
+	#res = 20
 	res = 70
+	#res = 100
+	#res = 150
+	#res = 200
 	domain = pnsolver.Domain( np.array([size, size]), np.array([res, res]), np.array([0.0, 0.0]))
 
 	problem["id"] = "checkerboard"
@@ -73,7 +77,50 @@ def checkerboard():
 
 
 
+def vacuum():
 
+	def sigma_a( pWS ):
+		return 0.0
+
+	def sigma_s( pWS ):
+		return 0.0
+		#return 10.0 - sigma_a(pWS) # constant sigma_t
+
+
+	def phase_shcoeffs( l, m, pWS ):
+		if l == 0 and m == 0:
+			return 1.0
+		return 0.0
+
+	def source_shcoeffs( l, m, pWS ):
+		if l==0 and m == 0:
+			x = pWS[0]
+			y = pWS[1]
+			if x > 3.0 and x < 4.0 and y > 3.0 and y < 4.0:
+				return 1.0
+				#return 100.0
+			return 0.0
+		return 0.0
+
+	problem = {}
+
+	# here we set some general parameters 
+	size = 7.0
+	res = 70
+	domain = pnsolver.Domain( np.array([size, size]), np.array([res, res]), np.array([0.0, 0.0]))
+
+	problem["id"] = "vacuum"
+	problem["domain"] = domain
+
+	# RTE parameters ------------
+	offset = np.array([1.0, 1.0])
+	problem["sigma_t"] = pnsolver.VoxelGrid( util.rasterize(lambda pWS: sigma_a(pWS) + sigma_s(pWS), domain, dtype=complex), domain, offset*0.5 )
+	problem["sigma_a"] = pnsolver.VoxelGrid( util.rasterize(sigma_a, domain, dtype=complex), domain, offset*0.5 )
+	problem["sigma_s"] = pnsolver.VoxelGrid( util.rasterize(sigma_s, domain, dtype=complex), domain, offset*0.5 )
+	problem["f_p"] = [pnsolver.Constant(1.0)]
+	problem["q"] = [pnsolver.VoxelGrid( util.rasterize(lambda pWS: source_shcoeffs(0, 0, pWS), domain, dtype=complex), domain, offset*0.5 )]
+
+	return problem
 
 
 # This basically takes an arbitrary problem and blurs it.

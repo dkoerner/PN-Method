@@ -50,6 +50,13 @@ struct SHEXP : public RadianceField
 				result+=m_coeffs.eval(l,m,pWS)*sph::sph_basis(l,m,theta, phi);
 		return result;
 	}
+	void eval2( const P2d& pWS )const
+	{
+		std::cout << "pWS=" << pWS[0] << " " << pWS[1] << std::endl;
+		for(int l=0;l<m_coeffs.getOrder()+1;++l)
+			for( int m=-l;m<=l;++m )
+				std::cout << "l=" << l << " m=" << m << " " << m_coeffs.eval(l,m,pWS) << std::endl;
+	}
 	/*
 	virtual std::complex<double> dx(const P2d& pWS, const V3d& omega)const override
 	{

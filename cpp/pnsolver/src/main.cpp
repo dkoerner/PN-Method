@@ -26,9 +26,15 @@ PYBIND11_MODULE(pnsolver, m)
 	py::class_<PNSystem> class_pnsystem(m, "PNSystem");
 	class_pnsystem
 	.def("__init__",
-	[](PNSystem &m, Domain &domain)
+	[](PNSystem &m, const std::string& stencil_name, Domain &domain)
 	{
-		new (&m) PNSystem(domain);
+		PNSystem::Stencil stencil;
+
+		if( stencil_name == "noop" )
+			stencil = PNSystem::Stencil(0, [](PNSystem::VoxelSystem&, PNSystem::Fields&){});
+		else
+			stencil = PNSystem::findStencil(stencil_name);
+		new (&m) PNSystem(stencil, domain);
 	})
 	.def("getGlobalIndex", &PNSystem::getGlobalIndex )
 	.def("getVoxelAndCoefficient",
@@ -51,6 +57,7 @@ PYBIND11_MODULE(pnsolver, m)
 	.def("getOrder", &PNSystem::getOrder )
 	.def("build", &PNSystem::build )
 	.def("solve", &PNSystem::solve )
+	.def("solveWithGuess", &PNSystem::solveWithGuess )
 	.def("solve2", &PNSystem::solve2 )
 	.def("solve_boundary", &PNSystem::solve_boundary )
 	.def("setField", &PNSystem::setField )
@@ -61,6 +68,7 @@ PYBIND11_MODULE(pnsolver, m)
 	.def("setDebugVoxel", &PNSystem::setDebugVoxel )
 	.def("get_boundary_A_real", &PNSystem::get_boundary_A_real )
 	.def("get_boundary_b_real", &PNSystem::get_boundary_b_real )
+	.def("computeGroundtruth", &PNSystem::computeGroundtruth )
 	;
 
 	// Domain ============================================================
@@ -79,6 +87,8 @@ PYBIND11_MODULE(pnsolver, m)
 	.def("numVoxels", &Domain::numVoxels )
 	.def("worldToVoxel", &Domain::worldToVoxel )
 	.def("voxelToWorld", &Domain::voxelToWorld )
+	.def("getBoundMax", &Domain::getBoundMax )
+	.def("getBoundMin", &Domain::getBoundMin )
 	;
 
 
@@ -129,7 +139,13 @@ PYBIND11_MODULE(pnsolver, m)
 	class_radiancefield
 	//TODO: this produces an compiler error with Eigen under MSVS2017: FLOATING_POINT_ARGUMENT_PASSED__INTEGER_WAS_EXPECTED
 	//.def("__call__", &RadianceField::eval)
-	;
+	.def("eval",
+	 [](RadianceField &m, const P2d& pWS, const V2d& omega)
+	 {
+		V3d o(omega[0], omega[1], 0.0);
+		return m.eval(pWS, o);
+	 }
+	);
 
 	// SHEXP ============================================================
 	py::class_<SHEXP, SHEXP::Ptr> class_shexp(m, "SHEXP", class_radiancefield);
@@ -141,5 +157,11 @@ PYBIND11_MODULE(pnsolver, m)
 	})
 	.def("setCoefficientField", &SHEXP::setCoefficientField)
 	.def("getCoefficientField", &SHEXP::getCoefficientField)
+	.def("eval2",
+		[](SHEXP &m, const P2d& pWS)
+		{
+			return m.eval2(pWS);
+		}
+	)
 	;
 }

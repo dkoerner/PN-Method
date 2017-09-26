@@ -2,6 +2,7 @@
 
 #include <complex>
 #include <iostream>
+#include <algorithm>
 
 #include <math/common.h>
 #include <math/vector.h>
@@ -24,6 +25,16 @@ struct VoxelGrid : public Field
 		m_data2 = std::vector<std::complex<double>>(data, data+domain.numVoxels());
 		m_step_x = V2d(m_domain.voxelSize()[0]*0.5, 0.0);
 		m_step_y = V2d(0.0, m_domain.voxelSize()[1]*0.5);
+
+
+		//double max_value = *std::max_element(std::begin(data), std::end(data));
+		m_max_value = 0.0;
+		for( int i=0;i<domain.numVoxels();++i )
+		{
+			double value = data[i].real();
+			if( value > m_max_value )
+				m_max_value = value;
+		}
 	}
 
 	std::complex<double> sample( const V2i& voxel )const
@@ -79,6 +90,12 @@ struct VoxelGrid : public Field
 		result += sample(V2i(v1[0], v1[1]))*tx*ty;
 		return result;
 	}
+
+	double getMax()const
+	{
+		return m_max_value;
+	}
+
 	/*
 	virtual std::complex<double> dx(const P2d& pWS)const override
 	{
@@ -151,6 +168,7 @@ private:
 	V2d m_step_y;
 	//std::complex<double>* m_data;
 	std::vector<std::complex<double>> m_data2;
+	double m_max_value;
 };
 
 

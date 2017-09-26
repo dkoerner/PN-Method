@@ -1,18 +1,24 @@
 #include <PNSystem.h>
 #include <field/Function.h>
+#include <field/VoxelGrid.h> // used only for getting maximum value of sigma_t
 
 #include<Eigen/IterativeLinearSolvers>
 #include<Eigen/SparseLU>
 //#include<Eigen/SparseCholesky>
 
+#include <math/rng.h>
+#include <util/threadpool.h>
 
-PNSystem::PNSystem(const Domain& domain)
+std::map<std::string, PNSystem::Stencil> PNSystem::g_stencils;
+
+PNSystem::PNSystem( Stencil stencil, const Domain& domain)
 	:
 	m_domain(domain),
-	m_fields(g_order)
+	m_fields(stencil.order),
+	m_stencil(stencil)
 {
 	m_numCoeffs = 0;
-	for( int l=0;l<=g_order;++l )
+	for( int l=0;l<=m_stencil.order;++l )
 		for( int m=-l;m<=l;++m )
 			// in 2d, we only need to solve for moments where l+m is even
 			if( (l+m) % 2 == 0 )
@@ -139,6 +145,175 @@ PNSystem::PNSystem(const Domain& domain)
 	*/
 }
 
+
+
+struct ParticleTracer2D : public Task
+{
+	Eigen::MatrixXd accumulation_buffer;
+	PNSystem::Fields* fields;
+	const Domain* domain;
+	RNGd rng;
+	int numSamples;
+
+	ParticleTracer2D()
+	{
+	}
+
+	virtual void run() override
+	{
+		for( int i=0;i<numSamples;++i )
+			sample();
+	}
+
+	void sample()
+	{
+		// particle state
+		P2d pWS;
+		V2d d;
+		//double pdf_over_throughput = 1.0;
+
+
+		// create initial position
+
+		// randomly sample emission field to find the next spawning position
+		// assuming checkerboard emission field
+		pWS = P2d( rng.next1D() + 3.0, rng.next1D() + 3.0 );
+		// currently we sample a unit square, for which the pdf is 1.0
+		//pdf_over_throughput /= 1.0;
+
+		//P2d pV;
+		//pWS = m_domain.voxelToWorld(pVS);
+		// TODO: envmap sampling
+
+		// create initial direction (assuming isotropic emission)
+		{
+			V3d d_sphere = sampleSphere<double>(rng);
+			d = V2d(d_sphere[0], d_sphere[1]);
+			//pdf_over_throughput /= sampleSpherePDF();
+		}
+
+
+		// light tracing
+		//int depth = 0;
+		//while( depth++ == 0 )
+		while(true)
+		{
+			// PROPAGATE ==============================
+			// woodcock/delta tracking
+			// TODO: assuming VoxelGrid field
+			double sigma_t_max = std::dynamic_pointer_cast<VoxelGrid>(fields->sigma_t)->getMax();
+
+			double t = 0.0;
+			int event = -1; // 0 = absortion, 1=scattering
+
+			//int numSteps = 0;
+			//while( numSteps++ == 0 )
+			while(true)
+			{
+				double step = -log( 1.0-rng.next1D() )/sigma_t_max;
+				t += step;
+
+				pWS += t*d;
+
+				if( !domain->getBound().contains(pWS) )
+					break;
+
+				double sigma_t = fields->sigma_t->eval(pWS).real();
+
+				// russian roulette
+				double dice = rng.next1D();
+
+				if(dice<sigma_t/sigma_t_max)
+				{
+					// scattering or absorbtion
+					double sigma_a = fields->sigma_a->eval(pWS).real();
+					if(dice < sigma_a/sigma_t_max)
+						event = 0;
+					else
+						event = 1;
+					break;
+				}
+				else
+				{
+					// virtual particle: accumulate
+					accumulate(pWS);
+				}
+			}
+
+
+
+			if(event==-1)
+				// propagation step has moved particle out of domain-we stop tracing this particle
+				break;
+
+			if(event==0)
+				// particle has been absorbed
+				break;
+
+			// ACCUMULATE ==============================
+			accumulate(pWS);
+
+
+			///*
+			// SCATTERING ==============================
+			// create new direction (assuming isotropic scattering)
+			{
+				V3d d_sphere = sampleSphere<double>(rng);
+				d = V2d(d_sphere[0], d_sphere[1]);
+				//pdf_over_throughput /= sampleSpherePDF();
+			}
+			//*/
+		} // path tracing while loop
+	}
+
+	void accumulate( const P2d& pWS )
+	{
+		P2d pVS = domain->worldToVoxel(pWS);
+		P2i voxel;
+		voxel = P2i( int(pVS[0]), int(pVS[1]) );
+
+		//accumlation_buffer
+		if( domain->contains_voxel(voxel) )
+		{
+			accumulation_buffer.coeffRef( voxel[0], voxel[1] ) += 1.0;
+		}
+	}
+};
+
+
+Eigen::MatrixXd PNSystem::computeGroundtruth(int numSamples)
+{
+	int numTasks = ThreadPool::instance()->getNumWorkers();
+	std::cout << "numTasks=" << numTasks << std::endl;
+
+	std::vector<ParticleTracer2D*> tasks;
+	for( int i=0;i<numTasks;++i )
+	{
+		ParticleTracer2D* pt = new ParticleTracer2D();
+		pt->accumulation_buffer = Eigen::MatrixXd::Zero(m_domain.resolution()[0], m_domain.resolution()[1]);
+		pt->fields = &m_fields;
+		pt->domain = &m_domain;
+		pt->rng = RNGd(123+i);
+		pt->numSamples = numSamples/numTasks;
+
+		tasks.push_back(pt);
+	}
+	//tasks[0]->run();
+	ThreadPool::instance()->enqueueAndWait(tasks);
+
+	Eigen::MatrixXd result = Eigen::MatrixXd::Zero(m_domain.resolution()[0], m_domain.resolution()[1]);
+	int count = 0;
+
+	for( auto t:tasks )
+	{
+		result += t->accumulation_buffer;
+		count += t->numSamples;
+		delete t;
+	}
+
+	return result/double(count);
+}
+
 void PNSystem::setField( const std::string& id, Field::Ptr field )
 {
 	//std::cout << "WARNING: PNSystem::setField currently ignored. Using explicit RTE functions.\n";
@@ -163,6 +338,7 @@ void PNSystem::setField( const std::string& id, Field::Ptr field )
 		throw std::runtime_error("PNSystem::setField unable to set field " + id);
 	//*/
 }
+
 
 PNSystem::VoxelSystem PNSystem::getVoxelSystem( const V2i& voxel )
 {
@@ -216,7 +392,7 @@ void PNSystem::build_S()
 	std::vector<ComplexTriplet> triplets_S;
 
 	int count = 0;
-	for( int l=0;l<=g_order;++l )
+	for( int l=0;l<=m_stencil.order;++l )
 		for( int m=l;m>=0;--m )
 		{
 			// in 2D, we skip coefficients for which l+m is odd
@@ -353,7 +529,7 @@ int PNSystem::getNumVoxels()const
 
 int PNSystem::getOrder() const
 {
-	return g_order;
+	return m_stencil.order;
 }
 
 int PNSystem::getGlobalBoundaryIndex( const V2i boundaryVoxel, int coeff )
@@ -462,7 +638,8 @@ void PNSystem::build()
 	// iterate all voxels and apply stencil which has been generated from python script ---
 	for( int i=min_x;i<max_x;++i )
 		for( int j=min_y;j<max_y;++j )
-			set_system_row( getVoxelSystem(V2i(i,j)), m_fields );
+			//set_system_row( getVoxelSystem(V2i(i,j)), m_fields );
+			m_stencil.apply( getVoxelSystem(V2i(i,j)), m_fields );
 
 	m_A_real = RealMatrix(m_domain.numVoxels()*m_numCoeffs, m_domain.numVoxels()*m_numCoeffs);
 	m_b_real = RealMatrix(m_domain.numVoxels()*m_numCoeffs, 1);
@@ -494,6 +671,36 @@ PNSystem::RealVector PNSystem::solve()
 
 	return x;
 
+}
+
+PNSystem::RealVector PNSystem::solveWithGuess(PNSystem::RealVector &x0)
+{
+	std::cout << "PNSystem::solve solving with guess for x...\n";
+
+	//Eigen::ConjugateGradient<RealMatrix> solver;
+	Eigen::BiCGSTAB<RealMatrix> solver;
+	//Eigen::SparseLU<RealMatrix> solver;
+	//solver.setMaxIterations(100000);
+	std::cout << "PNSystem::solve compute...\n";std::flush(std::cout);
+	solver.compute(get_A_real());
+	if(solver.info()!=Eigen::Success)
+	{
+		throw std::runtime_error("PNSystem::solve decomposition failed");
+	}
+	std::cout << "PNSystem::solve solve...\n";std::flush(std::cout);
+	Eigen::VectorXd b = get_b_real();
+	Eigen::VectorXd res = x0;
+	//RealVector x = solver.solveWithGuess(get_b_real(), res);
+	Eigen::VectorXd x = solver.solveWithGuess(b, res);
+	//RealVector x = solver.solve(get_b_real());
+
+	//std::cout << "iterations=" << solver.iterations() << std::endl;
+	if(solver.info()!=Eigen::Success)
+	{
+		throw std::runtime_error("PNSystem::solve solve failed");
+	}
+
+	return x.sparseView();
 }
 
 PNSystem::ComplexVector PNSystem::solve2()

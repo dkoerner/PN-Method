@@ -82,6 +82,21 @@ struct Domain
 		return true;
 	}
 
+	Box2d getBound()const
+	{
+		return m_bound;
+	}
+
+	P2d getBoundMax()const
+	{
+		return m_bound.max;
+	}
+
+	P2d getBoundMin()const
+	{
+		return m_bound.min;
+	}
+
 private:
 	V2i m_resolution;
 	V2d m_voxelsize;

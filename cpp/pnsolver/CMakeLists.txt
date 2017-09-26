@@ -13,11 +13,35 @@ include_directories( ${CMAKE_INSTALL_PREFIX}/include/eigen3 )
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/include )
 pybind11_add_module(pnsolver src/main.cpp
 	                         src/PNSystem.cpp
-							 src/stencil.cpp
+							 src/stencil_fopn_p0_cg.cpp
+							 src/stencil_fopn_p0_sg.cpp
+							 src/stencil_fopn_p1_cg.cpp
+							 src/stencil_fopn_p1_sg.cpp
+							 src/stencil_fopn_p2_cg.cpp
+							 src/stencil_fopn_p2_sg.cpp
+							 src/stencil_fopn_p3_cg.cpp
+							 src/stencil_fopn_p3_sg.cpp
+							 src/stencil_fopn_p4_cg.cpp
+							 src/stencil_fopn_p4_sg.cpp
+							 src/stencil_fopn_p5_cg.cpp
+							 src/stencil_fopn_p5_sg.cpp
+							 src/stencil_sopn_p0_cg.cpp
+							 src/stencil_sopn_p0_sg.cpp
+							 src/stencil_sopn_p1_cg.cpp
+							 src/stencil_sopn_p1_sg.cpp
+							 src/stencil_sopn_p2_cg.cpp
+							 src/stencil_sopn_p2_sg.cpp
+							 src/stencil_sopn_p3_cg.cpp
+							 src/stencil_sopn_p3_sg.cpp
+							 src/stencil_sopn_p4_cg.cpp
+							 src/stencil_sopn_p4_sg.cpp
+							 src/stencil_sopn_p5_cg.cpp
+							 src/stencil_sopn_p5_sg.cpp
 							 src/field/Field.cpp
 							 src/field/VoxelGrid.cpp
 							 src/field/Constant.cpp
 							 src/field/Function.cpp
 							 src/field/SHEXP.cpp
 							 src/common/Domain.cpp
+							 src/util/threadpool.cpp
 							 src/math/sph.cpp)

@@ -129,14 +129,17 @@ struct PNSystem
 			return mah;
 		}
 
-		void build( Matrix &m )
+		void build( int numRows, int numCols )
 		{
+			matrix = Matrix(numRows, numCols);
+
 			// build sparse matrix from triplets
-			m.setFromTriplets(triplets.begin(), triplets.end());
+			matrix.setFromTriplets(triplets.begin(), triplets.end());
 		}
 
 		std::vector<Triplet> triplets;
 		V2i                  dimensions;
+		Matrix               matrix;
 	};
 	typedef MatrixBuilder<double> MatrixBuilderd;
 
@@ -229,7 +232,7 @@ struct PNSystem
 	// this function uses Eigen to solve the system
 	RealVector solve();
 	RealVector solveWithGuess(RealVector &x0 );
-	ComplexVector solve2();
+	//ComplexVector solve2();
 	RealVector solve_boundary();
 
 
@@ -245,11 +248,11 @@ struct PNSystem
 
 	// the following methods are used to allow python to access the build result
 	// (used for storing to disk etc.)
-	ComplexMatrix& get_A_complex();
 	RealMatrix& get_A_real();
-
-	ComplexVector& get_b_complex();
 	RealVector& get_b_real();
+	//ComplexMatrix& get_A_complex();
+	//ComplexVector& get_b_complex();
+
 
 
 
@@ -285,30 +288,8 @@ private:
 	// returns an interface for working with rows in Ax=b which belong to the given voxel
 	VoxelSystem getVoxelSystem( const V2i& voxel );
 
-	// builds the matrix S (and its inverse) which is used to convert from complex-valued
-	// to real valued matrices (see starmap paper p.5 for details)
-	void build_S();
 
 
-	const Domain m_domain; // defines the spatial discretization
-
-	int m_numCoeffs; // number of coefficients per voxel
-
-
-	Fields m_fields; // the RTE parameters. Those have to be set by the client code through ::setField
-	Stencil m_stencil;
-
-	// the following matrices define the system Ax=b
-	ComplexMatrix m_A_complex;
-	RealMatrix m_A_real;
-	ComplexVector m_b_complex;
-	RealVector m_b_real;
-	ComplexMatrix m_S; // converts given complex-valued vector to real-valued vector
-	ComplexMatrix m_S_inv; // the inverse...
-
-
-	std::vector<ComplexTriplet> m_triplets_A; // triplets for construction of sparse matrix A (used by MatrixAccessHelper)
-	std::vector<ComplexTriplet> m_triplets_b; // triplets for construction of sparse vector b (used by MatrixAccessHelper)
 	std::map<std::pair<int, int>, int> m_lm_to_index; // used to convert from l,m to linear index in 2d
 	std::map<int, std::pair<int, int>> m_index_to_lm; // used to convert from linear index to l,m in 2d
 
@@ -327,18 +308,15 @@ private:
 	ComplexMatrix m_boundary_S; // converts given complex-valued vector to real-valued vector
 	ComplexMatrix m_boundary_S_inv; // the inverse...
 
-	std::vector<ComplexTriplet> m_boundary_triplets_A; // triplets for construction of sparse matrix C (used by MatrixAccessHelper)
-	//std::vector<ComplexTriplet> m_triplets_b; // triplets for construction of sparse vector b (used by MatrixAccessHelper)
+
+	// computational domain, problem and stencil
+	int m_numCoeffs; // number of coefficients per voxel
+	const Domain m_domain; // defines the spatial discretization
+	Fields m_fields; // the RTE parameters. Those have to be set by the client code through ::setField
+	Stencil m_stencil;
 
 
-	/*
-	MatrixBuilderd m_builder_Mx;
-	MatrixBuilderd m_builder_Dx;
-	MatrixBuilderd m_builder_My;
-	MatrixBuilderd m_builder_Dy;
-	MatrixBuilderd m_builder_C;
-	MatrixBuilderd m_builder_q;
-	*/
+	// the following matrices define the system Ax=b
 	MatrixBuilderd m_builder_A;
 	MatrixBuilderd m_builder_b;
 

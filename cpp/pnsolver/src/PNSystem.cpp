@@ -28,12 +28,7 @@ PNSystem::PNSystem( Stencil stencil, const Domain& domain)
 				++m_numCoeffs;
 			}
 
-	m_A_complex = ComplexMatrix(domain.numVoxels()*m_numCoeffs, domain.numVoxels()*m_numCoeffs);
-	m_b_complex = ComplexVector(domain.numVoxels()*m_numCoeffs, 1);
-	m_A_real = RealMatrix(domain.numVoxels()*m_numCoeffs, domain.numVoxels()*m_numCoeffs);
-	m_b_real = RealVector(domain.numVoxels()*m_numCoeffs, 1);
-
-
+	/*
 	// temp: boundary test ---
 	m_numBoundaryVoxels = (domain.resolution()[0]+4)*(domain.resolution()[1]+4) - domain.numVoxels();
 	m_boundary_A_complex = ComplexMatrix((domain.numVoxels()+m_numBoundaryVoxels)*m_numCoeffs, (domain.numVoxels()+m_numBoundaryVoxels)*m_numCoeffs);
@@ -83,9 +78,8 @@ PNSystem::PNSystem( Stencil stencil, const Domain& domain)
 			current += step;
 	}
 	// end of temp
+	*/
 
-
-	build_S();
 
 	debugVoxel = V2i(-1, -1);
 
@@ -350,24 +344,26 @@ const Domain& PNSystem::getDomain()const
 	return m_domain;
 }
 
+/*
 PNSystem::ComplexMatrix& PNSystem::get_A_complex()
 {
 	return m_A_complex;
-}
-
-PNSystem::RealMatrix& PNSystem::get_A_real()
-{
-	return m_A_real;
 }
 
 PNSystem::ComplexVector& PNSystem::get_b_complex()
 {
 	return m_b_complex;
 }
+*/
+
+PNSystem::RealMatrix& PNSystem::get_A_real()
+{
+	return m_builder_A.matrix;
+}
 
 PNSystem::RealVector& PNSystem::get_b_real()
 {
-	return m_b_real;
+	return m_builder_b.matrix;
 }
 
 void PNSystem::setDebugVoxel(const V2i &dv)
@@ -386,99 +382,6 @@ PNSystem::RealMatrix &PNSystem::get_boundary_b_real()
 	return m_boundary_b_real;
 }
 
-
-void PNSystem::build_S()
-{
-	std::vector<ComplexTriplet> triplets_S;
-
-	int count = 0;
-	for( int l=0;l<=m_stencil.order;++l )
-		for( int m=l;m>=0;--m )
-		{
-			// in 2D, we skip coefficients for which l+m is odd
-			if( (l+m)%2 != 0 )
-				continue;
-
-			// build S matrix, which converts solution from complex to real values
-
-			// computes the real part coefficients for a row (defined by l,m) in the S matrix
-			// (see bottom of p.5 in the starmap paper)
-
-			if(m == 0)
-			{
-				triplets_S.push_back( ComplexTriplet(count, getIndex(l,m), 1.0) );
-			}else
-			{
-				triplets_S.push_back( ComplexTriplet(count, getIndex(l,m), std::pow(-1.0, m)/std::sqrt(2)) );
-				if( m_lm_to_index.find(std::make_pair(l,-m)) != m_lm_to_index.end() )
-				{
-					triplets_S.push_back( ComplexTriplet(count, getIndex(l,-m), std::pow(-1.0, 2.0*m)/std::sqrt(2) ) );
-				}
-			}
-			count+=1;
-
-			// computes the imaginary part coefficients for a row (defined by l,m) in the S matrix
-			// (see bottom of p.5 in the starmap paper)
-			if( m > 0)
-			{
-				triplets_S.push_back( ComplexTriplet(count, getIndex(l,m), Complex(0.0, std::pow(-1.0, m)/std::sqrt(2)) ) );
-				if( m_lm_to_index.find(std::make_pair(l,-m)) != m_lm_to_index.end() )
-				{
-					triplets_S.push_back( ComplexTriplet(count, getIndex(l,-m), Complex(0.0, -std::pow(-1.0, 2*m)/std::sqrt(2)) ) );
-				}
-				count+=1;
-			}
-		}
-
-
-	// here we compute the inverse of S
-	// and extract the triplets for sparse construction
-	std::vector<ComplexTriplet> triplets_S_inv;
-	{
-		ComplexMatrix S(m_numCoeffs, m_numCoeffs);
-		S.setFromTriplets(triplets_S.begin(), triplets_S.end());
-
-		ComplexMatrix S_inv = Eigen::Matrix<Complex,Eigen::Dynamic,Eigen::Dynamic>(S).inverse().sparseView();
-		// extract triplets
-		for(int k=0; k < S_inv.outerSize(); ++k)
-			for (ComplexMatrix::InnerIterator it(S_inv,k); it; ++it)
-				triplets_S_inv.push_back( ComplexTriplet(it.row(), it.col(), it.value()) );
-	}
-
-	int numVoxels = m_domain.numVoxels();
-	m_S = ComplexMatrix(m_numCoeffs*numVoxels, m_numCoeffs*numVoxels);
-	m_S_inv = ComplexMatrix(m_numCoeffs*numVoxels, m_numCoeffs*numVoxels);
-
-	std::vector<ComplexTriplet> triplets_S_big;
-	std::vector<ComplexTriplet> triplets_S_inv_big;
-	for( int i=0;i<numVoxels;++i )
-	{
-		int global_i = i*m_numCoeffs;
-		int global_j = i*m_numCoeffs;
-		for( auto t : triplets_S )
-			triplets_S_big.push_back( ComplexTriplet(global_i+t.row(), global_j+t.col(), t.value()) );
-		for( auto t : triplets_S_inv )
-			triplets_S_inv_big.push_back( ComplexTriplet(global_i+t.row(), global_j+t.col(), t.value()) );
-	}
-	m_S.setFromTriplets(triplets_S_big.begin(), triplets_S_big.end());
-	m_S_inv.setFromTriplets(triplets_S_inv_big.begin(), triplets_S_inv_big.end());
-
-	// boundary condition test ------------
-	// here we add the triplets for the boundary section to the lists we used above
-	for( int i=0;i<m_numBoundaryVoxels;++i )
-	{
-		int global_i = (numVoxels+i)*m_numCoeffs;
-		int global_j = (numVoxels+i)*m_numCoeffs;
-		for( auto t : triplets_S )
-			triplets_S_big.push_back( ComplexTriplet(global_i+t.row(), global_j+t.col(), t.value()) );
-		for( auto t : triplets_S_inv )
-			triplets_S_inv_big.push_back( ComplexTriplet(global_i+t.row(), global_j+t.col(), t.value()) );
-	}
-	m_boundary_S = ComplexMatrix(m_numCoeffs*(numVoxels+m_numBoundaryVoxels), m_numCoeffs*(numVoxels+m_numBoundaryVoxels));
-	m_boundary_S_inv = ComplexMatrix(m_numCoeffs*(numVoxels+m_numBoundaryVoxels), m_numCoeffs*(numVoxels+m_numBoundaryVoxels));
-	m_boundary_S.setFromTriplets(triplets_S_big.begin(), triplets_S_big.end());
-	m_boundary_S_inv.setFromTriplets(triplets_S_inv_big.begin(), triplets_S_inv_big.end());
-}
 
 int PNSystem::getGlobalIndex( V2i voxel, int coeff )const
 {
@@ -542,6 +445,7 @@ int PNSystem::getGlobalBoundaryIndex( const V2i boundaryVoxel, int coeff )
 	return -1;
 }
 
+/*
 PNSystem::MatrixAccessHelper PNSystem::A( V2i voxel_i,
 										  int coefficient_i,
 										  V2i voxel_j,
@@ -563,64 +467,17 @@ PNSystem::MatrixAccessHelper PNSystem::A( V2i voxel_i,
 	}
 
 
-	/*
-	if( !m_domain.contains_voxel(voxel_i) ||
-		!m_domain.contains_voxel(voxel_j) )
-	{
-		// the voxel to be accessed by the stencil is out of bounds
-		// we return a MatrixAccessHelper with a zero pointer to a
-		// triplet list. All modifications/operations will have no effect.
-		return MatrixAccessHelper(0);
-	}
-	*/
 
 	MatrixAccessHelper mah(&m_triplets_A);
 	mah.m_global_i = getGlobalIndex(voxel_i, coefficient_i);
 	mah.m_global_j = getGlobalIndex(voxel_j, coefficient_j);
 	return mah;
 }
-
-
-PNSystem::MatrixAccessHelper PNSystem::b( V2i voxel_i,
-										  int coefficient_i )
-{
-	if( !m_domain.contains_voxel(voxel_i) )
-	{
-		// the voxel to be accessed by the stencil is out of bounds
-		// we return a MatrixAccessHelper with a zero pointer to a
-		// triplet list. All modifications/operations will have no effect.
-		return MatrixAccessHelper(0);
-	}
-
-	MatrixAccessHelper mah(&m_triplets_b);
-	mah.m_global_i = getGlobalIndex(voxel_i, coefficient_i);
-	mah.m_global_j = 0;
-	return mah;
-}
+*/
 
 
 void PNSystem::build()
 {
-	/*
-	RealMatrix Mx, Dx, My, Dy, C, q;
-
-	Mx = RealMatrix(m_domain.numVoxels()*m_numCoeffs, m_domain.numVoxels()*m_numCoeffs);
-	Dx = RealMatrix(m_domain.numVoxels()*m_numCoeffs, m_domain.numVoxels()*m_numCoeffs);
-	My = RealMatrix(m_domain.numVoxels()*m_numCoeffs, m_domain.numVoxels()*m_numCoeffs);
-	Dy = RealMatrix(m_domain.numVoxels()*m_numCoeffs, m_domain.numVoxels()*m_numCoeffs);
-	C = RealMatrix(m_domain.numVoxels()*m_numCoeffs, m_domain.numVoxels()*m_numCoeffs);
-	q = RealMatrix(m_domain.numVoxels()*m_numCoeffs, 1);
-
-	m_builder_Mx.build(Mx);
-	m_builder_Dx.build(Dx);
-	m_builder_My.build(My);
-	m_builder_Dy.build(Dy);
-	m_builder_C.build(C);
-	m_builder_q.build(q);
-	//m_A_real = Mx*Dx + My*Dy + C;
-	//m_b_real = q;
-
-	*/
 	std::cout << "PNSystem::build building system matrices A and b...\n";
 	int min_x = 0;
 	int min_y = 0;
@@ -638,13 +495,10 @@ void PNSystem::build()
 	// iterate all voxels and apply stencil which has been generated from python script ---
 	for( int i=min_x;i<max_x;++i )
 		for( int j=min_y;j<max_y;++j )
-			//set_system_row( getVoxelSystem(V2i(i,j)), m_fields );
 			m_stencil.apply( getVoxelSystem(V2i(i,j)), m_fields );
 
-	m_A_real = RealMatrix(m_domain.numVoxels()*m_numCoeffs, m_domain.numVoxels()*m_numCoeffs);
-	m_b_real = RealMatrix(m_domain.numVoxels()*m_numCoeffs, 1);
-	m_builder_A.build(m_A_real);
-	m_builder_b.build(m_b_real);
+	m_builder_A.build(m_domain.numVoxels()*m_numCoeffs, m_domain.numVoxels()*m_numCoeffs);
+	m_builder_b.build(m_domain.numVoxels()*m_numCoeffs, 1);
 }
 
 PNSystem::RealVector PNSystem::solve()
@@ -703,6 +557,7 @@ PNSystem::RealVector PNSystem::solveWithGuess(PNSystem::RealVector &x0)
 	return x.sparseView();
 }
 
+/*
 PNSystem::ComplexVector PNSystem::solve2()
 {
 	std::cout << "PNSystem::solve solving for x...\n";
@@ -725,6 +580,7 @@ PNSystem::ComplexVector PNSystem::solve2()
 
 	return x;
 }
+*/
 
 PNSystem::RealVector PNSystem::solve_boundary()
 {
@@ -765,58 +621,6 @@ P2d PNSystem::VoxelSystem::getVoxelSize() const
 	return m_pns->getDomain().voxelSize();
 }
 
-/*
-PNSystem::MatrixAccessHelper PNSystem::VoxelSystem::A( int coefficient_i, V2i voxel_j, int coefficient_j )
-{
-	return m_pns->A( m_voxel_i, coefficient_i, voxel_j, coefficient_j );
-}
-
-PNSystem::MatrixAccessHelper PNSystem::VoxelSystem::b( int coefficient_i )
-{
-	return m_pns->b( m_voxel_i, coefficient_i );
-}
-
-PNSystem::MatrixBuilderd::MatrixAccessHelper PNSystem::VoxelSystem::coeff_Mx(int coefficient_i, V2i voxel_j, int coefficient_j)
-{
-	int global_i = m_pns->getGlobalIndex(m_voxel_i, coefficient_i);
-	int global_j = m_pns->getGlobalIndex(voxel_j, coefficient_j);
-	return m_pns->m_builder_Mx.coeff(global_i, global_j);
-}
-
-PNSystem::MatrixBuilderd::MatrixAccessHelper PNSystem::VoxelSystem::coeff_Dx(int coefficient_i, V2i voxel_j, int coefficient_j)
-{
-	int global_i = m_pns->getGlobalIndex(m_voxel_i, coefficient_i);
-	int global_j = m_pns->getGlobalIndex(voxel_j, coefficient_j);
-	return m_pns->m_builder_Dx.coeff(global_i, global_j);
-}
-
-PNSystem::MatrixBuilderd::MatrixAccessHelper PNSystem::VoxelSystem::coeff_My(int coefficient_i, V2i voxel_j, int coefficient_j)
-{
-	int global_i = m_pns->getGlobalIndex(m_voxel_i, coefficient_i);
-	int global_j = m_pns->getGlobalIndex(voxel_j, coefficient_j);
-	return m_pns->m_builder_My.coeff(global_i, global_j);
-}
-
-PNSystem::MatrixBuilderd::MatrixAccessHelper PNSystem::VoxelSystem::coeff_Dy(int coefficient_i, V2i voxel_j, int coefficient_j)
-{
-	int global_i = m_pns->getGlobalIndex(m_voxel_i, coefficient_i);
-	int global_j = m_pns->getGlobalIndex(voxel_j, coefficient_j);
-	return m_pns->m_builder_Dy.coeff(global_i, global_j);
-}
-
-PNSystem::MatrixBuilderd::MatrixAccessHelper PNSystem::VoxelSystem::coeff_C(int coefficient_i, V2i voxel_j, int coefficient_j)
-{
-	int global_i = m_pns->getGlobalIndex(m_voxel_i, coefficient_i);
-	int global_j = m_pns->getGlobalIndex(voxel_j, coefficient_j);
-	return m_pns->m_builder_C.coeff(global_i, global_j);
-}
-
-PNSystem::MatrixBuilderd::MatrixAccessHelper PNSystem::VoxelSystem::coeff_q(int coefficient_i)
-{
-	int global_i = m_pns->getGlobalIndex(m_voxel_i, coefficient_i);
-	return m_pns->m_builder_q.coeff(global_i, 0);
-}
-*/
 
 PNSystem::MatrixBuilderd::MatrixAccessHelper PNSystem::VoxelSystem::coeff_A(int coefficient_i, V2i voxel_j, int coefficient_j)
 {
@@ -827,6 +631,7 @@ PNSystem::MatrixBuilderd::MatrixAccessHelper PNSystem::VoxelSystem::coeff_A(int 
 		m_pns->getDomain().contains_voxel(voxel_j))
 		return m_pns->m_builder_A.coeff(global_i, global_j);
 
+	// dirichlet BC
 	return PNSystem::MatrixBuilderd::MatrixAccessHelper(0);
 }
 

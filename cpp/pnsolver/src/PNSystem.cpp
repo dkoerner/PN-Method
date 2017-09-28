@@ -15,8 +15,10 @@ PNSystem::PNSystem( Stencil stencil, const Domain& domain)
 	:
 	m_domain(domain),
 	m_fields(stencil.order),
-	m_stencil(stencil)
+	m_stencil(stencil),
+	m_neumannBC(false)
 {
+	// find out number of coefficients and mapping between sh bands l,m and linear indices ---
 	m_numCoeffs = 0;
 	for( int l=0;l<=m_stencil.order;++l )
 		for( int m=-l;m<=l;++m )
@@ -30,19 +32,21 @@ PNSystem::PNSystem( Stencil stencil, const Domain& domain)
 
 	/*
 	// temp: boundary test ---
-	m_numBoundaryVoxels = (domain.resolution()[0]+4)*(domain.resolution()[1]+4) - domain.numVoxels();
 	m_boundary_A_complex = ComplexMatrix((domain.numVoxels()+m_numBoundaryVoxels)*m_numCoeffs, (domain.numVoxels()+m_numBoundaryVoxels)*m_numCoeffs);
 	m_boundary_b_complex = ComplexVector((domain.numVoxels()+m_numBoundaryVoxels)*m_numCoeffs, 1);
 	m_boundary_A_real = RealMatrix((domain.numVoxels()+m_numBoundaryVoxels)*m_numCoeffs, (domain.numVoxels()+m_numBoundaryVoxels)*m_numCoeffs);
 	m_boundary_b_real = RealVector((domain.numVoxels()+m_numBoundaryVoxels)*m_numCoeffs, 1);
-
 	//std::map<std::pair<int,int>, int> voxel_to_global_boundary_index;
+	*/
 
+	// create mapping from voxel space coordinates to matrix indicees.
+	// e.g. voxel.x=-2 mapps to matrix index i=0 in A
 	V2i current(-1,-1);
 	V2i step(0, 1);
 
-	//V2i res(4,4);
-	//int numBoundaryVoxels = (res[0]+4)*(res[1]+4) - res[0]*res[1];
+	m_numBoundaryLayers = m_stencil.width;
+	int numLayers = m_numBoundaryLayers;
+	m_numBoundaryVoxels = (domain.resolution()[0]+2*numLayers)*(domain.resolution()[1]+2*numLayers) - domain.numVoxels();
 	V2i res = domain.resolution();
 	int numBoundaryVoxels = m_numBoundaryVoxels;
 	int layer = 0;
@@ -78,7 +82,6 @@ PNSystem::PNSystem( Stencil stencil, const Domain& domain)
 			current += step;
 	}
 	// end of temp
-	*/
 
 
 	debugVoxel = V2i(-1, -1);
@@ -139,6 +142,35 @@ PNSystem::PNSystem( Stencil stencil, const Domain& domain)
 	*/
 }
 
+void PNSystem::setField( const std::string& id, Field::Ptr field )
+{
+	//std::cout << "WARNING: PNSystem::setField currently ignored. Using explicit RTE functions.\n";
+	///*
+	if( id == "sigma_t" )
+		m_fields.sigma_t = field;
+	else
+	if( id == "sigma_a" )
+		m_fields.sigma_a = field;
+	else
+	if( id == "sigma_s" )
+		m_fields.sigma_s = field;
+	else
+	if( id == "f_p" )
+		// we assume the zero coefficient is to be set
+		m_fields.f_p->setField(0,0,field);
+	else
+	if( id == "q" )
+		// we assume the zero coefficient is to be set
+		m_fields.q->setField(0,0,field);
+	else
+		throw std::runtime_error("PNSystem::setField unable to set field " + id);
+	//*/
+}
+
+void PNSystem::setNeumannBoundaryConditions(bool flag)
+{
+	m_neumannBC = flag;
+}
 
 
 struct ParticleTracer2D : public Task
@@ -308,30 +340,6 @@ Eigen::MatrixXd PNSystem::computeGroundtruth(int numSamples)
 	return result/double(count);
 }
 
-void PNSystem::setField( const std::string& id, Field::Ptr field )
-{
-	//std::cout << "WARNING: PNSystem::setField currently ignored. Using explicit RTE functions.\n";
-	///*
-	if( id == "sigma_t" )
-		m_fields.sigma_t = field;
-	else
-	if( id == "sigma_a" )
-		m_fields.sigma_a = field;
-	else
-	if( id == "sigma_s" )
-		m_fields.sigma_s = field;
-	else
-	if( id == "f_p" )
-		// we assume the zero coefficient is to be set
-		m_fields.f_p->setField(0,0,field);
-	else
-	if( id == "q" )
-		// we assume the zero coefficient is to be set
-		m_fields.q->setField(0,0,field);
-	else
-		throw std::runtime_error("PNSystem::setField unable to set field " + id);
-	//*/
-}
 
 
 PNSystem::VoxelSystem PNSystem::getVoxelSystem( const V2i& voxel )
@@ -374,12 +382,12 @@ void PNSystem::setDebugVoxel(const V2i &dv)
 
 PNSystem::RealMatrix &PNSystem::get_boundary_A_real()
 {
-	return m_boundary_A_real;
+	return m_builder_A_boundary.matrix;
 }
 
 PNSystem::RealMatrix &PNSystem::get_boundary_b_real()
 {
-	return m_boundary_b_real;
+	return m_builder_b_boundary.matrix;
 }
 
 
@@ -499,6 +507,179 @@ void PNSystem::build()
 
 	m_builder_A.build(m_domain.numVoxels()*m_numCoeffs, m_domain.numVoxels()*m_numCoeffs);
 	m_builder_b.build(m_domain.numVoxels()*m_numCoeffs, 1);
+
+
+	// boundary condition test -----------
+
+
+	// What we do is, we add the triplets for the original matrix A
+	// to the list of triplets for the extended BC matrix
+	//m_builder_A_boundary.reset();
+	//m_builder_b_boundary.reset();
+	m_builder_A_boundary.add(m_builder_A);
+	m_builder_b_boundary.add(m_builder_b);
+
+	// Dirichlet BC ---
+	/*
+	int numVoxels = m_domain.numVoxels();
+	for( int i=0;i<m_numBoundaryVoxels;++i )
+	{
+		int global_i = (numVoxels+i)*m_numCoeffs;
+		int global_j = (numVoxels+i)*m_numCoeffs;
+		for( int j=0;j<m_numCoeffs;++j )
+			m_builder_A_boundary.coeff(global_i+j, global_j+j) += 1.0;
+	}
+	*/
+
+	// Neumann BC ---
+	bool nbc = m_neumannBC;
+	///*
+	// we iterate over each layer of boundary voxel grids which covers the domain
+	V2i res = m_domain.resolution();
+	int numLayers = m_numBoundaryLayers;
+	int global_boundary_i = 0;
+	// for each coefficient
+	for( int c=0;c<m_numCoeffs;++c )
+	{
+		for( int layer=1;layer<=numLayers;++layer )
+		{
+			// for each voxel row
+			for( int i=0;i<res[0];++i )
+			{
+				// left side ----
+				global_boundary_i = getGlobalBoundaryIndex(V2i(i, -layer), c);
+
+				// set main diagonal to identity
+				m_builder_A_boundary.coeff(global_boundary_i, global_boundary_i) += 1.0;
+
+				// For neumann BC, we will identify the outer voxel with the closest interior voxel.
+				if(nbc)
+					m_builder_A_boundary.coeff(global_boundary_i, getGlobalIndex(V2i(i, 0), c)) += -1.0;
+
+				// right side ----
+				global_boundary_i = getGlobalBoundaryIndex(V2i(i, res[0]-1+layer), c);
+				m_builder_A_boundary.coeff(global_boundary_i, global_boundary_i) += 1.0;
+				if(nbc)
+					m_builder_A_boundary.coeff(global_boundary_i, getGlobalIndex(V2i(i, res[0]-1), c)) += -1.0;
+			} // for each voxel row
+			// for each voxel col
+			for( int j=0;j<res[1];++j )
+			{
+				// bottom side ----
+				global_boundary_i = getGlobalBoundaryIndex(V2i(-layer, j), c);
+				m_builder_A_boundary.coeff(global_boundary_i, global_boundary_i) += 1.0;
+				if(nbc)
+					m_builder_A_boundary.coeff(global_boundary_i, getGlobalIndex(V2i(0, j), c)) += -1.0;
+
+				// top side ----
+				global_boundary_i = getGlobalBoundaryIndex(V2i(res[1]-1+layer, j), c);
+				m_builder_A_boundary.coeff(global_boundary_i, global_boundary_i) += 1.0;
+				if(nbc)
+					m_builder_A_boundary.coeff(global_boundary_i, getGlobalIndex(V2i(res[1]-1, j), c)) += -1.0;
+			} // for each voxel col
+		} // for each layer
+
+		// corner boundary voxels are defined through linear interpolation between boundary voxels
+		V2i local_x(-1, 0);
+		V2i local_y(0, -1);
+		V2i corners[4] = {V2i(0,0),	V2i(0,res[1]-1), V2i(res[0]-1, res[1]-1), V2i(res[0]-1, 0) };
+		for( auto corner:corners )
+		{
+			if( m_numBoundaryLayers == 1 )
+			{
+				global_boundary_i = getGlobalBoundaryIndex(corner+local_x+local_y, c);
+				m_builder_A_boundary.coeff(global_boundary_i, global_boundary_i) += 1.0;
+				if(nbc)
+				{
+					m_builder_A_boundary.coeff(global_boundary_i, getGlobalBoundaryIndex(corner+local_x, c)) += -0.5;
+					m_builder_A_boundary.coeff(global_boundary_i, getGlobalBoundaryIndex(corner+local_y, c)) += -0.5;
+				}
+			}else
+			if( m_numBoundaryLayers == 2 )
+			{
+				// layer 1
+				{
+					global_boundary_i = getGlobalBoundaryIndex(corner+local_x+local_y, c);
+					m_builder_A_boundary.coeff(global_boundary_i, global_boundary_i) += 1.0;
+					if(nbc)
+					{
+						m_builder_A_boundary.coeff(global_boundary_i, getGlobalBoundaryIndex(corner+local_x, c)) += -0.25;
+						m_builder_A_boundary.coeff(global_boundary_i, getGlobalBoundaryIndex(corner+local_y, c)) += -0.25;
+						m_builder_A_boundary.coeff(global_boundary_i, getGlobalBoundaryIndex(corner+2*local_x+local_y, c)) += -0.25;
+						m_builder_A_boundary.coeff(global_boundary_i, getGlobalBoundaryIndex(corner+local_x+2*local_y, c)) += -0.25;
+					}
+				}
+
+				// layer 2
+				{
+					global_boundary_i = getGlobalBoundaryIndex(corner+2*local_x+2*local_y, c);
+					m_builder_A_boundary.coeff(global_boundary_i, global_boundary_i) += 1.0;
+					if(nbc)
+					{
+						m_builder_A_boundary.coeff(global_boundary_i, getGlobalBoundaryIndex(corner+2*local_x+local_y, c)) += -0.5;
+						m_builder_A_boundary.coeff(global_boundary_i, getGlobalBoundaryIndex(corner+local_x+2*local_y, c)) += -0.5;
+					}
+
+					global_boundary_i = getGlobalBoundaryIndex(corner+2*local_x+local_y, c);
+					m_builder_A_boundary.coeff(global_boundary_i, global_boundary_i) += 1.0;
+					if(nbc)
+					{
+						m_builder_A_boundary.coeff(global_boundary_i, getGlobalBoundaryIndex(corner+2*local_x, c)) += -0.33333;
+						m_builder_A_boundary.coeff(global_boundary_i, getGlobalBoundaryIndex(corner+2*local_x+2*local_y, c)) += -0.33333;
+						m_builder_A_boundary.coeff(global_boundary_i, getGlobalBoundaryIndex(corner+local_x+local_y, c)) += -0.33333;
+					}
+
+					global_boundary_i = getGlobalBoundaryIndex(corner+local_x+2*local_y, c);
+					m_builder_A_boundary.coeff(global_boundary_i, global_boundary_i) += 1.0;
+					if(nbc)
+					{
+						m_builder_A_boundary.coeff(global_boundary_i, getGlobalBoundaryIndex(corner+2*local_y, c)) += -0.33333;
+						m_builder_A_boundary.coeff(global_boundary_i, getGlobalBoundaryIndex(corner+2*local_y+2*local_x, c)) += -0.33333;
+						m_builder_A_boundary.coeff(global_boundary_i, getGlobalBoundaryIndex(corner+local_y+local_x, c)) += -0.33333;
+					}
+				}
+			}
+
+
+
+			// rotate
+			local_x = V2i(local_x[1], -local_x[0]);
+			local_y = V2i(local_y[1], -local_y[0]);
+		} // for each corner
+	} // for each coefficient
+	//*/
+
+	// now we build the system for the boundary matrices
+	m_builder_A_boundary.build((m_domain.numVoxels()+m_numBoundaryVoxels)*m_numCoeffs, (m_domain.numVoxels()+m_numBoundaryVoxels)*m_numCoeffs);
+	m_builder_b_boundary.build((m_domain.numVoxels()+m_numBoundaryVoxels)*m_numCoeffs, 1);
+	//m_builder_A_boundary.build(m_domain.numVoxels()*m_numCoeffs, m_domain.numVoxels()*m_numCoeffs);
+	//m_builder_b_boundary.build(m_domain.numVoxels()*m_numCoeffs, 1);
+
+}
+
+PNSystem::RealMatrix PNSystem::getIndexMatrix()
+{
+	MatrixBuilderd indexMatrix;
+
+	V2i res = m_domain.resolution();
+	int numLayers = m_numBoundaryLayers;
+	for( int i=-numLayers;i<res[0]+numLayers;++i )
+		for( int j=-numLayers;j<res[1]+numLayers;++j )
+		{
+			//std::cout << "i=" << i << " j=" << j << std::endl;std::flush(std::cout);
+			V2i voxel(i, j);
+			int index;
+			if( m_domain.contains_voxel(voxel) )
+				index = getGlobalIndex(voxel, 0)/m_numCoeffs;
+			else
+				index = getGlobalBoundaryIndex(voxel, 0)/m_numCoeffs;
+			indexMatrix.coeff(i+numLayers,j+numLayers) += double(index);
+		}
+
+	indexMatrix.build(res[0]+numLayers*2, res[1]+numLayers*2);
+
+	//std::cout << indexMatrix.matrix.cols() << " " << indexMatrix.matrix.rows() << std::endl;
+	return indexMatrix.matrix;
 }
 
 PNSystem::RealVector PNSystem::solve()
@@ -584,6 +765,7 @@ PNSystem::ComplexVector PNSystem::solve2()
 
 PNSystem::RealVector PNSystem::solve_boundary()
 {
+	/*
 	std::cout << "PNSystem::solve solving for x...\n";
 
 	// temp: boundary test:
@@ -601,6 +783,31 @@ PNSystem::RealVector PNSystem::solve_boundary()
 	}
 
 	return x;
+	*/
+
+	std::cout << "PNSystem::solve_boundary solving for x...\n";
+
+	//Eigen::ConjugateGradient<RealMatrix> solver;
+	//Eigen::BiCGSTAB<RealMatrix> solver;
+	Eigen::SparseLU<RealMatrix> solver;
+	//solver.setMaxIterations(1);
+	std::cout << "PNSystem::solve_boundary compute...\n";std::flush(std::cout);
+	solver.compute(get_boundary_A_real());
+	//solver.compute(get_A_real());
+	if(solver.info()!=Eigen::Success)
+	{
+		throw std::runtime_error("PNSystem::solve decomposition failed");
+	}
+	std::cout << "PNSystem::solve_boundary solve...\n";std::flush(std::cout);
+	RealVector x = solver.solve(get_boundary_b_real());
+	//RealVector x = solver.solve(get_b_real());
+	//std::cout << "iterations=" << solver.iterations() << std::endl;
+	if(solver.info()!=Eigen::Success)
+	{
+		throw std::runtime_error("PNSystem::solve solve failed");
+	}
+
+	return x.block(0, 0, m_domain.numVoxels()*m_numCoeffs, 1);
 }
 
 //PNSystem::VoxelSystem ==============================================
@@ -627,12 +834,54 @@ PNSystem::MatrixBuilderd::MatrixAccessHelper PNSystem::VoxelSystem::coeff_A(int 
 	int global_i = m_pns->getGlobalIndex(m_voxel_i, coefficient_i);
 	int global_j = m_pns->getGlobalIndex(voxel_j, coefficient_j);
 
-	if( m_pns->getDomain().contains_voxel(m_voxel_i) &&
-		m_pns->getDomain().contains_voxel(voxel_j))
-		return m_pns->m_builder_A.coeff(global_i, global_j);
+	if( !m_pns->getDomain().contains_voxel(m_voxel_i) )
+		throw std::runtime_error("PNSystem::VoxelSystem::coeff_A voxel_i is out of bound, which is unexpected.");
 
-	// dirichlet BC
-	return PNSystem::MatrixBuilderd::MatrixAccessHelper(0);
+
+	if( m_pns->getDomain().contains_voxel(voxel_j) )
+		return m_pns->m_builder_A.coeff(global_i, global_j);
+	///*
+	// voxel_j is a boundary voxel ---
+	V2d dist;
+	bool is_bound = false;
+	for( int i=0;i<2;++i )
+	{
+		if( voxel_j[i] < 0 )
+		{
+			is_bound = true;
+			dist[i] = std::abs(voxel_j[i]);
+		}
+		else
+		if( voxel_j[i] >= m_pns->m_domain.resolution()[i] )
+		{
+			is_bound = true;
+			dist[i] = voxel_j[i] - m_pns->m_domain.resolution()[i] + 1;
+		}
+		else
+		{
+			//non_bound += 1;
+			//std::cout << "boundary access: voxel=" << voxel_j[0] << " " << voxel_j[1] << std::endl;
+			//
+		}
+
+		//if( dist[i] > 1)
+		//		std::cout << "!!!!!!!!!!!!!!!!!!!!!!!!\n";
+	}
+
+	if(!is_bound)
+		throw std::runtime_error("voxel is not a boundary voxel although it is expected to be.");
+	//*/
+
+
+
+
+	// simple dirichlet BC: we pass an empty AccessHelper, which doesnt create any triplets and
+	// therefore basically sets all accessed coefficients to 0
+	//return PNSystem::MatrixBuilderd::MatrixAccessHelper(0);
+
+	// here we pass the access to the boundary coefficient to a different matrix builder
+	// which causes triplets to be created for boundary coefficients
+	return m_pns->m_builder_A_boundary.coeff(global_i, m_pns->getGlobalBoundaryIndex(voxel_j, coefficient_j));
 }
 
 PNSystem::MatrixBuilderd::MatrixAccessHelper PNSystem::VoxelSystem::coeff_b(int coefficient_i)

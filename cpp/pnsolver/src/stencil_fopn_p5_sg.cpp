@@ -2,7 +2,7 @@
 
 #include <PNSystem.h>
 
-void _fopn_p5_sg(PNSystem::VoxelSystem& sys,
+void stencil_fopn_p5_sg(PNSystem::VoxelSystem& sys,
 					PNSystem::Fields& fields)
 {
 	V2i vi = sys.getVoxel();
@@ -1301,4 +1301,4 @@ void _fopn_p5_sg(PNSystem::VoxelSystem& sys,
 	sys.coeff_b( 19 ) += b_real.coeffRef(19, 0);
 	sys.coeff_b( 20 ) += b_real.coeffRef(20, 0);
 }
-REGISTER_STENCIL(_fopn_p5_sg, 5)
+REGISTER_STENCIL(stencil_fopn_p5_sg, 5, 1)

@@ -31,7 +31,7 @@ PYBIND11_MODULE(pnsolver, m)
 		PNSystem::Stencil stencil;
 
 		if( stencil_name == "noop" )
-			stencil = PNSystem::Stencil(0, [](PNSystem::VoxelSystem&, PNSystem::Fields&){});
+			stencil = PNSystem::Stencil(0, 0, [](PNSystem::VoxelSystem&, PNSystem::Fields&){});
 		else
 			stencil = PNSystem::findStencil(stencil_name);
 		new (&m) PNSystem(stencil, domain);
@@ -60,6 +60,7 @@ PYBIND11_MODULE(pnsolver, m)
 	.def("solveWithGuess", &PNSystem::solveWithGuess )
 	.def("solve_boundary", &PNSystem::solve_boundary )
 	.def("setField", &PNSystem::setField )
+	.def("setNeumannBoundaryConditions", &PNSystem::setNeumannBoundaryConditions )
 	//.def("solve2", &PNSystem::solve2 )
 	//.def("get_A_complex", &PNSystem::get_A_complex )
 	//.def("get_b_complex", &PNSystem::get_b_complex )
@@ -69,6 +70,7 @@ PYBIND11_MODULE(pnsolver, m)
 	.def("get_boundary_A_real", &PNSystem::get_boundary_A_real )
 	.def("get_boundary_b_real", &PNSystem::get_boundary_b_real )
 	.def("computeGroundtruth", &PNSystem::computeGroundtruth )
+	.def("getIndexMatrix", &PNSystem::getIndexMatrix )
 	;
 
 	// Domain ============================================================

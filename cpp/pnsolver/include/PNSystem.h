@@ -9,10 +9,10 @@
 #include <field/Constant.h>
 
 
-#define REGISTER_STENCIL(name, order) \
+#define REGISTER_STENCIL(name, order, width) \
 	static struct name ##_{ \
 		name ##_() { \
-			PNSystem::registerStencil(#name, PNSystem::Stencil( order, name )); \
+			PNSystem::registerStencil(#name, PNSystem::Stencil( order, width, name )); \
 		} \
 	}name ##__;
 
@@ -46,8 +46,9 @@ struct PNSystem
 	{
 		typedef std::function<void(VoxelSystem&, Fields&)> StencilFunction;
 
-		Stencil( int _order = -1, StencilFunction fun = StencilFunction() ):
+		Stencil( int _order = -1, int _width = 0, StencilFunction fun = StencilFunction() ):
 			order(_order),
+			width(_width),
 			apply(fun)
 		{
 
@@ -55,6 +56,11 @@ struct PNSystem
 
 		StencilFunction apply;
 		int order;
+
+		// this tells us how many neighbouring voxels the stencil needs to see
+		// this value is required for setting up boundary voxels
+		// widht=0 means: no neighbours are touched
+		int width;
 	};
 
 
@@ -129,12 +135,24 @@ struct PNSystem
 			return mah;
 		}
 
+		void reset()
+		{
+			triplets.clear();
+			matrix = Matrix();
+		}
+
 		void build( int numRows, int numCols )
 		{
 			matrix = Matrix(numRows, numCols);
 
 			// build sparse matrix from triplets
 			matrix.setFromTriplets(triplets.begin(), triplets.end());
+		}
+
+		void add( const MatrixBuilder<T>& other )
+		{
+			for( auto t:other.triplets )
+				triplets.push_back(t);
 		}
 
 		std::vector<Triplet> triplets;
@@ -185,21 +203,7 @@ struct PNSystem
 		VoxelSystem(PNSystem* pns,
 					const V2i& voxel_i );
 
-		/*
-		MatrixAccessHelper A(   int coefficient_i,
-								V2i voxel_j,
-								int coefficient_j );
-		MatrixAccessHelper b( int coefficient_i );
-		*/
 
-		/*
-		MatrixBuilderd::MatrixAccessHelper coeff_Mx(int coefficient_i, V2i voxel_j, int coefficient_j);
-		MatrixBuilderd::MatrixAccessHelper coeff_Dx(int coefficient_i, V2i voxel_j, int coefficient_j);
-		MatrixBuilderd::MatrixAccessHelper coeff_My(int coefficient_i, V2i voxel_j, int coefficient_j);
-		MatrixBuilderd::MatrixAccessHelper coeff_Dy(int coefficient_i, V2i voxel_j, int coefficient_j);
-		MatrixBuilderd::MatrixAccessHelper coeff_C(int coefficient_i, V2i voxel_j, int coefficient_j);
-		MatrixBuilderd::MatrixAccessHelper coeff_q(int coefficient_i);
-		*/
 		MatrixBuilderd::MatrixAccessHelper coeff_A(int coefficient_i, V2i voxel_j, int coefficient_j);
 		MatrixBuilderd::MatrixAccessHelper coeff_b(int coefficient_i);
 
@@ -224,10 +228,14 @@ struct PNSystem
 	// q (setting only l=0 and m=0 field of a SHCoefficientFieldArray)
 	void setField( const std::string& id, Field::Ptr field );
 
+	void setNeumannBoundaryConditions( bool flag );
+
 
 	// This method builds the matrices A and b and also converts them
 	// from complex-valued to real-valued matrices
 	void build();
+
+	RealMatrix getIndexMatrix();
 
 	// this function uses Eigen to solve the system
 	RealVector solve();
@@ -301,18 +309,26 @@ private:
 	int getGlobalBoundaryIndex( const V2i boundaryVoxel, int coeff );
 	int m_numBoundaryVoxels;
 	std::map<std::pair<int,int>, int> m_voxel_to_global_boundary_index;
+
+	MatrixBuilderd m_builder_A_boundary;
+	MatrixBuilderd m_builder_b_boundary;
+
+	/*
 	ComplexMatrix m_boundary_A_complex;
 	RealMatrix m_boundary_A_real;
 	ComplexVector m_boundary_b_complex;
 	RealVector m_boundary_b_real;
 	ComplexMatrix m_boundary_S; // converts given complex-valued vector to real-valued vector
 	ComplexMatrix m_boundary_S_inv; // the inverse...
+	*/
 
 
 	// computational domain, problem and stencil
 	int m_numCoeffs; // number of coefficients per voxel
+	int m_numBoundaryLayers;
 	const Domain m_domain; // defines the spatial discretization
 	Fields m_fields; // the RTE parameters. Those have to be set by the client code through ::setField
+	bool m_neumannBC;
 	Stencil m_stencil;
 
 

@@ -87,4 +87,4 @@ void stencil_fopn_p1_sg(PNSystem::VoxelSystem& sys,
 	sys.coeff_b( 1 ) += b_real.coeffRef(1, 0);
 	sys.coeff_b( 2 ) += b_real.coeffRef(2, 0);
 }
-REGISTER_STENCIL(stencil_fopn_p1_sg, 1)
+REGISTER_STENCIL(stencil_fopn_p1_sg, 1, 1)

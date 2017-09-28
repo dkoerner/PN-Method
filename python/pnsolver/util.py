@@ -180,10 +180,19 @@ def write_pn_system(filename, sys, problem, x=None):
 	data["info"] = info
 	if not A is None:
 		data['A'] = A
+		#data['A_cond'] = np.linalg.cond(A)
 	if not b is None:
 		data['b'] = b
 	if not x is None:
 		data['x'] = x
+
+
+	data["index"] = sys.getIndexMatrix()
+	#Ab = 
+	data["A_boundary"] = sys.get_boundary_A_real()
+	#data['A_boundary_cond'] = np.linalg.cond(Ab.todense())
+	#print( "A_boundary_cond={}".format(data['A_boundary_cond']) )
+	data["b_boundary"] = sys.get_boundary_b_real()
 
 	data['sigma_s'] = rasterize(lambda pWS: np.real(problem["sigma_s"](pWS)), domain)
 	data['sigma_a'] = rasterize(lambda pWS: np.real(problem["sigma_a"](pWS)), domain)
@@ -195,7 +204,7 @@ def write_pn_system(filename, sys, problem, x=None):
 
 
 def load_pn_system( filename ):
-    #print("loading PN solution from {}".format(filename))
+    print("loading PN solution from {}".format(filename))
     data = scipy.io.loadmat(filename)
    
     result = {}
@@ -223,7 +232,9 @@ def load_pn_system( filename ):
         result["numCoeffs"] = 3
         result["resolution"] = np.array([70, 70])
         
-    #print("\torder={}  numCoeffs={}  resolution={} {}".format(result["order"], result["numCoeffs"], result["resolution"][0], result["resolution"][1]))
+    print("\torder={}  numCoeffs={}  resolution={} {}".format(result["order"], result["numCoeffs"], result["resolution"][0], result["resolution"][1]))
+    if "A_boundary_condest" in data:
+    	print("\tA_boundary_condest={}".format(data["A_boundary_condest"]))
         
     return result
 
@@ -238,6 +249,6 @@ def extract_coefficient_field( x, res, numCoeffs, coeff = 0 ):
 	u0 = np.zeros( (res_x, res_y), dtype=x.dtype )
 	for voxel_i in range(res_x):
 		for voxel_j in range(res_y):
-			i = (voxel_j*res_x + voxel_i)*numCoeffs + coeff
+			i = (voxel_i*res_y + voxel_j)*numCoeffs + coeff
 			u0[voxel_i, voxel_j] = x[i, 0]
 	return u0

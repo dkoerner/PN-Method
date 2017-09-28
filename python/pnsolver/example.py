@@ -30,22 +30,28 @@ def setProblem( sys, problem ):
 		raise ValueError("no higher order source functions supported yet")
 
 
-def solve( stencil_name, problem, filename ):
+def solve( stencil_name, problem, filename, do_neumannBC = False ):
 	# initialize the solver -----------------------------------
 	# NB: the truncation order has been baked into the cpp code as it is linked directly with the stencil
 	sys = pnsolver.PNSystem(stencil_name, problem["domain"])
 
 	# set the RTE parameter fields ---------------------------------------------
 	setProblem(sys, problem)
+	sys.setNeumannBoundaryConditions(do_neumannBC)
 
 	# build the system Ax=b using the cpp stencil -------------------
 	sys.build()
+
+	#A = sys.get_boundary_A_real()
+	#b = sys.get_boundary_b_real()
 
 	# solve for x -------------------
 	x = None
 
 	try:
-		x = sys.solve()
+		#x = sys.solve()
+		x = sys.solve_boundary()
+
 	except:
 		print("Solve failed...")
 
@@ -77,31 +83,39 @@ if __name__ == "__main__":
 	#problem = problems.vacuum()
 
 	
-	filename = "{}/{}_groundtruth.mat".format(path, problem["id"] )
-	groundtruth( problem, 8000000, filename )
+	#filename = "{}/{}_groundtruth.mat".format(path, problem["id"] )
+	#groundtruth( problem, 8000000, filename )
 
 
-	'''
+	#'''
+	staggered_id = {True:"sg", False:"cg"}
+	bc_id = {True:"_nbc", False:""}
+
+
 	rte_forms = ["fopn", "sopn"]
 	order = [0,1,2,3,4,5]
-	staggered = ["sg", "cg"]
+	staggered = [True, False]
+	boundary_conditions = [True, False]
 
-	#rte_forms = ["sopn"]
+	#rte_forms = ["fopn"]
 	#order = [1]
-	#staggered = ["sg"]
+	#staggered = [False]
+	#boundary_conditions = [False]
 
-	test = itertools.product(rte_forms, order, staggered)
+	test = itertools.product(rte_forms, order, staggered, boundary_conditions)
 	for c in test:
 		rte_form_name = c[0]
 		order = c[1]
-		staggered_id = c[2]
+		is_staggered = c[2]
+		do_neumannBC = c[3]
 
-
-		stencil_name = "stencil_{}_p{}_{}".format(rte_form_name, order, staggered_id )
+		stencil_name = "stencil_{}_p{}_{}".format(rte_form_name, order, staggered_id[is_staggered] )
 		
-		filename = "{}/{}{}.mat".format(path, problem["id"], stencil_name)
-		solve(stencil_name, problem, filename)
-	'''
+		filename = "{}/{}{}{}.mat".format(path, problem["id"], stencil_name, bc_id[do_neumannBC])
+		#filename = "{}/{}_test.mat".format(path, problem["id"], stencil_name)
+		print("clear;filename=\"{}\";compute_condest;".format(filename))
+		#solve(stencil_name, problem, filename, do_neumannBC=do_neumannBC)
+	#'''
 
 
 	#postfix = ""

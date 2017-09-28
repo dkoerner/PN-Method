@@ -1121,6 +1121,10 @@ def generate_stencil_code( stencil_name, filename, terms, order, staggered ):
 
 	pni = PNInfo2D(order, staggered)
 
+	# the width of the stencil (the number of neighbouring voxels the stencil touches)
+	# this values is determined later during construction the code for building A
+	stencil_width = 0
+
 	# source file
 	file = open(filename, "w")
 
@@ -1145,12 +1149,14 @@ def generate_stencil_code( stencil_name, filename, terms, order, staggered ):
 	for i in range(pni.getS().shape[0]):
 		for j in range(pni.getS().shape[1]):
 			value = pni.getS()[i,j]
-			file.write("\tS.coeffRef({}, {}) = std::complex<double>({}, {});\n".format(i, j, np.real(value), np.imag(value)))
+			if np.abs(value) > 1.0e-8:
+				file.write("\tS.coeffRef({}, {}) = std::complex<double>({}, {});\n".format(i, j, np.real(value), np.imag(value)))
 	file.write( "\tEigen::Matrix<std::complex<double>, {}, {}> SInv;\n".format(pni.getS().shape[0], pni.getS().shape[1]) )
 	for i in range(pni.getS().shape[0]):
 		for j in range(pni.getS().shape[1]):
 			value = pni.getSInv()[i,j]
-			file.write("\tSInv.coeffRef({}, {}) = std::complex<double>({}, {});\n".format(i, j, np.real(value), np.imag(value)))
+			if np.abs(value) > 1.0e-8:
+				file.write("\tSInv.coeffRef({}, {}) = std::complex<double>({}, {});\n".format(i, j, np.real(value), np.imag(value)))
 
 	file.write( "\n" )
 
@@ -1487,6 +1493,9 @@ def generate_stencil_code( stencil_name, filename, terms, order, staggered ):
 						# coefficient is vanishes
 						continue
 
+					#if u.interpolated == True:
+					#	print("interpolated unknown!")
+					
 					#meh.print_expr(expr)
 
 					# the expression consists of function calls or numerical values
@@ -1498,6 +1507,9 @@ def generate_stencil_code( stencil_name, filename, terms, order, staggered ):
 					info.coefficient_matrix_register = coefficient_matrix_register
 					info.fun_to_cpp = fun_to_cpp
 					expr_cpp = to_cpp(expr, info)
+
+					if np.max(np.abs(u.voxel)) > stencil_width:
+						stencil_width = np.max(np.abs(u.voxel))
 
 					file.write( "\tsys.coeff_A( {}, vi + V2i({},{}), {} ) += {};\n".format(coeff_index, u.voxel[0], u.voxel[1], u.coeff_index, expr_cpp) )
 					#file.write("\n")
@@ -1523,7 +1535,8 @@ def generate_stencil_code( stencil_name, filename, terms, order, staggered ):
 
 
 	file.write( "}\n" )
-	file.write( "REGISTER_STENCIL({}, {})\n".format(stencil_name, order) )
+	print("stencil_widht={}".format(stencil_width))
+	file.write( "REGISTER_STENCIL({}, {}, {})\n".format(stencil_name, order, stencil_width) )
 
 	file.close()
 
@@ -1556,28 +1569,35 @@ if __name__ == "__main__":
 	terms_fopn = rte_terms.splitAddition( terms_fopn )
 
 
-	rte_forms = [("fopn", terms_fopn), ("sopn", terms_sopn)]
-	staggered = [("sg", True), ("cg", False)]
+	staggered_id = {True:"sg", False:"cg"}
+	terms = {"fopn":terms_fopn, "sopn":terms_sopn}
+
+	rte_forms = ["fopn", "sopn"]
+	staggered = [True, False]
 	order = [0,1,2,3,4,5]
 
+	#rte_forms = ["sopn"]
+	#order = [2]
+	#staggered = [True]
 
 	test = itertools.product(rte_forms, order, staggered)
 	for c in test:
-		rte_form_name = c[0][0]
-		rte_form_terms = c[0][1]
+		rte_form_name = c[0]
+		rte_form_terms = terms[rte_form_name]
 		order = c[1]
-		staggered_id = c[2][0]
-		is_staggered = c[2][1]
+		is_staggered = c[2]
 		#print( "terms={} order={} staggered={}".format(rte_form_name, order, str(staggered_state)))
 
 		path = "c:/projects/epfl/epfl17/cpp/pnsolver/src"
-		stencil_name = "_{}_p{}_{}".format(rte_form_name, order, staggered_id )
+		stencil_name = "stencil_{}_p{}_{}".format(rte_form_name, order, staggered_id[is_staggered] )
 		filename = "{}/{}.cpp".format(path, stencil_name)
 
-		#generate_stencil_code( stencil_name, filename, rte_form_terms, order, is_staggered )
-		filename = "{}/stencil{}.cpp".format(path, stencil_name)
-		file = open(filename, "w")
-		file.close()
+		generate_stencil_code( stencil_name, filename, rte_form_terms, order, is_staggered )
+
+		# clear stencil file
+		#filename = "{}/stencil{}.cpp".format(path, stencil_name)
+		#file = open(filename, "w")
+		#file.close()
 
 
 

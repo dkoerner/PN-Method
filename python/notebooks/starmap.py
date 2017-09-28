@@ -217,9 +217,6 @@ class Starmap2D(object):
 				self.Mx_complex[i, self.lm_to_index[(l-1,m-1)]] = -0.5*c_lm(l-1, m-1)
 				self.My_complex[i, self.lm_to_index[(l-1,m-1)]] = 0.5*1j*c_lm(l-1, m-1)
 			if (l+1,m-1) in self.lm_to_index:
-				if i == 0:
-					tt = 0.5*d_lm(l+1, m-1)
-					print("test={}".format(tt))
 				self.Mx_complex[i, self.lm_to_index[(l+1,m-1)]] = 0.5*d_lm(l+1, m-1)
 				self.My_complex[i, self.lm_to_index[(l+1,m-1)]] = -0.5*1j*d_lm(l+1, m-1)   
 			if (l-1,m+1) in self.lm_to_index:
@@ -280,8 +277,8 @@ class Starmap2D(object):
 				self.sga.assign(col, i+1, j)
 				self.sga.assign(col, i-1, j)
 
-				if row == 0:
-					print("coefficient {} depends on coefficient {} {}".format(row, " dx ", col) )
+				#if row == 0:
+				#	print("coefficient {} depends on coefficient {} {}".format(row, " dx ", col) )
 
 				# do this next
 				if not col in done and not col in todo:
@@ -295,8 +292,8 @@ class Starmap2D(object):
 				self.sga.assign(col, i, j+1)
 				self.sga.assign(col, i, j-1)
 
-				if row == 0:
-					print("coefficient {} depends on coefficient {} {}".format(row, " dy ", col) )
+				#if row == 0:
+				#	print("coefficient {} depends on coefficient {} {}".format(row, " dy ", col) )
 
 				# do this next
 				if not col in done and not col in todo:
@@ -1153,7 +1150,8 @@ if __name__ == "__main__":
 
 	#print(shtools.numSHCoeffs(4))
 
-	sm = Starmap2D(1)
+	#order = 1
+	#sm = Starmap2D(order)
 
 	## the offsets in 2D (hardcoded)
 	#self.offsets[0][0] = (0.5,0.5)
@@ -1161,10 +1159,25 @@ if __name__ == "__main__":
 	#self.offsets[1][0] = (0.0,0.5)
 	#self.offsets[1][1] = (0.0,0.0)
 
-	#for i in range(2):
-	#	for j in range(2):
-	#		print("i={} j={}".format(i, j))
-	#		print(sm.sga.get_grid_components(i, j))
+	last_coeff_count = 0
+	for order in range(1, 6):
+		sm = Starmap2D(order)
+		print( "if self.order == {}:".format(order) )
+		for i in range(2):
+			for j in range(2):
+				offset = sm.sga.get_offset(i,j)
+				#print("i={} j={} offset={} {}".format(i, j, offset[0], offset[1]))
+				o = (int(offset[0]+0.5), int(offset[1]+0.5))
+				#print("offset converted= {} {}".format(o[0], o[1]))
+				grid_components = sm.sga.get_grid_components(i, j)
+				for c in grid_components:
+					if c>=last_coeff_count:
+						print("\tself.place_unknown( {}, ({}, {}) )".format(c, o[0], o[1]))
+		last_coeff_count = sm.numCoeffs
+	#print("else:")
+	#print("\traise ValueError(\"unable to place cofficients for order={{}}\".format(self.order))")
+
+
 
 
 

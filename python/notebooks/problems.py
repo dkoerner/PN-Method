@@ -19,6 +19,8 @@ class Constant(object):
         self.value = value
     def __call__(self, x):
         return self.value
+    def eval(self, pWS):
+    	return self(pWS)
     def dx(self, x):
         return 0.0
     def dxdx(self, x):
@@ -40,6 +42,8 @@ class Sum(object):
 		self.b = b
 	def __call__(self, x):
 		return self.a(x) + self.b(x)
+	def eval(self, pWS):
+		return self(pWS)
 	def dx(self, x):
 		return self.a.dx(x) + self.b.dx(x)
 	def dy(self, x):
@@ -56,6 +60,8 @@ class Gradient(object):
             self.normal = normal/norm
     def __call__(self, x):
         return np.dot(x, self.normal)
+    def eval(self, pWS):
+        return self(pWS)
     def dx(self, x):
         return self.normal[0]
     def dy(self, x):
@@ -99,8 +105,13 @@ class SHEXP(object):
         self.coeff_functions = coeff_functions
     def __call__(self, location, omega):
         (theta, phi) = shtools.sphericalCoordinates(omega)
-        coeffs = [f(location) for f in self.coeff_functions]
+        #coeffs = [f(location) for f in self.coeff_functions]
+        coeffs = [f.eval(location) for f in self.coeff_functions]
         return shtools.sh_sum(self.order, coeffs, theta, phi)
+    def check(self, pWS):
+    	coeffs = [f.eval(pWS) for f in self.coeff_functions]
+    	for c in coeffs:
+    		print(c)
     def dx(self, location, omega):
     	(theta, phi) = shtools.sphericalCoordinates(omega)
     	coeffs_dx = [f.dx(location) for f in self.coeff_functions]
@@ -254,10 +265,17 @@ class CoefficientGrid(object):
 		self.stride = stride
 		self.offset = offset
 
+
 		voxels = np.zeros( (domain.res_x, domain.res_y), dtype=complex )
+
 		for voxel_i in range(domain.res_y):
 			for voxel_j in range(domain.res_x):
-				voxels[voxel_i, voxel_j] = x[self.get_global_index(voxel_i, voxel_j, index)]
+				#a = np.complex(0.0, 1.0)
+				#print(type(a))
+				a = x[self.get_global_index(voxel_i, voxel_j, index)]
+				#print(type(a))
+				voxels[voxel_i, voxel_j] = a
+				#voxels[voxel_i, voxel_j] = x[self.get_global_index(voxel_i, voxel_j, index)]
 		self.voxels = voxels
 
 		#super().__init__(domain, voxels, offset)
@@ -271,6 +289,11 @@ class CoefficientGrid(object):
 
 	def sample( self, voxel ):
 		return self.voxels[voxel[0], voxel[1]]
+
+	def eval( self, pWS ):
+		pVS = self.domain.worldToVoxel(pWS)
+		voxel = np.array([int(pVS[0]), int(pVS[1])])
+		return self.sample(voxel)
 
 	def __call__(self, location):
 		numDimensions = 2

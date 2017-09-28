@@ -1,4 +1,314 @@
 import numpy as np
+import scipy.io
+import matplotlib.pyplot as plt
+from matplotlib.colors import LogNorm
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+
+from scipy.special import sph_harm, lpmv
+
+
+# Spherical Harmonics related =====================================================
+
+def num_sh_coeffs(order):
+    return (order + 1) * (order + 1)
+
+def sh_index( l, m):
+	if l<0 or m < -l or m > l:
+		return None
+	return l * (l + 1) + m
+
+def sh_sum( order, coeffs, theta, phi ):
+    result = 0.0
+    for l in range(order+1):
+        for m in range(-l, l+1):
+            result+=coeffs[sh_index(l,m)]*sph_harm(m, l, phi, theta)
+    return result
+
+
+
+class PNInfo2D(object):
+	def __init__(self, order, staggered=True):
+		self.order = order
+
+		# the following dictionaries help mapping lm to shindex and vice versa ---
+		# NB: sh_index refers to the complex valued SH coefficient
+		# find out how much coefficients we have in 2d
+		self.index_to_lm = [] # this will map equation index to l,m indices
+		self.lm_to_index = {} # this dict will map l,m indices to the equation index
+		# NB: we dont use l(l+1)+m because in 2d, we skipp odd (l+m) entries, which changes the sequence.
+		# iterate all sh coefficients for given truncation order
+		for l in range(0, self.order+1):
+			for m in range(-l, l+1):
+				# in 2d, we only need to solve for moments where l+m is even
+				if (l+m) % 2 == 0:
+					self.index_to_lm.append( (l, m) )
+					self.lm_to_index[(l,m)] = len(self.index_to_lm)-1
+		self.numCoeffs = len(self.index_to_lm)
+
+		self.build_S()
+
+		# the following dictionaries help mapping lm to uindex and vice versa ---
+		# NB: u_index refers to the real-valued coefficient of the solution vector u which
+		# represents real and imaginary part (both are real numbers) of sh coefficients lm with m>=0
+		self.u_index_to_lm = []
+		self.lm_to_u_index = {}
+		local_u_index = 0 # this counter represents the current row in the solution vector for a single voxel
+		for l in range(0, self.order+1):
+			# NB: the starmap code builds the solution vector from reverse order, we do it the same,
+			# as we want our conversion matrix S (and therefore the structure of Mx, My) to be indentical
+			for m in range(l, -1, -1):
+
+				# In 2d, we only need to solve for moments where l+m is even.
+				# This is why all other coefficients are not even part of the global system Ax=b.
+				if (l+m) % 2 != 0:
+					continue
+
+				# handle real valued part of the current sh coefficient
+				key = (l,m,0)
+				self.u_index_to_lm.append(key)
+				self.lm_to_u_index[key] = local_u_index
+				local_u_index += 1
+
+				# handle imaginary part of the current sh coefficient
+				# NB: if m==0, then the imaginary part will always be zero, this is why we skip it
+				if m>0:
+					key = (l,m,1)
+					self.u_index_to_lm.append(key)
+					self.lm_to_u_index[key] = local_u_index
+					local_u_index += 1
+
+
+		# we keep track of where the unknowns are placed
+		self.unknown_info = [ {} for i in range(self.numCoeffs)]
+
+		# by default we place all unknowns at the cell centers
+		for i in range(self.numCoeffs):
+			self.place_unknown(i, (1, 1))
+		# and we use full voxel central differences
+		self.stencil_half_steps = 2
+
+		if staggered == True:
+			# TODO: generalize this to arbitrary order
+			# see starmap python implementation on how to do it
+			# but how to do it without M matrix?
+			self.place_unknown( 0, (1,1) )
+			if self.numCoeffs > 1:
+				self.place_unknown( 1, (0,1) )
+			if self.numCoeffs > 2:
+				self.place_unknown( 2, (1,0) )
+			self.stencil_half_steps = 1
+
+
+	def build_S(self):
+		'''builds the S matrix, which converts from complex-valued to real valued coefficients'''
+		# build S matrix ( we iterate over l, m to make sure that the order is correct)
+
+		self.S = np.zeros((self.numCoeffs, self.numCoeffs),dtype=complex)
+		count = 0
+		for l in range(0, self.order+1):
+			for m in range(l, -1, -1):
+				# in 2D, we skip coefficients for which l+m is odd
+				if (l+m) % 2 != 0:
+					continue
+				
+				# build S matrix, which converts solution from complex to real values
+
+				# computes the real part coefficients for a row (defined by l,m) in the S matrix
+				# (see bottom of p.5 in the starmap paper)
+				if m == 0:
+					self.S[count, self.lm_to_index[(l,m)]] = 1.0
+				else:
+					self.S[count, self.lm_to_index[(l,m)]] = np.power(-1.0, m)/np.sqrt(2)
+					if (l,-m) in self.lm_to_index:
+						self.S[count, self.lm_to_index[(l,-m)]] = np.power(-1.0, 2.0*m)/np.sqrt(2)
+				count+=1
+
+				# computes the imaginary part coefficients for a row (defined by l,m) in the S matrix
+				# (see bottom of p.5 in the starmap paper)
+				if m > 0:
+					self.S[count, self.lm_to_index[(l,m)]] = np.power(-1.0, m)/np.sqrt(2)*1j
+					if (l,-m) in self.lm_to_index:
+						self.S[count, self.lm_to_index[(l,-m)]] = -np.power(-1.0, 2*m)/np.sqrt(2)*1j
+					count+=1
+		self.S_inv = np.linalg.inv(self.S)
+
+	def to_complex( self, x_real):
+	    # use this to convert the solution from complex valued to real valued
+	    numVoxels = int(x_real.shape[0]/self.numCoeffs)
+	    x_complex = np.zeros( (numVoxels*self.numCoeffs, 1), dtype=complex )
+	    for i in range(numVoxels):
+	        block_i = i*self.numCoeffs
+	        x_complex[block_i:block_i + self.numCoeffs, :] = np.real(self.S_inv @ x_real[block_i:block_i + self.numCoeffs, :])
+
+	    return x_complex
+
+	def to_real(self, x_complex):
+		raise ValueError("not correctly implemented yet")
+		# use this to convert the solution from real valued to complex valued
+		numVoxels = self.domain.res_x*self.domain.res_y
+		x_real = np.zeros( (numVoxels*self.numCoeffs), dtype=float )
+		for voxel_x in range(self.domain.res_x):
+			for voxel_y in range(self.domain.res_y):
+				block_i = self.get_global_index(voxel_x, voxel_y, 0)
+				#if block_i <= 6628 and block_i+self.numCoeffs >= 6628:
+				#if block_i == 6627:
+				#	print(block_i)
+				#	print(x_complex[block_i:block_i + self.numCoeffs])
+				#	print(np.real(self.S.dot(x_complex[block_i:block_i + self.numCoeffs])))
+				x_real[block_i:block_i + self.numCoeffs] = np.real(self.S.dot(x_complex[block_i:block_i + self.numCoeffs]))
+		return x_real
+
+	def getS(self):
+		return self.S
+
+	def getSInv(self):
+		return self.S_inv
+
+	def num_coeffs(self):
+		return self.numCoeffs
+
+	def u_index( self, l, m, part ):
+		# the third argument identifies the real(0) or imaginary(1) part of the complex number
+		key = (l,m,part)
+		if key in self.lm_to_u_index:
+			return self.lm_to_u_index[key]
+		return None
+
+	def lmp_index(self, coeff_index):
+		return self.u_index_to_lm[coeff_index]
+
+	def sh_index(self, l, m):
+		key = (l,m)
+		#NB: we dont use l(l+1)+m because in 2d, we skipp odd (l+m) entries, which changes the sequence.
+		if key in self.lm_to_index:
+			return self.lm_to_index[key]
+		return None
+
+	def lm_index(self, coeff_index):
+		return self.index_to_lm[coeff_index]
+
+	def getOrder(self):
+		return self.order
+
+
+	def place_unknown( self, coeff_index, grid_id ):
+		self.unknown_info[coeff_index]['grid_id'] = grid_id
+		self.unknown_info[coeff_index]['offset'] = np.array( [grid_id[0], grid_id[1]] , dtype=int)
+
+	def unknown_offset(self, coeff_index):
+		return self.unknown_info[coeff_index]['offset']
+
+	def getOffset(self, coeff_index):
+		return self.unknown_info[coeff_index]['offset']
+
+	#def getLocation(self, voxel, coeff_index):
+	#	return GridLocation2D(voxel, self.unknown_offset(coeff_index)) 
+
+
+
+def load_pn_system( filename ):
+    #print("loading PN solution from {}".format(filename))
+    data = scipy.io.loadmat(filename)
+   
+    result = {}
+    if "sigma_t" in data:
+        result["sigma_t"] = data["sigma_t"]
+    if "sigma_a" in data:
+        result["sigma_a"] = data["sigma_a"]
+    if "sigma_s" in data:
+        result["sigma_s"] = data["sigma_s"]
+    if "q00" in data:
+        result["q00"] = data["q00"]
+    if "x" in data:
+        result["x"] = data["x"]
+    if "b" in data:
+        result["b"] = data["b"]
+    if "A" in data:
+        result["A"] = data["A"]
+    if "info" in data:
+        info = data["info"]
+        result["order"] = info["order"][0][0][0][0]
+        result["numCoeffs"] = info["numCoeffs"][0][0][0][0]
+        result["resolution"] = np.array(info["resolution"][0][0][0])
+    else:
+        result["order"] = 1
+        result["numCoeffs"] = 3
+        result["resolution"] = np.array([70, 70])
+        
+    #print("\torder={}  numCoeffs={}  resolution={} {}".format(result["order"], result["numCoeffs"], result["resolution"][0], result["resolution"][1]))
+        
+    return result
+
+
+   
+def visualize_solution_vector( x, res, numCoeffs ):
+
+    coeff = 0 # the coefficient we want to visualize
+    res_x = res[0]
+    res_y = res[1]
+    
+    u0 = np.zeros( (res_x, res_y) )
+    for voxel_i in range(res_x):
+        for voxel_j in range(res_y):
+            i = (voxel_j*res_x + voxel_i)*numCoeffs + coeff
+            value = x[i, 0]
+            u0[voxel_i, voxel_j] = np.real(value)
+
+    #u0 = np.abs(u0)
+    #u0 = -u0
+    u0 = np.clip(u0,1.0e-8, np.max(u0))
+
+    vmin = np.min(u0)
+    vmax = np.max(u0)
+    
+    if vmin >= vmax:
+        vmin = vmax
+    #print("vmin={} vmax={}".format(vmin, vmax))
+
+    if vmin==vmax or vmin < 0.0:
+        img_view = plt.imshow(u0.T, interpolation="nearest", cmap='jet', vmin=vmin, vmax=vmax, origin='lower')
+    else:
+        img_view = plt.imshow(u0.T, interpolation="nearest", cmap='jet', norm=LogNorm(vmin=vmin, vmax=vmax), origin='lower')
+    return img_view
+
+
+
+def visualize_solution(result):
+	fig = plt.figure(figsize=(15, 15));
+	ax = plt.subplot(131)
+	plt.title("x>0")
+
+	img_view = visualize_solution_vector( result["x"], result["resolution"], result["numCoeffs"] )
+	divider = make_axes_locatable(ax)
+	cax = divider.append_axes("right", size="5%", pad=0.05)
+	plt.colorbar(img_view, cax=cax)
+
+	ax = plt.subplot(132)
+	plt.title("-x>0")
+	img_view = visualize_solution_vector( -result["x"], result["resolution"], result["numCoeffs"] )
+	divider = make_axes_locatable(ax)
+	cax = divider.append_axes("right", size="5%", pad=0.05)
+	plt.colorbar(img_view, cax=cax)
+
+	ax = plt.subplot(133)
+	plt.title("abs(x)")
+	img_view = visualize_solution_vector( np.abs(result["x"]), result["resolution"], result["numCoeffs"] )
+	divider = make_axes_locatable(ax)
+	cax = divider.append_axes("right", size="5%", pad=0.05)
+	plt.colorbar(img_view, cax=cax)
+
+	plt.show()
+
+
+def visualize_solution_simple(result):
+	fig = plt.figure(figsize=(6, 6));
+	ax = plt.subplot(111)
+	img_view = visualize_solution_vector( np.abs(result["x"]), result["resolution"], result["numCoeffs"] )
+	divider = make_axes_locatable(ax)
+	cax = divider.append_axes("right", size="5%", pad=0.05)
+	plt.colorbar(img_view, cax=cax)
+
+	plt.show()
 
 def pointsource_2d_fluence( pWS, center = np.array([0.0, 0.0]), power = 1.0 ):
 	''' returns fluence at position pWS for a unit power point light located at origin'''

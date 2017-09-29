@@ -16,7 +16,9 @@ PNSystem::PNSystem( Stencil stencil, const Domain& domain)
 	m_domain(domain),
 	m_fields(stencil.order),
 	m_stencil(stencil),
-	m_neumannBC(false)
+	m_neumannBC(false),
+	m_voxelManager(),
+	m_numBoundaryLayers(stencil.width)
 {
 	// find out number of coefficients and mapping between sh bands l,m and linear indices ---
 	m_numCoeffs = 0;
@@ -29,6 +31,8 @@ PNSystem::PNSystem( Stencil stencil, const Domain& domain)
 				m_index_to_lm[m_numCoeffs] = std::make_pair(l,m);
 				++m_numCoeffs;
 			}
+	m_voxelManager.init(this);
+
 
 	/*
 	// temp: boundary test ---
@@ -39,12 +43,12 @@ PNSystem::PNSystem( Stencil stencil, const Domain& domain)
 	//std::map<std::pair<int,int>, int> voxel_to_global_boundary_index;
 	*/
 
+	/*
 	// create mapping from voxel space coordinates to matrix indicees.
 	// e.g. voxel.x=-2 mapps to matrix index i=0 in A
 	V2i current(-1,-1);
 	V2i step(0, 1);
 
-	m_numBoundaryLayers = m_stencil.width;
 	int numLayers = m_numBoundaryLayers;
 	m_numBoundaryVoxels = (domain.resolution()[0]+2*numLayers)*(domain.resolution()[1]+2*numLayers) - domain.numVoxels();
 	V2i res = domain.resolution();
@@ -82,6 +86,7 @@ PNSystem::PNSystem( Stencil stencil, const Domain& domain)
 			current += step;
 	}
 	// end of temp
+	*/
 
 
 	debugVoxel = V2i(-1, -1);
@@ -140,7 +145,174 @@ PNSystem::PNSystem( Stencil stencil, const Domain& domain)
 	m_fields.f_p->setField(0,0,std::make_shared<Function>(phase_shcoeff));
 	m_fields.q->setField(0,0,std::make_shared<Function>(source_shcoeffs));
 	*/
+
+
+	// new stuff... ===========================
+	int globalOffset = 0;
+	for( int i=-m_numBoundaryLayers;i<domain.resolution()[0]+m_numBoundaryLayers;++i )
+		for( int j=-m_numBoundaryLayers;j<domain.resolution()[1]+m_numBoundaryLayers;++j )
+	//for( int j=-m_numBoundaryLayers;j<domain.resolution()[1]+m_numBoundaryLayers;++j )
+	//	for( int i=-m_numBoundaryLayers;i<domain.resolution()[0]+m_numBoundaryLayers;++i )
+		{
+			m_voxels.push_back(m_voxelManager.createVoxel( V2i(i, j), globalOffset ));
+			globalOffset += m_voxelManager.getNumCoeffs(m_voxels.back());
+		}
+	// the value of globalOffset equals the number of cols and rows of our global system A
+	m_numSystemEquations = globalOffset;
 }
+
+PNSystem::MatrixBuilderd::MatrixAccessHelper PNSystem::coeff_A(V2i voxel_i, int coefficient_i, V2i voxel_j, int coefficient_j)
+{
+	if( m_domain.contains_voxel(voxel_i) &&
+		m_domain.contains_voxel(voxel_j))
+	{
+		int globalIndex_i = m_voxelManager.getGlobalIndex(getVoxel2(voxel_i), coefficient_i);
+		int globalIndex_j = m_voxelManager.getGlobalIndex(getVoxel2(voxel_j), coefficient_j);
+
+		if( (globalIndex_i >= 0)&&(globalIndex_j >= 0) )
+		{
+			return m_builder_A.coeff(globalIndex_i, globalIndex_j);
+		}
+	}
+	return PNSystem::MatrixBuilderd::MatrixAccessHelper();
+}
+
+PNSystem::MatrixBuilderd::MatrixAccessHelper PNSystem::coeff_b(V2i voxel_i, int coefficient_i)
+{
+	int globalIndex_i = m_voxelManager.getGlobalIndex(getVoxel2(voxel_i), coefficient_i);
+
+	if( globalIndex_i >= 0 )
+		return m_builder_b.coeff(globalIndex_i, 0);
+	return PNSystem::MatrixBuilderd::MatrixAccessHelper();
+}
+
+
+PNSystem::Voxel& PNSystem::getVoxel2( const V2i& voxel )
+{
+	if( (voxel[0] < -m_numBoundaryLayers)||
+		(voxel[1] < -m_numBoundaryLayers)||
+		(voxel[0] >= m_domain.resolution()[0]+m_numBoundaryLayers)||
+		(voxel[1] >= m_domain.resolution()[1]+m_numBoundaryLayers) )
+	{
+		std::cout << "test: " << voxel[0] << " " << voxel[1] << std::endl;
+		throw std::runtime_error("PNSystem::getVoxel2 invalid voxel access");
+	}
+	int index = (voxel[0]+m_numBoundaryLayers)*(m_domain.resolution()[1]+2*m_numBoundaryLayers) + voxel[1] + m_numBoundaryLayers;
+	//int index = (voxel[1]+m_numBoundaryLayers)*(m_domain.resolution()[0]+2*m_numBoundaryLayers) + voxel[0] + m_numBoundaryLayers;
+	return m_voxels[index];
+}
+
+
+PNSystem::VoxelManager::VoxelManager():sys(0)
+{
+
+}
+
+void PNSystem::VoxelManager::init(PNSystem *sys)
+{
+	this->sys = sys;
+	mixedTypes[ std::make_pair(1, 0) ] = Voxel::EVT_N;
+	mixedTypes[ std::make_pair(0, 1) ] = Voxel::EVT_E;
+	mixedTypes[ std::make_pair(-1, 0) ] = Voxel::EVT_S;
+	mixedTypes[ std::make_pair(0, -1) ] = Voxel::EVT_W;
+	mixedTypes[ std::make_pair(1, 1) ] = Voxel::EVT_NE;
+	mixedTypes[ std::make_pair(-1, 1) ] = Voxel::EVT_SE;
+	mixedTypes[ std::make_pair(-1, -1) ] = Voxel::EVT_SW;
+	mixedTypes[ std::make_pair(1, -1) ] = Voxel::EVT_NW;
+
+	// initialize all coefficients to boundary coefficients
+	int numCoeffs = sys->getNumCoefficients();
+	m_localCoefficientIndices = std::vector<std::vector<int>>( 10, std::vector<int>(numCoeffs, -1) );
+
+	for( int i=0;i<numCoeffs;++i )
+	{
+		m_localCoefficientIndices[Voxel::EVT_Interior][i] = i;
+
+		// TODO: bring boundary conditions into correct place
+	}
+
+}
+
+PNSystem::Voxel PNSystem::VoxelManager::createVoxel( const V2i& coord, int globalOffset )
+{
+	Voxel v;
+	v.coord = coord;
+	v.globalOffset = globalOffset;
+
+
+	// determine voxeltype ==================
+	if( sys->getDomain().contains_voxel(coord) )
+		v.type = Voxel::EVT_Interior;
+	else
+	{
+		V2i dist; // distance to the boundary
+		for( int i=0;i<2;++i )
+		{
+			if( v.coord[i] < 0 )
+				dist[i] = v.coord[i];
+			else
+			if( v.coord[i] >= sys->getDomain().resolution()[i] )
+				dist[i] = v.coord[i] - sys->getDomain().resolution()[i] + 1;
+			else
+				dist[i] = 0;
+		}
+		if( (std::abs(dist[0]) > 1)||(std::abs(dist[1]) > 1) )
+			v.type = Voxel::EVT_Boundary;
+		else
+		{
+			// voxel is part of the first layer around the interior part
+			// therefore it is of a mixed type and may contain boundary and
+			// interior coefficients
+			auto it = mixedTypes.find(std::make_pair(dist[0], dist[1]));
+			if(it==mixedTypes.end())
+				throw std::runtime_error("unexpected");
+			v.type = it->second;
+		}
+	}
+
+
+	return v;
+}
+
+int PNSystem::VoxelManager::getNumCoeffs(const Voxel& voxel)
+{
+	switch(voxel.type)
+	{
+	case Voxel::EVT_Interior:
+		// interior cells have all coefficients defined
+		return sys->getNumCoefficients();
+		break;
+	case Voxel::EVT_E:
+		//break;
+	case Voxel::EVT_W:
+		//break;
+	case Voxel::EVT_N:
+		//break;
+	case Voxel::EVT_S:
+		//break;
+	case Voxel::EVT_NE:
+		//break;
+	case Voxel::EVT_NW:
+		//break;
+	case Voxel::EVT_SW:
+		//break;
+	case Voxel::EVT_SE:
+		//break;
+	case Voxel::EVT_Boundary:
+		// boundary cells have no coefficients defined
+		return 0;
+		break;
+	default:
+		throw std::runtime_error("PNSystem::VoxelManager::getNumCoeffs: unknown voxel type");
+	};
+	return 0;
+}
+
+int PNSystem::VoxelManager::getGlobalIndex(const Voxel &voxel, int coeff)
+{
+	return voxel.globalOffset + m_localCoefficientIndices[voxel.type][coeff];
+}
+
 
 void PNSystem::setField( const std::string& id, Field::Ptr field )
 {
@@ -340,6 +512,11 @@ Eigen::MatrixXd PNSystem::computeGroundtruth(int numSamples)
 	return result/double(count);
 }
 
+PNSystem::Fields &PNSystem::getFields()
+{
+	return m_fields;
+}
+
 
 
 PNSystem::VoxelSystem PNSystem::getVoxelSystem( const V2i& voxel )
@@ -501,14 +678,16 @@ void PNSystem::build()
 	}
 
 	// iterate all voxels and apply stencil which has been generated from python script ---
-	for( int i=min_x;i<max_x;++i )
-		for( int j=min_y;j<max_y;++j )
-			m_stencil.apply( getVoxelSystem(V2i(i,j)), m_fields );
+	//for( int i=min_x;i<max_x;++i )
+	//	for( int j=min_y;j<max_y;++j )
+	//		m_stencil.apply( getVoxelSystem(V2i(i,j)), m_fields );
+	for( auto& v: m_voxels )
+		m_stencil.apply( *this, v.coord );
 
-	m_builder_A.build(m_domain.numVoxels()*m_numCoeffs, m_domain.numVoxels()*m_numCoeffs);
-	m_builder_b.build(m_domain.numVoxels()*m_numCoeffs, 1);
+	m_builder_A.build(m_numSystemEquations, m_numSystemEquations);
+	m_builder_b.build(m_numSystemEquations, 1);
 
-
+/*
 	// boundary condition test -----------
 
 
@@ -520,20 +699,17 @@ void PNSystem::build()
 	m_builder_b_boundary.add(m_builder_b);
 
 	// Dirichlet BC ---
-	/*
-	int numVoxels = m_domain.numVoxels();
-	for( int i=0;i<m_numBoundaryVoxels;++i )
-	{
-		int global_i = (numVoxels+i)*m_numCoeffs;
-		int global_j = (numVoxels+i)*m_numCoeffs;
-		for( int j=0;j<m_numCoeffs;++j )
-			m_builder_A_boundary.coeff(global_i+j, global_j+j) += 1.0;
-	}
-	*/
+//	int numVoxels = m_domain.numVoxels();
+//	for( int i=0;i<m_numBoundaryVoxels;++i )
+//	{
+//		int global_i = (numVoxels+i)*m_numCoeffs;
+//		int global_j = (numVoxels+i)*m_numCoeffs;
+//		for( int j=0;j<m_numCoeffs;++j )
+//			m_builder_A_boundary.coeff(global_i+j, global_j+j) += 1.0;
+//	}
 
 	// Neumann BC ---
 	bool nbc = m_neumannBC;
-	///*
 	// we iterate over each layer of boundary voxel grids which covers the domain
 	V2i res = m_domain.resolution();
 	int numLayers = m_numBoundaryLayers;
@@ -647,14 +823,13 @@ void PNSystem::build()
 			local_y = V2i(local_y[1], -local_y[0]);
 		} // for each corner
 	} // for each coefficient
-	//*/
 
 	// now we build the system for the boundary matrices
 	m_builder_A_boundary.build((m_domain.numVoxels()+m_numBoundaryVoxels)*m_numCoeffs, (m_domain.numVoxels()+m_numBoundaryVoxels)*m_numCoeffs);
 	m_builder_b_boundary.build((m_domain.numVoxels()+m_numBoundaryVoxels)*m_numCoeffs, 1);
 	//m_builder_A_boundary.build(m_domain.numVoxels()*m_numCoeffs, m_domain.numVoxels()*m_numCoeffs);
 	//m_builder_b_boundary.build(m_domain.numVoxels()*m_numCoeffs, 1);
-
+*/
 }
 
 PNSystem::RealMatrix PNSystem::getIndexMatrix()
@@ -682,6 +857,55 @@ PNSystem::RealMatrix PNSystem::getIndexMatrix()
 	return indexMatrix.matrix;
 }
 
+PNSystem::RealMatrix PNSystem::getVoxelInfo(const std::string &info)
+{
+	MatrixBuilderd indexMatrix;
+
+	V2i res = m_domain.resolution();
+	int numLayers = m_numBoundaryLayers;
+	for( int i=-numLayers;i<res[0]+numLayers;++i )
+		for( int j=-numLayers;j<res[1]+numLayers;++j )
+		{
+			/*
+			//std::cout << "i=" << i << " j=" << j << std::endl;std::flush(std::cout);
+			V2i voxel(i, j);
+			int index;
+			if( m_domain.contains_voxel(voxel) )
+				index = getGlobalIndex(voxel, 0)/m_numCoeffs;
+			else
+				index = getGlobalBoundaryIndex(voxel, 0)/m_numCoeffs;
+			*/
+			V2i coord(i, j);
+			Voxel& v = getVoxel2(coord);
+			double value = 0.123;
+
+			if( info == "globalOffset" )
+				value = v.globalOffset;
+			else
+			if( info == "type" )
+				value = double(int(v.type));
+			else
+			if( info == "coord.x" )
+				value = double(int(v.coord[0]));
+			else
+			if( info == "coord.y" )
+				value = double(int(v.coord[1]));
+			else
+			if( info == "tmp0" )
+				value = double(int(v.tmp0));
+			else
+			if( info == "tmp1" )
+				value = double(int(v.tmp1));
+
+			indexMatrix.coeff(i+numLayers,j+numLayers) += value;
+		}
+
+	indexMatrix.build(res[0]+numLayers*2, res[1]+numLayers*2);
+
+	//std::cout << indexMatrix.matrix.cols() << " " << indexMatrix.matrix.rows() << std::endl;
+	return indexMatrix.matrix;
+}
+
 PNSystem::RealVector PNSystem::solve()
 {
 	std::cout << "PNSystem::solve solving for x...\n";
@@ -689,7 +913,7 @@ PNSystem::RealVector PNSystem::solve()
 	//Eigen::ConjugateGradient<RealMatrix> solver;
 	//Eigen::BiCGSTAB<RealMatrix> solver;
 	Eigen::SparseLU<RealMatrix> solver;
-	//solver.setMaxIterations(100000);
+	//solver.setMaxIterations(1000);
 	std::cout << "PNSystem::solve compute...\n";std::flush(std::cout);
 	solver.compute(get_A_real());
 	if(solver.info()!=Eigen::Success)
@@ -704,8 +928,28 @@ PNSystem::RealVector PNSystem::solve()
 		throw std::runtime_error("PNSystem::solve solve failed");
 	}
 
-	return x;
 
+
+	// ..................
+	RealVector x2( m_domain.numVoxels()*m_numCoeffs,1);
+	std::vector<RealTriplet> triplets;
+	for( auto&v:m_voxels )
+	{
+		if( !m_domain.contains_voxel(v.coord) )
+			// boundary or mixed boundary voxel
+			continue;
+		for( int i=0;i<m_numCoeffs;++i )
+		{
+			int new_index = getGlobalIndex(v.coord, i);
+			int index = m_voxelManager.getGlobalIndex(v, i);
+			if(index==-1)
+				throw std::runtime_error("PNSystem::solve didnt expect invalid coefficient index");
+			triplets.push_back(RealTriplet(new_index, 0, x.coeffRef(index, 0)));
+		}
+	}
+	x2.setFromTriplets(triplets.begin(), triplets.end());
+
+	return x2;
 }
 
 PNSystem::RealVector PNSystem::solveWithGuess(PNSystem::RealVector &x0)

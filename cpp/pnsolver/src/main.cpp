@@ -31,7 +31,7 @@ PYBIND11_MODULE(pnsolver, m)
 		PNSystem::Stencil stencil;
 
 		if( stencil_name == "noop" )
-			stencil = PNSystem::Stencil(0, 0, [](PNSystem::VoxelSystem&, PNSystem::Fields&){});
+			stencil = PNSystem::Stencil::noop();
 		else
 			stencil = PNSystem::findStencil(stencil_name);
 		new (&m) PNSystem(stencil, domain);
@@ -71,6 +71,7 @@ PYBIND11_MODULE(pnsolver, m)
 	.def("get_boundary_b_real", &PNSystem::get_boundary_b_real )
 	.def("computeGroundtruth", &PNSystem::computeGroundtruth )
 	.def("getIndexMatrix", &PNSystem::getIndexMatrix )
+	.def("getVoxelInfo", &PNSystem::getVoxelInfo )
 	;
 
 	// Domain ============================================================

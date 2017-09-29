@@ -44,7 +44,7 @@ struct PNSystem
 
 	struct Stencil
 	{
-		typedef std::function<void(VoxelSystem&, Fields&)> StencilFunction;
+		typedef std::function<void(PNSystem&, const V2i&)> StencilFunction;
 
 		Stencil( int _order = -1, int _width = 0, StencilFunction fun = StencilFunction() ):
 			order(_order),
@@ -61,6 +61,11 @@ struct PNSystem
 		// this value is required for setting up boundary voxels
 		// widht=0 means: no neighbours are touched
 		int width;
+
+		static Stencil noop()
+		{
+			return Stencil(0, 2, [](PNSystem& sys, const V2i& voxel){});
+		}
 	};
 
 
@@ -108,7 +113,7 @@ struct PNSystem
 		// a new triplet, which is being stored in that list.
 		struct MatrixAccessHelper
 		{
-			MatrixAccessHelper(std::vector<Triplet>* triplets):
+			MatrixAccessHelper(std::vector<Triplet>* triplets = 0):
 				triplets(triplets)
 			{
 
@@ -215,10 +220,61 @@ struct PNSystem
 		PNSystem* m_pns;
 	};
 
+	struct Voxel
+	{
+		Voxel():type(-1),tmp0(-100),tmp1(-100)
+		{
+
+		}
+
+		enum EVoxelType
+		{
+			EVT_Interior=0, // contains no boundary coefficients
+			EVT_E=1, // below are all voxels containing boundary and interior coefficients
+			EVT_W=2,
+			EVT_N=3,
+			EVT_S=4,
+			EVT_NE=5,
+			EVT_NW=6,
+			EVT_SW=7,
+			EVT_SE=8,
+			EVT_Boundary=9 // contains only boundary coefficients
+		};
+
+		V2i coord;
+		int globalOffset; // points at the global index of the first coefficient
+		int type; // identifies the voxel type (interior, east-boundary, etc.)
+		int tmp0;
+		int tmp1;
+	};
+	std::vector<Voxel> m_voxels;
+
+	struct VoxelManager
+	{
+		VoxelManager();
+		void init(PNSystem* sys);
+		Voxel createVoxel( const V2i& coord, int globalOffset );
+		int getNumCoeffs(const Voxel& voxel);
+		int getGlobalIndex( const Voxel& voxel, int coeff );
+	private:
+		PNSystem* sys;
+		std::map<std::pair<int,int>, int> mixedTypes;
+
+		// maps [type][coeff_index] to local index within voxel
+		// this mapping is different per type
+		std::vector<std::vector<int>> m_localCoefficientIndices;
+	};
+
+	MatrixBuilderd::MatrixAccessHelper coeff_A(V2i voxel_i, int coefficient_i, V2i voxel_j, int coefficient_j);
+	MatrixBuilderd::MatrixAccessHelper coeff_b(V2i voxel_i, int coefficient_i);
+
+
 
 	// computes the groundtruth by doing 2d path tracing
 	Eigen::MatrixXd computeGroundtruth( int numSamples );
 
+
+	Fields& getFields();
 
 	// This method is used to set RTE parameters. Allowed ids are:
 	// sigma_t (Field)
@@ -236,6 +292,7 @@ struct PNSystem
 	void build();
 
 	RealMatrix getIndexMatrix();
+	RealMatrix getVoxelInfo( const std::string& info );
 
 	// this function uses Eigen to solve the system
 	RealVector solve();
@@ -284,6 +341,11 @@ struct PNSystem
 		return it->second;
 	}
 
+
+public:
+	PNSystem::Voxel &getVoxel2(const V2i &voxel);
+	int getVoxel3(const V2i &voxel);
+	PNSystem::Voxel createVoxel(const V2i &coord, int globalOffset);
 private:
 	// These are used by VoxelSystem during construction of Ax=b
 	MatrixAccessHelper A(   V2i voxel_i,
@@ -335,6 +397,9 @@ private:
 	// the following matrices define the system Ax=b
 	MatrixBuilderd m_builder_A;
 	MatrixBuilderd m_builder_b;
+
+	VoxelManager m_voxelManager;
+	int m_numSystemEquations; // number of cols and rows of A
 
 
 	static std::map<std::string, Stencil> g_stencils; // global register of stencils

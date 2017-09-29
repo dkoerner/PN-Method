@@ -39,6 +39,12 @@ struct Domain
 		return m_voxelsize;
 	}
 
+	P2d getVoxelSize()const
+	{
+		return m_voxelsize;
+	}
+
+
 	int numVoxels()const
 	{
 		return m_resolution[0]*m_resolution[1];

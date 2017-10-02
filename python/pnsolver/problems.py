@@ -64,9 +64,9 @@ def checkerboard():
 	#res = 200
 	domain = pnsolver.Domain( np.array([size, size]), np.array([res, res]), np.array([0.0, 0.0]))
 	#voxel_area = domain.voxelSize()[0]*domain.voxelSize()[1]/0.01
-	voxel_area = 1.0
-	print("voxel_area={}".format(voxel_area))
-	print("1/voxel_area={}".format(1.0/voxel_area))
+	#voxel_area = 1.0
+	#print("voxel_area={}".format(voxel_area))
+	#print("1/voxel_area={}".format(1.0/voxel_area))
 
 	problem["id"] = "checkerboard"
 	problem["domain"] = domain
@@ -77,7 +77,7 @@ def checkerboard():
 	problem["sigma_a"] = pnsolver.VoxelGrid( util.rasterize(sigma_a, domain, dtype=complex), domain, offset*0.5 )
 	problem["sigma_s"] = pnsolver.VoxelGrid( util.rasterize(sigma_s, domain, dtype=complex), domain, offset*0.5 )
 	problem["f_p"] = [pnsolver.Constant(1.0)]
-	problem["q"] = [pnsolver.VoxelGrid( util.rasterize(lambda pWS: source_shcoeffs(0, 0, pWS), domain, dtype=complex)*voxel_area, domain, offset*0.5 )]
+	problem["q"] = [pnsolver.VoxelGrid( util.rasterize(lambda pWS: source_shcoeffs(0, 0, pWS), domain, dtype=complex), domain, offset*0.5 )]
 
 	return problem
 

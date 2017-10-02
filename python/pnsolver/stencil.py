@@ -360,7 +360,7 @@ def to_cpp( expr, info, level=0 ):
 	elif isinstance(expr, meh.Function):
 		return info.fun_to_cpp(expr, info, level)
 	elif expr.__class__ == GridLocation2D:
-		return "sys.voxelToWorld(vd+V2d({}, {}))".format(expr.getVoxel()[0]+expr.getOffset()[0]*0.5, expr.getVoxel()[1]+expr.getOffset()[1]*0.5 )
+		return "domain.voxelToWorld(vd+V2d({}, {}))".format(expr.getVoxel()[0]+expr.getOffset()[0]*0.5, expr.getVoxel()[1]+expr.getOffset()[1]*0.5 )
 	elif expr.__class__ == meh.Derivation:
 		raise ValueError("didnt expect any object of type Derivation")
 	elif expr.__class__ == meh.Addition:
@@ -1135,14 +1135,16 @@ def generate_stencil_code( stencil_name, filename, terms, order, staggered ):
 	#file.write("int PNSystem::g_order = {};\n\n".format(order))
 	
 
-	arg_sys = "PNSystem::VoxelSystem& sys"
-	arg_fields = "PNSystem::Fields& fields"
-	prototype = "void {}({},\n\t\t\t\t\t{})\n".format(stencil_name, arg_sys, arg_fields)
+	arg_sys = "PNSystem& sys"
+	arg_voxel = "const V2i& voxel"
+	prototype = "void {}({},\n\t\t\t\t\t{})\n".format(stencil_name, arg_sys, arg_voxel)
 	file.write( prototype )
 	file.write( "{\n" )
-	file.write( "\tV2i vi = sys.getVoxel();\n" )
-	file.write( "\tV2d vd = sys.getVoxel().cast<double>();\n" )
-	file.write( "\tV2d h_inv( 1.0/({}*sys.getVoxelSize()[0]), 1.0/({}*sys.getVoxelSize()[1]) );\n".format(pni.stencil_half_steps, pni.stencil_half_steps) )
+	file.write( "\tV2i vi = voxel;\n" )
+	file.write( "\tV2d vd = vi.cast<double>();\n" )
+	file.write( "\tconst Domain& domain = sys.getDomain();\n" )
+	file.write( "\tconst PNSystem::Fields& fields = sys.getFields();\n" )
+	file.write( "\tV2d h_inv( 1.0/({}*domain.getVoxelSize()[0]), 1.0/({}*domain.getVoxelSize()[1]) );\n".format(pni.stencil_half_steps, pni.stencil_half_steps) )
 	file.write( "\n" )
 
 	file.write( "\tEigen::Matrix<std::complex<double>, {}, {}> S;\n".format(pni.getS().shape[0], pni.getS().shape[1]) )
@@ -1251,10 +1253,10 @@ def generate_stencil_code( stencil_name, filename, terms, order, staggered ):
 					f.M_real = np.real(pni.getS().dot(f.M_complex.dot(pni.getSInv())))
 
 					file.write( "\t// is constant\n" )
-					file.write( "\tEigen::Matrix<double, {}, {}> {}_real;\n".format(f.numRows, f.numCols, f.id) )
-					for i in range(f.numRows):
-						for j in range(f.numCols):
-							file.write( "\t{}_real({}, {}) = {};\n".format( f.id, i, j, f.M_real[i, j] ) )
+					#file.write( "\tEigen::Matrix<double, {}, {}> {}_real;\n".format(f.numRows, f.numCols, f.id) )
+					#for i in range(f.numRows):
+					#	for j in range(f.numCols):
+					#		file.write( "\t{}_real({}, {}) = {};\n".format( f.id, i, j, f.M_real[i, j] ) )
 				else:
 					matrix_written = False
 
@@ -1511,7 +1513,7 @@ def generate_stencil_code( stencil_name, filename, terms, order, staggered ):
 					if np.max(np.abs(u.voxel)) > stencil_width:
 						stencil_width = np.max(np.abs(u.voxel))
 
-					file.write( "\tsys.coeff_A( {}, vi + V2i({},{}), {} ) += {};\n".format(coeff_index, u.voxel[0], u.voxel[1], u.coeff_index, expr_cpp) )
+					file.write( "\tsys.coeff_A( vi, {}, vi + V2i({},{}), {} ) += {};\n".format(coeff_index, u.voxel[0], u.voxel[1], u.coeff_index, expr_cpp) )
 					#file.write("\n")
 			else:
 				expr = meh.apply_recursive(result, ReplaceCoefficientMatrixComponents(coefficient_matrix_register))
@@ -1531,11 +1533,20 @@ def generate_stencil_code( stencil_name, filename, terms, order, staggered ):
 				info.fun_to_cpp = fun_to_cpp
 				expr_cpp = to_cpp(expr, info)
 
-				file.write( "\tsys.coeff_b( {} ) += {};\n".format(coeff_index, expr_cpp) )
+				file.write( "\tsys.coeff_b( vi, {} ) += {};\n".format(coeff_index, expr_cpp) )
 
 
 	file.write( "}\n" )
-	print("stencil_widht={}".format(stencil_width))
+	file.write("V2i {}_get_offset(int coeff)\n".format(stencil_name))
+	file.write("{\n")
+	file.write("\tswitch(coeff)\n")
+	file.write("\t{\n")
+	for i in range(pni.num_coeffs()):
+		offset = pni.getOffset(i)
+		file.write("\t\tcase {}:return V2i({}, {});break;\n".format(i, offset[0], offset[1]))
+	file.write("\t\tdefault:throw std::runtime_error(\"unexpected coefficient index\");break;\n")
+	file.write("\t};\n")
+	file.write("}\n")
 	file.write( "REGISTER_STENCIL({}, {}, {})\n".format(stencil_name, order, stencil_width) )
 
 	file.close()
@@ -1576,8 +1587,8 @@ if __name__ == "__main__":
 	staggered = [True, False]
 	order = [0,1,2,3,4,5]
 
-	#rte_forms = ["sopn"]
-	#order = [2]
+	#rte_forms = ["fopn"]
+	#order = [1]
 	#staggered = [True]
 
 	test = itertools.product(rte_forms, order, staggered)
@@ -1595,7 +1606,6 @@ if __name__ == "__main__":
 		generate_stencil_code( stencil_name, filename, rte_form_terms, order, is_staggered )
 
 		# clear stencil file
-		#filename = "{}/stencil{}.cpp".format(path, stencil_name)
 		#file = open(filename, "w")
 		#file.close()
 

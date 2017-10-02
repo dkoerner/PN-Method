@@ -163,17 +163,45 @@ PNSystem::PNSystem( Stencil stencil, const Domain& domain)
 
 PNSystem::MatrixBuilderd::MatrixAccessHelper PNSystem::coeff_A(V2i voxel_i, int coefficient_i, V2i voxel_j, int coefficient_j)
 {
-	if( m_domain.contains_voxel(voxel_i) &&
-		m_domain.contains_voxel(voxel_j))
+	/*
+	if(m_debug)
+	{
+		std::cout << "coeff_A: voxel_i=" << voxel_i[0] << " " << voxel_i[1] << " coeff_i=" << coefficient_i << std::endl;
+		std::cout << "coeff_A: voxel_j=" << voxel_j[0] << " " << voxel_j[1] << " coeff_j=" << coefficient_j << std::endl;
+	}
+	*/
+
+
+	//if( m_domain.contains_voxel(voxel_i) &&
+	//	m_domain.contains_voxel(voxel_j))
+
+//here is a bug!!
+
+	if( voxelIsValid(voxel_i) && voxelIsValid(voxel_j) )
 	{
 		int globalIndex_i = m_voxelManager.getGlobalIndex(getVoxel2(voxel_i), coefficient_i);
 		int globalIndex_j = m_voxelManager.getGlobalIndex(getVoxel2(voxel_j), coefficient_j);
 
 		if( (globalIndex_i >= 0)&&(globalIndex_j >= 0) )
 		{
+			/*
+			if( !(m_domain.contains_voxel(voxel_i) && m_domain.contains_voxel(voxel_j)))
+			{
+				std::cout << "valid index for boundary voxel:\n";
+				std::cout << "voxel_i=" << voxel_i[0] << " " << voxel_i[1] << " voxel_j=" << voxel_j[0] << " " << voxel_j[1];
+				std::cout << "  gobalIndex_i=" << globalIndex_i << " gobalIndex_j=" << globalIndex_j << " " << std::endl;
+			}
+			*/
+
 			return m_builder_A.coeff(globalIndex_i, globalIndex_j);
 		}
 	}
+
+	//if(m_debug)
+	//	std::cout << ""
+
+
+
 	return PNSystem::MatrixBuilderd::MatrixAccessHelper();
 }
 
@@ -208,6 +236,23 @@ PNSystem::VoxelManager::VoxelManager():sys(0)
 
 }
 
+std::string typeStr( int type )
+{
+	switch(type)
+	{
+	case PNSystem::Voxel::EVT_Interior:return "Interior";
+	case PNSystem::Voxel::EVT_Boundary:return "Boundary";
+	case PNSystem::Voxel::EVT_E:return "E";
+	case PNSystem::Voxel::EVT_S:return "S";
+	case PNSystem::Voxel::EVT_W:return "W";
+	case PNSystem::Voxel::EVT_N:return "N";
+	case PNSystem::Voxel::EVT_NE:return "NE";
+	case PNSystem::Voxel::EVT_SE:return "SE";
+	case PNSystem::Voxel::EVT_SW:return "SW";
+	case PNSystem::Voxel::EVT_NW:return "NW";
+	};
+}
+
 void PNSystem::VoxelManager::init(PNSystem *sys)
 {
 	this->sys = sys;
@@ -223,14 +268,56 @@ void PNSystem::VoxelManager::init(PNSystem *sys)
 	// initialize all coefficients to boundary coefficients
 	int numCoeffs = sys->getNumCoefficients();
 	m_localCoefficientIndices = std::vector<std::vector<int>>( 10, std::vector<int>(numCoeffs, -1) );
+	m_numNonBoundaryCoefficients = std::vector<int>(10, 0);
 
 	for( int i=0;i<numCoeffs;++i )
 	{
-		m_localCoefficientIndices[Voxel::EVT_Interior][i] = i;
+		V2i offset = sys->m_stencil.getOffset(i);
+		//std::cout << offset[0] << " " << offset[1] << std::endl;
+		// interior cells have all voxels defines, therefore their indices are all set
+		m_localCoefficientIndices[Voxel::EVT_Interior][i] = m_numNonBoundaryCoefficients[Voxel::EVT_Interior]++;
 
+
+		///*
 		// TODO: bring boundary conditions into correct place
+		if( (offset[0] == 0)&&(offset[1] == 0) )
+		{
+			m_localCoefficientIndices[Voxel::EVT_N][i] = m_numNonBoundaryCoefficients[Voxel::EVT_N]++;
+			m_localCoefficientIndices[Voxel::EVT_NE][i] = m_numNonBoundaryCoefficients[Voxel::EVT_NE]++;
+			m_localCoefficientIndices[Voxel::EVT_E][i] = m_numNonBoundaryCoefficients[Voxel::EVT_E]++;
+		}else
+		if( (offset[0] == 0)&&(offset[1] == 1) )
+		{
+			m_localCoefficientIndices[Voxel::EVT_N][i] = m_numNonBoundaryCoefficients[Voxel::EVT_N]++;
+		}else
+		if( (offset[0] == 1)&&(offset[1] == 0) )
+		{
+			m_localCoefficientIndices[Voxel::EVT_E][i] = m_numNonBoundaryCoefficients[Voxel::EVT_E]++;
+		}
+
+		//std::cout << "check:" << m_numNonBoundaryCoefficients[Voxel::EVT_E] << std::endl;
+		//*/
+
+		//Voxel::EVT_E;
+		//Voxel::EVT_S;
+		//Voxel::EVT_W;
+		//Voxel::EVT_NE;
+		//Voxel::EVT_SE;
+		//Voxel::EVT_SW;
+		//Voxel::EVT_NW;
 	}
 
+	/*
+	for(int i=0;i<10;++i)
+	{
+		int numValidCoeffs = 0;
+		for( int j=0;j<numCoeffs;++j )
+			if( m_localCoefficientIndices[i][j] >= 0 )
+				++numValidCoeffs;
+		std::cout << "type=" << typeStr(i) << " numValidCoeffs=" <<  numValidCoeffs << " numCoeffs=" << m_numNonBoundaryCoefficients[i] << std::endl;
+		//m_numNonBoundaryCoefficients[i] = numValidCoeffs;
+	}
+	*/
 }
 
 PNSystem::Voxel PNSystem::VoxelManager::createVoxel( const V2i& coord, int globalOffset )
@@ -276,41 +363,49 @@ PNSystem::Voxel PNSystem::VoxelManager::createVoxel( const V2i& coord, int globa
 
 int PNSystem::VoxelManager::getNumCoeffs(const Voxel& voxel)
 {
-	switch(voxel.type)
-	{
-	case Voxel::EVT_Interior:
-		// interior cells have all coefficients defined
-		return sys->getNumCoefficients();
-		break;
-	case Voxel::EVT_E:
-		//break;
-	case Voxel::EVT_W:
-		//break;
-	case Voxel::EVT_N:
-		//break;
-	case Voxel::EVT_S:
-		//break;
-	case Voxel::EVT_NE:
-		//break;
-	case Voxel::EVT_NW:
-		//break;
-	case Voxel::EVT_SW:
-		//break;
-	case Voxel::EVT_SE:
-		//break;
-	case Voxel::EVT_Boundary:
-		// boundary cells have no coefficients defined
-		return 0;
-		break;
-	default:
-		throw std::runtime_error("PNSystem::VoxelManager::getNumCoeffs: unknown voxel type");
-	};
-	return 0;
+	return m_numNonBoundaryCoefficients[voxel.type];
 }
 
 int PNSystem::VoxelManager::getGlobalIndex(const Voxel &voxel, int coeff)
 {
-	return voxel.globalOffset + m_localCoefficientIndices[voxel.type][coeff];
+	int globalIndex = -1;
+	int localOffset = m_localCoefficientIndices[voxel.type][coeff];
+	if( localOffset >= 0 )
+		globalIndex = voxel.globalOffset + localOffset;
+
+
+	// dirichlet BC: we simply lookup the valid coefficients, the invalid once are ignored when setting
+	// coefficients in A
+	return globalIndex;
+
+/*
+
+	bool neumann_bc = true;
+	if(neumann_bc)
+	{
+		switch(voxel.type)
+		{
+			case EVT_E:
+			case EVT_W:
+			case EVT_N:
+			case EVT_S:
+			case EVT_NE:
+			case EVT_NW:
+			case EVT_SW:
+			case EVT_SE:
+			case EVT_Interior:
+			case EVT_Boundary:
+			{
+				int localOffset = m_localCoefficientIndices[voxel.type][coeff];
+				if( localOffset >= 0 )
+					return voxel.globalOffset + localOffset;
+				else
+					return -1;
+			}
+		}
+	}
+*/
+
 }
 
 
@@ -519,11 +614,6 @@ PNSystem::Fields &PNSystem::getFields()
 
 
 
-PNSystem::VoxelSystem PNSystem::getVoxelSystem( const V2i& voxel )
-{
-	return PNSystem::VoxelSystem(this, voxel);
-}
-
 const Domain& PNSystem::getDomain()const
 {
 	return m_domain;
@@ -682,7 +772,16 @@ void PNSystem::build()
 	//	for( int j=min_y;j<max_y;++j )
 	//		m_stencil.apply( getVoxelSystem(V2i(i,j)), m_fields );
 	for( auto& v: m_voxels )
+	{
+		/*
+		if( (v.coord[0] == 35)&&(v.coord[1]==70) )
+			m_debug = true;
+		else
+			m_debug = false;
+		*/
 		m_stencil.apply( *this, v.coord );
+		//m_debug = false;
+	}
 
 	m_builder_A.build(m_numSystemEquations, m_numSystemEquations);
 	m_builder_b.build(m_numSystemEquations, 1);
@@ -1052,91 +1151,5 @@ PNSystem::RealVector PNSystem::solve_boundary()
 	}
 
 	return x.block(0, 0, m_domain.numVoxels()*m_numCoeffs, 1);
-}
-
-//PNSystem::VoxelSystem ==============================================
-PNSystem::VoxelSystem::VoxelSystem(PNSystem* pns,
-				const V2i& voxel_i ):
-	m_pns(pns),
-	m_voxel_i(voxel_i)
-{
-}
-
-const V2i& PNSystem::VoxelSystem::getVoxel()const
-{
-	return m_voxel_i;
-}
-
-P2d PNSystem::VoxelSystem::getVoxelSize() const
-{
-	return m_pns->getDomain().voxelSize();
-}
-
-
-PNSystem::MatrixBuilderd::MatrixAccessHelper PNSystem::VoxelSystem::coeff_A(int coefficient_i, V2i voxel_j, int coefficient_j)
-{
-	int global_i = m_pns->getGlobalIndex(m_voxel_i, coefficient_i);
-	int global_j = m_pns->getGlobalIndex(voxel_j, coefficient_j);
-
-	if( !m_pns->getDomain().contains_voxel(m_voxel_i) )
-		throw std::runtime_error("PNSystem::VoxelSystem::coeff_A voxel_i is out of bound, which is unexpected.");
-
-
-	if( m_pns->getDomain().contains_voxel(voxel_j) )
-		return m_pns->m_builder_A.coeff(global_i, global_j);
-	///*
-	// voxel_j is a boundary voxel ---
-	V2d dist;
-	bool is_bound = false;
-	for( int i=0;i<2;++i )
-	{
-		if( voxel_j[i] < 0 )
-		{
-			is_bound = true;
-			dist[i] = std::abs(voxel_j[i]);
-		}
-		else
-		if( voxel_j[i] >= m_pns->m_domain.resolution()[i] )
-		{
-			is_bound = true;
-			dist[i] = voxel_j[i] - m_pns->m_domain.resolution()[i] + 1;
-		}
-		else
-		{
-			//non_bound += 1;
-			//std::cout << "boundary access: voxel=" << voxel_j[0] << " " << voxel_j[1] << std::endl;
-			//
-		}
-
-		//if( dist[i] > 1)
-		//		std::cout << "!!!!!!!!!!!!!!!!!!!!!!!!\n";
-	}
-
-	if(!is_bound)
-		throw std::runtime_error("voxel is not a boundary voxel although it is expected to be.");
-	//*/
-
-
-
-
-	// simple dirichlet BC: we pass an empty AccessHelper, which doesnt create any triplets and
-	// therefore basically sets all accessed coefficients to 0
-	//return PNSystem::MatrixBuilderd::MatrixAccessHelper(0);
-
-	// here we pass the access to the boundary coefficient to a different matrix builder
-	// which causes triplets to be created for boundary coefficients
-	return m_pns->m_builder_A_boundary.coeff(global_i, m_pns->getGlobalBoundaryIndex(voxel_j, coefficient_j));
-}
-
-PNSystem::MatrixBuilderd::MatrixAccessHelper PNSystem::VoxelSystem::coeff_b(int coefficient_i)
-{
-	int global_i = m_pns->getGlobalIndex(m_voxel_i, coefficient_i);
-	return m_pns->m_builder_b.coeff(global_i, 0);
-}
-
-
-V2d PNSystem::VoxelSystem::voxelToWorld(const V2d& pVS )const
-{
-	return m_pns->getDomain().voxelToWorld(pVS);
 }
 

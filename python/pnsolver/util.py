@@ -138,7 +138,7 @@ def compare_matrices( A0, A1, id0, id1 ):
     if A0.dtype != A1.dtype:
         raise ValueError("unmatched dtype")
 
-    diff = A0-A1
+    diff = (A0-A1).todense()
     abs_real_diff = np.abs(np.real(diff))
     abs_imag_diff = np.abs(np.imag(diff))
 
@@ -180,19 +180,24 @@ def write_pn_system(filename, sys, problem, x=None):
 	data["info"] = info
 	if not A is None:
 		data['A'] = A
-		#data['A_cond'] = np.linalg.cond(A)
 	if not b is None:
 		data['b'] = b
 	if not x is None:
 		data['x'] = x
 
 
-	data["index"] = sys.getIndexMatrix()
+	data["globalOffset"] = sys.getVoxelInfo("globalOffset").todense()
+	#data["globalOffset"] = sys.getVoxelInfo("coord.x").todense()
+	#data["globalOffset"] = sys.getVoxelInfo("coord.y").todense()
+	#data["type"] = sys.getVoxelInfo("type").todense()
+	#data["tmp0"] = sys.getVoxelInfo("tmp0").todense()
+	#data["tmp1"] = sys.getVoxelInfo("tmp1").todense()
+	#data["index"] = sys.getIndexMatrix()
 	#Ab = 
-	data["A_boundary"] = sys.get_boundary_A_real()
+	#data["A_boundary"] = sys.get_boundary_A_real()
 	#data['A_boundary_cond'] = np.linalg.cond(Ab.todense())
 	#print( "A_boundary_cond={}".format(data['A_boundary_cond']) )
-	data["b_boundary"] = sys.get_boundary_b_real()
+	#data["b_boundary"] = sys.get_boundary_b_real()
 
 	data['sigma_s'] = rasterize(lambda pWS: np.real(problem["sigma_s"](pWS)), domain)
 	data['sigma_a'] = rasterize(lambda pWS: np.real(problem["sigma_a"](pWS)), domain)

@@ -37,7 +37,7 @@ def solve( stencil_name, problem, filename, do_neumannBC = False ):
 
 	# set the RTE parameter fields ---------------------------------------------
 	setProblem(sys, problem)
-	sys.setNeumannBoundaryConditions(do_neumannBC)
+	#sys.setNeumannBoundaryConditions(do_neumannBC)
 
 	# build the system Ax=b using the cpp stencil -------------------
 	sys.build()
@@ -49,9 +49,8 @@ def solve( stencil_name, problem, filename, do_neumannBC = False ):
 	x = None
 
 	try:
-		#x = sys.solve()
-		x = sys.solve_boundary()
-
+		x = sys.solve()
+		#pass
 	except:
 		print("Solve failed...")
 
@@ -92,15 +91,17 @@ if __name__ == "__main__":
 	bc_id = {True:"_nbc", False:""}
 
 
-	rte_forms = ["fopn", "sopn"]
-	order = [0,1,2,3,4,5]
-	staggered = [True, False]
-	boundary_conditions = [True, False]
-
-	#rte_forms = ["fopn"]
-	#order = [1]
-	#staggered = [False]
+	#rte_forms = ["fopn", "sopn"]
+	#order = [0,1,2,3,4,5]
+	#staggered = [True, False]
 	#boundary_conditions = [False]
+
+	#order = [0,1,2,3,4]
+	#'''
+	rte_forms = ["fopn"]
+	order = [1]
+	staggered = [True]
+	boundary_conditions = [False]
 
 	test = itertools.product(rte_forms, order, staggered, boundary_conditions)
 	for c in test:
@@ -110,11 +111,12 @@ if __name__ == "__main__":
 		do_neumannBC = c[3]
 
 		stencil_name = "stencil_{}_p{}_{}".format(rte_form_name, order, staggered_id[is_staggered] )
+		#stencil_name = "noop"
 		
-		filename = "{}/{}{}{}.mat".format(path, problem["id"], stencil_name, bc_id[do_neumannBC])
-		#filename = "{}/{}_test.mat".format(path, problem["id"], stencil_name)
-		print("clear;filename=\"{}\";compute_condest;".format(filename))
-		#solve(stencil_name, problem, filename, do_neumannBC=do_neumannBC)
+		#filename = "{}/{}5{}{}.mat".format(path, problem["id"], stencil_name, bc_id[do_neumannBC])
+		filename = "{}/{}_test.mat".format(path, problem["id"], stencil_name)
+		#print("clear;filename=\"{}\";compute_condest;".format(filename))
+		solve(stencil_name, problem, filename, do_neumannBC=do_neumannBC)
 	#'''
 
 
@@ -172,13 +174,25 @@ if __name__ == "__main__":
 
 	'''
 	# compare matrices A
-	#filename = "c:/projects/epfl/epfl17/python/pnsolver/results/terms_original/checkerboard_sopn_cg_term1.mat"
-	filename = "c:/projects/epfl/epfl17/python/pnsolver/results/terms_original/checkerboard_sopn_cg.mat"
-	data = util.load_pn_system(filename)
-	print("comparing A ----")
-	util.compare_matrices( sys.get_A_real(), data["A"], "new", "original" )
-	print("comparing b ----")
-	util.compare_matrices( sys.get_b_real(), data["b"], "new", "original" )
+	filename_a = "c:/projects/epfl/epfl17/python/pnsolver/results/studies/checkerboard_test.mat"
+	filename_b = "c:/projects/epfl/epfl17/python/pnsolver/results/studies/checkerboard_test_org.mat"
+	data_a = util.load_pn_system(filename_a)
+	data_b = util.load_pn_system(filename_b)
+	A_a = data_a["A"]
+	A_b = data_b["A"]
+	b_a = data_a["b"]
+	b_b = data_b["b"]
+
+	#print("comparing A ----")
+	#util.compare_matrices( A_a, A_b, "new", "original" )
+	#gg = 2131
+	#print(A_a[gg,gg])
+	#print(A_b[gg,gg])
+	#print("comparing b ----")
+	#util.compare_matrices( b_a, b_b, "new", "original" )
+	#print(b_a[6603,0])
+	#print(b_b[6603,0])
+
 	'''
 
 

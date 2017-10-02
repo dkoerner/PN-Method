@@ -2,12 +2,13 @@
 
 #include <PNSystem.h>
 
-void stencil_fopn_p1_cg(PNSystem& sys, const V2i& voxel)
+void stencil_fopn_p1_cg(PNSystem& sys,
+					const V2i& voxel)
 {
-	PNSystem::Fields& fields = sys.getFields();
-	const Domain& domain = sys.getDomain();
 	V2i vi = voxel;
 	V2d vd = vi.cast<double>();
+	const Domain& domain = sys.getDomain();
+	const PNSystem::Fields& fields = sys.getFields();
 	V2d h_inv( 1.0/(2*domain.getVoxelSize()[0]), 1.0/(2*domain.getVoxelSize()[1]) );
 
 	Eigen::Matrix<std::complex<double>, 3, 3> S;
@@ -28,29 +29,9 @@ void stencil_fopn_p1_cg(PNSystem& sys, const V2i& voxel)
 
 	//M_0 ---
 	// is constant
-	Eigen::Matrix<double, 3, 3> M_0_real;
-	M_0_real(0, 0) = 0.0;
-	M_0_real(0, 1) = 0.5773502691896258;
-	M_0_real(0, 2) = 0.0;
-	M_0_real(1, 0) = 0.5773502691896257;
-	M_0_real(1, 1) = 0.0;
-	M_0_real(1, 2) = 0.0;
-	M_0_real(2, 0) = 0.0;
-	M_0_real(2, 1) = 0.0;
-	M_0_real(2, 2) = 0.0;
 
 	//M_1 ---
 	// is constant
-	Eigen::Matrix<double, 3, 3> M_1_real;
-	M_1_real(0, 0) = 0.0;
-	M_1_real(0, 1) = 0.0;
-	M_1_real(0, 2) = 0.5773502691896258;
-	M_1_real(1, 0) = 0.0;
-	M_1_real(1, 1) = 0.0;
-	M_1_real(1, 2) = 0.0;
-	M_1_real(2, 0) = 0.5773502691896257;
-	M_1_real(2, 1) = 0.0;
-	M_1_real(2, 2) = 0.0;
 
 	//M_2 ---
 	// all components vanish
@@ -87,5 +68,15 @@ void stencil_fopn_p1_cg(PNSystem& sys, const V2i& voxel)
 	sys.coeff_b( vi, 0 ) += b_real.coeffRef(0, 0);
 	sys.coeff_b( vi, 1 ) += b_real.coeffRef(1, 0);
 	sys.coeff_b( vi, 2 ) += b_real.coeffRef(2, 0);
+}
+V2i stencil_fopn_p1_cg_get_offset(int coeff)
+{
+	switch(coeff)
+	{
+		case 0:return V2i(1, 1);break;
+		case 1:return V2i(1, 1);break;
+		case 2:return V2i(1, 1);break;
+		default:throw std::runtime_error("unexpected coefficient index");break;
+	};
 }
 REGISTER_STENCIL(stencil_fopn_p1_cg, 1, 1)

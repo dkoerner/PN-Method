@@ -12,7 +12,7 @@
 #define REGISTER_STENCIL(name, order, width) \
 	static struct name ##_{ \
 		name ##_() { \
-			PNSystem::registerStencil(#name, PNSystem::Stencil( order, width, name )); \
+			PNSystem::registerStencil(#name, PNSystem::Stencil( order, width, name, name##_get_offset )); \
 		} \
 	}name ##__;
 
@@ -45,16 +45,22 @@ struct PNSystem
 	struct Stencil
 	{
 		typedef std::function<void(PNSystem&, const V2i&)> StencilFunction;
+		typedef std::function<V2i(int)> GetCoefficientOffsetFunction;
 
-		Stencil( int _order = -1, int _width = 0, StencilFunction fun = StencilFunction() ):
+		Stencil( int _order = -1,
+				 int _width = 0,
+				 StencilFunction fun = StencilFunction(),
+				 GetCoefficientOffsetFunction getOffset_fun = GetCoefficientOffsetFunction() ):
 			order(_order),
 			width(_width),
-			apply(fun)
+			apply(fun),
+			getOffset(getOffset_fun)
 		{
 
 		}
 
 		StencilFunction apply;
+		GetCoefficientOffsetFunction getOffset;
 		int order;
 
 		// this tells us how many neighbouring voxels the stencil needs to see
@@ -64,7 +70,9 @@ struct PNSystem
 
 		static Stencil noop()
 		{
-			return Stencil(0, 2, [](PNSystem& sys, const V2i& voxel){});
+			return Stencil(0, 2,
+						   [](PNSystem& sys, const V2i& voxel){},
+						   [](int coeff){return V2i(1,1);}); // noop places all coefficients at the cell center
 		}
 	};
 
@@ -203,23 +211,6 @@ struct PNSystem
 	// is expressed by the expanded RTE terms which are used to generate set_system_row.
 	// So instead of generating a function, which sets a single row in the global system,
 	// it is more intuitive to have a function which sets a complete block-row per voxel.
-	struct VoxelSystem
-	{
-		VoxelSystem(PNSystem* pns,
-					const V2i& voxel_i );
-
-
-		MatrixBuilderd::MatrixAccessHelper coeff_A(int coefficient_i, V2i voxel_j, int coefficient_j);
-		MatrixBuilderd::MatrixAccessHelper coeff_b(int coefficient_i);
-
-		V2d voxelToWorld(const V2d& pVS)const;
-		const V2i& getVoxel()const;
-		P2d getVoxelSize()const;
-	private:
-		V2i m_voxel_i;
-		PNSystem* m_pns;
-	};
-
 	struct Voxel
 	{
 		Voxel():type(-1),tmp0(-100),tmp1(-100)
@@ -263,6 +254,7 @@ struct PNSystem
 		// maps [type][coeff_index] to local index within voxel
 		// this mapping is different per type
 		std::vector<std::vector<int>> m_localCoefficientIndices;
+		std::vector<int> m_numNonBoundaryCoefficients; // stores the number of non-boundary coefficients for every voxeltype
 	};
 
 	MatrixBuilderd::MatrixAccessHelper coeff_A(V2i voxel_i, int coefficient_i, V2i voxel_j, int coefficient_j);
@@ -344,6 +336,14 @@ struct PNSystem
 
 public:
 	PNSystem::Voxel &getVoxel2(const V2i &voxel);
+	bool voxelIsValid( const P2i& voxel )const
+	{
+		if( (voxel[0] < -m_numBoundaryLayers)||(voxel[0] >= m_domain.resolution()[0]+m_numBoundaryLayers)||
+			(voxel[1] < -m_numBoundaryLayers)||(voxel[1] >= m_domain.resolution()[1]+m_numBoundaryLayers))
+			return false;
+		return true;
+	}
+
 	int getVoxel3(const V2i &voxel);
 	PNSystem::Voxel createVoxel(const V2i &coord, int globalOffset);
 private:
@@ -354,9 +354,6 @@ private:
 							int coefficient_j );
 	MatrixAccessHelper b( V2i voxel_i,
 							 int coefficient_i );
-
-	// returns an interface for working with rows in Ax=b which belong to the given voxel
-	VoxelSystem getVoxelSystem( const V2i& voxel );
 
 
 
@@ -392,6 +389,7 @@ private:
 	Fields m_fields; // the RTE parameters. Those have to be set by the client code through ::setField
 	bool m_neumannBC;
 	Stencil m_stencil;
+	bool m_debug;
 
 
 	// the following matrices define the system Ax=b

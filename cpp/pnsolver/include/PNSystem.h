@@ -42,70 +42,6 @@ struct PNSystem
 	struct VoxelSystem;
 	struct Fields;
 
-	struct Stencil
-	{
-		typedef std::function<void(PNSystem&, const V2i&)> StencilFunction;
-		typedef std::function<V2i(int)> GetCoefficientOffsetFunction;
-
-		Stencil( int _order = -1,
-				 int _width = 0,
-				 StencilFunction fun = StencilFunction(),
-				 GetCoefficientOffsetFunction getOffset_fun = GetCoefficientOffsetFunction() ):
-			order(_order),
-			width(_width),
-			apply(fun),
-			getOffset(getOffset_fun)
-		{
-
-		}
-
-		StencilFunction apply;
-		GetCoefficientOffsetFunction getOffset;
-		int order;
-
-		// this tells us how many neighbouring voxels the stencil needs to see
-		// this value is required for setting up boundary voxels
-		// widht=0 means: no neighbours are touched
-		int width;
-
-		static Stencil noop()
-		{
-			return Stencil(0, 2,
-						   [](PNSystem& sys, const V2i& voxel){},
-						   [](int coeff){return V2i(1,1);}); // noop places all coefficients at the cell center
-		}
-	};
-
-
-	PNSystem(Stencil stencil, const Domain& domain);
-
-
-
-	// This class is used to allow setting coefficients in A and b as if it were dense
-	// matrices. The access to the components are stored as triplets which will be
-	// used to efficiently build the sparse matrix after all coefficients have been set.
-	// The class stores a pointer to a triplet list. Every call to += will generate
-	// a new triplet, which is being stored in that list.
-	struct MatrixAccessHelper
-	{
-		MatrixAccessHelper(std::vector<ComplexTriplet>* triplets):
-			m_triplets(triplets)
-		{
-
-		}
-
-		MatrixAccessHelper& operator+=(const Complex& rhs)
-		{
-			// add triplet
-			if(m_triplets)
-				m_triplets->push_back(ComplexTriplet(m_global_i, m_global_j, rhs));
-			return *this; // return the result by reference
-		}
-
-		int m_global_i;
-		int m_global_j;
-		std::vector<ComplexTriplet>* m_triplets;
-	};
 
 	template<typename T>
 	struct MatrixBuilder
@@ -213,9 +149,9 @@ struct PNSystem
 	// it is more intuitive to have a function which sets a complete block-row per voxel.
 	struct Voxel
 	{
-		Voxel():type(-1),tmp0(-100),tmp1(-100)
+		Voxel():
+			type(-1)
 		{
-
 		}
 
 		enum EVoxelType
@@ -232,30 +168,161 @@ struct PNSystem
 			EVT_Boundary=9 // contains only boundary coefficients
 		};
 
+		static std::string typeStr( int type )
+		{
+			switch(type)
+			{
+			case PNSystem::Voxel::EVT_Interior:return "Interior";
+			case PNSystem::Voxel::EVT_Boundary:return "Boundary";
+			case PNSystem::Voxel::EVT_E:return "E";
+			case PNSystem::Voxel::EVT_S:return "S";
+			case PNSystem::Voxel::EVT_W:return "W";
+			case PNSystem::Voxel::EVT_N:return "N";
+			case PNSystem::Voxel::EVT_NE:return "NE";
+			case PNSystem::Voxel::EVT_SE:return "SE";
+			case PNSystem::Voxel::EVT_SW:return "SW";
+			case PNSystem::Voxel::EVT_NW:return "NW";
+			};
+		}
+
 		V2i coord;
 		int globalOffset; // points at the global index of the first coefficient
 		int type; // identifies the voxel type (interior, east-boundary, etc.)
-		int tmp0;
-		int tmp1;
 	};
-	std::vector<Voxel> m_voxels;
 
 	struct VoxelManager
 	{
 		VoxelManager();
 		void init(PNSystem* sys);
-		Voxel createVoxel( const V2i& coord, int globalOffset );
 		int getNumCoeffs(const Voxel& voxel);
 		int getGlobalIndex( const Voxel& voxel, int coeff );
+		bool isBoundaryCoefficient(const Voxel &voxel, int coeff ); // returns true, if the given coefficient is a boundary coefficient
+
+		Voxel &getVoxel(const V2i &voxel);
+		bool voxelIsValid( const P2i& voxel )const
+		{
+			if( (voxel[0] < -m_numBoundaryLayers)||(voxel[0] >= m_resolution[0]+m_numBoundaryLayers)||
+				(voxel[1] < -m_numBoundaryLayers)||(voxel[1] >= m_resolution[1]+m_numBoundaryLayers))
+				return false;
+			return true;
+		}
+		std::vector<Voxel>& getVoxels()
+		{
+			return m_voxels;
+		}
+
+		int getNumUnknowns()const
+		{
+			return m_numUnknowns;
+		}
+
+		V2i getVoxelMin()
+		{
+			return V2i(-m_numBoundaryLayers, -m_numBoundaryLayers);
+		}
+
+		V2i getVoxelMax()
+		{
+			return V2i(m_resolution[0]+m_numBoundaryLayers, m_resolution[1]+m_numBoundaryLayers);
+		}
 	private:
+
+		// returns boundary layer indices of the current voxel in x and y
+		// the indices are signed, indicating left or right side of the domain.
+		// if no layer is touched: zero is returned
+		V2i getBoundaryLayer( const Voxel& voxel );
+
 		PNSystem* sys;
 		std::map<std::pair<int,int>, int> mixedTypes;
+
+
+		int m_numUnknowns; // number of cols and rows of A
+		int m_numBoundaryLayers;
+		V2i m_resolution;
+
 
 		// maps [type][coeff_index] to local index within voxel
 		// this mapping is different per type
 		std::vector<std::vector<int>> m_localCoefficientIndices;
+		std::vector<std::vector<bool>> m_isBoundaryCoefficient; // this table flags each boundary coefficient
 		std::vector<int> m_numNonBoundaryCoefficients; // stores the number of non-boundary coefficients for every voxeltype
+		std::vector<Voxel> m_voxels;
 	};
+
+
+
+
+
+
+
+	struct Stencil
+	{
+		struct Context
+		{
+			Context( PNSystem& sys, Voxel& voxel ):
+				sys(sys),
+				voxel(voxel)
+			{
+				if(!sys.m_voxelManager.voxelIsValid(voxel.coord))
+					throw std::runtime_error("Stencil::Context::Context: voxel is expected to be valid.");
+			}
+
+			V2i getVoxel()
+			{
+				return voxel.coord;
+			}
+
+			const Domain& getDomain()
+			{
+				return sys.getDomain();
+			}
+
+			Fields& getFields()
+			{
+				return sys.getFields();
+			}
+
+			MatrixBuilderd::MatrixAccessHelper coeff_A( int coeff_i, const V2i& voxel_j, int coeff_j );
+			MatrixBuilderd::MatrixAccessHelper coeff_b( int coeff_i );
+
+		private:
+			PNSystem& sys;
+			Voxel& voxel;
+		};
+
+		typedef std::function<void(Context&)> StencilFunction;
+		typedef std::function<V2i(int)> GetCoefficientOffsetFunction;
+
+		Stencil( int _order = -1,
+				 int _width = 0,
+				 StencilFunction fun = StencilFunction(),
+				 GetCoefficientOffsetFunction getOffset_fun = GetCoefficientOffsetFunction() ):
+			order(_order),
+			width(_width),
+			apply(fun),
+			getOffset(getOffset_fun)
+		{
+
+		}
+
+		StencilFunction apply;
+		GetCoefficientOffsetFunction getOffset;
+		int order;
+
+		// this tells us how many neighbouring voxels the stencil needs to see
+		// this value is required for setting up boundary voxels
+		// widht=0 means: no neighbours are touched
+		int width;
+
+		static Stencil noop()
+		{
+			return Stencil(0, 2,
+						   [](Context& sys){},
+						   [](int coeff){return V2i(1,1);}); // noop places all coefficients at the cell center
+		}
+	};
+
+	PNSystem(Stencil stencil, const Domain& domain, bool neumannBC);
 
 	MatrixBuilderd::MatrixAccessHelper coeff_A(V2i voxel_i, int coefficient_i, V2i voxel_j, int coefficient_j);
 	MatrixBuilderd::MatrixAccessHelper coeff_b(V2i voxel_i, int coefficient_i);
@@ -266,8 +333,9 @@ struct PNSystem
 	Eigen::MatrixXd computeGroundtruth( int numSamples );
 
 
-	Fields& getFields();
+	Stencil& getStencil();
 
+	Fields& getFields();
 	// This method is used to set RTE parameters. Allowed ids are:
 	// sigma_t (Field)
 	// sigma_a (Field)
@@ -276,21 +344,19 @@ struct PNSystem
 	// q (setting only l=0 and m=0 field of a SHCoefficientFieldArray)
 	void setField( const std::string& id, Field::Ptr field );
 
-	void setNeumannBoundaryConditions( bool flag );
+	int getBoundaryConditions();
 
 
 	// This method builds the matrices A and b and also converts them
 	// from complex-valued to real-valued matrices
 	void build();
 
-	RealMatrix getIndexMatrix();
 	RealMatrix getVoxelInfo( const std::string& info );
 
 	// this function uses Eigen to solve the system
 	RealVector solve();
 	RealVector solveWithGuess(RealVector &x0 );
 	//ComplexVector solve2();
-	RealVector solve_boundary();
 
 
 	const Domain& getDomain()const; // returns the spatial discretization used by the system
@@ -315,9 +381,6 @@ struct PNSystem
 
 	void setDebugVoxel( const V2i& dv ); // this is used for debugging
 
-	// temp boundary test
-	RealMatrix& get_boundary_A_real();
-	RealMatrix& get_boundary_b_real();
 
 	static void registerStencil( const std::string& name, Stencil stencil )
 	{
@@ -334,28 +397,9 @@ struct PNSystem
 	}
 
 
-public:
-	PNSystem::Voxel &getVoxel2(const V2i &voxel);
-	bool voxelIsValid( const P2i& voxel )const
-	{
-		if( (voxel[0] < -m_numBoundaryLayers)||(voxel[0] >= m_domain.resolution()[0]+m_numBoundaryLayers)||
-			(voxel[1] < -m_numBoundaryLayers)||(voxel[1] >= m_domain.resolution()[1]+m_numBoundaryLayers))
-			return false;
-		return true;
-	}
+	VoxelManager& getVoxelManager();
 
-	int getVoxel3(const V2i &voxel);
-	PNSystem::Voxel createVoxel(const V2i &coord, int globalOffset);
 private:
-	// These are used by VoxelSystem during construction of Ax=b
-	MatrixAccessHelper A(   V2i voxel_i,
-							int coefficient_i,
-							V2i voxel_j,
-							int coefficient_j );
-	MatrixAccessHelper b( V2i voxel_i,
-							 int coefficient_i );
-
-
 
 	std::map<std::pair<int, int>, int> m_lm_to_index; // used to convert from l,m to linear index in 2d
 	std::map<int, std::pair<int, int>> m_index_to_lm; // used to convert from linear index to l,m in 2d
@@ -369,22 +413,10 @@ private:
 	int m_numBoundaryVoxels;
 	std::map<std::pair<int,int>, int> m_voxel_to_global_boundary_index;
 
-	MatrixBuilderd m_builder_A_boundary;
-	MatrixBuilderd m_builder_b_boundary;
-
-	/*
-	ComplexMatrix m_boundary_A_complex;
-	RealMatrix m_boundary_A_real;
-	ComplexVector m_boundary_b_complex;
-	RealVector m_boundary_b_real;
-	ComplexMatrix m_boundary_S; // converts given complex-valued vector to real-valued vector
-	ComplexMatrix m_boundary_S_inv; // the inverse...
-	*/
 
 
 	// computational domain, problem and stencil
 	int m_numCoeffs; // number of coefficients per voxel
-	int m_numBoundaryLayers;
 	const Domain m_domain; // defines the spatial discretization
 	Fields m_fields; // the RTE parameters. Those have to be set by the client code through ::setField
 	bool m_neumannBC;
@@ -397,8 +429,6 @@ private:
 	MatrixBuilderd m_builder_b;
 
 	VoxelManager m_voxelManager;
-	int m_numSystemEquations; // number of cols and rows of A
-
 
 	static std::map<std::string, Stencil> g_stencils; // global register of stencils
 };

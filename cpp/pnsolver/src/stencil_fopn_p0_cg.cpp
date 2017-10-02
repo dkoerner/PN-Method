@@ -2,13 +2,12 @@
 
 #include <PNSystem.h>
 
-void stencil_fopn_p0_cg(PNSystem& sys,
-					const V2i& voxel)
+void stencil_fopn_p0_cg(PNSystem::Stencil::Context& ctx)
 {
-	V2i vi = voxel;
+	V2i vi = ctx.getVoxel();
 	V2d vd = vi.cast<double>();
-	const Domain& domain = sys.getDomain();
-	const PNSystem::Fields& fields = sys.getFields();
+	const Domain& domain = ctx.getDomain();
+	const PNSystem::Fields& fields = ctx.getFields();
 	V2d h_inv( 1.0/(2*domain.getVoxelSize()[0]), 1.0/(2*domain.getVoxelSize()[1]) );
 
 	Eigen::Matrix<std::complex<double>, 1, 1> S;
@@ -40,8 +39,8 @@ void stencil_fopn_p0_cg(PNSystem& sys,
 	Eigen::Matrix<double, 1, 1> b_real = (S*b).real();
 
 	// Assembling global system =============
-	sys.coeff_A( vi, 0, vi + V2i(0,0), 0 ) += M_3_real.coeffRef(0, 0);
-	sys.coeff_b( vi, 0 ) += b_real.coeffRef(0, 0);
+	ctx.coeff_A( 0, vi + V2i(0,0), 0 ) += M_3_real.coeffRef(0, 0);
+	ctx.coeff_b( 0 ) += b_real.coeffRef(0, 0);
 }
 V2i stencil_fopn_p0_cg_get_offset(int coeff)
 {

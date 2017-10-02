@@ -1135,15 +1135,16 @@ def generate_stencil_code( stencil_name, filename, terms, order, staggered ):
 	#file.write("int PNSystem::g_order = {};\n\n".format(order))
 	
 
-	arg_sys = "PNSystem& sys"
-	arg_voxel = "const V2i& voxel"
-	prototype = "void {}({},\n\t\t\t\t\t{})\n".format(stencil_name, arg_sys, arg_voxel)
+	arg_sys = "PNSystem::Stencil::Context& ctx"
+	#arg_voxel = "const V2i& voxel"
+	#prototype = "void {}({},\n\t\t\t\t\t{})\n".format(stencil_name, arg_sys, arg_voxel)
+	prototype = "void {}({})\n".format(stencil_name, arg_sys)
 	file.write( prototype )
 	file.write( "{\n" )
-	file.write( "\tV2i vi = voxel;\n" )
+	file.write( "\tV2i vi = ctx.getVoxel();\n" )
 	file.write( "\tV2d vd = vi.cast<double>();\n" )
-	file.write( "\tconst Domain& domain = sys.getDomain();\n" )
-	file.write( "\tconst PNSystem::Fields& fields = sys.getFields();\n" )
+	file.write( "\tconst Domain& domain = ctx.getDomain();\n" )
+	file.write( "\tconst PNSystem::Fields& fields = ctx.getFields();\n" )
 	file.write( "\tV2d h_inv( 1.0/({}*domain.getVoxelSize()[0]), 1.0/({}*domain.getVoxelSize()[1]) );\n".format(pni.stencil_half_steps, pni.stencil_half_steps) )
 	file.write( "\n" )
 
@@ -1513,7 +1514,7 @@ def generate_stencil_code( stencil_name, filename, terms, order, staggered ):
 					if np.max(np.abs(u.voxel)) > stencil_width:
 						stencil_width = np.max(np.abs(u.voxel))
 
-					file.write( "\tsys.coeff_A( vi, {}, vi + V2i({},{}), {} ) += {};\n".format(coeff_index, u.voxel[0], u.voxel[1], u.coeff_index, expr_cpp) )
+					file.write( "\tctx.coeff_A( {}, vi + V2i({},{}), {} ) += {};\n".format(coeff_index, u.voxel[0], u.voxel[1], u.coeff_index, expr_cpp) )
 					#file.write("\n")
 			else:
 				expr = meh.apply_recursive(result, ReplaceCoefficientMatrixComponents(coefficient_matrix_register))
@@ -1533,7 +1534,7 @@ def generate_stencil_code( stencil_name, filename, terms, order, staggered ):
 				info.fun_to_cpp = fun_to_cpp
 				expr_cpp = to_cpp(expr, info)
 
-				file.write( "\tsys.coeff_b( vi, {} ) += {};\n".format(coeff_index, expr_cpp) )
+				file.write( "\tctx.coeff_b( {} ) += {};\n".format(coeff_index, expr_cpp) )
 
 
 	file.write( "}\n" )
@@ -1585,11 +1586,12 @@ if __name__ == "__main__":
 
 	rte_forms = ["fopn", "sopn"]
 	staggered = [True, False]
-	order = [0,1,2,3,4,5]
+	#order = [0,1,2,3,4,5]
+	order = [0,1,2,3,4]
 
 	#rte_forms = ["fopn"]
 	#order = [1]
-	#staggered = [True]
+	#staggered = [True, False]
 
 	test = itertools.product(rte_forms, order, staggered)
 	for c in test:

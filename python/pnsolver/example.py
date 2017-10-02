@@ -33,7 +33,7 @@ def setProblem( sys, problem ):
 def solve( stencil_name, problem, filename, do_neumannBC = False ):
 	# initialize the solver -----------------------------------
 	# NB: the truncation order has been baked into the cpp code as it is linked directly with the stencil
-	sys = pnsolver.PNSystem(stencil_name, problem["domain"])
+	sys = pnsolver.PNSystem(stencil_name, problem["domain"], do_neumannBC)
 
 	# set the RTE parameter fields ---------------------------------------------
 	setProblem(sys, problem)
@@ -59,7 +59,7 @@ def solve( stencil_name, problem, filename, do_neumannBC = False ):
 
 def groundtruth( problem, numSamples, filename ):
 	stencil_name = "noop"
-	sys = pnsolver.PNSystem(stencil_name, problem["domain"])
+	sys = pnsolver.PNSystem(stencil_name, problem["domain"], False)
 
 	# set the RTE parameter fields ---------------------------------------------
 	setProblem(sys, problem)
@@ -91,17 +91,17 @@ if __name__ == "__main__":
 	bc_id = {True:"_nbc", False:""}
 
 
-	#rte_forms = ["fopn", "sopn"]
+	rte_forms = ["fopn", "sopn"]
 	#order = [0,1,2,3,4,5]
-	#staggered = [True, False]
-	#boundary_conditions = [False]
+	staggered = [True, False]
+	boundary_conditions = [True]
 
-	#order = [0,1,2,3,4]
+	order = [0,1,2,3,4]
 	#'''
-	rte_forms = ["fopn"]
-	order = [1]
-	staggered = [True]
-	boundary_conditions = [False]
+	#rte_forms = ["fopn"]
+	#order = [1]
+	#staggered = [True, False]
+	#boundary_conditions = [True, False]
 
 	test = itertools.product(rte_forms, order, staggered, boundary_conditions)
 	for c in test:
@@ -113,8 +113,8 @@ if __name__ == "__main__":
 		stencil_name = "stencil_{}_p{}_{}".format(rte_form_name, order, staggered_id[is_staggered] )
 		#stencil_name = "noop"
 		
-		#filename = "{}/{}5{}{}.mat".format(path, problem["id"], stencil_name, bc_id[do_neumannBC])
-		filename = "{}/{}_test.mat".format(path, problem["id"], stencil_name)
+		filename = "{}/{}5{}{}.mat".format(path, problem["id"], stencil_name, bc_id[do_neumannBC])
+		#filename = "{}/{}_test.mat".format(path, problem["id"], stencil_name)
 		#print("clear;filename=\"{}\";compute_condest;".format(filename))
 		solve(stencil_name, problem, filename, do_neumannBC=do_neumannBC)
 	#'''

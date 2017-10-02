@@ -2,13 +2,12 @@
 
 #include <PNSystem.h>
 
-void stencil_sopn_p1_cg(PNSystem& sys,
-					const V2i& voxel)
+void stencil_sopn_p1_cg(PNSystem::Stencil::Context& ctx)
 {
-	V2i vi = voxel;
+	V2i vi = ctx.getVoxel();
 	V2d vd = vi.cast<double>();
-	const Domain& domain = sys.getDomain();
-	const PNSystem::Fields& fields = sys.getFields();
+	const Domain& domain = ctx.getDomain();
+	const PNSystem::Fields& fields = ctx.getFields();
 	V2d h_inv( 1.0/(2*domain.getVoxelSize()[0]), 1.0/(2*domain.getVoxelSize()[1]) );
 
 	Eigen::Matrix<std::complex<double>, 3, 3> S;
@@ -155,72 +154,72 @@ void stencil_sopn_p1_cg(PNSystem& sys,
 	Eigen::Matrix<double, 3, 1> b_real = (S*b).real();
 
 	// Assembling global system =============
-	sys.coeff_A( vi, 0, vi + V2i(-2,0), 0 ) += (h_inv[0]*h_inv[0]*-0.333333333333);
-	sys.coeff_A( vi, 0, vi + V2i(0,0), 0 ) += -(h_inv[0]*h_inv[0]*-0.333333333333);
-	sys.coeff_A( vi, 0, vi + V2i(0,0), 0 ) += -(h_inv[0]*h_inv[0]*-0.333333333333);
-	sys.coeff_A( vi, 0, vi + V2i(2,0), 0 ) += (h_inv[0]*h_inv[0]*-0.333333333333);
-	sys.coeff_A( vi, 1, vi + V2i(-2,0), 1 ) += (h_inv[0]*h_inv[0]*-0.6);
-	sys.coeff_A( vi, 1, vi + V2i(0,0), 1 ) += -(h_inv[0]*h_inv[0]*-0.6);
-	sys.coeff_A( vi, 1, vi + V2i(0,0), 1 ) += -(h_inv[0]*h_inv[0]*-0.6);
-	sys.coeff_A( vi, 1, vi + V2i(2,0), 1 ) += (h_inv[0]*h_inv[0]*-0.6);
-	sys.coeff_A( vi, 2, vi + V2i(-2,0), 2 ) += (h_inv[0]*h_inv[0]*-0.2);
-	sys.coeff_A( vi, 2, vi + V2i(0,0), 2 ) += -(h_inv[0]*h_inv[0]*-0.2);
-	sys.coeff_A( vi, 2, vi + V2i(0,0), 2 ) += -(h_inv[0]*h_inv[0]*-0.2);
-	sys.coeff_A( vi, 2, vi + V2i(2,0), 2 ) += (h_inv[0]*h_inv[0]*-0.2);
-	sys.coeff_A( vi, 2, vi + V2i(-1,-1), 1 ) += (h_inv[1]*h_inv[0]*-0.2);
-	sys.coeff_A( vi, 2, vi + V2i(-1,1), 1 ) += -(h_inv[1]*h_inv[0]*-0.2);
-	sys.coeff_A( vi, 2, vi + V2i(1,-1), 1 ) += -(h_inv[1]*h_inv[0]*-0.2);
-	sys.coeff_A( vi, 2, vi + V2i(1,1), 1 ) += (h_inv[1]*h_inv[0]*-0.2);
-	sys.coeff_A( vi, 1, vi + V2i(-1,-1), 2 ) += (h_inv[1]*h_inv[0]*-0.2);
-	sys.coeff_A( vi, 1, vi + V2i(-1,1), 2 ) += -(h_inv[1]*h_inv[0]*-0.2);
-	sys.coeff_A( vi, 1, vi + V2i(1,-1), 2 ) += -(h_inv[1]*h_inv[0]*-0.2);
-	sys.coeff_A( vi, 1, vi + V2i(1,1), 2 ) += (h_inv[1]*h_inv[0]*-0.2);
-	sys.coeff_A( vi, 2, vi + V2i(-1,-1), 1 ) += (h_inv[0]*h_inv[1]*-0.2);
-	sys.coeff_A( vi, 2, vi + V2i(1,-1), 1 ) += -(h_inv[0]*h_inv[1]*-0.2);
-	sys.coeff_A( vi, 2, vi + V2i(-1,1), 1 ) += -(h_inv[0]*h_inv[1]*-0.2);
-	sys.coeff_A( vi, 2, vi + V2i(1,1), 1 ) += (h_inv[0]*h_inv[1]*-0.2);
-	sys.coeff_A( vi, 1, vi + V2i(-1,-1), 2 ) += (h_inv[0]*h_inv[1]*-0.2);
-	sys.coeff_A( vi, 1, vi + V2i(1,-1), 2 ) += -(h_inv[0]*h_inv[1]*-0.2);
-	sys.coeff_A( vi, 1, vi + V2i(-1,1), 2 ) += -(h_inv[0]*h_inv[1]*-0.2);
-	sys.coeff_A( vi, 1, vi + V2i(1,1), 2 ) += (h_inv[0]*h_inv[1]*-0.2);
-	sys.coeff_A( vi, 0, vi + V2i(0,-2), 0 ) += (h_inv[1]*h_inv[1]*-0.333333333333);
-	sys.coeff_A( vi, 0, vi + V2i(0,0), 0 ) += -(h_inv[1]*h_inv[1]*-0.333333333333);
-	sys.coeff_A( vi, 0, vi + V2i(0,0), 0 ) += -(h_inv[1]*h_inv[1]*-0.333333333333);
-	sys.coeff_A( vi, 0, vi + V2i(0,2), 0 ) += (h_inv[1]*h_inv[1]*-0.333333333333);
-	sys.coeff_A( vi, 1, vi + V2i(0,-2), 1 ) += (h_inv[1]*h_inv[1]*-0.2);
-	sys.coeff_A( vi, 1, vi + V2i(0,0), 1 ) += -(h_inv[1]*h_inv[1]*-0.2);
-	sys.coeff_A( vi, 1, vi + V2i(0,0), 1 ) += -(h_inv[1]*h_inv[1]*-0.2);
-	sys.coeff_A( vi, 1, vi + V2i(0,2), 1 ) += (h_inv[1]*h_inv[1]*-0.2);
-	sys.coeff_A( vi, 2, vi + V2i(0,-2), 2 ) += (h_inv[1]*h_inv[1]*-0.6);
-	sys.coeff_A( vi, 2, vi + V2i(0,0), 2 ) += -(h_inv[1]*h_inv[1]*-0.6);
-	sys.coeff_A( vi, 2, vi + V2i(0,0), 2 ) += -(h_inv[1]*h_inv[1]*-0.6);
-	sys.coeff_A( vi, 2, vi + V2i(0,2), 2 ) += (h_inv[1]*h_inv[1]*-0.6);
-	sys.coeff_A( vi, 0, vi + V2i(0,0), 0 ) += M_9_real.coeffRef(0, 0);
-	sys.coeff_A( vi, 1, vi + V2i(0,0), 0 ) += M_9_real.coeffRef(1, 0);
-	sys.coeff_A( vi, 2, vi + V2i(0,0), 0 ) += M_9_real.coeffRef(2, 0);
-	sys.coeff_A( vi, 0, vi + V2i(0,0), 1 ) += M_9_real.coeffRef(0, 1);
-	sys.coeff_A( vi, 1, vi + V2i(0,0), 1 ) += M_9_real.coeffRef(1, 1);
-	sys.coeff_A( vi, 0, vi + V2i(0,0), 2 ) += M_9_real.coeffRef(0, 2);
-	sys.coeff_A( vi, 2, vi + V2i(0,0), 2 ) += M_9_real.coeffRef(2, 2);
-	sys.coeff_A( vi, 1, vi + V2i(-1,0), 0 ) += -(h_inv[0]*M_10_real.coeffRef(1, 0));
-	sys.coeff_A( vi, 1, vi + V2i(1,0), 0 ) += (h_inv[0]*M_10_real.coeffRef(1, 0));
-	sys.coeff_A( vi, 2, vi + V2i(-1,0), 0 ) += -(h_inv[0]*M_10_real.coeffRef(2, 0));
-	sys.coeff_A( vi, 2, vi + V2i(1,0), 0 ) += (h_inv[0]*M_10_real.coeffRef(2, 0));
-	sys.coeff_A( vi, 0, vi + V2i(-1,0), 1 ) += -(h_inv[0]*M_10_real.coeffRef(0, 1));
-	sys.coeff_A( vi, 0, vi + V2i(1,0), 1 ) += (h_inv[0]*M_10_real.coeffRef(0, 1));
-	sys.coeff_A( vi, 0, vi + V2i(-1,0), 2 ) += -(h_inv[0]*M_10_real.coeffRef(0, 2));
-	sys.coeff_A( vi, 0, vi + V2i(1,0), 2 ) += (h_inv[0]*M_10_real.coeffRef(0, 2));
-	sys.coeff_A( vi, 1, vi + V2i(0,-1), 0 ) += -(h_inv[1]*M_11_real.coeffRef(1, 0));
-	sys.coeff_A( vi, 1, vi + V2i(0,1), 0 ) += (h_inv[1]*M_11_real.coeffRef(1, 0));
-	sys.coeff_A( vi, 2, vi + V2i(0,-1), 0 ) += -(h_inv[1]*M_11_real.coeffRef(2, 0));
-	sys.coeff_A( vi, 2, vi + V2i(0,1), 0 ) += (h_inv[1]*M_11_real.coeffRef(2, 0));
-	sys.coeff_A( vi, 0, vi + V2i(0,-1), 1 ) += -(h_inv[1]*M_11_real.coeffRef(0, 1));
-	sys.coeff_A( vi, 0, vi + V2i(0,1), 1 ) += (h_inv[1]*M_11_real.coeffRef(0, 1));
-	sys.coeff_A( vi, 0, vi + V2i(0,-1), 2 ) += -(h_inv[1]*M_11_real.coeffRef(0, 2));
-	sys.coeff_A( vi, 0, vi + V2i(0,1), 2 ) += (h_inv[1]*M_11_real.coeffRef(0, 2));
-	sys.coeff_b( vi, 0 ) += b_real.coeffRef(0, 0);
-	sys.coeff_b( vi, 1 ) += b_real.coeffRef(1, 0);
-	sys.coeff_b( vi, 2 ) += b_real.coeffRef(2, 0);
+	ctx.coeff_A( 0, vi + V2i(-2,0), 0 ) += (h_inv[0]*h_inv[0]*-0.333333333333);
+	ctx.coeff_A( 0, vi + V2i(0,0), 0 ) += -(h_inv[0]*h_inv[0]*-0.333333333333);
+	ctx.coeff_A( 0, vi + V2i(0,0), 0 ) += -(h_inv[0]*h_inv[0]*-0.333333333333);
+	ctx.coeff_A( 0, vi + V2i(2,0), 0 ) += (h_inv[0]*h_inv[0]*-0.333333333333);
+	ctx.coeff_A( 1, vi + V2i(-2,0), 1 ) += (h_inv[0]*h_inv[0]*-0.6);
+	ctx.coeff_A( 1, vi + V2i(0,0), 1 ) += -(h_inv[0]*h_inv[0]*-0.6);
+	ctx.coeff_A( 1, vi + V2i(0,0), 1 ) += -(h_inv[0]*h_inv[0]*-0.6);
+	ctx.coeff_A( 1, vi + V2i(2,0), 1 ) += (h_inv[0]*h_inv[0]*-0.6);
+	ctx.coeff_A( 2, vi + V2i(-2,0), 2 ) += (h_inv[0]*h_inv[0]*-0.2);
+	ctx.coeff_A( 2, vi + V2i(0,0), 2 ) += -(h_inv[0]*h_inv[0]*-0.2);
+	ctx.coeff_A( 2, vi + V2i(0,0), 2 ) += -(h_inv[0]*h_inv[0]*-0.2);
+	ctx.coeff_A( 2, vi + V2i(2,0), 2 ) += (h_inv[0]*h_inv[0]*-0.2);
+	ctx.coeff_A( 2, vi + V2i(-1,-1), 1 ) += (h_inv[1]*h_inv[0]*-0.2);
+	ctx.coeff_A( 2, vi + V2i(-1,1), 1 ) += -(h_inv[1]*h_inv[0]*-0.2);
+	ctx.coeff_A( 2, vi + V2i(1,-1), 1 ) += -(h_inv[1]*h_inv[0]*-0.2);
+	ctx.coeff_A( 2, vi + V2i(1,1), 1 ) += (h_inv[1]*h_inv[0]*-0.2);
+	ctx.coeff_A( 1, vi + V2i(-1,-1), 2 ) += (h_inv[1]*h_inv[0]*-0.2);
+	ctx.coeff_A( 1, vi + V2i(-1,1), 2 ) += -(h_inv[1]*h_inv[0]*-0.2);
+	ctx.coeff_A( 1, vi + V2i(1,-1), 2 ) += -(h_inv[1]*h_inv[0]*-0.2);
+	ctx.coeff_A( 1, vi + V2i(1,1), 2 ) += (h_inv[1]*h_inv[0]*-0.2);
+	ctx.coeff_A( 2, vi + V2i(-1,-1), 1 ) += (h_inv[0]*h_inv[1]*-0.2);
+	ctx.coeff_A( 2, vi + V2i(1,-1), 1 ) += -(h_inv[0]*h_inv[1]*-0.2);
+	ctx.coeff_A( 2, vi + V2i(-1,1), 1 ) += -(h_inv[0]*h_inv[1]*-0.2);
+	ctx.coeff_A( 2, vi + V2i(1,1), 1 ) += (h_inv[0]*h_inv[1]*-0.2);
+	ctx.coeff_A( 1, vi + V2i(-1,-1), 2 ) += (h_inv[0]*h_inv[1]*-0.2);
+	ctx.coeff_A( 1, vi + V2i(1,-1), 2 ) += -(h_inv[0]*h_inv[1]*-0.2);
+	ctx.coeff_A( 1, vi + V2i(-1,1), 2 ) += -(h_inv[0]*h_inv[1]*-0.2);
+	ctx.coeff_A( 1, vi + V2i(1,1), 2 ) += (h_inv[0]*h_inv[1]*-0.2);
+	ctx.coeff_A( 0, vi + V2i(0,-2), 0 ) += (h_inv[1]*h_inv[1]*-0.333333333333);
+	ctx.coeff_A( 0, vi + V2i(0,0), 0 ) += -(h_inv[1]*h_inv[1]*-0.333333333333);
+	ctx.coeff_A( 0, vi + V2i(0,0), 0 ) += -(h_inv[1]*h_inv[1]*-0.333333333333);
+	ctx.coeff_A( 0, vi + V2i(0,2), 0 ) += (h_inv[1]*h_inv[1]*-0.333333333333);
+	ctx.coeff_A( 1, vi + V2i(0,-2), 1 ) += (h_inv[1]*h_inv[1]*-0.2);
+	ctx.coeff_A( 1, vi + V2i(0,0), 1 ) += -(h_inv[1]*h_inv[1]*-0.2);
+	ctx.coeff_A( 1, vi + V2i(0,0), 1 ) += -(h_inv[1]*h_inv[1]*-0.2);
+	ctx.coeff_A( 1, vi + V2i(0,2), 1 ) += (h_inv[1]*h_inv[1]*-0.2);
+	ctx.coeff_A( 2, vi + V2i(0,-2), 2 ) += (h_inv[1]*h_inv[1]*-0.6);
+	ctx.coeff_A( 2, vi + V2i(0,0), 2 ) += -(h_inv[1]*h_inv[1]*-0.6);
+	ctx.coeff_A( 2, vi + V2i(0,0), 2 ) += -(h_inv[1]*h_inv[1]*-0.6);
+	ctx.coeff_A( 2, vi + V2i(0,2), 2 ) += (h_inv[1]*h_inv[1]*-0.6);
+	ctx.coeff_A( 0, vi + V2i(0,0), 0 ) += M_9_real.coeffRef(0, 0);
+	ctx.coeff_A( 1, vi + V2i(0,0), 0 ) += M_9_real.coeffRef(1, 0);
+	ctx.coeff_A( 2, vi + V2i(0,0), 0 ) += M_9_real.coeffRef(2, 0);
+	ctx.coeff_A( 0, vi + V2i(0,0), 1 ) += M_9_real.coeffRef(0, 1);
+	ctx.coeff_A( 1, vi + V2i(0,0), 1 ) += M_9_real.coeffRef(1, 1);
+	ctx.coeff_A( 0, vi + V2i(0,0), 2 ) += M_9_real.coeffRef(0, 2);
+	ctx.coeff_A( 2, vi + V2i(0,0), 2 ) += M_9_real.coeffRef(2, 2);
+	ctx.coeff_A( 1, vi + V2i(-1,0), 0 ) += -(h_inv[0]*M_10_real.coeffRef(1, 0));
+	ctx.coeff_A( 1, vi + V2i(1,0), 0 ) += (h_inv[0]*M_10_real.coeffRef(1, 0));
+	ctx.coeff_A( 2, vi + V2i(-1,0), 0 ) += -(h_inv[0]*M_10_real.coeffRef(2, 0));
+	ctx.coeff_A( 2, vi + V2i(1,0), 0 ) += (h_inv[0]*M_10_real.coeffRef(2, 0));
+	ctx.coeff_A( 0, vi + V2i(-1,0), 1 ) += -(h_inv[0]*M_10_real.coeffRef(0, 1));
+	ctx.coeff_A( 0, vi + V2i(1,0), 1 ) += (h_inv[0]*M_10_real.coeffRef(0, 1));
+	ctx.coeff_A( 0, vi + V2i(-1,0), 2 ) += -(h_inv[0]*M_10_real.coeffRef(0, 2));
+	ctx.coeff_A( 0, vi + V2i(1,0), 2 ) += (h_inv[0]*M_10_real.coeffRef(0, 2));
+	ctx.coeff_A( 1, vi + V2i(0,-1), 0 ) += -(h_inv[1]*M_11_real.coeffRef(1, 0));
+	ctx.coeff_A( 1, vi + V2i(0,1), 0 ) += (h_inv[1]*M_11_real.coeffRef(1, 0));
+	ctx.coeff_A( 2, vi + V2i(0,-1), 0 ) += -(h_inv[1]*M_11_real.coeffRef(2, 0));
+	ctx.coeff_A( 2, vi + V2i(0,1), 0 ) += (h_inv[1]*M_11_real.coeffRef(2, 0));
+	ctx.coeff_A( 0, vi + V2i(0,-1), 1 ) += -(h_inv[1]*M_11_real.coeffRef(0, 1));
+	ctx.coeff_A( 0, vi + V2i(0,1), 1 ) += (h_inv[1]*M_11_real.coeffRef(0, 1));
+	ctx.coeff_A( 0, vi + V2i(0,-1), 2 ) += -(h_inv[1]*M_11_real.coeffRef(0, 2));
+	ctx.coeff_A( 0, vi + V2i(0,1), 2 ) += (h_inv[1]*M_11_real.coeffRef(0, 2));
+	ctx.coeff_b( 0 ) += b_real.coeffRef(0, 0);
+	ctx.coeff_b( 1 ) += b_real.coeffRef(1, 0);
+	ctx.coeff_b( 2 ) += b_real.coeffRef(2, 0);
 }
 V2i stencil_sopn_p1_cg_get_offset(int coeff)
 {

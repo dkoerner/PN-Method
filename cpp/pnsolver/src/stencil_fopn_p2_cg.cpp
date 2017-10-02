@@ -2,13 +2,12 @@
 
 #include <PNSystem.h>
 
-void stencil_fopn_p2_cg(PNSystem& sys,
-					const V2i& voxel)
+void stencil_fopn_p2_cg(PNSystem::Stencil::Context& ctx)
 {
-	V2i vi = voxel;
+	V2i vi = ctx.getVoxel();
 	V2d vd = vi.cast<double>();
-	const Domain& domain = sys.getDomain();
-	const PNSystem::Fields& fields = sys.getFields();
+	const Domain& domain = ctx.getDomain();
+	const PNSystem::Fields& fields = ctx.getFields();
 	V2d h_inv( 1.0/(2*domain.getVoxelSize()[0]), 1.0/(2*domain.getVoxelSize()[1]) );
 
 	Eigen::Matrix<std::complex<double>, 6, 6> S;
@@ -73,50 +72,50 @@ void stencil_fopn_p2_cg(PNSystem& sys,
 	Eigen::Matrix<double, 6, 1> b_real = (S*b).real();
 
 	// Assembling global system =============
-	sys.coeff_A( vi, 1, vi + V2i(-1,0), 0 ) += -(h_inv[0]*0.57735026919);
-	sys.coeff_A( vi, 1, vi + V2i(1,0), 0 ) += (h_inv[0]*0.57735026919);
-	sys.coeff_A( vi, 0, vi + V2i(-1,0), 1 ) += -(h_inv[0]*0.57735026919);
-	sys.coeff_A( vi, 0, vi + V2i(1,0), 1 ) += (h_inv[0]*0.57735026919);
-	sys.coeff_A( vi, 3, vi + V2i(-1,0), 1 ) += -(h_inv[0]*0.4472135955);
-	sys.coeff_A( vi, 3, vi + V2i(1,0), 1 ) += (h_inv[0]*0.4472135955);
-	sys.coeff_A( vi, 5, vi + V2i(-1,0), 1 ) += -(h_inv[0]*-0.258198889747);
-	sys.coeff_A( vi, 5, vi + V2i(1,0), 1 ) += (h_inv[0]*-0.258198889747);
-	sys.coeff_A( vi, 4, vi + V2i(-1,0), 2 ) += -(h_inv[0]*0.4472135955);
-	sys.coeff_A( vi, 4, vi + V2i(1,0), 2 ) += (h_inv[0]*0.4472135955);
-	sys.coeff_A( vi, 1, vi + V2i(-1,0), 3 ) += -(h_inv[0]*0.4472135955);
-	sys.coeff_A( vi, 1, vi + V2i(1,0), 3 ) += (h_inv[0]*0.4472135955);
-	sys.coeff_A( vi, 2, vi + V2i(-1,0), 4 ) += -(h_inv[0]*0.4472135955);
-	sys.coeff_A( vi, 2, vi + V2i(1,0), 4 ) += (h_inv[0]*0.4472135955);
-	sys.coeff_A( vi, 1, vi + V2i(-1,0), 5 ) += -(h_inv[0]*-0.258198889747);
-	sys.coeff_A( vi, 1, vi + V2i(1,0), 5 ) += (h_inv[0]*-0.258198889747);
-	sys.coeff_A( vi, 2, vi + V2i(0,-1), 0 ) += -(h_inv[1]*0.57735026919);
-	sys.coeff_A( vi, 2, vi + V2i(0,1), 0 ) += (h_inv[1]*0.57735026919);
-	sys.coeff_A( vi, 4, vi + V2i(0,-1), 1 ) += -(h_inv[1]*0.4472135955);
-	sys.coeff_A( vi, 4, vi + V2i(0,1), 1 ) += (h_inv[1]*0.4472135955);
-	sys.coeff_A( vi, 0, vi + V2i(0,-1), 2 ) += -(h_inv[1]*0.57735026919);
-	sys.coeff_A( vi, 0, vi + V2i(0,1), 2 ) += (h_inv[1]*0.57735026919);
-	sys.coeff_A( vi, 3, vi + V2i(0,-1), 2 ) += -(h_inv[1]*-0.4472135955);
-	sys.coeff_A( vi, 3, vi + V2i(0,1), 2 ) += (h_inv[1]*-0.4472135955);
-	sys.coeff_A( vi, 5, vi + V2i(0,-1), 2 ) += -(h_inv[1]*-0.258198889747);
-	sys.coeff_A( vi, 5, vi + V2i(0,1), 2 ) += (h_inv[1]*-0.258198889747);
-	sys.coeff_A( vi, 2, vi + V2i(0,-1), 3 ) += -(h_inv[1]*-0.4472135955);
-	sys.coeff_A( vi, 2, vi + V2i(0,1), 3 ) += (h_inv[1]*-0.4472135955);
-	sys.coeff_A( vi, 1, vi + V2i(0,-1), 4 ) += -(h_inv[1]*0.4472135955);
-	sys.coeff_A( vi, 1, vi + V2i(0,1), 4 ) += (h_inv[1]*0.4472135955);
-	sys.coeff_A( vi, 2, vi + V2i(0,-1), 5 ) += -(h_inv[1]*-0.258198889747);
-	sys.coeff_A( vi, 2, vi + V2i(0,1), 5 ) += (h_inv[1]*-0.258198889747);
-	sys.coeff_A( vi, 0, vi + V2i(0,0), 0 ) += M_3_real.coeffRef(0, 0);
-	sys.coeff_A( vi, 1, vi + V2i(0,0), 1 ) += M_3_real.coeffRef(1, 1);
-	sys.coeff_A( vi, 2, vi + V2i(0,0), 2 ) += M_3_real.coeffRef(2, 2);
-	sys.coeff_A( vi, 3, vi + V2i(0,0), 3 ) += M_3_real.coeffRef(3, 3);
-	sys.coeff_A( vi, 4, vi + V2i(0,0), 4 ) += M_3_real.coeffRef(4, 4);
-	sys.coeff_A( vi, 5, vi + V2i(0,0), 5 ) += M_3_real.coeffRef(5, 5);
-	sys.coeff_b( vi, 0 ) += b_real.coeffRef(0, 0);
-	sys.coeff_b( vi, 1 ) += b_real.coeffRef(1, 0);
-	sys.coeff_b( vi, 2 ) += b_real.coeffRef(2, 0);
-	sys.coeff_b( vi, 3 ) += b_real.coeffRef(3, 0);
-	sys.coeff_b( vi, 4 ) += b_real.coeffRef(4, 0);
-	sys.coeff_b( vi, 5 ) += b_real.coeffRef(5, 0);
+	ctx.coeff_A( 1, vi + V2i(-1,0), 0 ) += -(h_inv[0]*0.57735026919);
+	ctx.coeff_A( 1, vi + V2i(1,0), 0 ) += (h_inv[0]*0.57735026919);
+	ctx.coeff_A( 0, vi + V2i(-1,0), 1 ) += -(h_inv[0]*0.57735026919);
+	ctx.coeff_A( 0, vi + V2i(1,0), 1 ) += (h_inv[0]*0.57735026919);
+	ctx.coeff_A( 3, vi + V2i(-1,0), 1 ) += -(h_inv[0]*0.4472135955);
+	ctx.coeff_A( 3, vi + V2i(1,0), 1 ) += (h_inv[0]*0.4472135955);
+	ctx.coeff_A( 5, vi + V2i(-1,0), 1 ) += -(h_inv[0]*-0.258198889747);
+	ctx.coeff_A( 5, vi + V2i(1,0), 1 ) += (h_inv[0]*-0.258198889747);
+	ctx.coeff_A( 4, vi + V2i(-1,0), 2 ) += -(h_inv[0]*0.4472135955);
+	ctx.coeff_A( 4, vi + V2i(1,0), 2 ) += (h_inv[0]*0.4472135955);
+	ctx.coeff_A( 1, vi + V2i(-1,0), 3 ) += -(h_inv[0]*0.4472135955);
+	ctx.coeff_A( 1, vi + V2i(1,0), 3 ) += (h_inv[0]*0.4472135955);
+	ctx.coeff_A( 2, vi + V2i(-1,0), 4 ) += -(h_inv[0]*0.4472135955);
+	ctx.coeff_A( 2, vi + V2i(1,0), 4 ) += (h_inv[0]*0.4472135955);
+	ctx.coeff_A( 1, vi + V2i(-1,0), 5 ) += -(h_inv[0]*-0.258198889747);
+	ctx.coeff_A( 1, vi + V2i(1,0), 5 ) += (h_inv[0]*-0.258198889747);
+	ctx.coeff_A( 2, vi + V2i(0,-1), 0 ) += -(h_inv[1]*0.57735026919);
+	ctx.coeff_A( 2, vi + V2i(0,1), 0 ) += (h_inv[1]*0.57735026919);
+	ctx.coeff_A( 4, vi + V2i(0,-1), 1 ) += -(h_inv[1]*0.4472135955);
+	ctx.coeff_A( 4, vi + V2i(0,1), 1 ) += (h_inv[1]*0.4472135955);
+	ctx.coeff_A( 0, vi + V2i(0,-1), 2 ) += -(h_inv[1]*0.57735026919);
+	ctx.coeff_A( 0, vi + V2i(0,1), 2 ) += (h_inv[1]*0.57735026919);
+	ctx.coeff_A( 3, vi + V2i(0,-1), 2 ) += -(h_inv[1]*-0.4472135955);
+	ctx.coeff_A( 3, vi + V2i(0,1), 2 ) += (h_inv[1]*-0.4472135955);
+	ctx.coeff_A( 5, vi + V2i(0,-1), 2 ) += -(h_inv[1]*-0.258198889747);
+	ctx.coeff_A( 5, vi + V2i(0,1), 2 ) += (h_inv[1]*-0.258198889747);
+	ctx.coeff_A( 2, vi + V2i(0,-1), 3 ) += -(h_inv[1]*-0.4472135955);
+	ctx.coeff_A( 2, vi + V2i(0,1), 3 ) += (h_inv[1]*-0.4472135955);
+	ctx.coeff_A( 1, vi + V2i(0,-1), 4 ) += -(h_inv[1]*0.4472135955);
+	ctx.coeff_A( 1, vi + V2i(0,1), 4 ) += (h_inv[1]*0.4472135955);
+	ctx.coeff_A( 2, vi + V2i(0,-1), 5 ) += -(h_inv[1]*-0.258198889747);
+	ctx.coeff_A( 2, vi + V2i(0,1), 5 ) += (h_inv[1]*-0.258198889747);
+	ctx.coeff_A( 0, vi + V2i(0,0), 0 ) += M_3_real.coeffRef(0, 0);
+	ctx.coeff_A( 1, vi + V2i(0,0), 1 ) += M_3_real.coeffRef(1, 1);
+	ctx.coeff_A( 2, vi + V2i(0,0), 2 ) += M_3_real.coeffRef(2, 2);
+	ctx.coeff_A( 3, vi + V2i(0,0), 3 ) += M_3_real.coeffRef(3, 3);
+	ctx.coeff_A( 4, vi + V2i(0,0), 4 ) += M_3_real.coeffRef(4, 4);
+	ctx.coeff_A( 5, vi + V2i(0,0), 5 ) += M_3_real.coeffRef(5, 5);
+	ctx.coeff_b( 0 ) += b_real.coeffRef(0, 0);
+	ctx.coeff_b( 1 ) += b_real.coeffRef(1, 0);
+	ctx.coeff_b( 2 ) += b_real.coeffRef(2, 0);
+	ctx.coeff_b( 3 ) += b_real.coeffRef(3, 0);
+	ctx.coeff_b( 4 ) += b_real.coeffRef(4, 0);
+	ctx.coeff_b( 5 ) += b_real.coeffRef(5, 0);
 }
 V2i stencil_fopn_p2_cg_get_offset(int coeff)
 {

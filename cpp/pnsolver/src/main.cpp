@@ -26,7 +26,7 @@ PYBIND11_MODULE(pnsolver, m)
 	py::class_<PNSystem> class_pnsystem(m, "PNSystem");
 	class_pnsystem
 	.def("__init__",
-	[](PNSystem &m, const std::string& stencil_name, Domain &domain)
+	[](PNSystem &m, const std::string& stencil_name, Domain &domain, bool neumannBC)
 	{
 		PNSystem::Stencil stencil;
 
@@ -34,7 +34,7 @@ PYBIND11_MODULE(pnsolver, m)
 			stencil = PNSystem::Stencil::noop();
 		else
 			stencil = PNSystem::findStencil(stencil_name);
-		new (&m) PNSystem(stencil, domain);
+		new (&m) PNSystem(stencil, domain, neumannBC);
 	})
 	.def("getGlobalIndex", &PNSystem::getGlobalIndex )
 	.def("getVoxelAndCoefficient",
@@ -58,19 +58,14 @@ PYBIND11_MODULE(pnsolver, m)
 	.def("build", &PNSystem::build )
 	.def("solve", &PNSystem::solve )
 	.def("solveWithGuess", &PNSystem::solveWithGuess )
-	.def("solve_boundary", &PNSystem::solve_boundary )
 	.def("setField", &PNSystem::setField )
-	.def("setNeumannBoundaryConditions", &PNSystem::setNeumannBoundaryConditions )
 	//.def("solve2", &PNSystem::solve2 )
 	//.def("get_A_complex", &PNSystem::get_A_complex )
 	//.def("get_b_complex", &PNSystem::get_b_complex )
 	.def("get_A_real", &PNSystem::get_A_real )
 	.def("get_b_real", &PNSystem::get_b_real )
 	.def("setDebugVoxel", &PNSystem::setDebugVoxel )
-	.def("get_boundary_A_real", &PNSystem::get_boundary_A_real )
-	.def("get_boundary_b_real", &PNSystem::get_boundary_b_real )
 	.def("computeGroundtruth", &PNSystem::computeGroundtruth )
-	.def("getIndexMatrix", &PNSystem::getIndexMatrix )
 	.def("getVoxelInfo", &PNSystem::getVoxelInfo )
 	;
 

@@ -308,6 +308,11 @@ inline T sign( T x )
 	return (x < T(0)) ? T(-1) : T(1);
 }
 
+template <typename T> int sgn(T val)
+{
+	return (T(0) < val) - (val < T(0));
+}
+
 template<typename T>
 inline T signum( T x )
 {

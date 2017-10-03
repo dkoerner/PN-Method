@@ -208,8 +208,9 @@ def write_pn_system(filename, sys, problem, x=None):
 	scipy.io.savemat(filename, data)
 
 
-def load_pn_system( filename ):
-    print("loading PN solution from {}".format(filename))
+def load_pn_system( filename, silent = False ):
+    if not silent:
+        print("loading PN solution from {}".format(filename))
     data = scipy.io.loadmat(filename)
    
     result = {}
@@ -237,9 +238,8 @@ def load_pn_system( filename ):
         result["numCoeffs"] = 3
         result["resolution"] = np.array([70, 70])
         
-    print("\torder={}  numCoeffs={}  resolution={} {}".format(result["order"], result["numCoeffs"], result["resolution"][0], result["resolution"][1]))
-    if "A_boundary_condest" in data:
-    	print("\tA_boundary_condest={}".format(data["A_boundary_condest"]))
+    if not silent:
+        print("\torder={}  numCoeffs={}  resolution={} {}".format(result["order"], result["numCoeffs"], result["resolution"][0], result["resolution"][1]))
         
     return result
 

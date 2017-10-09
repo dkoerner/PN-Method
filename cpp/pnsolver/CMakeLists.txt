@@ -38,10 +38,11 @@ pybind11_add_module(pnsolver src/main.cpp
 							 src/stencil_sopn_p5_cg.cpp
 							 src/stencil_sopn_p5_sg.cpp
 							 src/field/Field.cpp
-							 src/field/VoxelGrid.cpp
+							 src/field/VoxelGridField.cpp
 							 src/field/Constant.cpp
 							 src/field/Function.cpp
 							 src/field/SHEXP.cpp
 							 src/common/Domain.cpp
 							 src/util/threadpool.cpp
+							 src/util/voxelgrid.cpp
 							 src/math/sph.cpp)

@@ -150,15 +150,16 @@ def compare_matrices( A0, A1, id0, id1 ):
     print("imag: max={} max element=({}, {})".format(mm,max_index[0], max_index[1]))
 
 # I/O related =====================================================
-def rasterize( fun, domain, offset = np.array([0.5, 0.5]), dtype=float ):
-	res = domain.resolution()
-	shape = (res[0], res[1])
+def rasterize( fun, domain, offset = np.array([0.5, 0.5, 0.5]), dtype=float ):
+	res = domain.getResolution()
+	shape = (res[0], res[1], res[2])
 	voxels = np.zeros(shape, dtype=dtype)
 	for i in range(0, res[0]):
 		for j in range(0, res[1]):
-			pVS = np.array([i, j]) + offset
-			pWS = domain.voxelToWorld(pVS)
-			voxels[i, j] = fun(pWS)
+			for k in range(0, res[2]):
+				pVS = np.array([i, j, k]) + offset
+				pWS = domain.voxelToWorld(pVS)
+				voxels[i, j, k] = fun(pWS)
 	return voxels
 
 def write_pn_system(filename, sys, problem, x=None):
@@ -171,12 +172,10 @@ def write_pn_system(filename, sys, problem, x=None):
 	info = {}
 	info["order"] = sys.getOrder()
 	info["numCoeffs"] = sys.getNumCoefficients()
-	info["resolution"] = domain.resolution()
+	info["resolution"] = domain.getResolution()
 
 	data = {}
-
 	data["id"] = problem["id"]
-
 	data["info"] = info
 	if not A is None:
 		data['A'] = A
@@ -187,6 +186,7 @@ def write_pn_system(filename, sys, problem, x=None):
 
 
 	data["globalOffset"] = sys.getVoxelInfo("globalOffset").todense()
+	'''
 	#data["globalOffset"] = sys.getVoxelInfo("coord.x").todense()
 	#data["globalOffset"] = sys.getVoxelInfo("coord.y").todense()
 	#data["type"] = sys.getVoxelInfo("type").todense()
@@ -203,9 +203,10 @@ def write_pn_system(filename, sys, problem, x=None):
 	data['sigma_a'] = rasterize(lambda pWS: np.real(problem["sigma_a"](pWS)), domain)
 	data['sigma_t'] = rasterize(lambda pWS: np.real(problem["sigma_t"](pWS)), domain)
 	data['q00']     = rasterize(lambda pWS: np.real(problem['q'][0](pWS)), domain)
-
+	'''
 	print("writing PN system to {}".format(filename))
 	scipy.io.savemat(filename, data)
+
 
 
 def load_pn_system( filename, silent = False ):
@@ -236,7 +237,7 @@ def load_pn_system( filename, silent = False ):
     else:
         result["order"] = 1
         result["numCoeffs"] = 3
-        result["resolution"] = np.array([70, 70])
+        result["resolution"] = np.array([70, 70, 1])
         
     if not silent:
         print("\torder={}  numCoeffs={}  resolution={} {}".format(result["order"], result["numCoeffs"], result["resolution"][0], result["resolution"][1]))
@@ -250,10 +251,12 @@ def extract_coefficient_field( x, res, numCoeffs, coeff = 0 ):
 	# out of the solution vector
 	res_x = res[0]
 	res_y = res[1]
+	#res_z = res[2]
 
 	u0 = np.zeros( (res_x, res_y), dtype=x.dtype )
 	for voxel_i in range(res_x):
 		for voxel_j in range(res_y):
+			#for voxel_k in range(res_z):
 			i = (voxel_i*res_y + voxel_j)*numCoeffs + coeff
 			u0[voxel_i, voxel_j] = x[i, 0]
-	return u0
+	return u0.reshape((res_x, res_y, 1))

@@ -16,18 +16,21 @@ import os
 
 
 
-class GridLocation2D(object):
+class GridLocation3D(object):
 	def __init__(self, voxel, offset):
 		voxel_i = voxel[0]
 		voxel_j = voxel[1]
+		voxel_k = voxel[2]
 
 		(voxel_offset_i, offset_i) = divmod( offset[0], 2 )
 		(voxel_offset_j, offset_j) = divmod( offset[1], 2 )
+		(voxel_offset_k, offset_k) = divmod( offset[2], 2 )
 
 		self.voxel_i = voxel_i + voxel_offset_i
 		self.voxel_j = voxel_j + voxel_offset_j
-		self.voxel = np.array([voxel_i + voxel_offset_i,voxel_j + voxel_offset_j])
-		self.offset = np.array([offset_i,offset_j])
+		self.voxel_k = voxel_k + voxel_offset_k
+		self.voxel = np.array([voxel_i + voxel_offset_i,voxel_j + voxel_offset_j,voxel_k + voxel_offset_k])
+		self.offset = np.array([offset_i,offset_j,offset_k])
 	def getOffset(self):
 		return self.offset
 	def getVoxel(self):
@@ -35,13 +38,13 @@ class GridLocation2D(object):
 	def pVS(self):
 		return self.voxel + self.offset*0.5
 	def getShiftedLocation(self, offset):
-		return GridLocation2D(self.voxel, self.offset+offset)
+		return GridLocation3D(self.voxel, self.offset+offset)
 	def __str__(self):
-		return "voxel={} {} offset={} {}".format(self.voxel[0], self.voxel[1], self.offset[0], self.offset[1])
+		return "voxel={} {} {} offset={} {} {}".format(self.voxel[0], self.voxel[1], self.voxel[2], self.offset[0], self.offset[1], self.offset[2])
 	def toLatex(self):
 		return self.__class__.__name__
 	def deep_copy(self):
-		return GridLocation2D(self.voxel, self.offset)
+		return GridLocation3D(self.voxel, self.offset)
 
 
 
@@ -150,6 +153,7 @@ def eval_term( expr, info, level=0 ):
 				info.term_vanishes = True
 				return meh.num(0)
 
+			# TODO: do3D
 			numDimensions = 2
 
 			# check if the location, at which to evaluate the unknown,
@@ -171,15 +175,15 @@ def eval_term( expr, info, level=0 ):
 
 				# TODO: generalize to 3D
 
-				u0 = Unknown(coeff_index, info.location.getShiftedLocation(np.array([0, 1])).getVoxel(), meh.num(0.5))
+				u0 = Unknown(coeff_index, info.location.getShiftedLocation(np.array([0,1,0])).getVoxel(), meh.num(0.5))
 				u0.interpolated = True
-				u1 = Unknown(coeff_index, info.location.getShiftedLocation(np.array([0, -1])).getVoxel(), meh.num(0.5))
+				u1 = Unknown(coeff_index, info.location.getShiftedLocation(np.array([0,-1,0])).getVoxel(), meh.num(0.5))
 				u1.interpolated = True
 				return UnknownSet([u0,u1])
 			elif location_offset[1] == unknown_offset[1]:
-				u0 = Unknown(coeff_index, info.location.getShiftedLocation(np.array([1, 0])).getVoxel(), meh.num(0.5))
+				u0 = Unknown(coeff_index, info.location.getShiftedLocation(np.array([1,0,0])).getVoxel(), meh.num(0.5))
 				u0.interpolated = True
-				u1 = Unknown(coeff_index, info.location.getShiftedLocation(np.array([-1, 0])).getVoxel(), meh.num(0.5))
+				u1 = Unknown(coeff_index, info.location.getShiftedLocation(np.array([-1,0,0])).getVoxel(), meh.num(0.5))
 				u1.interpolated = True
 				result = UnknownSet([u0,u1])
 			else:
@@ -193,7 +197,7 @@ def eval_term( expr, info, level=0 ):
 				weight =  1.0/num_offset_combinations
 				unknowns = []
 				for o in offset_combinations:
-					u = Unknown(coeff_index, info.location.getShiftedLocation(np.array(o)).getVoxel(), meh.num(weight))
+					u = Unknown(coeff_index, info.location.getShiftedLocation(np.array([o[0], o[1], 0])).getVoxel(), meh.num(weight))
 					u.interpolated = True
 					unknowns.append(u)
 				result = UnknownSet(unknowns)
@@ -250,6 +254,7 @@ def eval_term( expr, info, level=0 ):
 		else:
 			raise ValueError("unable to identify derivation variable")
 
+		# TODO: do3D
 		max_dimension = 2
 		if dimension >= max_dimension:
 			# we have a derivative in z although we only work in 2d domain
@@ -258,7 +263,7 @@ def eval_term( expr, info, level=0 ):
 
 		# stepsize determines the stepsize of the stencil in number of half-voxels
 		stepsize = info.pni.stencil_half_steps
-		step = np.zeros(max_dimension, dtype=int)
+		step = np.zeros(3, dtype=int)
 		step[dimension] = stepsize
 
 		# 
@@ -359,8 +364,8 @@ def to_cpp( expr, info, level=0 ):
 		return expr.getSymbol()
 	elif isinstance(expr, meh.Function):
 		return info.fun_to_cpp(expr, info, level)
-	elif expr.__class__ == GridLocation2D:
-		return "domain.voxelToWorld(vd+V2d({}, {}))".format(expr.getVoxel()[0]+expr.getOffset()[0]*0.5, expr.getVoxel()[1]+expr.getOffset()[1]*0.5 )
+	elif expr.__class__ == GridLocation3D:
+		return "domain.voxelToWorld(vd+V3d({}, {}, {}))".format(expr.getVoxel()[0]+expr.getOffset()[0]*0.5, expr.getVoxel()[1]+expr.getOffset()[1]*0.5, expr.getVoxel()[2]+expr.getOffset()[2]*0.5 )
 	elif expr.__class__ == meh.Derivation:
 		raise ValueError("didnt expect any object of type Derivation")
 	elif expr.__class__ == meh.Addition:
@@ -528,38 +533,38 @@ class PNInfo2D(object):
 
 		# by default we place all unknowns at the cell centers
 		for i in range(self.numCoeffs):
-			self.place_unknown(i, (1, 1))
+			self.place_unknown(i, (1, 1, 1))
 		# and we use full voxel central differences
 		self.stencil_half_steps = 2
 
 		if staggered == True:
 			if self.order >= 1:
 				#self.place_unknown( 0, (1, 1) )
-				self.place_unknown( 2, (1, 0) )
-				self.place_unknown( 1, (0, 1) )
+				self.place_unknown( 2, (1, 0, 1) )
+				self.place_unknown( 1, (0, 1, 1) )
 			#'''
 			if self.order >= 2:
-				self.place_unknown( 3, (1, 1) )
-				self.place_unknown( 5, (1, 1) )
-				self.place_unknown( 4, (0, 0) )
+				self.place_unknown( 3, (1, 1, 1) )
+				self.place_unknown( 5, (1, 1, 1) )
+				self.place_unknown( 4, (0, 0, 1) )
 			if self.order >= 3:
-				self.place_unknown( 7, (1, 0) )
-				self.place_unknown( 9, (1, 0) )
-				self.place_unknown( 6, (0, 1) )
-				self.place_unknown( 8, (0, 1) )
+				self.place_unknown( 7, (1, 0, 1) )
+				self.place_unknown( 9, (1, 0, 1) )
+				self.place_unknown( 6, (0, 1, 1) )
+				self.place_unknown( 8, (0, 1, 1) )
 			if self.order >= 4:
-				self.place_unknown( 10, (1, 1) )
-				self.place_unknown( 12, (1, 1) )
-				self.place_unknown( 14, (1, 1) )
-				self.place_unknown( 11, (0, 0) )
-				self.place_unknown( 13, (0, 0) )
+				self.place_unknown( 10, (1, 1, 1) )
+				self.place_unknown( 12, (1, 1, 1) )
+				self.place_unknown( 14, (1, 1, 1) )
+				self.place_unknown( 11, (0, 0, 1) )
+				self.place_unknown( 13, (0, 0, 1) )
 			if self.order >= 5:
-				self.place_unknown( 16, (1, 0) )
-				self.place_unknown( 18, (1, 0) )
-				self.place_unknown( 20, (1, 0) )
-				self.place_unknown( 15, (0, 1) )
-				self.place_unknown( 17, (0, 1) )
-				self.place_unknown( 19, (0, 1) )
+				self.place_unknown( 16, (1, 0, 1) )
+				self.place_unknown( 18, (1, 0, 1) )
+				self.place_unknown( 20, (1, 0, 1) )
+				self.place_unknown( 15, (0, 1, 1) )
+				self.place_unknown( 17, (0, 1, 1) )
+				self.place_unknown( 19, (0, 1, 1) )
 			#'''
 			if self.order > 5:
 				raise ValueError("CHECK!")
@@ -656,7 +661,7 @@ class PNInfo2D(object):
 
 	def place_unknown( self, coeff_index, grid_id ):
 		self.unknown_info[coeff_index]['grid_id'] = grid_id
-		self.unknown_info[coeff_index]['offset'] = np.array( [grid_id[0], grid_id[1]] , dtype=int)
+		self.unknown_info[coeff_index]['offset'] = np.array( [grid_id[0], grid_id[1], grid_id[2]] , dtype=int)
 
 	def unknown_offset(self, coeff_index):
 		return self.unknown_info[coeff_index]['offset']
@@ -665,7 +670,7 @@ class PNInfo2D(object):
 		return self.unknown_info[coeff_index]['offset']
 
 	def getLocation(self, voxel, coeff_index):
-		return GridLocation2D(voxel, self.unknown_offset(coeff_index)) 
+		return GridLocation3D(voxel, self.unknown_offset(coeff_index)) 
 
 
 
@@ -1141,11 +1146,11 @@ def generate_stencil_code( stencil_name, filename, terms, order, staggered ):
 	prototype = "void {}({})\n".format(stencil_name, arg_sys)
 	file.write( prototype )
 	file.write( "{\n" )
-	file.write( "\tV2i vi = ctx.getVoxel();\n" )
-	file.write( "\tV2d vd = vi.cast<double>();\n" )
+	file.write( "\tV3i vi = ctx.getVoxelCoord();\n" )
+	file.write( "\tV3d vd = vi.cast<double>();\n" )
 	file.write( "\tconst Domain& domain = ctx.getDomain();\n" )
 	file.write( "\tconst PNSystem::Fields& fields = ctx.getFields();\n" )
-	file.write( "\tV2d h_inv( 1.0/({}*domain.getVoxelSize()[0]), 1.0/({}*domain.getVoxelSize()[1]) );\n".format(pni.stencil_half_steps, pni.stencil_half_steps) )
+	file.write( "\tV3d h_inv( 1.0/({}*domain.getVoxelSize()[0]), 1.0/({}*domain.getVoxelSize()[1]), 1.0/({}*domain.getVoxelSize()[2]) );\n".format(pni.stencil_half_steps, pni.stencil_half_steps, pni.stencil_half_steps) )
 	file.write( "\n" )
 
 	file.write( "\tEigen::Matrix<std::complex<double>, {}, {}> S;\n".format(pni.getS().shape[0], pni.getS().shape[1]) )
@@ -1280,7 +1285,7 @@ def generate_stencil_code( stencil_name, filename, terms, order, staggered ):
 							#info.debug = True
 							info.unknown_symbol = "u"
 							info.pni = pni
-							info.location = pni.getLocation( np.array([0,0]), i )
+							info.location = pni.getLocation( np.array([0,0,0]), i )
 							info.vars = {}
 							# TODO: get rid of info.location alltogether and just use vec{x} ?
 							info.vars["\\vec{x}"] = info.location
@@ -1432,7 +1437,7 @@ def generate_stencil_code( stencil_name, filename, terms, order, staggered ):
 				var_value = var_values[var_index]
 				term = meh.apply_recursive(term, meh.Substitute(meh.var(variable_names[var_index]), meh.num(var_value)))
 
-			location = pni.getLocation( np.array([0,0]), coeff_index )
+			location = pni.getLocation( np.array([0,0,0]), coeff_index )
 
 			# now we run eval_term in order to discretize the differential operators
 			info = EvalInfo()
@@ -1514,7 +1519,7 @@ def generate_stencil_code( stencil_name, filename, terms, order, staggered ):
 					if np.max(np.abs(u.voxel)) > stencil_width:
 						stencil_width = np.max(np.abs(u.voxel))
 
-					file.write( "\tctx.coeff_A( {}, vi + V2i({},{}), {} ) += {};\n".format(coeff_index, u.voxel[0], u.voxel[1], u.coeff_index, expr_cpp) )
+					file.write( "\tctx.coeff_A( {}, vi + V3i({},{},{}), {} ) += {};\n".format(coeff_index, u.voxel[0], u.voxel[1], u.voxel[2], u.coeff_index, expr_cpp) )
 					#file.write("\n")
 			else:
 				expr = meh.apply_recursive(result, ReplaceCoefficientMatrixComponents(coefficient_matrix_register))
@@ -1538,17 +1543,17 @@ def generate_stencil_code( stencil_name, filename, terms, order, staggered ):
 
 
 	file.write( "}\n" )
-	file.write("V2i {}_get_offset(int coeff)\n".format(stencil_name))
+	file.write("V3i {}_get_offset(int coeff)\n".format(stencil_name))
 	file.write("{\n")
 	file.write("\tswitch(coeff)\n")
 	file.write("\t{\n")
 	for i in range(pni.num_coeffs()):
 		offset = pni.getOffset(i)
-		file.write("\t\tcase {}:return V2i({}, {});break;\n".format(i, offset[0], offset[1]))
+		file.write("\t\tcase {}:return V3i({}, {}, {});break;\n".format(i, offset[0], offset[1], offset[2]))
 	file.write("\t\tdefault:throw std::runtime_error(\"unexpected coefficient index\");break;\n")
 	file.write("\t};\n")
 	file.write("}\n")
-	file.write( "REGISTER_STENCIL({}, {}, {})\n".format(stencil_name, order, stencil_width) )
+	file.write( "REGISTER_STENCIL({}, {}, {}, {})\n".format(stencil_name, order, pni.num_coeffs(), stencil_width) )
 
 	file.close()
 
@@ -1584,14 +1589,14 @@ if __name__ == "__main__":
 	staggered_id = {True:"sg", False:"cg"}
 	terms = {"fopn":terms_fopn, "sopn":terms_sopn}
 
-	rte_forms = ["fopn", "sopn"]
-	staggered = [True, False]
-	#order = [0,1,2,3,4,5]
-	order = [0,1,2,3,4]
-
-	#rte_forms = ["fopn"]
-	#order = [1]
+	#rte_forms = ["fopn", "sopn"]
 	#staggered = [True, False]
+	#order = [0,1,2,3,4,5]
+	#order = [0,1,2,3,4]
+
+	rte_forms = ["fopn"]
+	order = [1]
+	staggered = [True, False]
 
 	test = itertools.product(rte_forms, order, staggered)
 	for c in test:

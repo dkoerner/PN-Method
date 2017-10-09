@@ -6,8 +6,6 @@
 
 
 
-
-
 SHCoefficientFieldArray::SHCoefficientFieldArray( int order ):
 	m_order(order)
 {
@@ -32,7 +30,7 @@ Field::Ptr SHCoefficientFieldArray::getField(int l, int m)
 	return m_coeff_fields[getSHIndex(l,m)];
 }
 
-std::complex<double> SHCoefficientFieldArray::eval( int l, int m, const V2d& pWS )const
+std::complex<double> SHCoefficientFieldArray::eval( int l, int m, const P3d& pWS )const
 {
 	// map l, m to shindex
 	int shindex = l * (l + 1) + m; // NB: this computes the sh index from l,m for the general 3d case
@@ -49,3 +47,4 @@ int SHCoefficientFieldArray::getSHIndex(int l, int m) const
 {
 	return l * (l + 1) + m;
 }
+

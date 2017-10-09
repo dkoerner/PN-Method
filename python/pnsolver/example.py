@@ -91,17 +91,18 @@ if __name__ == "__main__":
 	bc_id = {True:"_nbc", False:""}
 
 
-	rte_forms = ["fopn", "sopn"]
+	#rte_forms = ["fopn", "sopn"]
 	#order = [0,1,2,3,4,5]
-	staggered = [True, False]
-	boundary_conditions = [True]
-
-	order = [0,1,2,3,4]
-	#'''
-	#rte_forms = ["fopn"]
-	#order = [1]
+	#order = [0,1,2,3,4]
 	#staggered = [True, False]
 	#boundary_conditions = [True, False]
+
+	
+	#'''
+	rte_forms = ["fopn"]
+	order = [1]
+	staggered = [False]
+	boundary_conditions = [False]
 
 	test = itertools.product(rte_forms, order, staggered, boundary_conditions)
 	for c in test:
@@ -112,9 +113,10 @@ if __name__ == "__main__":
 
 		stencil_name = "stencil_{}_p{}_{}".format(rte_form_name, order, staggered_id[is_staggered] )
 		#stencil_name = "noop"
+		#print(stencil_name)
 		
-		filename = "{}/{}5{}{}.mat".format(path, problem["id"], stencil_name, bc_id[do_neumannBC])
-		#filename = "{}/{}_test.mat".format(path, problem["id"], stencil_name)
+		#filename = "{}/{}9{}{}.mat".format(path, problem["id"], stencil_name, bc_id[do_neumannBC])
+		filename = "{}/{}_test.mat".format(path, problem["id"], stencil_name)
 		#print("clear;filename=\"{}\";compute_condest;".format(filename))
 		solve(stencil_name, problem, filename, do_neumannBC=do_neumannBC)
 	#'''

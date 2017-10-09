@@ -721,4 +721,5 @@ def splitAddition( terms ):
 
 
 if __name__ == "__main__":
-	pass
+	#pass
+	test = lspn.term0_projected_expr(True)

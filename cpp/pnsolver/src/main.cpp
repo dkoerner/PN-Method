@@ -10,7 +10,7 @@
 #include <math/ray.h>
 
 #include<common/Domain.h>
-#include<field/VoxelGrid.h>
+#include<field/VoxelGridField.h>
 #include<field/Constant.h>
 #include<field/SHEXP.h>
 #include <PNSystem.h>
@@ -22,6 +22,7 @@ namespace py = pybind11;
 
 PYBIND11_MODULE(pnsolver, m)
 {
+
 	// PNSystem ==============================
 	py::class_<PNSystem> class_pnsystem(m, "PNSystem");
 	class_pnsystem
@@ -36,22 +37,6 @@ PYBIND11_MODULE(pnsolver, m)
 			stencil = PNSystem::findStencil(stencil_name);
 		new (&m) PNSystem(stencil, domain, neumannBC);
 	})
-	.def("getGlobalIndex", &PNSystem::getGlobalIndex )
-	.def("getVoxelAndCoefficient",
-	[](PNSystem &m, int global_index)
-	{
-		V2i voxel;
-		int coeff;
-		m.getVoxelAndCoefficient(global_index, voxel, coeff);
-		return py::make_tuple(voxel, coeff);
-	})
-	.def("getLM",
-	[](PNSystem &sys, int sh_index)
-	{
-		int l,m;
-		sys.getLM(sh_index, l, m);
-		return py::make_tuple(l, m);
-	})
 	.def("getNumCoefficients", &PNSystem::getNumCoefficients )
 	.def("getNumVoxels", &PNSystem::getNumVoxels )
 	.def("getOrder", &PNSystem::getOrder )
@@ -59,13 +44,10 @@ PYBIND11_MODULE(pnsolver, m)
 	.def("solve", &PNSystem::solve )
 	.def("solveWithGuess", &PNSystem::solveWithGuess )
 	.def("setField", &PNSystem::setField )
-	//.def("solve2", &PNSystem::solve2 )
-	//.def("get_A_complex", &PNSystem::get_A_complex )
-	//.def("get_b_complex", &PNSystem::get_b_complex )
 	.def("get_A_real", &PNSystem::get_A_real )
 	.def("get_b_real", &PNSystem::get_b_real )
 	.def("setDebugVoxel", &PNSystem::setDebugVoxel )
-	.def("computeGroundtruth", &PNSystem::computeGroundtruth )
+	//.def("computeGroundtruth", &PNSystem::computeGroundtruth )
 	.def("getVoxelInfo", &PNSystem::getVoxelInfo )
 	;
 
@@ -73,34 +55,70 @@ PYBIND11_MODULE(pnsolver, m)
 	py::class_<Domain> class_domain(m, "Domain");
 	class_domain
 	.def("__init__",
-	[](Domain &m, const V2d& size, const V2i& resolution, const V2d& offset)
+	[](Domain &m, const Eigen::Matrix<double, 3, 1>& size, const Eigen::Matrix<int, 3, 1>& resolution, const Eigen::Matrix<double, 3, 1>& offset)
 	{
 		new (&m) Domain( size,
 						 resolution,
 						 offset);
 	})
-	.def("resolution", &Domain::resolution )
-	.def("setResolution", &Domain::setResolution )
-	.def("voxelSize", &Domain::voxelSize )
-	.def("numVoxels", &Domain::numVoxels )
-	.def("worldToVoxel", &Domain::worldToVoxel )
-	.def("voxelToWorld", &Domain::voxelToWorld )
-	.def("getBoundMax", &Domain::getBoundMax )
-	.def("getBoundMin", &Domain::getBoundMin )
+	.def("getResolution",
+		[](Domain &m)
+		{
+			return m.getResolution();
+		})
+	.def("setResolution",
+		[](Domain &m, const Eigen::Matrix<int, 3, 1>& resolution)
+		{
+			m.setResolution(resolution);
+		})
+	.def("getVoxelSize",
+		[](Domain &m)
+		{
+			return m.getVoxelSize();
+		})
+	.def("numVoxels",
+		[](Domain &m)
+		{
+			return m.numVoxels();
+		})
+	.def("worldToVoxel",
+		[](Domain &m, const Eigen::Matrix<double, 3, 1>& pWS)
+		{
+			return m.worldToVoxel(pWS);
+		})
+	.def("voxelToWorld",
+		[](Domain &m, const Eigen::Matrix<double, 3, 1>& pVS)
+		{
+			return m.voxelToWorld(pVS);
+		})
+	.def("getBoundMax",
+		[](Domain &m)
+		{
+			return m.getBoundMax();
+		})
+	.def("getBoundMin",
+		[](Domain &m)
+		{
+			return m.getBoundMin();
+		})
 	;
 
 
 	// Field ============================================================
 	py::class_<Field, Field::Ptr> class_field(m, "Field");
 	class_field
-	.def("__call__", &Field::eval)
+	.def("__call__",
+	[](Field &m, const Eigen::Matrix<double, 3, 1>& pWS)
+	{
+		return m.eval(pWS);
+	})
 	;
 
 	// VoxelGrid ============================================================
-	py::class_<VoxelGrid, VoxelGrid::Ptr> class_VoxelGrid(m, "VoxelGrid", class_field);
-	class_VoxelGrid
+	py::class_<VoxelGridField, VoxelGridField::Ptr> class_VoxelGridField(m, "VoxelGridField", class_field);
+	class_VoxelGridField
 	.def("__init__",
-	[](VoxelGrid &m, py::array b, Domain& domain, const V2d& offset)
+	[](VoxelGridField &m, py::array b, Domain& domain, const Eigen::Matrix<double, 3, 1>& offset)
 	{
 		typedef Eigen::Stride<Eigen::Dynamic, Eigen::Dynamic> Strides;
 
@@ -111,16 +129,16 @@ PYBIND11_MODULE(pnsolver, m)
 		if (info.format != py::format_descriptor<std::complex<double>>::format())
 			throw std::runtime_error("Incompatible format: expected a complex array!");
 
-		if (info.ndim != 2)
+		if (info.ndim != 3)
 			throw std::runtime_error("Incompatible buffer dimension!");
 
 		int res_x = int(info.shape[0]);
 		int res_y = int(info.shape[1]);
+		int res_z = int(info.shape[2]);
 
 		auto data = static_cast<std::complex<double> *>(info.ptr);
-		new (&m) VoxelGrid( data, domain, offset );
+		new (&m) VoxelGridField( data, domain, offset );
 	})
-	.def("test", &VoxelGrid::test )
 	;
 
 	// Constant ============================================================
@@ -135,15 +153,12 @@ PYBIND11_MODULE(pnsolver, m)
 	// RadianceField ============================================================
 	py::class_<RadianceField, RadianceField::Ptr> class_radiancefield(m, "RadianceField");
 	class_radiancefield
-	//TODO: this produces an compiler error with Eigen under MSVS2017: FLOATING_POINT_ARGUMENT_PASSED__INTEGER_WAS_EXPECTED
-	//.def("__call__", &RadianceField::eval)
-	.def("eval",
-	 [](RadianceField &m, const P2d& pWS, const V2d& omega)
-	 {
-		V3d o(omega[0], omega[1], 0.0);
-		return m.eval(pWS, o);
-	 }
-	);
+	.def("__call__",
+	[](RadianceField &m, const Eigen::Matrix<double, 3, 1>& pWS, const Eigen::Matrix<double, 3, 1>& omega)
+	{
+		return m.eval(pWS, omega);
+	})
+	;
 
 	// SHEXP ============================================================
 	py::class_<SHEXP, SHEXP::Ptr> class_shexp(m, "SHEXP", class_radiancefield);
@@ -155,11 +170,5 @@ PYBIND11_MODULE(pnsolver, m)
 	})
 	.def("setCoefficientField", &SHEXP::setCoefficientField)
 	.def("getCoefficientField", &SHEXP::getCoefficientField)
-	.def("eval2",
-		[](SHEXP &m, const P2d& pWS)
-		{
-			return m.eval2(pWS);
-		}
-	)
 	;
 }

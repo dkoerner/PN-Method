@@ -78,7 +78,8 @@ if __name__ == "__main__":
 	path = "C:/projects/epfl/epfl17/python/pnsolver/results/studies"
 
 	# define problem ----------------------------
-	problem = problems.checkerboard()
+	#problem = problems.checkerboard()
+	problem = problems.checkerboard3d()
 	#problem = problems.vacuum()
 
 	
@@ -101,7 +102,7 @@ if __name__ == "__main__":
 	#'''
 	rte_forms = ["fopn"]
 	order = [1]
-	staggered = [False]
+	staggered = [True]
 	boundary_conditions = [False]
 
 	test = itertools.product(rte_forms, order, staggered, boundary_conditions)
@@ -115,7 +116,7 @@ if __name__ == "__main__":
 		#stencil_name = "noop"
 		#print(stencil_name)
 		
-		#filename = "{}/{}9{}{}.mat".format(path, problem["id"], stencil_name, bc_id[do_neumannBC])
+		#filename = "{}/{}10{}{}.mat".format(path, problem["id"], stencil_name, bc_id[do_neumannBC])
 		filename = "{}/{}_test.mat".format(path, problem["id"], stencil_name)
 		#print("clear;filename=\"{}\";compute_condest;".format(filename))
 		solve(stencil_name, problem, filename, do_neumannBC=do_neumannBC)

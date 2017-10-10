@@ -379,6 +379,7 @@ void PNSystem::build()
 
 	m_builder_A.build(m_voxelManager.getNumUnknowns(), m_voxelManager.getNumUnknowns());
 	m_builder_b.build(m_voxelManager.getNumUnknowns(), 1);
+	
 }
 
 

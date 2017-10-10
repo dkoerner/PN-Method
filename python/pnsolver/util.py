@@ -251,12 +251,16 @@ def extract_coefficient_field( x, res, numCoeffs, coeff = 0 ):
 	# out of the solution vector
 	res_x = res[0]
 	res_y = res[1]
-	#res_z = res[2]
+	res_z = res[2]
 
-	u0 = np.zeros( (res_x, res_y), dtype=x.dtype )
+	u0 = np.zeros( (res_x, res_y, res_z), dtype=x.dtype )
 	for voxel_i in range(res_x):
 		for voxel_j in range(res_y):
-			#for voxel_k in range(res_z):
-			i = (voxel_i*res_y + voxel_j)*numCoeffs + coeff
-			u0[voxel_i, voxel_j] = x[i, 0]
-	return u0.reshape((res_x, res_y, 1))
+			for voxel_k in range(res_z):
+				#i = (voxel_i*res_y + voxel_j)*numCoeffs + coeff
+
+				new_voxel_index = voxel_i*res[2]*res[1] + voxel_j*res[2] + voxel_k
+				new_global_index = new_voxel_index*numCoeffs + coeff
+				u0[voxel_i, voxel_j, voxel_k] = x[new_global_index, 0]
+	#return u0.reshape((res_x, res_y, res_z))
+	return u0

@@ -61,7 +61,7 @@ class Unknown(object):
 			weight_expr_str = self.weight_expr.toLatex()
 		else:
 			weight_expr_str = weight_expr.__class__.__name__
-		return "coeff_index={} voxel={} {} weight_expr={}\n".format(self.coeff_index, self.voxel[0], self.voxel[1], weight_expr_str)
+		return "coeff_index={} voxel={} {} {} weight_expr={}\n".format(self.coeff_index, self.voxel[0], self.voxel[1], self.voxel[2], weight_expr_str)
 
 
 
@@ -88,10 +88,6 @@ class UnknownSet(object):
 		return UnknownSet( self.unknowns + other.unknowns )
 	def __radd__(self, lhs):
 		return self + lhs
-	'''
-	def __sub__(self, other):
-		return self+ (-1.0)*other
-	'''
 	def __neg__(self):
 		return meh.num(-1.0)*self
 
@@ -153,51 +149,46 @@ def eval_term( expr, info, level=0 ):
 				info.term_vanishes = True
 				return meh.num(0)
 
-			# TODO: do3D
-			numDimensions = 2
 
-			# check if the location, at which to evaluate the unknown,
-			# matches the actual grid location of the unknown
-			# this is true for first order equation with non-anisotropic media
+			# location_offset is the staggered grid location at which to evaluate the unknown
 			location_offset = info.location.getOffset()
+			# unknown_offset is the staggered grid location at which the unknown is defined
 			unknown_offset = info.pni.getOffset(coeff_index)
 
-			if (location_offset == unknown_offset).all():
-				# unknown location and eval location are the same spot
-				# no interpolation needed
+			# now find in which dimension the staggered grid locations match
+			same_axis = np.array([0 for i in range(3)])
+			for i in range(3):
+				if location_offset[i] == unknown_offset[i]:
+					same_axis[i] = 1
+
+			# number of axes in which evaluation location and coefficient location are equal
+			numSameAxes = np.sum(same_axis)
+
+			# now we build a list of local coordinate axes from those dimensions, where the
+			# staggered grid locations of unknown and evaluation location didnt match
+			all_axes = [ np.array([1,0,0]), np.array([0,1,0]), np.array([0,0,1]) ]
+			local_axes = []
+			for i in range(3):
+				if same_axis[i] == 0:
+					local_axes.append(all_axes[i])
+			numAxes = len(local_axes)
+
+			if numAxes == 0:
+				# unknown location and eval location are at the same spot---no interpolation needed
 				u = Unknown(coeff_index, info.location.getVoxel())
 				u.interpolated = False
 				result = UnknownSet([u])
-			elif location_offset[0] == unknown_offset[0]:
-				# in the previous if-clause, we checked for location and unknown to be exactly equal
-				# now if their offset matches only in one dimension, then we can simply interpolate
-				# between the two neighbouring datapoints in that dimension
-
-				# TODO: generalize to 3D
-
-				u0 = Unknown(coeff_index, info.location.getShiftedLocation(np.array([0,1,0])).getVoxel(), meh.num(0.5))
-				u0.interpolated = True
-				u1 = Unknown(coeff_index, info.location.getShiftedLocation(np.array([0,-1,0])).getVoxel(), meh.num(0.5))
-				u1.interpolated = True
-				return UnknownSet([u0,u1])
-			elif location_offset[1] == unknown_offset[1]:
-				u0 = Unknown(coeff_index, info.location.getShiftedLocation(np.array([1,0,0])).getVoxel(), meh.num(0.5))
-				u0.interpolated = True
-				u1 = Unknown(coeff_index, info.location.getShiftedLocation(np.array([-1,0,0])).getVoxel(), meh.num(0.5))
-				u1.interpolated = True
-				result = UnknownSet([u0,u1])
 			else:
-				# the offsets of evaluation and unknown do not match in any dimension, therefore 
-				# we can conclude that the location of the unknown is on the diagonals to the eval location
-
-				# the unknown is located diagonal to the position at which we want to evaluate it
-				# therefore we will do an equal weighted sum of all for surrounding unknowns
-				offset_combinations = itertools.product(*[[-1, 1] for d in range(numDimensions)])
-				num_offset_combinations = 2**numDimensions
+				# now we interpolate from the neighbous along the defined local axes
+				offset_combinations = itertools.product(*[[-1, 1] for d in range(numAxes)])
+				num_offset_combinations = 2**numAxes
 				weight =  1.0/num_offset_combinations
 				unknowns = []
 				for o in offset_combinations:
-					u = Unknown(coeff_index, info.location.getShiftedLocation(np.array([o[0], o[1], 0])).getVoxel(), meh.num(weight))
+					offset = np.array([0, 0, 0])
+					for i in range(numAxes):
+						offset += o[i]*local_axes[i]
+					u = Unknown(coeff_index, info.location.getShiftedLocation(offset).getVoxel(), meh.num(weight))
 					u.interpolated = True
 					unknowns.append(u)
 				result = UnknownSet(unknowns)
@@ -254,10 +245,8 @@ def eval_term( expr, info, level=0 ):
 		else:
 			raise ValueError("unable to identify derivation variable")
 
-		# TODO: do3D
-		max_dimension = 2
-		if dimension >= max_dimension:
-			# we have a derivative in z although we only work in 2d domain
+		if info.pni.is2D() and dimension == 2:
+			# we have a derivative in z, although we only work in 2d domain
 			info.term_vanishes = True
 			return meh.num(0)
 
@@ -269,9 +258,6 @@ def eval_term( expr, info, level=0 ):
 		# 
 		location = info.location
 
-		#voxelsize = np.array([7.0/70, 7.0/70])
-		#central_difference_weight = 1.0/(stepsize*voxelsize[dimension])
-		#central_difference_weight = meh.num(1.0/(stepsize*voxelsize[dimension]))
 		central_difference_weight = meh.var("h_inv[{}]".format(dimension))
 
 		nested_expr = expr.getExpr()
@@ -287,13 +273,7 @@ def eval_term( expr, info, level=0 ):
 		info.location = location
 		info.vars["\\vec{x}"] = info.location
 
-		#if a.__class__ == UnknownSet and b.__class__ == UnknownSet:
-		#	return a+b
-		#elif a.__class__ == UnknownSet or b.__class__ == UnknownSet:
-		#	raise ValueError("expecting either a and b or none of both to be an UnknownSet")
-		#else:
 		result = meh.add(a, b)
-		#result = a
 		if info.debug == True:
 			print("{}result={}".format(meh.indent_string(level), str(result)))
 		return result
@@ -570,7 +550,8 @@ class PNInfo2D(object):
 				raise ValueError("CHECK!")
 			self.stencil_half_steps = 1
 
-
+	def is2D(self):
+		return True
 	def build_S(self):
 		'''builds the S matrix, which converts from complex-valued to real valued coefficients'''
 		# build S matrix ( we iterate over l, m to make sure that the order is correct)
@@ -628,6 +609,214 @@ class PNInfo2D(object):
 				#	print(np.real(self.S.dot(x_complex[block_i:block_i + self.numCoeffs])))
 				x_real[block_i:block_i + self.numCoeffs] = np.real(self.S.dot(x_complex[block_i:block_i + self.numCoeffs]))
 		return x_real
+
+	def getS(self):
+		return self.S
+
+	def getSInv(self):
+		return self.S_inv
+
+	def num_coeffs(self):
+		return self.numCoeffs
+
+	def u_index( self, l, m, part ):
+		# the third argument identifies the real(0) or imaginary(1) part of the complex number
+		key = (l,m,part)
+		if key in self.lm_to_u_index:
+			return self.lm_to_u_index[key]
+		return None
+
+	def lmp_index(self, coeff_index):
+		return self.u_index_to_lm[coeff_index]
+
+	def sh_index(self, l, m):
+		key = (l,m)
+		#NB: we dont use l(l+1)+m because in 2d, we skipp odd (l+m) entries, which changes the sequence.
+		if key in self.lm_to_index:
+			return self.lm_to_index[key]
+		return None
+
+	def lm_index(self, coeff_index):
+		return self.index_to_lm[coeff_index]
+
+
+	def place_unknown( self, coeff_index, grid_id ):
+		self.unknown_info[coeff_index]['grid_id'] = grid_id
+		self.unknown_info[coeff_index]['offset'] = np.array( [grid_id[0], grid_id[1], grid_id[2]] , dtype=int)
+
+	def unknown_offset(self, coeff_index):
+		return self.unknown_info[coeff_index]['offset']
+
+	def getOffset(self, coeff_index):
+		return self.unknown_info[coeff_index]['offset']
+
+	def getLocation(self, voxel, coeff_index):
+		return GridLocation3D(voxel, self.unknown_offset(coeff_index)) 
+
+
+
+class PNInfo3D(object):
+	def __init__(self, order, staggered=True):
+		self.order = order
+
+		# the following dictionaries help mapping lm to shindex and vice versa ---
+		# NB: sh_index refers to the complex valued SH coefficient
+		# find out how much coefficients we have in 2d
+		self.index_to_lm = [] # this will map equation index to l,m indices
+		self.lm_to_index = {} # this dict will map l,m indices to the equation index
+		# NB: we dont use l(l+1)+m because in 2d, we skipp odd (l+m) entries, which changes the sequence.
+		# iterate all sh coefficients for given truncation order
+		for l in range(0, self.order+1):
+			for m in range(-l, l+1):
+				self.index_to_lm.append( (l, m) )
+				sh_index = len(self.index_to_lm)-1
+				self.lm_to_index[(l,m)] = sh_index
+				#print( "check: {} {}".format(sh_index, util.sh_index(l,m)) )
+		self.numCoeffs = len(self.index_to_lm)
+		#print( "check: {} {}".format(self.numCoeffs, util.num_sh_coeffs(self.order)) )
+
+		self.build_S()
+
+		# the following dictionaries help mapping lm to uindex and vice versa ---
+		# NB: u_index refers to the real-valued coefficient of the solution vector u which
+		# represents real and imaginary part (both are real numbers) of sh coefficients lm with m>=0
+		self.u_index_to_lm = []
+		self.lm_to_u_index = {}
+		local_u_index = 0 # this counter represents the current row in the solution vector for a single voxel
+		for l in range(0, self.order+1):
+			# NB: the starmap code builds the solution vector from reverse order, we do it the same,
+			# as we want our conversion matrix S (and therefore the structure of Mx, My) to be indentical
+			for m in range(l, -1, -1):
+
+				# handle real valued part of the current sh coefficient
+				key = (l,m,0)
+				self.u_index_to_lm.append(key)
+				self.lm_to_u_index[key] = local_u_index
+				local_u_index += 1
+
+				# handle imaginary part of the current sh coefficient
+				# NB: if m==0, then the imaginary part will always be zero, this is why we skip it
+				if m>0:
+					key = (l,m,1)
+					self.u_index_to_lm.append(key)
+					self.lm_to_u_index[key] = local_u_index
+					local_u_index += 1
+
+
+		# we keep track of where the unknowns are placed
+		self.unknown_info = [ {} for i in range(self.numCoeffs)]
+
+		# by default we place all unknowns at the cell centers
+		for i in range(self.numCoeffs):
+			self.place_unknown(i, (1, 1, 1))
+		# and we use full voxel central differences
+		self.stencil_half_steps = 2
+
+		if staggered == True:
+			if self.order >= 1:
+				self.place_unknown( 0, (1, 1, 1) )
+				self.place_unknown( 3, (1, 1, 0) )
+				self.place_unknown( 2, (1, 0, 1) )
+				self.place_unknown( 1, (0, 1, 1) )
+			if self.order >= 2:
+				self.place_unknown( 4, (1, 1, 1) )
+				self.place_unknown( 8, (1, 1, 1) )
+				self.place_unknown( 7, (1, 0, 0) )
+				self.place_unknown( 6, (0, 1, 0) )
+				self.place_unknown( 5, (0, 0, 1) )
+			if self.order >= 3:
+				self.place_unknown( 11, (1, 1, 0) )
+				self.place_unknown( 15, (1, 1, 0) )
+				self.place_unknown( 10, (1, 0, 1) )
+				self.place_unknown( 14, (1, 0, 1) )
+				self.place_unknown( 9, (0, 1, 1) )
+				self.place_unknown( 13, (0, 1, 1) )
+				self.place_unknown( 12, (0, 0, 0) )
+			if self.order >= 4:
+				self.place_unknown( 16, (1, 1, 1) )
+				self.place_unknown( 20, (1, 1, 1) )
+				self.place_unknown( 24, (1, 1, 1) )
+				self.place_unknown( 19, (1, 0, 0) )
+				self.place_unknown( 23, (1, 0, 0) )
+				self.place_unknown( 18, (0, 1, 0) )
+				self.place_unknown( 22, (0, 1, 0) )
+				self.place_unknown( 17, (0, 0, 1) )
+				self.place_unknown( 21, (0, 0, 1) )
+			if self.order >= 5:
+				self.place_unknown( 27, (1, 1, 0) )
+				self.place_unknown( 31, (1, 1, 0) )
+				self.place_unknown( 35, (1, 1, 0) )
+				self.place_unknown( 26, (1, 0, 1) )
+				self.place_unknown( 30, (1, 0, 1) )
+				self.place_unknown( 34, (1, 0, 1) )
+				self.place_unknown( 25, (0, 1, 1) )
+				self.place_unknown( 29, (0, 1, 1) )
+				self.place_unknown( 33, (0, 1, 1) )
+				self.place_unknown( 28, (0, 0, 0) )
+				self.place_unknown( 32, (0, 0, 0) )
+			#'''
+			if self.order > 5:
+				raise ValueError("CHECK!")
+			self.stencil_half_steps = 1
+
+	def is2D(self):
+		return False
+	def build_S(self):
+		'''builds the S matrix, which converts from complex-valued to real valued coefficients'''
+		# build S matrix ( we iterate over l, m to make sure that the order is correct)
+
+		self.S = np.zeros((self.numCoeffs, self.numCoeffs),dtype=complex)
+		count = 0
+		for l in range(0, self.order+1):
+			for m in range(l, -1, -1):
+
+				# build S matrix, which converts solution from complex to real values
+
+				# computes the real part coefficients for a row (defined by l,m) in the S matrix
+				# (see bottom of p.5 in the starmap paper)
+				if m == 0:
+					self.S[count, self.lm_to_index[(l,m)]] = 1.0
+				else:
+					self.S[count, self.lm_to_index[(l,m)]] = np.power(-1.0, m)/np.sqrt(2)
+					if (l,-m) in self.lm_to_index:
+						self.S[count, self.lm_to_index[(l,-m)]] = np.power(-1.0, 2.0*m)/np.sqrt(2)
+				count+=1
+
+				# computes the imaginary part coefficients for a row (defined by l,m) in the S matrix
+				# (see bottom of p.5 in the starmap paper)
+				if m > 0:
+					self.S[count, self.lm_to_index[(l,m)]] = np.power(-1.0, m)/np.sqrt(2)*1j
+					if (l,-m) in self.lm_to_index:
+						self.S[count, self.lm_to_index[(l,-m)]] = -np.power(-1.0, 2*m)/np.sqrt(2)*1j
+					count+=1
+		self.S_inv = np.linalg.inv(self.S)
+
+	def to_complex( self, x_real):
+		# use this to convert the solution from complex valued to real valued
+		numVoxels = int(x_real.shape[0]/self.numCoeffs)
+		x_complex = np.zeros( (numVoxels*self.numCoeffs, 1), dtype=complex )
+		for i in range(numVoxels):
+			block_i = i*self.numCoeffs
+			x_complex[block_i:block_i + self.numCoeffs, :] = self.S_inv @ x_real[block_i:block_i + self.numCoeffs, :]
+
+		return x_complex
+
+	'''
+	def to_real(self, x_complex):
+		# use this to convert the solution from real valued to complex valued
+		numVoxels = self.domain.res_x*self.domain.res_y*self.domain.res_z
+		x_real = np.zeros( (numVoxels*self.numCoeffs), dtype=float )
+		for voxel_x in range(self.domain.res_x):
+			for voxel_y in range(self.domain.res_y):
+				block_i = self.get_global_index(voxel_x, voxel_y, 0)
+				#if block_i <= 6628 and block_i+self.numCoeffs >= 6628:
+				#if block_i == 6627:
+				#	print(block_i)
+				#	print(x_complex[block_i:block_i + self.numCoeffs])
+				#	print(np.real(self.S.dot(x_complex[block_i:block_i + self.numCoeffs])))
+				x_real[block_i:block_i + self.numCoeffs] = np.real(self.S.dot(x_complex[block_i:block_i + self.numCoeffs]))
+		return x_real
+	'''
 
 	def getS(self):
 		return self.S
@@ -1120,11 +1309,9 @@ def fun_to_cpp( expr, info, level ):
 		raise ValueError("unable to convert function {} to c++ code.".format(symbol))
 
 
-def generate_stencil_code( stencil_name, filename, terms, order, staggered ):
+def generate_stencil_code( stencil_name, filename, terms, pni ):
 
 	print( "generating stencil code {} order={} staggered={}\nfilename={}".format(stencil_name, order, staggered, filename) )
-
-	pni = PNInfo2D(order, staggered)
 
 	# the width of the stencil (the number of neighbouring voxels the stencil touches)
 	# this values is determined later during construction the code for building A
@@ -1565,6 +1752,8 @@ if __name__ == "__main__":
 	#staggered = True
 	#filename = "c:/projects/epfl/epfl17/cpp/pnsolver/src/stencil.cpp"
 
+	#test = PNInfo3D(4, True)
+	#exit(1)
 
 
 
@@ -1596,7 +1785,7 @@ if __name__ == "__main__":
 
 	rte_forms = ["fopn"]
 	order = [1]
-	staggered = [True, False]
+	staggered = [True]
 
 	test = itertools.product(rte_forms, order, staggered)
 	for c in test:
@@ -1610,7 +1799,11 @@ if __name__ == "__main__":
 		stencil_name = "stencil_{}_p{}_{}".format(rte_form_name, order, staggered_id[is_staggered] )
 		filename = "{}/{}.cpp".format(path, stencil_name)
 
-		generate_stencil_code( stencil_name, filename, rte_form_terms, order, is_staggered )
+		#pni = PNInfo2D(order, is_staggered)
+		pni = PNInfo3D(order, is_staggered)
+
+
+		generate_stencil_code( stencil_name, filename, rte_form_terms, pni )
 
 		# clear stencil file
 		#file = open(filename, "w")

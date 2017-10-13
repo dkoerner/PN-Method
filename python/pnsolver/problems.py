@@ -22,6 +22,7 @@ def checkerboard():
 			g = 1
 		return (1.0-g)*0 + g*10
 		#return 0.0
+		#return 5.0
 
 	def sigma_s( pWS ):
 		x = pWS[0]
@@ -34,6 +35,7 @@ def checkerboard():
 		return (1.0-g)*1 + g*0
 		#return 0.0
 		#return 10.0 - sigma_a(pWS) # constant sigma_t
+		#return 5.0
 
 
 	def phase_shcoeffs( l, m, pWS ):
@@ -56,8 +58,8 @@ def checkerboard():
 	# here we set some general parameters 
 	size = 7.0
 	#res = 20
-	res = 35
-	#res = 71
+	#res = 70
+	res = 71
 	#res = 2
 	#res = 200
 	#res = 150

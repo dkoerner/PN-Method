@@ -162,8 +162,23 @@ def rasterize( fun, domain, offset = np.array([0.5, 0.5, 0.5]), dtype=float ):
 				voxels[i, j, k] = fun(pWS)
 	return voxels
 
+def write_problem(filename, problem):
+	data = {}
+	data["sigma_t"] = problem["sigma_t"].getData()
+	data["q"] = problem["q"][0].getData()
+	data["sigma_a"] = problem["sigma_a"].getData()
+	data["sigma_s"] = problem["sigma_s"].getData()
+
+	data["sigma_t_diff"] = problem["sigma_t"].test()
+	data["q_diff"] = problem["q"][0].test()
+	data["sigma_a_diff"] = problem["sigma_a"].test()
+	data["sigma_s_diff"] = problem["sigma_s"].test()
+
+	scipy.io.savemat(filename, data)
+
 def write_pn_system(filename, sys, problem, x=None):
 	domain = problem["domain"]
+
 	A = sys.get_A_real()
 	b = sys.get_b_real()
 	#A = sys.get_boundary_A_real()
@@ -179,6 +194,22 @@ def write_pn_system(filename, sys, problem, x=None):
 	data["info"] = info
 	if not A is None:
 		data['A'] = A
+		'''
+		numRows = A.shape[0]
+		numCols = A.shape[1]
+		for i in range(numRows):
+			diag = A[i, i]
+			s = 0.0
+			for j in range(numCols):
+				s+=A[i,j]
+			s-= A[i, i]
+			if diag < s:
+				raise ValueError("is not diagonal dominant!")
+		'''
+				
+
+
+
 	if not b is None:
 		data['b'] = b
 	if not x is None:

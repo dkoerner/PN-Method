@@ -50,8 +50,9 @@ struct PNSystem
 		// a new triplet, which is being stored in that list.
 		struct MatrixAccessHelper
 		{
-			MatrixAccessHelper(std::vector<Triplet>* triplets = 0):
-				triplets(triplets)
+			MatrixAccessHelper(std::vector<Triplet>* triplets = 0, bool debug = false):
+				triplets(triplets),
+				debug(debug)
 			{
 
 			}
@@ -60,18 +61,23 @@ struct PNSystem
 			{
 				// add triplet
 				if(triplets)
+				{
+					if(debug)
+						std::cout << "MatrixAccessHelper: adding triplet i=" << i << " j=" << j << " value=" << rhs << std::endl;
 					triplets->push_back(Triplet(i, j, rhs));
+				}
 				return *this; // return the result by reference
 			}
 
 			int i;
 			int j;
+			bool debug;
 			std::vector<Triplet>* triplets;
 		};
 
-		MatrixAccessHelper coeff(int i,int j)
+		MatrixAccessHelper coeff(int i,int j, bool debug = false)
 		{
-			MatrixAccessHelper mah(&triplets);
+			MatrixAccessHelper mah(&triplets, debug);
 			mah.i = i;
 			mah.j = j;
 			return mah;
@@ -143,13 +149,15 @@ struct PNSystem
 	struct Voxel
 	{
 		Voxel():
-			type(-1)
+			type(-1),
+			debug(false)
 		{
 		}
 
 		V3i coord;
 		int globalOffset; // points at the global index of the first coefficient
 		int type; // identifies the voxel type (interior, east-boundary, etc.)
+		bool debug;
 	};
 
 	struct VoxelManager
@@ -259,8 +267,6 @@ struct PNSystem
 
 
 
-
-
 	struct Stencil
 	{
 		struct Context
@@ -278,6 +284,11 @@ struct PNSystem
 				return voxel.coord;
 			}
 
+			V3d getOffset( int coeff )
+			{
+				return sys.getStencil().getOffset(coeff).cast<double>()*0.5;
+			}
+
 			const Domain& getDomain()
 			{
 				return sys.getDomain();
@@ -288,12 +299,25 @@ struct PNSystem
 				return sys.getFields();
 			}
 
+			// return the offset of the given staggered grid in voxelspace
+			const V3d& getGridOffset(int grid_index)
+			{
+				return g_grid_offsets[grid_index].cast<double>()*0.5;
+			}
+
+			const V3d& getGridOffset2(int grid_index)
+			{
+				return g_grid_offsets2[grid_index];
+			}
+
 			MatrixBuilderd::MatrixAccessHelper coeff_A(int coeff_i, const V3i &voxel_j, int coeff_j );
 			MatrixBuilderd::MatrixAccessHelper coeff_b( int coeff_i );
 
 		private:
 			PNSystem& sys;
 			Voxel& voxel;
+			static V3i g_grid_offsets[8];
+			static V3d g_grid_offsets2[8];
 		};
 
 
@@ -328,6 +352,10 @@ struct PNSystem
 		// widht=0 means: no neighbours are touched
 		int width;
 
+		// this vector contains for every coefficient the staggered grid location index and therefore defines
+		// where each coefficient is located
+		//std::vector<int> coeffGridIndex;
+
 		static Stencil noop()
 		{
 			return Stencil(0, 1, 2,
@@ -338,8 +366,8 @@ struct PNSystem
 
 	PNSystem(Stencil stencil, const Domain& domain, bool neumannBC);
 
-	MatrixBuilderd::MatrixAccessHelper coeff_A(V3i voxel_i, int coefficient_i, V3i voxel_j, int coefficient_j);
-	MatrixBuilderd::MatrixAccessHelper coeff_b(V3i voxel_i, int coefficient_i);
+	MatrixBuilderd::MatrixAccessHelper coeff_A(V3i voxel_i, int coefficient_i, V3i voxel_j, int coefficient_j, bool debug = false);
+	MatrixBuilderd::MatrixAccessHelper coeff_b(V3i voxel_i, int coefficient_i, bool debug = false);
 
 
 
@@ -381,7 +409,7 @@ struct PNSystem
 	// the following methods are used to allow python to access the build result
 	// (used for storing to disk etc.)
 	RealMatrix& get_A_real();
-	RealVector& get_b_real();
+	RealVector &get_b_real();
 
 
 	void setDebugVoxel( const V3i& dv ); // this is used for debugging

@@ -13,6 +13,27 @@
 
 std::map<std::string, PNSystem::Stencil> PNSystem::g_stencils;
 
+
+V3i PNSystem::Stencil::Context::g_grid_offsets[8] ={V3i(0, 0, 1),
+													V3i(1, 0, 1),
+													V3i(1, 1, 1),
+													V3i(0, 1, 1),
+													V3i(0, 0, 0),
+													V3i(1, 0, 0),
+													V3i(1, 1, 0),
+													V3i(0, 1, 0)};
+
+
+V3d PNSystem::Stencil::Context::g_grid_offsets2[8] ={V3d(0.0, 0.0, 0.5),
+													V3d(0.5, 0.0, 0.5),
+													V3d(0.5, 0.5, 0.5),
+													V3d(0.0, 0.5, 0.5),
+													V3d(0.0, 0.0, 0.0),
+													V3d(0.5, 0.0, 0.0),
+													V3d(0.5, 0.5, 0.0),
+													V3d(0.0, 0.5, 0.0)};
+
+
 PNSystem::PNSystem( Stencil stencil, const Domain& domain, bool neumannBC)
 	:
 	m_domain(domain),
@@ -45,6 +66,8 @@ PNSystem::PNSystem( Stencil stencil, const Domain& domain, bool neumannBC)
 			(cy-2.0*std::abs(cx-4.0) < 4) )
 			g = 1;
 		return (1.0-g)*0 + g*10;
+		//return (1.0-g)*1 + g*10;
+		//return 6.0;
 	};
 	Function::FunctionType sigma_s = [](const P3d& pWS)
 	{
@@ -59,6 +82,7 @@ PNSystem::PNSystem( Stencil stencil, const Domain& domain, bool neumannBC)
 			(cy-2.0*std::abs(cx-4.0) < 4) )
 			g = 1;
 		return (1.0-g)*1 + g*0;
+		//return 0.0;
 	};
 	Function::FunctionType sigma_t = [=](const P3d& pWS)
 	{
@@ -79,18 +103,18 @@ PNSystem::PNSystem( Stencil stencil, const Domain& domain, bool neumannBC)
 	};
 
 
-//	m_fields.sigma_a = std::make_shared<Function>(sigma_a);
-//	m_fields.sigma_s = std::make_shared<Function>(sigma_s);
-//	m_fields.sigma_t = std::make_shared<Function>(sigma_t);
-//	m_fields.f_p->setField(0,0,std::make_shared<Function>(phase_shcoeff));
-//	m_fields.q->setField(0,0,std::make_shared<Function>(source_shcoeffs));
+	m_fields.sigma_a = std::make_shared<Function>(sigma_a);
+	m_fields.sigma_s = std::make_shared<Function>(sigma_s);
+	m_fields.sigma_t = std::make_shared<Function>(sigma_t);
+	m_fields.f_p->setField(0,0,std::make_shared<Function>(phase_shcoeff));
+	m_fields.q->setField(0,0,std::make_shared<Function>(source_shcoeffs));
 
 
 
 }
 
 
-PNSystem::MatrixBuilderd::MatrixAccessHelper PNSystem::coeff_A(V3i voxel_i, int coefficient_i, V3i voxel_j, int coefficient_j)
+PNSystem::MatrixBuilderd::MatrixAccessHelper PNSystem::coeff_A(V3i voxel_i, int coefficient_i, V3i voxel_j, int coefficient_j, bool debug)
 {
 	if( m_voxelManager.voxelIsValid(voxel_i) && m_voxelManager.voxelIsValid(voxel_j) )
 	{
@@ -98,18 +122,18 @@ PNSystem::MatrixBuilderd::MatrixAccessHelper PNSystem::coeff_A(V3i voxel_i, int 
 		int globalIndex_j = m_voxelManager.getGlobalIndex(m_voxelManager.getVoxel(voxel_j), coefficient_j);
 
 		if( (globalIndex_i >= 0)&&(globalIndex_j >= 0) )
-			return m_builder_A.coeff(globalIndex_i, globalIndex_j);
+			return m_builder_A.coeff(globalIndex_i, globalIndex_j, debug);
 	}
 
 	return PNSystem::MatrixBuilderd::MatrixAccessHelper();
 }
 
-PNSystem::MatrixBuilderd::MatrixAccessHelper PNSystem::coeff_b(V3i voxel_i, int coefficient_i)
+PNSystem::MatrixBuilderd::MatrixAccessHelper PNSystem::coeff_b(V3i voxel_i, int coefficient_i, bool debug)
 {
 	int globalIndex_i = m_voxelManager.getGlobalIndex(m_voxelManager.getVoxel(voxel_i), coefficient_i);
 
 	if( globalIndex_i >= 0 )
-		return m_builder_b.coeff(globalIndex_i, 0);
+		return m_builder_b.coeff(globalIndex_i, 0, debug);
 	return PNSystem::MatrixBuilderd::MatrixAccessHelper();
 }
 
@@ -122,7 +146,8 @@ PNSystem::VoxelManager& PNSystem::getVoxelManager()
 
 void PNSystem::setField( const std::string& id, Field::Ptr field )
 {
-	//std::cout << "WARNING: PNSystem::setField currently ignored. Using explicit RTE functions.\n";
+	std::cout << "WARNING: PNSystem::setField currently ignored. Using explicit RTE functions.\n";
+	/*
 	if( id == "sigma_t" )
 		m_fields.sigma_t = field;
 	else
@@ -141,6 +166,7 @@ void PNSystem::setField( const std::string& id, Field::Ptr field )
 		m_fields.q->setField(0,0,field);
 	else
 		throw std::runtime_error("PNSystem::setField unable to set field " + id);
+	*/
 }
 /*
 struct ParticleTracer2D : public Task
@@ -370,12 +396,21 @@ void PNSystem::build()
 		max_z = min_z+1;
 	}
 
+	// set debug voxels
+	//m_voxelManager.getVoxel(V3i(21, 38, 0)).debug = true;
+	//m_voxelManager.getVoxel(V3i(71-21-1 + 1, 38, 0)).debug = true;
+
+
 	// iterate all voxels and apply stencil which has been generated from python script ---
 	//for( int i=min_x;i<max_x;++i )
 	//	for( int j=min_y;j<max_y;++j )
 	//		m_stencil.apply( getVoxelSystem(V2i(i,j)), m_fields );
 	for( auto& v: m_voxelManager.getVoxels() )
+	{
+		if(v.debug)
+			std::cout << "Voxel=" << v.coord[0] << " " << v.coord[1] << " " << v.coord[2] << "==============================\n";
 		m_stencil.apply(Stencil::Context(*this, v));
+	}
 
 	m_builder_A.build(m_voxelManager.getNumUnknowns(), m_voxelManager.getNumUnknowns());
 	m_builder_b.build(m_voxelManager.getNumUnknowns(), 1);
@@ -430,6 +465,7 @@ PNSystem::RealVector PNSystem::solve()
 {
 	std::cout << "PNSystem::solve solving for x...\n";
 
+	/*
 	//Eigen::ConjugateGradient<RealMatrix> solver;
 	//Eigen::BiCGSTAB<RealMatrix> solver;
 	Eigen::SparseLU<RealMatrix> solver;
@@ -442,6 +478,25 @@ PNSystem::RealVector PNSystem::solve()
 	}
 	std::cout << "PNSystem::solve solve...\n";std::flush(std::cout);
 	RealVector x = solver.solve(get_b_real());
+	//std::cout << "iterations=" << solver.iterations() << std::endl;
+	if(solver.info()!=Eigen::Success)
+	{
+		throw std::runtime_error("PNSystem::solve solve failed");
+	}
+	*/
+
+	Eigen::ConjugateGradient<RealMatrix> solver;
+	//Eigen::BiCGSTAB<RealMatrix> solver;
+	//Eigen::SparseLU<RealMatrix> solver;
+	//solver.setMaxIterations(1000);
+	std::cout << "PNSystem::solve compute...\n";std::flush(std::cout);
+	solver.compute(get_A_real().transpose()*get_A_real());
+	if(solver.info()!=Eigen::Success)
+	{
+		throw std::runtime_error("PNSystem::solve decomposition failed");
+	}
+	std::cout << "PNSystem::solve solve...\n";std::flush(std::cout);
+	RealVector x = solver.solve(get_A_real().transpose()*get_b_real());
 	//std::cout << "iterations=" << solver.iterations() << std::endl;
 	if(solver.info()!=Eigen::Success)
 	{
@@ -475,6 +530,13 @@ PNSystem::RealVector PNSystem::solve()
 			if(index==-1)
 				throw std::runtime_error("PNSystem::solve didnt expect invalid coefficient index");
 			triplets.push_back(RealTriplet(new_global_index, 0, x.coeffRef(index, 0)));
+
+			if( (coord[0] == 21)&&(coord[1] == 38) )
+			{
+				//triplets.push_back(RealTriplet(new_global_index, 0, 1.0));
+				//std::cout <<
+			}
+
 		}
 	}
 	x2.setFromTriplets(triplets.begin(), triplets.end());
@@ -536,12 +598,12 @@ PNSystem::MatrixBuilderd::MatrixAccessHelper PNSystem::Stencil::Context::coeff_A
 	if(sys.m_voxelManager.isBoundaryCoefficient(voxel, coeff_i))
 		return PNSystem::MatrixBuilderd::MatrixAccessHelper();
 
-	return sys.coeff_A(voxel.coord, coeff_i, voxel_j, coeff_j);
+	return sys.coeff_A(voxel.coord, coeff_i, voxel_j, coeff_j, voxel.debug);
 }
 
 PNSystem::MatrixBuilderd::MatrixAccessHelper PNSystem::Stencil::Context::coeff_b(int coeff_i)
 {
-	return sys.coeff_b(voxel.coord, coeff_i);
+	return sys.coeff_b(voxel.coord, coeff_i, voxel.debug);
 }
 
 
@@ -596,56 +658,60 @@ void PNSystem::VoxelManager::init(PNSystem *sys)
 		// interior cells have all coefficients defined, therefore their indices are all set
 		getVoxelType(0,0,0).registerActiveCoefficient(i);
 
-		// here we make those coefficients non-boundary(active) coefficients, which sit directly on the boundary
-		// I think this is required for both, neumann and dirichlet BC
-		if( (offset[0] == 0)&&(offset[1] == 0)&&(offset[2] == 1) )
+
+		if(sys->getStencil().width > 0)
 		{
-			getVoxelType(1,1,0).registerActiveCoefficient(i);
-			getVoxelType(1,0,0).registerActiveCoefficient(i);
-			getVoxelType(0,1,0).registerActiveCoefficient(i);
-		}else
-		if( (offset[0] == 0)&&(offset[1] == 1)&&(offset[2] == 1) )
-		{
-			getVoxelType(1,0,0).registerActiveCoefficient(i);
-		}else
-		if( (offset[0] == 1)&&(offset[1] == 0)&&(offset[2] == 1) )
-		{
-			getVoxelType(0,1,0).registerActiveCoefficient(i);
-		}else
-		if( (offset[0] == 1)&&(offset[1] == 1)&&(offset[2] == 1) )
-		{
-			// coefficients in the center will always be boundary/passive coefficients
-		}else
-		if( (offset[0] == 0)&&(offset[1] == 0)&&(offset[2] == 0) )
-		{
-			// coefficients at the intersection are active for north, east and forward boundary cells
-			getVoxelType(1,0,0).registerActiveCoefficient(i);
-			getVoxelType(0,1,0).registerActiveCoefficient(i);
-			getVoxelType(0,0,1).registerActiveCoefficient(i);
-			// and edgecorner cells
-			getVoxelType(0,1,1).registerActiveCoefficient(i);
-			getVoxelType(1,0,1).registerActiveCoefficient(i);
-			getVoxelType(1,1,0).registerActiveCoefficient(i);
-			// and the corner cell
-			getVoxelType(1,1,1).registerActiveCoefficient(i);
-		}else
-		if( (offset[0] == 0)&&(offset[1] == 1)&&(offset[2] == 0) )
-		{
-			getVoxelType(1,0,1).registerActiveCoefficient(i);
-			getVoxelType(1,0,0).registerActiveCoefficient(i);
-			getVoxelType(0,0,1).registerActiveCoefficient(i);
-		}else
-		if( (offset[0] == 1)&&(offset[1] == 0)&&(offset[2] == 0) )
-		{
-			getVoxelType(0,1,1).registerActiveCoefficient(i);
-			getVoxelType(0,1,0).registerActiveCoefficient(i);
-			getVoxelType(0,0,1).registerActiveCoefficient(i);
-		}else
-		if( (offset[0] == 1)&&(offset[1] == 1)&&(offset[2] == 0) )
-		{
-			getVoxelType(0,0,1).registerActiveCoefficient(i);
-		}else
-			throw std::runtime_error("unexpected");
+			// here we make those coefficients non-boundary(active) coefficients, which sit directly on the boundary
+			// I think this is required for both, neumann and dirichlet BC
+			if( (offset[0] == 0)&&(offset[1] == 0)&&(offset[2] == 1) )
+			{
+				getVoxelType(1,1,0).registerActiveCoefficient(i);
+				getVoxelType(1,0,0).registerActiveCoefficient(i);
+				getVoxelType(0,1,0).registerActiveCoefficient(i);
+			}else
+			if( (offset[0] == 0)&&(offset[1] == 1)&&(offset[2] == 1) )
+			{
+				getVoxelType(1,0,0).registerActiveCoefficient(i);
+			}else
+			if( (offset[0] == 1)&&(offset[1] == 0)&&(offset[2] == 1) )
+			{
+				getVoxelType(0,1,0).registerActiveCoefficient(i);
+			}else
+			if( (offset[0] == 1)&&(offset[1] == 1)&&(offset[2] == 1) )
+			{
+				// coefficients in the center will always be boundary/passive coefficients
+			}else
+			if( (offset[0] == 0)&&(offset[1] == 0)&&(offset[2] == 0) )
+			{
+				// coefficients at the intersection are active for north, east and forward boundary cells
+				getVoxelType(1,0,0).registerActiveCoefficient(i);
+				getVoxelType(0,1,0).registerActiveCoefficient(i);
+				getVoxelType(0,0,1).registerActiveCoefficient(i);
+				// and edgecorner cells
+				getVoxelType(0,1,1).registerActiveCoefficient(i);
+				getVoxelType(1,0,1).registerActiveCoefficient(i);
+				getVoxelType(1,1,0).registerActiveCoefficient(i);
+				// and the corner cell
+				getVoxelType(1,1,1).registerActiveCoefficient(i);
+			}else
+			if( (offset[0] == 0)&&(offset[1] == 1)&&(offset[2] == 0) )
+			{
+				getVoxelType(1,0,1).registerActiveCoefficient(i);
+				getVoxelType(1,0,0).registerActiveCoefficient(i);
+				getVoxelType(0,0,1).registerActiveCoefficient(i);
+			}else
+			if( (offset[0] == 1)&&(offset[1] == 0)&&(offset[2] == 0) )
+			{
+				getVoxelType(0,1,1).registerActiveCoefficient(i);
+				getVoxelType(0,1,0).registerActiveCoefficient(i);
+				getVoxelType(0,0,1).registerActiveCoefficient(i);
+			}else
+			if( (offset[0] == 1)&&(offset[1] == 1)&&(offset[2] == 0) )
+			{
+				getVoxelType(0,0,1).registerActiveCoefficient(i);
+			}else
+				throw std::runtime_error("unexpected");
+		} // if stencil.widh > 0 (if we need to register active coefficients in boundary voxels)
 
 	}
 
@@ -782,7 +848,8 @@ PNSystem::VoxelManager::VoxelType &PNSystem::VoxelManager::getVoxelType(const st
 	auto it = m_layerToVoxelTypeIndex.find(boundaryLayer);
 	if( it != m_layerToVoxelTypeIndex.end() )
 		return m_voxelTypes[it->second];
-	throw std::runtime_error("PNSystem::VoxelManager::getType: type does not exist for given boundary layer");
+	std::cout << "boundaryLayer=" << std::get<0>(boundaryLayer) << " " << std::get<1>(boundaryLayer) << " " << std::get<2>(boundaryLayer) << std::endl;
+	throw std::runtime_error("PNSystem::VoxelManager::getVoxelType: type does not exist for given boundary layer");
 }
 
 

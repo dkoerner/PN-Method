@@ -13,9 +13,60 @@ import pnsolver
 import os
 
 
+class StaggeredGridLocation(object):
+	def __init__( self, voxel = np.array([0,0,0]), offset = np.array([0,0,0]) ):
+		voxel_i = voxel[0]
+		voxel_j = voxel[1]
+		voxel_k = voxel[2]
+
+		(voxel_offset_i, offset_i) = divmod( offset[0], 2 )
+		(voxel_offset_j, offset_j) = divmod( offset[1], 2 )
+		(voxel_offset_k, offset_k) = divmod( offset[2], 2 )
+
+		self.voxel = np.array([voxel_i + voxel_offset_i,voxel_j + voxel_offset_j,voxel_k + voxel_offset_k])
+		self.offset = np.array([offset_i,offset_j,offset_k])
+	def getVoxel(self):
+		return self.voxel
+	def getOffset(self):
+		return self.offset
+	def isZero(self):
+		for i in range(3):
+			if self.voxel[i] != 0 and self.offset[i] != 0:
+				return False
+		return True
+
+	def __add__(self, other):
+		return StaggeredGridLocation( self.voxel+other.voxel, self.offset + other.offset )
 
 
 
+class GridLocation3D(object):
+	def __init__(self, start, shift, test):
+		self.start = start
+		self.shift = shift
+		self.test = test
+
+
+	def getOffset(self):
+		return (self.start+self.shift).getOffset()
+	def getVoxel(self):
+		return (self.start+self.shift).getVoxel()
+	def getShiftedLocation(self, step):
+		return GridLocation3D(self.start, self.shift+StaggeredGridLocation(np.array([0,0,0]), step), "check")
+
+	'''
+	def pVS(self):
+		return self.voxel + self.offset*0.5
+	def __str__(self):
+		return "voxel={} {} {} offset={} {} {}".format(self.voxel[0], self.voxel[1], self.voxel[2], self.offset[0], self.offset[1], self.offset[2])
+	def toLatex(self):
+		return self.__class__.__name__
+	def deep_copy(self):
+		return GridLocation3D(self.voxel, self.offset)
+		'''
+
+
+'''
 class GridLocation3D(object):
 	def __init__(self, voxel, offset):
 		voxel_i = voxel[0]
@@ -45,7 +96,7 @@ class GridLocation3D(object):
 		return self.__class__.__name__
 	def deep_copy(self):
 		return GridLocation3D(self.voxel, self.offset)
-
+'''
 
 
 
@@ -345,7 +396,24 @@ def to_cpp( expr, info, level=0 ):
 	elif isinstance(expr, meh.Function):
 		return info.fun_to_cpp(expr, info, level)
 	elif expr.__class__ == GridLocation3D:
-		return "domain.voxelToWorld(vd+V3d({}, {}, {}))".format(expr.getVoxel()[0]+expr.getOffset()[0]*0.5, expr.getVoxel()[1]+expr.getOffset()[1]*0.5, expr.getVoxel()[2]+expr.getOffset()[2]*0.5 )
+		loc = expr
+		#return "TODO"
+		#return "domain.voxelToWorld(vd+V3d({}, {}, {}))".format(expr.getVoxel()[0]+expr.getOffset()[0]*0.5, expr.getVoxel()[1]+expr.getOffset()[1]*0.5, expr.getVoxel()[2]+expr.getOffset()[2]*0.5 )
+
+		#return "domain.voxelToWorld(vd+V3d({}, {}, {}))".format(expr.getVoxel()[0]+expr.getOffset()[0]*0.5, expr.getVoxel()[1]+expr.getOffset()[1]*0.5, expr.getVoxel()[2]+expr.getOffset()[2]*0.5 )
+
+		#'''
+		if loc.shift.isZero():
+			grid_index = info.pni.getGridIndex(loc.getOffset())
+			start_code = "+ctx.getGridOffset2({})".format(grid_index)
+			if hasattr(loc.start, "to_cpp_str"):
+				start_code = loc.start.to_cpp_str
+			return "domain.voxelToWorld(vd{})".format(start_code)
+		else:
+			grid_index = info.pni.getGridIndex(loc.start.getOffset())
+			shift = loc.shift.getVoxel()+loc.shift.getOffset()*0.5
+			return "domain.voxelToWorld(vd+ctx.getGridOffset2({})+V3d({}, {}, {}))".format(grid_index, shift[0], shift[1], shift[2])		#'''
+		
 	elif expr.__class__ == meh.Derivation:
 		raise ValueError("didnt expect any object of type Derivation")
 	elif expr.__class__ == meh.Addition:
@@ -507,6 +575,20 @@ class PNInfo2D(object):
 					self.lm_to_u_index[key] = local_u_index
 					local_u_index += 1
 
+		# staggered grid locations
+		self.grid_offsets = []
+		self.grid_offsets.append( (0, 0, 1) )
+		self.grid_offsets.append( (1, 0, 1) )
+		self.grid_offsets.append( (1, 1, 1) )
+		self.grid_offsets.append( (0, 1, 1) )
+		self.grid_offsets.append( (0, 0, 0) )
+		self.grid_offsets.append( (1, 0, 0) )
+		self.grid_offsets.append( (1, 1, 0) )
+		self.grid_offsets.append( (0, 1, 0) )
+		self.grid_from_offset = {}
+		for i in range(len(self.grid_offsets)):
+			self.grid_from_offset[self.grid_offsets[i]] = i
+
 
 		# we keep track of where the unknowns are placed
 		self.unknown_info = [ {} for i in range(self.numCoeffs)]
@@ -519,9 +601,9 @@ class PNInfo2D(object):
 
 		if staggered == True:
 			if self.order >= 1:
-				#self.place_unknown( 0, (1, 1) )
-				self.place_unknown( 2, (1, 0, 1) )
+				#pass
 				self.place_unknown( 1, (0, 1, 1) )
+				self.place_unknown( 2, (1, 0, 1) )
 			#'''
 			if self.order >= 2:
 				self.place_unknown( 3, (1, 1, 1) )
@@ -549,6 +631,22 @@ class PNInfo2D(object):
 			if self.order > 5:
 				raise ValueError("CHECK!")
 			self.stencil_half_steps = 1
+
+	def getGridOffset(self, grid_index):
+		return self.grid_offsets[grid_index]
+
+	def getGridIndex(self, offset):
+		key = (offset[0], offset[1], offset[2])
+		return self.grid_from_offset[key]
+
+
+	def getGridIndexFromCoeff(self, coeff):
+		offset = self.getOffset(coeff)
+		return self.getGridIndex(offset)
+
+
+	def getNumGrids(self):
+		return 4
 
 	def is2D(self):
 		return True
@@ -644,14 +742,15 @@ class PNInfo2D(object):
 		self.unknown_info[coeff_index]['grid_id'] = grid_id
 		self.unknown_info[coeff_index]['offset'] = np.array( [grid_id[0], grid_id[1], grid_id[2]] , dtype=int)
 
-	def unknown_offset(self, coeff_index):
-		return self.unknown_info[coeff_index]['offset']
-
 	def getOffset(self, coeff_index):
 		return self.unknown_info[coeff_index]['offset']
-
+	'''
 	def getLocation(self, voxel, coeff_index):
-		return GridLocation3D(voxel, self.unknown_offset(coeff_index)) 
+		#return GridLocation3D(voxel, self.unknown_offset(coeff_index)) 
+		start = StaggeredGridLocation(voxel, self.getOffset(coeff_index))
+		offset = StaggeredGridLocation()
+		return GridLocation3D(start, offset, "check") 
+	'''
 
 
 
@@ -852,14 +951,17 @@ class PNInfo3D(object):
 		self.unknown_info[coeff_index]['grid_id'] = grid_id
 		self.unknown_info[coeff_index]['offset'] = np.array( [grid_id[0], grid_id[1], grid_id[2]] , dtype=int)
 
-	def unknown_offset(self, coeff_index):
-		return self.unknown_info[coeff_index]['offset']
-
 	def getOffset(self, coeff_index):
 		return self.unknown_info[coeff_index]['offset']
 
+	'''
 	def getLocation(self, voxel, coeff_index):
-		return GridLocation3D(voxel, self.unknown_offset(coeff_index)) 
+		#return GridLocation3D(voxel, self.unknown_offset(coeff_index)) 
+		start = StaggeredGridLocation(voxel, self.getOffset(coeff_index))
+		offset = StaggeredGridLocation()
+		return GridLocation3D(start, offset, "check") 
+	'''
+
 
 
 
@@ -1437,6 +1539,9 @@ def generate_stencil_code( stencil_name, filename, terms, pni ):
 				if is_constant and f.coeff_terms:
 
 					# evaluate complex valued matrix straight away
+					# NB: I hope we are right in the assumption that for constant
+					# coefficient matrices (which dont depend on any RTE variable or position)
+					# it will be the same for every grid point
 					f.M_complex = np.zeros((f.numRows, f.numCols), dtype=complex)
 					for key, expr in f.coeff_terms.items():
 						f.M_complex[key[0], key[1]] = expr.evaluate()
@@ -1451,16 +1556,11 @@ def generate_stencil_code( stencil_name, filename, terms, pni ):
 					#	for j in range(f.numCols):
 					#		file.write( "\t{}_real({}, {}) = {};\n".format( f.id, i, j, f.M_real[i, j] ) )
 				else:
-					matrix_written = False
-
-					# We later will generate c++ code for converting complex-valued matrices to real-valued ones.
-					# For 2d, some of these matrices will come out as zero-matrices in which case we
-					# can skip the conversion step. This makes our code easier to read and avoids wasting compute.
-					skip_conversion_step = True
 
 					# now generate c++ code for generating the coefficient matrix
 					# this is done by calling eval_term on each coefficient term (in order to get constant folding
 					# and discretization of differential operators) and converting the result to cpp code expressions.
+					code = ""
 					for i in range(f.numRows):
 						for j in range(f.numCols):
 							term = f.getCoefficientTerm(i,j)
@@ -1472,7 +1572,10 @@ def generate_stencil_code( stencil_name, filename, terms, pni ):
 							#info.debug = True
 							info.unknown_symbol = "u"
 							info.pni = pni
-							info.location = pni.getLocation( np.array([0,0,0]), i )
+							#info.location = pni.getLocation( np.array([0,0,0]), i )
+							info.location = GridLocation3D(StaggeredGridLocation(np.array([0,0,0]), pni.getOffset(i)), StaggeredGridLocation(), "check") 
+							info.location.start.to_cpp_str = "+ctx.getGridOffset2(i)"
+
 							info.vars = {}
 							# TODO: get rid of info.location alltogether and just use vec{x} ?
 							info.vars["\\vec{x}"] = info.location
@@ -1486,10 +1589,6 @@ def generate_stencil_code( stencil_name, filename, terms, pni ):
 							if info.term_vanishes == True:
 								#print("term vanishes at matrix component={} {}".format(i,j))
 								continue
-							else:
-								# At least one term does not vanish and therefore will have to do 
-								# the conversion from complex-valued to real-valued matrices
-								skip_conversion_step = False
 
 
 							# sanity check
@@ -1501,29 +1600,48 @@ def generate_stencil_code( stencil_name, filename, terms, pni ):
 								# coefficient is vanishes
 								continue
 
-							# convert to cpp
 							info = EvalInfo()
 							info.fun_to_cpp = fun_to_cpp
+							info.pni = pni
 							expr_cpp = to_cpp(result, info)
 
-							if not matrix_written:
-								matrix_written = True
-								# generate c++ code for building the matrix in our stencil function per voxel
-								file.write( "\tEigen::Matrix<std::complex<double>, {}, {}> {};\n".format(f.numRows, f.numCols, f.id) )
-
-
 							#
-							file.write( "\t{}({}, {}) = {};\n".format( f.id, i, j, expr_cpp ) )
+							#file.write( "\t{}({}, {}) = {};\n".format( f.id, i, j, expr_cpp ) )
+							#code += "\t{}({}, {}) = {};\n".format( f.id, i, j, expr_cpp )
+							code += "\t\t{}({}, {}) = {};\n".format( f.id, i, j, expr_cpp )
 
 
 
-					if skip_conversion_step == False:
+					if code:
+						# generate c++ code for building the matrix in our stencil function per voxel						
+						#file.write( "\tEigen::Matrix<std::complex<double>, {}, {}> {};\n".format(f.numRows, f.numCols, f.id) )
+						matrix_def = "\tEigen::Matrix<double, {}, {}> {}_real_staggered[{}];\n".format(f.numRows, f.numCols, f.id, pni.getNumGrids())
+
+						loop = "\tfor( int i=0;i<{};++i )\n".format(pni.getNumGrids())
+						loop += "\t{\n"
+						loop += "\t\tEigen::Matrix<std::complex<double>, {}, {}> {};\n".format(f.numRows, f.numCols, f.id)
+
+						code = matrix_def + loop + code
+
 						# Produce stencil code for converting from complex-valued system to real valued system =================
 						# convert the matrix to real valued matrix
 						if not value.isLHS():
-							file.write( "\tEigen::Matrix<double, {}, {}> {}_real = (S*{}).real();\n".format(f.numRows, f.numCols, f.id, f.id) )
+							#file.write( "\tEigen::Matrix<double, {}, {}> {}_real = (S*{}).real();\n".format(f.numRows, f.numCols, f.id, f.id) )
+							#code += "\tEigen::Matrix<double, {}, {}> {}_real = (S*{}).real();\n".format(f.numRows, f.numCols, f.id, f.id)
+							code += "\t\t{}_real_staggered[i] = (S*{}).real();\n".format(f.id, f.id)
 						else:
-							file.write( "\tEigen::Matrix<double, {}, {}> {}_real = (S*{}*SInv).real();\n".format(f.numRows, f.numCols, f.id, f.id) )
+							#file.write( "\tEigen::Matrix<double, {}, {}> {}_real = (S*{}*SInv).real();\n".format(f.numRows, f.numCols, f.id, f.id) )
+							#code += "\tEigen::Matrix<double, {}, {}> {}_real = (S*{}*SInv).real();\n".format(f.numRows, f.numCols, f.id, f.id)
+							code += "\t\t{}_real_staggered[i] = (S*{}*SInv).real();\n".format(f.id, f.id)
+						code += "\t}\n"
+
+						# now assemble final real matrix
+						code += "\tEigen::Matrix<double, {}, {}> {}_real;\n".format(f.numRows, f.numCols, f.id)
+						for i in range(pni.num_coeffs()):
+							code += "\t{}_real.row({}) = {}_real_staggered[{}].row({});\n".format(f.id, i, f.id, pni.getGridIndexFromCoeff(i), i)
+
+
+						file.write( code )
 					else:
 						file.write( "\t// all components vanish\n" )
 
@@ -1624,7 +1742,8 @@ def generate_stencil_code( stencil_name, filename, terms, pni ):
 				var_value = var_values[var_index]
 				term = meh.apply_recursive(term, meh.Substitute(meh.var(variable_names[var_index]), meh.num(var_value)))
 
-			location = pni.getLocation( np.array([0,0,0]), coeff_index )
+			location = GridLocation3D(StaggeredGridLocation(np.array([0,0,0]), pni.getOffset(coeff_index)), StaggeredGridLocation(), "check") 
+			#location = pni.getLocation( np.array([0,0,0]), coeff_index )
 
 			# now we run eval_term in order to discretize the differential operators
 			info = EvalInfo()
@@ -1774,18 +1893,22 @@ if __name__ == "__main__":
 	terms_fopn.append(rte_terms.fopn.source_term())
 	terms_fopn = rte_terms.splitAddition( terms_fopn )
 
+	for term in terms_fopn:
+		print("\n-------------------\n")
+		meh.print_expr(term)
+
 
 	staggered_id = {True:"sg", False:"cg"}
 	terms = {"fopn":terms_fopn, "sopn":terms_sopn}
 
-	#rte_forms = ["fopn", "sopn"]
-	#staggered = [True, False]
+	rte_forms = ["fopn", "sopn"]
+	staggered = [True, False]
 	#order = [0,1,2,3,4,5]
-	#order = [0,1,2,3,4]
+	order = [0,1,2,3,4]
 
-	rte_forms = ["fopn"]
-	order = [1]
-	staggered = [True]
+	#rte_forms = ["fopn"]
+	#order = [1]
+	#staggered = [True]
 
 	test = itertools.product(rte_forms, order, staggered)
 	for c in test:
@@ -1799,8 +1922,8 @@ if __name__ == "__main__":
 		stencil_name = "stencil_{}_p{}_{}".format(rte_form_name, order, staggered_id[is_staggered] )
 		filename = "{}/{}.cpp".format(path, stencil_name)
 
-		#pni = PNInfo2D(order, is_staggered)
-		pni = PNInfo3D(order, is_staggered)
+		pni = PNInfo2D(order, is_staggered)
+		#pni = PNInfo3D(order, is_staggered)
 
 
 		generate_stencil_code( stencil_name, filename, rte_form_terms, pni )

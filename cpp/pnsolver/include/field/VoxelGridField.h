@@ -12,7 +12,7 @@
 
 #include <field/Field.h>
 
-
+#include <Eigen/Dense>
 
 
 struct VoxelGridField : public Field
@@ -53,6 +53,48 @@ struct VoxelGridField : public Field
 		return m_max_value;
 	}
 
+	Eigen::MatrixXd test()
+	{
+		V3i res = m_domain.getResolution();
+		//Eigen::MatrixXd m(res[0],res[1]);
+		Eigen::MatrixXd m = Eigen::MatrixXd::Zero(res[0],res[1]);
+
+		for(int i=0;i<71;++i)
+			for(int j=0;j<71;++j)
+			{
+				//m(i, j) = m_voxelgrid.sample(i, j, 0).real();
+				//m(i, j) = double(i)/double(res[0]-1);
+			}
+
+		///*
+		for(int i=0;i<35;++i)
+			for(int j=0;j<71;++j)
+			{
+				double a = m_voxelgrid.sample(i, j, 0).real();
+				double b = m_voxelgrid.sample(res[0]-i-1, j, 0).real();
+
+				m(i, j) = std::abs(a-b);
+				//if( (a-b) > 1.0e-8 )
+				//	std::cout << "!!!!!!!!!!!!!!!\n";
+			}
+		//*/
+
+		return m;
+	}
+
+	Eigen::MatrixXd getData()
+	{
+		V3i res = m_domain.getResolution();
+		Eigen::MatrixXd m = Eigen::MatrixXd::Zero(res[1],res[1]);
+
+		for(int i=0;i<71;++i)
+			for(int j=0;j<71;++j)
+			{
+				m(i, j) = m_voxelgrid.sample(i, j, 0).real();
+			}
+
+		return m;
+	}
 
 private:
 	Domain m_domain;

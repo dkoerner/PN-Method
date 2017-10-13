@@ -139,6 +139,8 @@ PYBIND11_MODULE(pnsolver, m)
 		auto data = static_cast<std::complex<double> *>(info.ptr);
 		new (&m) VoxelGridField( data, domain, offset );
 	})
+	.def("test", &VoxelGridField::test)
+	.def("getData", &VoxelGridField::getData)
 	;
 
 	// Constant ============================================================

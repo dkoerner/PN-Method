@@ -102,12 +102,13 @@ PNSystem::PNSystem( Stencil stencil, const Domain& domain, bool neumannBC)
 
 	};
 
-
+	/*
 	m_fields.sigma_a = std::make_shared<Function>(sigma_a);
 	m_fields.sigma_s = std::make_shared<Function>(sigma_s);
 	m_fields.sigma_t = std::make_shared<Function>(sigma_t);
 	m_fields.f_p->setField(0,0,std::make_shared<Function>(phase_shcoeff));
 	m_fields.q->setField(0,0,std::make_shared<Function>(source_shcoeffs));
+	*/
 
 
 
@@ -146,8 +147,8 @@ PNSystem::VoxelManager& PNSystem::getVoxelManager()
 
 void PNSystem::setField( const std::string& id, Field::Ptr field )
 {
-	std::cout << "WARNING: PNSystem::setField currently ignored. Using explicit RTE functions.\n";
-	/*
+	//std::cout << "WARNING: PNSystem::setField currently ignored. Using explicit RTE functions.\n";
+	///*
 	if( id == "sigma_t" )
 		m_fields.sigma_t = field;
 	else
@@ -166,7 +167,7 @@ void PNSystem::setField( const std::string& id, Field::Ptr field )
 		m_fields.q->setField(0,0,field);
 	else
 		throw std::runtime_error("PNSystem::setField unable to set field " + id);
-	*/
+	//*/
 }
 /*
 struct ParticleTracer2D : public Task
@@ -465,7 +466,7 @@ PNSystem::RealVector PNSystem::solve()
 {
 	std::cout << "PNSystem::solve solving for x...\n";
 
-	/*
+	///*
 	//Eigen::ConjugateGradient<RealMatrix> solver;
 	//Eigen::BiCGSTAB<RealMatrix> solver;
 	Eigen::SparseLU<RealMatrix> solver;
@@ -483,8 +484,9 @@ PNSystem::RealVector PNSystem::solve()
 	{
 		throw std::runtime_error("PNSystem::solve solve failed");
 	}
-	*/
+	//*/
 
+	/*
 	Eigen::ConjugateGradient<RealMatrix> solver;
 	//Eigen::BiCGSTAB<RealMatrix> solver;
 	//Eigen::SparseLU<RealMatrix> solver;
@@ -502,6 +504,7 @@ PNSystem::RealVector PNSystem::solve()
 	{
 		throw std::runtime_error("PNSystem::solve solve failed");
 	}
+	*/
 
 
 

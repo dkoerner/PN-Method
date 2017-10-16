@@ -9,7 +9,11 @@
 /cpp/*_build
 /cpp/*-build
 
+# c++
+*.autosave
 
+
+# latex specific excludes
 *.log
 *.gz
 *.pdf

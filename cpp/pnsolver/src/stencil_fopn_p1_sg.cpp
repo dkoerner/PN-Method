@@ -10,20 +10,18 @@ void stencil_fopn_p1_sg(PNSystem::Stencil::Context& ctx)
 	const PNSystem::Fields& fields = ctx.getFields();
 	V3d h_inv( 1.0/(1*domain.getVoxelSize()[0]), 1.0/(1*domain.getVoxelSize()[1]), 1.0/(1*domain.getVoxelSize()[2]) );
 
-	Eigen::Matrix<std::complex<double>, 4, 4> S;
+	Eigen::Matrix<std::complex<double>, 3, 3> S;
 	S.coeffRef(0, 0) = std::complex<double>(1.0, 0.0);
 	S.coeffRef(1, 1) = std::complex<double>(0.7071067811865475, 0.0);
-	S.coeffRef(1, 3) = std::complex<double>(-0.7071067811865475, 0.0);
+	S.coeffRef(1, 2) = std::complex<double>(-0.7071067811865475, 0.0);
 	S.coeffRef(2, 1) = std::complex<double>(-0.0, -0.7071067811865475);
-	S.coeffRef(2, 3) = std::complex<double>(-0.0, -0.7071067811865475);
-	S.coeffRef(3, 2) = std::complex<double>(1.0, 0.0);
-	Eigen::Matrix<std::complex<double>, 4, 4> SInv;
+	S.coeffRef(2, 2) = std::complex<double>(-0.0, -0.7071067811865475);
+	Eigen::Matrix<std::complex<double>, 3, 3> SInv;
 	SInv.coeffRef(0, 0) = std::complex<double>(1.0, 0.0);
 	SInv.coeffRef(1, 1) = std::complex<double>(0.7071067811865476, 0.0);
 	SInv.coeffRef(1, 2) = std::complex<double>(0.0, 0.7071067811865476);
-	SInv.coeffRef(2, 3) = std::complex<double>(1.0, 0.0);
-	SInv.coeffRef(3, 1) = std::complex<double>(-0.7071067811865476, 0.0);
-	SInv.coeffRef(3, 2) = std::complex<double>(-0.0, 0.7071067811865476);
+	SInv.coeffRef(2, 1) = std::complex<double>(-0.7071067811865476, 0.0);
+	SInv.coeffRef(2, 2) = std::complex<double>(-0.0, 0.7071067811865476);
 
 	//Producing complex-valued matrices =============
 	//M_0dxL + M_1dyL + M_2dzL + M_3L = b
@@ -35,45 +33,40 @@ void stencil_fopn_p1_sg(PNSystem::Stencil::Context& ctx)
 	// is constant
 
 	//M_2 ---
-	// is constant
+	// all components vanish
 
 	//M_3 ---
-	Eigen::Matrix<double, 4, 4> M_3_real_staggered[8];
-	for( int i=0;i<8;++i )
+	Eigen::Matrix<double, 3, 3> M_3_real_staggered[4];
+	for( int i=0;i<4;++i )
 	{
-		Eigen::Matrix<std::complex<double>, 4, 4> M_3;
+		Eigen::Matrix<std::complex<double>, 3, 3> M_3;
 		M_3(0, 0) = (fields.sigma_t->eval(domain.voxelToWorld(vd+ctx.getGridOffset2(i)))+
 			-(fields.sigma_s->eval(domain.voxelToWorld(vd+ctx.getGridOffset2(i)))*fields.f_p->eval(0, 0, domain.voxelToWorld(vd+ctx.getGridOffset2(i)))));
 		M_3(1, 1) = (fields.sigma_t->eval(domain.voxelToWorld(vd+ctx.getGridOffset2(i)))+
 			-(fields.sigma_s->eval(domain.voxelToWorld(vd+ctx.getGridOffset2(i)))*fields.f_p->eval(1, 0, domain.voxelToWorld(vd+ctx.getGridOffset2(i)))));
 		M_3(2, 2) = (fields.sigma_t->eval(domain.voxelToWorld(vd+ctx.getGridOffset2(i)))+
 			-(fields.sigma_s->eval(domain.voxelToWorld(vd+ctx.getGridOffset2(i)))*fields.f_p->eval(1, 0, domain.voxelToWorld(vd+ctx.getGridOffset2(i)))));
-		M_3(3, 3) = (fields.sigma_t->eval(domain.voxelToWorld(vd+ctx.getGridOffset2(i)))+
-			-(fields.sigma_s->eval(domain.voxelToWorld(vd+ctx.getGridOffset2(i)))*fields.f_p->eval(1, 0, domain.voxelToWorld(vd+ctx.getGridOffset2(i)))));
 		M_3_real_staggered[i] = (S*M_3*SInv).real();
 	}
-	Eigen::Matrix<double, 4, 4> M_3_real;
+	Eigen::Matrix<double, 3, 3> M_3_real;
 	M_3_real.row(0) = M_3_real_staggered[2].row(0);
 	M_3_real.row(1) = M_3_real_staggered[3].row(1);
 	M_3_real.row(2) = M_3_real_staggered[1].row(2);
-	M_3_real.row(3) = M_3_real_staggered[6].row(3);
 
 	//b ---
-	Eigen::Matrix<double, 4, 1> b_real_staggered[8];
-	for( int i=0;i<8;++i )
+	Eigen::Matrix<double, 3, 1> b_real_staggered[4];
+	for( int i=0;i<4;++i )
 	{
-		Eigen::Matrix<std::complex<double>, 4, 1> b;
+		Eigen::Matrix<std::complex<double>, 3, 1> b;
 		b(0, 0) = fields.q->eval(0, 0, domain.voxelToWorld(vd+ctx.getGridOffset2(i)));
 		b(1, 0) = fields.q->eval(1, -1, domain.voxelToWorld(vd+ctx.getGridOffset2(i)));
-		b(2, 0) = fields.q->eval(1, 0, domain.voxelToWorld(vd+ctx.getGridOffset2(i)));
-		b(3, 0) = fields.q->eval(1, 1, domain.voxelToWorld(vd+ctx.getGridOffset2(i)));
+		b(2, 0) = fields.q->eval(1, 1, domain.voxelToWorld(vd+ctx.getGridOffset2(i)));
 		b_real_staggered[i] = (S*b).real();
 	}
-	Eigen::Matrix<double, 4, 1> b_real;
+	Eigen::Matrix<double, 3, 1> b_real;
 	b_real.row(0) = b_real_staggered[2].row(0);
 	b_real.row(1) = b_real_staggered[3].row(1);
 	b_real.row(2) = b_real_staggered[1].row(2);
-	b_real.row(3) = b_real_staggered[6].row(3);
 
 	// Assembling global system =============
 	ctx.coeff_A( 1, vi + V3i(-1,0,0), 0 ) += -(h_inv[0]*0.57735026919);
@@ -84,18 +77,12 @@ void stencil_fopn_p1_sg(PNSystem::Stencil::Context& ctx)
 	ctx.coeff_A( 2, vi + V3i(0,0,0), 0 ) += (h_inv[1]*0.57735026919);
 	ctx.coeff_A( 0, vi + V3i(0,0,0), 2 ) += -(h_inv[1]*0.57735026919);
 	ctx.coeff_A( 0, vi + V3i(0,1,0), 2 ) += (h_inv[1]*0.57735026919);
-	ctx.coeff_A( 3, vi + V3i(0,0,-1), 0 ) += -(h_inv[2]*0.57735026919);
-	ctx.coeff_A( 3, vi + V3i(0,0,0), 0 ) += (h_inv[2]*0.57735026919);
-	ctx.coeff_A( 0, vi + V3i(0,0,0), 3 ) += -(h_inv[2]*0.57735026919);
-	ctx.coeff_A( 0, vi + V3i(0,0,1), 3 ) += (h_inv[2]*0.57735026919);
 	ctx.coeff_A( 0, vi + V3i(0,0,0), 0 ) += M_3_real.coeffRef(0, 0);
 	ctx.coeff_A( 1, vi + V3i(0,0,0), 1 ) += M_3_real.coeffRef(1, 1);
 	ctx.coeff_A( 2, vi + V3i(0,0,0), 2 ) += M_3_real.coeffRef(2, 2);
-	ctx.coeff_A( 3, vi + V3i(0,0,0), 3 ) += M_3_real.coeffRef(3, 3);
 	ctx.coeff_b( 0 ) += b_real.coeffRef(0, 0);
 	ctx.coeff_b( 1 ) += b_real.coeffRef(1, 0);
 	ctx.coeff_b( 2 ) += b_real.coeffRef(2, 0);
-	ctx.coeff_b( 3 ) += b_real.coeffRef(3, 0);
 }
 V3i stencil_fopn_p1_sg_get_offset(int coeff)
 {
@@ -104,8 +91,7 @@ V3i stencil_fopn_p1_sg_get_offset(int coeff)
 		case 0:return V3i(1, 1, 1);break;
 		case 1:return V3i(0, 1, 1);break;
 		case 2:return V3i(1, 0, 1);break;
-		case 3:return V3i(1, 1, 0);break;
 		default:throw std::runtime_error("unexpected coefficient index");break;
 	};
 }
-REGISTER_STENCIL(stencil_fopn_p1_sg, 1, 4, 1)
+REGISTER_STENCIL(stencil_fopn_p1_sg, 1, 3, 1)

@@ -102,13 +102,13 @@ PNSystem::PNSystem( Stencil stencil, const Domain& domain, bool neumannBC)
 
 	};
 
-	/*
+	///*
 	m_fields.sigma_a = std::make_shared<Function>(sigma_a);
 	m_fields.sigma_s = std::make_shared<Function>(sigma_s);
 	m_fields.sigma_t = std::make_shared<Function>(sigma_t);
 	m_fields.f_p->setField(0,0,std::make_shared<Function>(phase_shcoeff));
 	m_fields.q->setField(0,0,std::make_shared<Function>(source_shcoeffs));
-	*/
+	//*/
 
 
 
@@ -147,8 +147,8 @@ PNSystem::VoxelManager& PNSystem::getVoxelManager()
 
 void PNSystem::setField( const std::string& id, Field::Ptr field )
 {
-	//std::cout << "WARNING: PNSystem::setField currently ignored. Using explicit RTE functions.\n";
-	///*
+	std::cout << "WARNING: PNSystem::setField currently ignored. Using explicit RTE functions.\n";
+	/*
 	if( id == "sigma_t" )
 		m_fields.sigma_t = field;
 	else
@@ -167,7 +167,7 @@ void PNSystem::setField( const std::string& id, Field::Ptr field )
 		m_fields.q->setField(0,0,field);
 	else
 		throw std::runtime_error("PNSystem::setField unable to set field " + id);
-	//*/
+	*/
 }
 /*
 struct ParticleTracer2D : public Task
@@ -353,6 +353,24 @@ PNSystem::RealMatrix& PNSystem::get_A_real()
 PNSystem::RealVector& PNSystem::get_b_real()
 {
 	return m_builder_b.matrix;
+}
+
+PNSystem::RealMatrix PNSystem::get_A_real_test()
+{
+	return m_builder_A.matrix.transpose()*m_builder_A.matrix;
+}
+
+Eigen::VectorXd PNSystem::get_b_real_test()
+{
+	return m_builder_A.matrix.transpose()*m_builder_b.matrix;
+}
+
+Eigen::VectorXd PNSystem::get_solve_convergence()
+{
+	Eigen::RowVectorXd x = Eigen::VectorXd( m_solve_convergence.size() );
+	for( int i=0;i<m_solve_convergence.size();++i )
+		x(i) = m_solve_convergence[i];
+	return x;
 }
 
 void PNSystem::setDebugVoxel(const V3i &dv)
@@ -547,34 +565,67 @@ PNSystem::RealVector PNSystem::solve()
 	return x2;
 }
 
-PNSystem::RealVector PNSystem::solveWithGuess(PNSystem::RealVector &x0)
+
+Eigen::VectorXd PNSystem::solve_cg( const Eigen::VectorXd& x0 )
 {
-	std::cout << "PNSystem::solve solving with guess for x...\n";
+	double tol = 1.0e-10;
+	m_solve_convergence.clear();
 
-	//Eigen::ConjugateGradient<RealMatrix> solver;
-	Eigen::BiCGSTAB<RealMatrix> solver;
-	//Eigen::SparseLU<RealMatrix> solver;
-	//solver.setMaxIterations(100000);
-	std::cout << "PNSystem::solve compute...\n";std::flush(std::cout);
-	solver.compute(get_A_real());
-	if(solver.info()!=Eigen::Success)
+
+	RealMatrix A = get_A_real().transpose()*get_A_real();
+	RealVector b = get_A_real().transpose()*get_b_real();
+	Eigen::VectorXd x = x0;
+
+	Eigen::VectorXd r = b-A*x;
+	Eigen::VectorXd p = r;
+	Eigen::VectorXd Ap;
+	double rsold = r.squaredNorm();
+
+	int maxIterations = b.rows();
+	for( int i=0;i<maxIterations;++i )
 	{
-		throw std::runtime_error("PNSystem::solve decomposition failed");
+		Ap = A*p;
+		double alpha = rsold/p.dot(Ap);
+		x = x + alpha*p;
+		r = r - alpha*Ap;
+		double rsnew = r.squaredNorm();
+		m_solve_convergence.push_back(std::sqrt(rsnew));
+		if( std::sqrt(rsnew) < tol )
+			break;
+		p = r + (rsnew/rsold)*p;
+		rsold = rsnew;
 	}
-	std::cout << "PNSystem::solve solve...\n";std::flush(std::cout);
-	Eigen::VectorXd b = get_b_real();
-	Eigen::VectorXd res = x0;
-	//RealVector x = solver.solveWithGuess(get_b_real(), res);
-	Eigen::VectorXd x = solver.solveWithGuess(b, res);
-	//RealVector x = solver.solve(get_b_real());
 
-	//std::cout << "iterations=" << solver.iterations() << std::endl;
-	if(solver.info()!=Eigen::Success)
+	return stripBoundary(x);
+}
+
+Eigen::VectorXd PNSystem::stripBoundary(const Eigen::VectorXd &x)
+{
+	Eigen::VectorXd x2( m_domain.numVoxels()*m_stencil.numCoeffs,1);
+	std::vector<Voxel>& voxels = m_voxelManager.getVoxels();
+	for( auto&v:voxels )
 	{
-		throw std::runtime_error("PNSystem::solve solve failed");
-	}
+		if( !m_domain.contains_voxel(v.coord) )
+			// boundary or mixed boundary voxel
+			continue;
+		for( int i=0;i<m_stencil.numCoeffs;++i )
+		{
+			// this is the new index, which wont include boundary voxels
+			V3i coord = v.coord;
+			V3i res = m_domain.getResolution();
+			int new_voxel_index = coord[0]*res[2]*res[1] + coord[1]*res[2] + coord[2];
+			// since we store only internal voxels, we know that they all have all coefficients defined
+			int new_global_index = new_voxel_index*m_stencil.numCoeffs + i;
 
-	return x.sparseView();
+			// this is the current index, which includes boundary voxels
+			int index = m_voxelManager.getGlobalIndex(v, i);
+
+			if(index==-1)
+				throw std::runtime_error("PNSystem::solve didnt expect invalid coefficient index");
+			x2.coeffRef(new_global_index, 0) = x.coeffRef(index, 0);
+		} // for each coefficient
+	} // for each voxel
+	return x2;
 }
 
 

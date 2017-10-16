@@ -693,6 +693,7 @@ class PNInfo2D(object):
 
 	    return x_complex
 
+	'''
 	def to_real(self, x_complex):
 		# use this to convert the solution from real valued to complex valued
 		numVoxels = self.domain.res_x*self.domain.res_y
@@ -707,6 +708,7 @@ class PNInfo2D(object):
 				#	print(np.real(self.S.dot(x_complex[block_i:block_i + self.numCoeffs])))
 				x_real[block_i:block_i + self.numCoeffs] = np.real(self.S.dot(x_complex[block_i:block_i + self.numCoeffs]))
 		return x_real
+	'''
 
 	def getS(self):
 		return self.S
@@ -802,6 +804,20 @@ class PNInfo3D(object):
 					local_u_index += 1
 
 
+		# staggered grid locations
+		self.grid_offsets = []
+		self.grid_offsets.append( (0, 0, 1) )
+		self.grid_offsets.append( (1, 0, 1) )
+		self.grid_offsets.append( (1, 1, 1) )
+		self.grid_offsets.append( (0, 1, 1) )
+		self.grid_offsets.append( (0, 0, 0) )
+		self.grid_offsets.append( (1, 0, 0) )
+		self.grid_offsets.append( (1, 1, 0) )
+		self.grid_offsets.append( (0, 1, 0) )
+		self.grid_from_offset = {}
+		for i in range(len(self.grid_offsets)):
+			self.grid_from_offset[self.grid_offsets[i]] = i
+
 		# we keep track of where the unknowns are placed
 		self.unknown_info = [ {} for i in range(self.numCoeffs)]
 
@@ -857,6 +873,22 @@ class PNInfo3D(object):
 			if self.order > 5:
 				raise ValueError("CHECK!")
 			self.stencil_half_steps = 1
+
+	def getGridOffset(self, grid_index):
+		return self.grid_offsets[grid_index]
+
+	def getGridIndex(self, offset):
+		key = (offset[0], offset[1], offset[2])
+		return self.grid_from_offset[key]
+
+
+	def getGridIndexFromCoeff(self, coeff):
+		offset = self.getOffset(coeff)
+		return self.getGridIndex(offset)
+
+
+	def getNumGrids(self):
+		return 8
 
 	def is2D(self):
 		return False
@@ -1901,14 +1933,14 @@ if __name__ == "__main__":
 	staggered_id = {True:"sg", False:"cg"}
 	terms = {"fopn":terms_fopn, "sopn":terms_sopn}
 
-	rte_forms = ["fopn", "sopn"]
-	staggered = [True, False]
+	#rte_forms = ["fopn", "sopn"]
+	#staggered = [True, False]
 	#order = [0,1,2,3,4,5]
-	order = [0,1,2,3,4]
+	#order = [0,1,2,3,4]
 
-	#rte_forms = ["fopn"]
-	#order = [1]
-	#staggered = [True]
+	rte_forms = ["fopn"]
+	order = [1]
+	staggered = [True]
 
 	test = itertools.product(rte_forms, order, staggered)
 	for c in test:

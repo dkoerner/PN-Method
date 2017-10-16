@@ -397,7 +397,8 @@ struct PNSystem
 
 	// this function uses Eigen to solve the system
 	RealVector solve();
-	RealVector solveWithGuess(RealVector &x0 );
+	Eigen::VectorXd solve_cg(const Eigen::VectorXd &x0);
+	Eigen::VectorXd stripBoundary(const Eigen::VectorXd& x);
 
 
 	const Domain& getDomain()const; // returns the spatial discretization used by the system
@@ -409,8 +410,11 @@ struct PNSystem
 	// the following methods are used to allow python to access the build result
 	// (used for storing to disk etc.)
 	RealMatrix& get_A_real();
-	RealVector &get_b_real();
+	RealVector& get_b_real();
 
+	RealMatrix get_A_real_test();
+	Eigen::VectorXd get_b_real_test();
+	Eigen::VectorXd get_solve_convergence();
 
 	void setDebugVoxel( const V3i& dv ); // this is used for debugging
 
@@ -451,7 +455,7 @@ private:
 	VoxelManager m_voxelManager;
 
 	static std::map<std::string, Stencil> g_stencils; // global register of stencils
-
+	std::vector<double> m_solve_convergence;
 };
 
 

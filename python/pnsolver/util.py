@@ -179,8 +179,8 @@ def write_problem(filename, problem):
 def write_pn_system(filename, sys, problem, x=None):
 	domain = problem["domain"]
 
-	A = sys.get_A_real()
-	b = sys.get_b_real()
+	A = sys.get_A_real_test()
+	b = sys.get_b_real_test()
 	#A = sys.get_boundary_A_real()
 	#b = sys.get_boundary_b_real()
 
@@ -214,6 +214,9 @@ def write_pn_system(filename, sys, problem, x=None):
 		data['b'] = b
 	if not x is None:
 		data['x'] = x
+
+	data["convergence"] = sys.get_solve_convergence()
+	print(data["convergence"].shape)
 
 
 	data["globalOffset"] = sys.getVoxelInfo("globalOffset").todense()
@@ -260,6 +263,8 @@ def load_pn_system( filename, silent = False ):
         result["b"] = data["b"]
     if "A" in data:
         result["A"] = data["A"]
+    if "convergence" in data:
+        result["convergence"] = data["convergence"]
     if "info" in data:
         info = data["info"]
         result["order"] = info["order"][0][0][0][0]

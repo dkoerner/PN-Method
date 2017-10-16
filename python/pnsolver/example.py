@@ -48,11 +48,15 @@ def solve( stencil_name, problem, filename, do_neumannBC = False ):
 	# solve for x -------------------
 	x = None
 
-	try:
-		x = sys.solve()
-		#pass
-	except:
-		print("Solve failed...")
+	#try:
+	#x = sys.solve()
+	b = sys.get_b_real_test()
+	x = sys.solve_cg( b )
+	x = x.reshape((x.shape[0], 1))
+	#print(x.shape)
+	#pass
+	#except:
+	#	print("Solve failed...")
 
 	# write the result to disk for visualization ---------------
 	util.write_pn_system(filename, sys, problem, x)
@@ -118,7 +122,7 @@ if __name__ == "__main__":
 		#stencil_name = "noop"
 		#print(stencil_name)
 		
-		#filename = "{}/{}11{}{}.mat".format(path, problem["id"], stencil_name, bc_id[do_neumannBC])
+		#filename = "{}/{}12{}{}.mat".format(path, problem["id"], stencil_name, bc_id[do_neumannBC])
 		filename = "{}/{}_test.mat".format(path, problem["id"], stencil_name)
 		#print("clear;filename=\"{}\";compute_condest;".format(filename))
 		solve(stencil_name, problem, filename, do_neumannBC=do_neumannBC)

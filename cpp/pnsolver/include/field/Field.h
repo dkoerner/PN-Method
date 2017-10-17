@@ -9,6 +9,7 @@ struct Field
 {
 	typedef std::shared_ptr<Field> Ptr;
 	virtual std::complex<double> eval( const P3d& pWS )const=0;
+	virtual Ptr createRestricted()const=0;
 	virtual void test()const{}
 };
 
@@ -27,10 +28,13 @@ struct SHCoefficientFieldArray
 	SHCoefficientFieldArray( int order );
 
 	void setField( int l, int m, Field::Ptr field );
+	void setField( int sh_index, Field::Ptr field );
 	Field::Ptr getField(int l, int m);
 	std::complex<double> eval( int l, int m, const P3d& pWS )const;
 
 	int getOrder()const;
+
+	SHCoefficientFieldArray::Ptr createRestricted()const;
 
 private:
 	// This function computes the linear SH index from l,m indices

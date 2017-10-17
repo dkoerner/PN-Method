@@ -58,8 +58,8 @@ def checkerboard():
 	# here we set some general parameters 
 	size = 7.0
 	#res = 20
-	#res = 70
-	res = 71
+	res = 70
+	#res = 71
 	#res = 2
 	#res = 200
 	#res = 150

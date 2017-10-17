@@ -50,8 +50,11 @@ def solve( stencil_name, problem, filename, do_neumannBC = False ):
 
 	#try:
 	#x = sys.solve()
-	b = sys.get_b_real_test()
-	x = sys.solve_cg( b )
+	#b = sys.get_b_real_test()
+	#x = sys.solve_cg( b )
+	#x = sys.solve_mg()
+	x, convergence = pnsolver.solve_multigrid( sys )
+	#x, convergence = pnsolver.solve_cg( sys )
 	x = x.reshape((x.shape[0], 1))
 	#print(x.shape)
 	#pass
@@ -59,7 +62,7 @@ def solve( stencil_name, problem, filename, do_neumannBC = False ):
 	#	print("Solve failed...")
 
 	# write the result to disk for visualization ---------------
-	util.write_pn_system(filename, sys, problem, x)
+	util.write_pn_system(filename, sys, problem, x, convergence)
 
 def groundtruth( problem, numSamples, filename ):
 	stencil_name = "noop"

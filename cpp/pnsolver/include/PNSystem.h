@@ -128,8 +128,20 @@ struct PNSystem
 			sigma_a(std::make_shared<Constant>(0.0)),
 			sigma_s(std::make_shared<Constant>(0.0)),
 			f_p( std::make_shared<SHCoefficientFieldArray>(order) ),
-			q( std::make_shared<SHCoefficientFieldArray>(order) )
+			q( std::make_shared<SHCoefficientFieldArray>(order) ),
+			m_order(order)
 		{
+		}
+
+		Fields createRestricted()const
+		{
+			Fields result(m_order);
+			result.sigma_t = sigma_t->createRestricted();
+			result.sigma_a = sigma_a->createRestricted();
+			result.sigma_s = sigma_s->createRestricted();
+			result.f_p = f_p->createRestricted();
+			result.q = q->createRestricted();
+			return result;
 		}
 
 		Field::Ptr sigma_t;
@@ -137,6 +149,7 @@ struct PNSystem
 		Field::Ptr sigma_s;
 		SHCoefficientFieldArray::Ptr f_p;
 		SHCoefficientFieldArray::Ptr q;
+		int m_order;
 	};
 
 	// This class serves as an interface to the stencil, which is used to
@@ -284,10 +297,14 @@ struct PNSystem
 				return voxel.coord;
 			}
 
-			V3d getOffset( int coeff )
+			/*
+			// returns the offset in voxelspace coordinates for the given coefficient index
+			V3d getVoxelSpaceOffsetFromCoefficient( int coeff )
 			{
 				return sys.getStencil().getOffset(coeff).cast<double>()*0.5;
 			}
+			*/
+
 
 			const Domain& getDomain()
 			{
@@ -299,13 +316,16 @@ struct PNSystem
 				return sys.getFields();
 			}
 
-			// return the offset of the given staggered grid in voxelspace
-			const V3d& getGridOffset(int grid_index)
+			/*
+			// return the offset in voxelspace for the given staggered grid index
+			static V3d getVoxelSpaceOffsetFromGrid(int grid_index)
 			{
-				return g_grid_offsets[grid_index].cast<double>()*0.5;
+				return PNSystem::getGridSpaceOffsetFromGrid(grid_index).cast<double>()*0.5;
 			}
+			*/
 
-			const V3d& getGridOffset2(int grid_index)
+			// return the offset in voxelspace for the given staggered grid index
+			static V3d& getVoxelSpaceOffsetFromGrid2(int grid_index)
 			{
 				return g_grid_offsets2[grid_index];
 			}
@@ -316,7 +336,6 @@ struct PNSystem
 		private:
 			PNSystem& sys;
 			Voxel& voxel;
-			static V3i g_grid_offsets[8];
 			static V3d g_grid_offsets2[8];
 		};
 
@@ -335,8 +354,25 @@ struct PNSystem
 			apply(fun),
 			getOffset(getOffset_fun)
 		{
-
+			for( int i=0;i<numCoeffs;++i )
+			{
+				for( int j=0;j<8;++j )
+					if( PNSystem::getGridSpaceOffsetFromGrid(j) == getOffset_fun(i) )
+					{
+						m_gridIndices.push_back(j);
+						break;
+					}
+				if( m_gridIndices.size() != i+1 )
+					throw std::runtime_error("every coefficient needs to have a grid index!");
+			}
 		}
+
+		int getGridIndexFromCoefficient(int coeff)
+		{
+			return m_gridIndices[coeff];
+		}
+
+
 
 		StencilFunction apply;
 		GetCoefficientOffsetFunction getOffset;
@@ -362,6 +398,9 @@ struct PNSystem
 						   [](Context& sys){},
 						   [](int coeff){return V3i(1,1,1);}); // noop places all coefficients at the cell center
 		}
+
+	private:
+		std::vector<int> m_gridIndices; // maps each coefficient to a grid index
 	};
 
 	PNSystem(Stencil stencil, const Domain& domain, bool neumannBC);
@@ -385,6 +424,7 @@ struct PNSystem
 	// f_p  (setting only l=0 and m=0 field of a SHCoefficientFieldArray)
 	// q (setting only l=0 and m=0 field of a SHCoefficientFieldArray)
 	void setField( const std::string& id, Field::Ptr field );
+	void setFields( Fields fields );
 
 	int getBoundaryConditions();
 
@@ -414,7 +454,8 @@ struct PNSystem
 
 	RealMatrix get_A_real_test();
 	Eigen::VectorXd get_b_real_test();
-	Eigen::VectorXd get_solve_convergence();
+	Eigen::VectorXd upsample(PNSystem &sys_coarse, const Eigen::VectorXd &x_coarse);
+	Eigen::VectorXd downsample( PNSystem& sys_coarse, const Eigen::VectorXd &x_fine );
 
 	void setDebugVoxel( const V3i& dv ); // this is used for debugging
 
@@ -436,6 +477,9 @@ struct PNSystem
 
 	VoxelManager& getVoxelManager();
 
+
+	static V3i getGridSpaceOffsetFromGrid(int grid_index);
+
 private:
 	V3i debugVoxel;
 
@@ -455,7 +499,6 @@ private:
 	VoxelManager m_voxelManager;
 
 	static std::map<std::string, Stencil> g_stencils; // global register of stencils
-	std::vector<double> m_solve_convergence;
 };
 
 

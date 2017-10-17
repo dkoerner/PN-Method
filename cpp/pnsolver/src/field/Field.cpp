@@ -21,7 +21,12 @@ SHCoefficientFieldArray::SHCoefficientFieldArray( int order ):
 void SHCoefficientFieldArray::setField( int l, int m, Field::Ptr field )
 {
 	// NB: this computes the sh index from l,m for the general 3d case
-	m_coeff_fields[getSHIndex(l,m)] = field;
+	setField(getSHIndex(l,m), field);
+}
+
+void SHCoefficientFieldArray::setField(int sh_index, Field::Ptr field)
+{
+	m_coeff_fields[sh_index] = field;
 }
 
 Field::Ptr SHCoefficientFieldArray::getField(int l, int m)
@@ -41,6 +46,14 @@ std::complex<double> SHCoefficientFieldArray::eval( int l, int m, const P3d& pWS
 int SHCoefficientFieldArray::getOrder() const
 {
 	return m_order;
+}
+
+SHCoefficientFieldArray::Ptr SHCoefficientFieldArray::createRestricted() const
+{
+	Ptr result = std::make_shared<SHCoefficientFieldArray>(m_order);
+	for( int i=0;i<m_coeff_fields.size();++i )
+		result->setField(i, m_coeff_fields[i]->createRestricted());
+	return result;
 }
 
 int SHCoefficientFieldArray::getSHIndex(int l, int m) const

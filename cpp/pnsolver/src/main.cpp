@@ -9,6 +9,8 @@
 #include <math/vector.h>
 #include <math/ray.h>
 
+#include <util/timer.h>
+
 #include<common/Domain.h>
 #include<field/VoxelGridField.h>
 #include<field/Constant.h>
@@ -18,10 +20,175 @@
 namespace py = pybind11;
 
 
+Eigen::VectorXd to_vector( const std::vector<double>& values )
+{
+	Eigen::RowVectorXd x = Eigen::VectorXd( values.size() );
+	for( int i=0;i<values.size();++i )
+		x(i) = values[i];
+	return x;
+}
 
+
+// returns the square root of the residual
+double run_cg_iterations( PNSystem::RealMatrix& A, Eigen::VectorXd& b, Eigen::VectorXd& x, Eigen::VectorXd& r, int numIterations, double tol )
+{
+	r = b-A*x;
+	Eigen::VectorXd p = r;
+	Eigen::VectorXd Ap;
+	double rsold = r.squaredNorm();
+
+	for( int i=0;i<numIterations;++i )
+	{
+		Ap = A*p;
+		double alpha = rsold/p.dot(Ap);
+		x = x + alpha*p;
+		r = r - alpha*Ap;
+		double rsnew = r.squaredNorm();
+		if( std::sqrt(rsnew) < tol )
+			return std::sqrt(rsnew);
+		p = r + (rsnew/rsold)*p;
+		rsold = rsnew;
+	}
+
+	return std::sqrt(rsold);
+}
+
+
+
+// returns the solution vector x, and the convergence plot per iteration
+std::tuple<Eigen::VectorXd, Eigen::VectorXd> solve_multigrid( PNSystem& sys_fine )
+{
+	Timer timer;
+	timer.start();
+
+	std::vector<double> solve_convergence;
+
+	V3i res_fine = sys_fine.getDomain().getResolution();
+
+	bool is2D = res_fine[2] == 1;
+
+	// for multigrid, we require the resolution to be even,
+	// so that we can do restriction and interpolation straigh forwardly
+	if( (res_fine[0]%2!=0)||(res_fine[1]%2!=0)||(!is2D && (res_fine[2]%2!=0)))
+		throw std::runtime_error("solve_multigrid multigrid currently requires even resolution");
+
+	V3i res_coarse( res_fine[0]/2, res_fine[1]/2, is2D ? 1:res_fine[2]/2 );
+
+	Domain domain_coarse( sys_fine.getDomain().getBound().getExtents(),
+						  res_coarse,
+						  sys_fine.getDomain().getBound().min );
+
+	// build coarse level using restriction step on fields
+	PNSystem sys_coarse(sys_fine.getStencil(), domain_coarse, sys_fine.getBoundaryConditions());
+	sys_coarse.setFields( sys_fine.getFields().createRestricted() );
+	sys_coarse.build();
+
+	std::cout << "solve_multigrid: time for setup: " << timer.elapsedSeconds() << "s\n";
+
+	//the following two lines solve the system on the fine grid and return the restricted result
+	//NB: to visualize the solution, you have to use the correct coarse solution...
+	//Eigen::VectorXd x_restricted = restricted( sys_coarse, solve_cg( get_b_real_test() ));
+	//return sys_coarse.stripBoundary(x_restricted);
+
+	//the following two lines solve the system on the coarse grid and return the interpolated result
+	//Eigen::VectorXd x_interp = interpolate( sys_coarse, sys_coarse.solve_cg(sys_coarse.get_b_real_test()) );
+	//return stripBoundary(x_interp);
+
+	double tol = 1.0e-10; // convergence error tolerance
+	int maxNumCycles = 1000; // maximum number of V-cycles
+	int numSteps_fine = 10; // number of CG iterations on the fine level
+	int numSteps_coarse = 10; // number of CG iterations on the coarse level
+
+	PNSystem::RealMatrix A_coarse = sys_coarse.get_A_real().transpose()*sys_coarse.get_A_real();
+	Eigen::VectorXd b_coarse( sys_coarse.getVoxelManager().getNumUnknowns() );
+	Eigen::VectorXd x_coarse( sys_coarse.getVoxelManager().getNumUnknowns() );
+	x_coarse.fill(0.0);
+	Eigen::VectorXd r_coarse( sys_coarse.getVoxelManager().getNumUnknowns() );
+
+	PNSystem::RealMatrix A_fine = sys_fine.get_A_real().transpose()*sys_fine.get_A_real();
+	Eigen::VectorXd b_fine = sys_fine.get_A_real().transpose()*sys_fine.get_b_real();
+	Eigen::VectorXd x_fine = b_fine; // initial guess for first fine level solve
+	Eigen::VectorXd r_fine( sys_fine.getVoxelManager().getNumUnknowns() );
+
+
+	// v-cycle
+	solve_convergence.clear();
+	for( int i=0;i<maxNumCycles;++i )
+	{
+		// solve on fine level
+		double rmse = run_cg_iterations( A_fine, b_fine, x_fine, r_fine, numSteps_fine, tol );
+
+		// check convergence
+		solve_convergence.push_back(rmse);
+		if(rmse < tol)
+			// done
+			break;
+
+		// get residual as right hand side on the coarse level
+		b_coarse = sys_fine.downsample(sys_coarse, r_fine);
+
+		// solve correction equation on course level
+		run_cg_iterations( A_coarse, b_coarse, x_coarse, r_coarse, numSteps_coarse, tol );
+
+		// x_course is the error correction on the course level.
+		// We interpolate it and apply it to the current final level solution.
+		x_fine = x_fine + sys_fine.upsample(sys_coarse, x_coarse);
+	}
+
+	timer.stop();
+	std::cout << "solve_multigrid: " << timer.elapsedSeconds() << "s\n";
+	return std::make_tuple( sys_fine.stripBoundary(x_fine), to_vector(solve_convergence) );
+}
+
+
+
+std::tuple<Eigen::VectorXd, Eigen::VectorXd> solve_cg( PNSystem& sys )
+{
+	Timer timer;
+	timer.start();
+
+	std::vector<double> solve_convergence;
+
+	PNSystem::RealMatrix A = sys.get_A_real().transpose()*sys.get_A_real();
+	Eigen::VectorXd b = sys.get_A_real().transpose()*sys.get_b_real();
+	Eigen::VectorXd x = b; // initial guess
+	Eigen::VectorXd r( sys.getVoxelManager().getNumUnknowns() );
+
+
+
+	// cg solver
+	double tol = 1.0e-10; // convergence error tolerance
+	int numIterations = b.rows();
+	{
+		r = b-A*x;
+		Eigen::VectorXd p = r;
+		Eigen::VectorXd Ap;
+		double rsold = r.squaredNorm();
+		for( int i=0;i<numIterations;++i )
+		{
+			Ap = A*p;
+			double alpha = rsold/p.dot(Ap);
+			x = x + alpha*p;
+			r = r - alpha*Ap;
+			double rsnew = r.squaredNorm();
+			solve_convergence.push_back(std::sqrt(rsnew));
+			if( std::sqrt(rsnew) < tol )
+				break;
+			p = r + (rsnew/rsold)*p;
+			rsold = rsnew;
+		}
+	} // end of cg solver
+
+	timer.stop();
+	std::cout << "solve_cg: " << timer.elapsedSeconds() << "s\n";
+	return std::make_tuple( sys.stripBoundary(x), to_vector(solve_convergence) );
+}
 
 PYBIND11_MODULE(pnsolver, m)
 {
+	m.def( "solve_multigrid", &solve_multigrid);
+	m.def( "solve_cg", &solve_cg);
+
 
 	// PNSystem ==============================
 	py::class_<PNSystem> class_pnsystem(m, "PNSystem");
@@ -48,8 +215,6 @@ PYBIND11_MODULE(pnsolver, m)
 	.def("get_b_real", &PNSystem::get_b_real )
 	.def("get_A_real_test", &PNSystem::get_A_real_test )
 	.def("get_b_real_test", &PNSystem::get_b_real_test )
-	.def("get_solve_convergence", &PNSystem::get_solve_convergence )
-
 	.def("setDebugVoxel", &PNSystem::setDebugVoxel )
 	//.def("computeGroundtruth", &PNSystem::computeGroundtruth )
 	.def("getVoxelInfo", &PNSystem::getVoxelInfo )
@@ -144,7 +309,7 @@ PYBIND11_MODULE(pnsolver, m)
 		new (&m) VoxelGridField( data, domain, offset );
 	})
 	.def("test", &VoxelGridField::test)
-	.def("getData", &VoxelGridField::getData)
+	.def("getSlice", &VoxelGridField::getSlice)
 	;
 
 	// Constant ============================================================

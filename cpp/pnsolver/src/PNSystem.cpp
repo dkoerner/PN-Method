@@ -14,14 +14,6 @@
 std::map<std::string, PNSystem::Stencil> PNSystem::g_stencils;
 
 
-V3i PNSystem::Stencil::Context::g_grid_offsets[8] ={V3i(0, 0, 1),
-													V3i(1, 0, 1),
-													V3i(1, 1, 1),
-													V3i(0, 1, 1),
-													V3i(0, 0, 0),
-													V3i(1, 0, 0),
-													V3i(1, 1, 0),
-													V3i(0, 1, 0)};
 
 
 V3d PNSystem::Stencil::Context::g_grid_offsets2[8] ={V3d(0.0, 0.0, 0.5),
@@ -102,13 +94,13 @@ PNSystem::PNSystem( Stencil stencil, const Domain& domain, bool neumannBC)
 
 	};
 
-	///*
+	/*
 	m_fields.sigma_a = std::make_shared<Function>(sigma_a);
 	m_fields.sigma_s = std::make_shared<Function>(sigma_s);
 	m_fields.sigma_t = std::make_shared<Function>(sigma_t);
 	m_fields.f_p->setField(0,0,std::make_shared<Function>(phase_shcoeff));
 	m_fields.q->setField(0,0,std::make_shared<Function>(source_shcoeffs));
-	//*/
+	*/
 
 
 
@@ -145,10 +137,24 @@ PNSystem::VoxelManager& PNSystem::getVoxelManager()
 }
 
 
+V3i PNSystem::getGridSpaceOffsetFromGrid(int grid_index)
+{
+	static const V3i g_grid_offsets[8] ={ V3i(0, 0, 1),
+										  V3i(1, 0, 1),
+										  V3i(1, 1, 1),
+										  V3i(0, 1, 1),
+										  V3i(0, 0, 0),
+										  V3i(1, 0, 0),
+										  V3i(1, 1, 0),
+										  V3i(0, 1, 0)};
+	return g_grid_offsets[grid_index];
+}
+
+
 void PNSystem::setField( const std::string& id, Field::Ptr field )
 {
-	std::cout << "WARNING: PNSystem::setField currently ignored. Using explicit RTE functions.\n";
-	/*
+	//std::cout << "WARNING: PNSystem::setField currently ignored. Using explicit RTE functions.\n";
+	///*
 	if( id == "sigma_t" )
 		m_fields.sigma_t = field;
 	else
@@ -167,7 +173,12 @@ void PNSystem::setField( const std::string& id, Field::Ptr field )
 		m_fields.q->setField(0,0,field);
 	else
 		throw std::runtime_error("PNSystem::setField unable to set field " + id);
-	*/
+	//*/
+}
+
+void PNSystem::setFields(PNSystem::Fields fields)
+{
+	m_fields = fields;
 }
 /*
 struct ParticleTracer2D : public Task
@@ -365,13 +376,6 @@ Eigen::VectorXd PNSystem::get_b_real_test()
 	return m_builder_A.matrix.transpose()*m_builder_b.matrix;
 }
 
-Eigen::VectorXd PNSystem::get_solve_convergence()
-{
-	Eigen::RowVectorXd x = Eigen::VectorXd( m_solve_convergence.size() );
-	for( int i=0;i<m_solve_convergence.size();++i )
-		x(i) = m_solve_convergence[i];
-	return x;
-}
 
 void PNSystem::setDebugVoxel(const V3i &dv)
 {
@@ -569,7 +573,7 @@ PNSystem::RealVector PNSystem::solve()
 Eigen::VectorXd PNSystem::solve_cg( const Eigen::VectorXd& x0 )
 {
 	double tol = 1.0e-10;
-	m_solve_convergence.clear();
+	//m_solve_convergence.clear();
 
 
 	RealMatrix A = get_A_real().transpose()*get_A_real();
@@ -589,14 +593,321 @@ Eigen::VectorXd PNSystem::solve_cg( const Eigen::VectorXd& x0 )
 		x = x + alpha*p;
 		r = r - alpha*Ap;
 		double rsnew = r.squaredNorm();
-		m_solve_convergence.push_back(std::sqrt(rsnew));
+		//m_solve_convergence.push_back(std::sqrt(rsnew));
 		if( std::sqrt(rsnew) < tol )
 			break;
 		p = r + (rsnew/rsold)*p;
 		rsold = rsnew;
 	}
 
-	return stripBoundary(x);
+	//return stripBoundary(x);
+	return x;
+}
+
+
+
+Eigen::VectorXd PNSystem::downsample( PNSystem& sys_coarse, const Eigen::VectorXd &x_fine )
+{
+	VoxelManager& vm_coarse = sys_coarse.getVoxelManager();
+	VoxelManager& vm_fine = getVoxelManager();
+
+
+	Eigen::VectorXd x_coarse( vm_coarse.getNumUnknowns() );
+	x_coarse.fill(0.0);
+
+	// offset and weights for coefficients at grid with offset=1,1
+	std::vector<std::pair<V3i, double>> stamp_11;
+	stamp_11.push_back( std::make_pair(V3i(0,0,0), 0.75*0.75) );
+	stamp_11.push_back( std::make_pair(V3i(0,1,0), 0.75*0.75) );
+	stamp_11.push_back( std::make_pair(V3i(1,1,0), 0.75*0.75) );
+	stamp_11.push_back( std::make_pair(V3i(1,0,0), 0.75*0.75) );
+	stamp_11.push_back( std::make_pair(V3i(0,2,0), 0.25*0.75) );
+	stamp_11.push_back( std::make_pair(V3i(1,2,0), 0.25*0.75) );
+	stamp_11.push_back( std::make_pair(V3i(0,-1,0), 0.25*0.75) );
+	stamp_11.push_back( std::make_pair(V3i(1,-1,0), 0.25*0.75) );
+	stamp_11.push_back( std::make_pair(V3i(2,0,0), 0.25*0.75) );
+	stamp_11.push_back( std::make_pair(V3i(2,1,0), 0.25*0.75) );
+	stamp_11.push_back( std::make_pair(V3i(-1,0,0), 0.25*0.75) );
+	stamp_11.push_back( std::make_pair(V3i(-1,1,0), 0.25*0.75) );
+	stamp_11.push_back( std::make_pair(V3i(2,2,0), 0.25*0.25) );
+	stamp_11.push_back( std::make_pair(V3i(-1,2,0), 0.25*0.25) );
+	stamp_11.push_back( std::make_pair(V3i(-1,-1,0), 0.25*0.25) );
+	stamp_11.push_back( std::make_pair(V3i(2,-1,0), 0.25*0.25) );
+
+	// offset and weights for coefficients at grid with offset=0,1
+	std::vector<std::pair<V3i, double>> stamp_01;
+	stamp_01.push_back( std::make_pair(V3i(-1,-1,0), 0.5*0.25) );
+	stamp_01.push_back( std::make_pair(V3i(-1,0,0), 0.5*0.75) );
+	stamp_01.push_back( std::make_pair(V3i(-1,1,0), 0.5*0.75) );
+	stamp_01.push_back( std::make_pair(V3i(-1,2,0), 0.5*0.25) );
+	stamp_01.push_back( std::make_pair(V3i(0,-1,0), 0.25) );
+	stamp_01.push_back( std::make_pair(V3i(0,0,0), 0.75) );
+	stamp_01.push_back( std::make_pair(V3i(0,1,0), 0.75) );
+	stamp_01.push_back( std::make_pair(V3i(0,2,0), 0.25) );
+	stamp_01.push_back( std::make_pair(V3i(1,-1,0), 0.5*0.25) );
+	stamp_01.push_back( std::make_pair(V3i(1,0,0), 0.5*0.75) );
+	stamp_01.push_back( std::make_pair(V3i(1,1,0), 0.5*0.75) );
+	stamp_01.push_back( std::make_pair(V3i(1,2,0), 0.5*0.25) );
+
+	// offset and weights for coefficients at grid with offset=1,0
+	std::vector<std::pair<V3i, double>> stamp_10;
+	stamp_10.push_back( std::make_pair(V3i(-1,-1,0), 0.5*0.25) );
+	stamp_10.push_back( std::make_pair(V3i(0,-1,0), 0.5*0.75) );
+	stamp_10.push_back( std::make_pair(V3i(1,-1,0), 0.5*0.75) );
+	stamp_10.push_back( std::make_pair(V3i(2,-1,0), 0.5*0.25) );
+	stamp_10.push_back( std::make_pair(V3i(-1,0,0), 0.25) );
+	stamp_10.push_back( std::make_pair(V3i(0,0,0), 0.75) );
+	stamp_10.push_back( std::make_pair(V3i(1,0,0), 0.75) );
+	stamp_10.push_back( std::make_pair(V3i(2,0,0), 0.25) );
+	stamp_10.push_back( std::make_pair(V3i(-1,1,0), 0.5*0.25) );
+	stamp_10.push_back( std::make_pair(V3i(0,1,0), 0.5*0.75) );
+	stamp_10.push_back( std::make_pair(V3i(1,1,0), 0.5*0.75) );
+	stamp_10.push_back( std::make_pair(V3i(2,1,0), 0.5*0.25) );
+
+	// offset and weights for coefficients at grid with offset=0,0
+	std::vector<std::pair<V3i, double>> stamp_00;
+	stamp_00.push_back( std::make_pair(V3i(0,0,0), 1.0) );
+	stamp_00.push_back( std::make_pair(V3i(0,-1,0), 0.5) );
+	stamp_00.push_back( std::make_pair(V3i(0,1,0), 0.5) );
+	stamp_00.push_back( std::make_pair(V3i(-1,0,0), 0.5) );
+	stamp_00.push_back( std::make_pair(V3i(1,0,0), 0.5) );
+	stamp_00.push_back( std::make_pair(V3i(1,-1,0), 0.5*0.5) );
+	stamp_00.push_back( std::make_pair(V3i(1,1,0), 0.5*0.5) );
+	stamp_00.push_back( std::make_pair(V3i(-1,1,0), 0.5*0.5) );
+	stamp_00.push_back( std::make_pair(V3i(-1,-1,0), 0.5*0.5) );
+
+
+
+
+	std::vector<std::vector<std::pair<V3i, double>>*> stamps(8, 0);
+	stamps[0] = &stamp_00;
+	stamps[1] = &stamp_10;
+	stamps[2] = &stamp_11;
+	stamps[3] = &stamp_01;
+
+	/*
+	test.push_back( std::make_pair(V3i(0,0,0), 1.0) );
+	test.push_back( std::make_pair(V3i(1,0,0), 1.0) );
+	test.push_back( std::make_pair(V3i(1,1,0), 1.0) );
+	test.push_back( std::make_pair(V3i(0,1,0), 1.0) );
+	*/
+
+
+
+
+	// 2d --------------------
+	// iterate all coarse voxels
+	std::vector<Voxel>& voxels_coarse = vm_coarse.getVoxels();
+	for( auto&v_coarse:voxels_coarse )
+	{
+		// coordinate of the corresponding fine voxel
+		V3i coord_fine = v_coarse.coord*2;
+
+		// Now compute the value of the coarse voxels coefficients from gathering the values from
+		// the fine voxels which are affecting the coarse voxels values. These values will be weighted,
+		// as fine voxels are affected by multiple coarse voxels.
+
+		for( int coeff_index=0;coeff_index<getNumCoefficients();++coeff_index )
+		{
+			//int coeff_index = 0;
+
+			// get the global index of the coarse voxel/coeff
+			int gi_coarse = vm_coarse.getGlobalIndex( v_coarse, coeff_index );
+
+			// we only set values on active coefficients. Active coefficients are coefficients,
+			// which correspond to an actual coefficient in the solution vector.
+			if( vm_coarse.isBoundaryCoefficient(v_coarse, coeff_index) )
+				continue;
+
+
+			// initialize the value of the current coefficient at current coarse voxel
+			// this value is computed from all affected fine voxels
+			double value_coarse = 0.0;
+			double weight_sum = 0.0;
+
+			// now iterate over all affected fine voxels. This depends on the grid location
+			int grid_index = m_stencil.getGridIndexFromCoefficient(coeff_index);
+			auto stamp = stamps[grid_index];
+			for( auto& tt:*stamp )
+			{
+				V3i v_fine_coord = coord_fine + std::get<0>(tt);
+				double weight = std::get<1>(tt);
+
+				// using the stamps offset on boundary voxels may create invalid voxel coordinates
+				if( !vm_fine.voxelIsValid(v_fine_coord) )
+					continue;
+
+				Voxel& v_fine = vm_fine.getVoxel(v_fine_coord);
+
+				// retrieve value of fine voxels
+				double value_fine = 0.0;
+				int gi_fine = vm_fine.getGlobalIndex(v_fine, coeff_index);
+				if( gi_fine >= 0 )
+					// either the fine voxel/coeff is not a boundary voxel/coeff,
+					// or we have a boundary voxel with neumann BC, pointing to an
+					// interior voxel
+					value_fine = x_fine(gi_fine);
+				// else: value_fine remains zero, which means we have a boundary voxel with dirichlet BC
+
+				value_coarse += value_fine*weight;
+				weight_sum += weight;
+			} // for each stamp entry
+
+			// now set (normalized) value
+			x_coarse(gi_coarse) = value_coarse/weight_sum;
+		} // for each coefficient
+	} // for each coarse voxel
+
+	return x_coarse;
+}
+
+Eigen::VectorXd PNSystem::upsample( PNSystem& sys_coarse, const Eigen::VectorXd &x_coarse )
+{
+	Eigen::VectorXd x_fine( m_voxelManager.getNumUnknowns() );
+	x_fine.fill(0.0);
+
+	// offset and weights for coefficients at grid with offset=1,1
+	std::vector<std::pair<V3i, double>> stamp_11;
+	stamp_11.push_back( std::make_pair(V3i(0,0,0), 0.75*0.75) );
+	stamp_11.push_back( std::make_pair(V3i(0,1,0), 0.75*0.75) );
+	stamp_11.push_back( std::make_pair(V3i(1,1,0), 0.75*0.75) );
+	stamp_11.push_back( std::make_pair(V3i(1,0,0), 0.75*0.75) );
+	stamp_11.push_back( std::make_pair(V3i(0,2,0), 0.25*0.75) );
+	stamp_11.push_back( std::make_pair(V3i(1,2,0), 0.25*0.75) );
+	stamp_11.push_back( std::make_pair(V3i(0,-1,0), 0.25*0.75) );
+	stamp_11.push_back( std::make_pair(V3i(1,-1,0), 0.25*0.75) );
+	stamp_11.push_back( std::make_pair(V3i(2,0,0), 0.25*0.75) );
+	stamp_11.push_back( std::make_pair(V3i(2,1,0), 0.25*0.75) );
+	stamp_11.push_back( std::make_pair(V3i(-1,0,0), 0.25*0.75) );
+	stamp_11.push_back( std::make_pair(V3i(-1,1,0), 0.25*0.75) );
+	stamp_11.push_back( std::make_pair(V3i(2,2,0), 0.25*0.25) );
+	stamp_11.push_back( std::make_pair(V3i(-1,2,0), 0.25*0.25) );
+	stamp_11.push_back( std::make_pair(V3i(-1,-1,0), 0.25*0.25) );
+	stamp_11.push_back( std::make_pair(V3i(2,-1,0), 0.25*0.25) );
+
+	// offset and weights for coefficients at grid with offset=0,1
+	std::vector<std::pair<V3i, double>> stamp_01;
+	stamp_01.push_back( std::make_pair(V3i(-1,-1,0), 0.5*0.25) );
+	stamp_01.push_back( std::make_pair(V3i(-1,0,0), 0.5*0.75) );
+	stamp_01.push_back( std::make_pair(V3i(-1,1,0), 0.5*0.75) );
+	stamp_01.push_back( std::make_pair(V3i(-1,2,0), 0.5*0.25) );
+	stamp_01.push_back( std::make_pair(V3i(0,-1,0), 0.25) );
+	stamp_01.push_back( std::make_pair(V3i(0,0,0), 0.75) );
+	stamp_01.push_back( std::make_pair(V3i(0,1,0), 0.75) );
+	stamp_01.push_back( std::make_pair(V3i(0,2,0), 0.25) );
+	stamp_01.push_back( std::make_pair(V3i(1,-1,0), 0.5*0.25) );
+	stamp_01.push_back( std::make_pair(V3i(1,0,0), 0.5*0.75) );
+	stamp_01.push_back( std::make_pair(V3i(1,1,0), 0.5*0.75) );
+	stamp_01.push_back( std::make_pair(V3i(1,2,0), 0.5*0.25) );
+
+	// offset and weights for coefficients at grid with offset=1,0
+	std::vector<std::pair<V3i, double>> stamp_10;
+	stamp_10.push_back( std::make_pair(V3i(-1,-1,0), 0.5*0.25) );
+	stamp_10.push_back( std::make_pair(V3i(0,-1,0), 0.5*0.75) );
+	stamp_10.push_back( std::make_pair(V3i(1,-1,0), 0.5*0.75) );
+	stamp_10.push_back( std::make_pair(V3i(2,-1,0), 0.5*0.25) );
+	stamp_10.push_back( std::make_pair(V3i(-1,0,0), 0.25) );
+	stamp_10.push_back( std::make_pair(V3i(0,0,0), 0.75) );
+	stamp_10.push_back( std::make_pair(V3i(1,0,0), 0.75) );
+	stamp_10.push_back( std::make_pair(V3i(2,0,0), 0.25) );
+	stamp_10.push_back( std::make_pair(V3i(-1,1,0), 0.5*0.25) );
+	stamp_10.push_back( std::make_pair(V3i(0,1,0), 0.5*0.75) );
+	stamp_10.push_back( std::make_pair(V3i(1,1,0), 0.5*0.75) );
+	stamp_10.push_back( std::make_pair(V3i(2,1,0), 0.5*0.25) );
+
+	// offset and weights for coefficients at grid with offset=0,0
+	std::vector<std::pair<V3i, double>> stamp_00;
+	stamp_00.push_back( std::make_pair(V3i(0,0,0), 1.0) );
+	stamp_00.push_back( std::make_pair(V3i(0,-1,0), 0.5) );
+	stamp_00.push_back( std::make_pair(V3i(0,1,0), 0.5) );
+	stamp_00.push_back( std::make_pair(V3i(-1,0,0), 0.5) );
+	stamp_00.push_back( std::make_pair(V3i(1,0,0), 0.5) );
+	stamp_00.push_back( std::make_pair(V3i(1,-1,0), 0.5*0.5) );
+	stamp_00.push_back( std::make_pair(V3i(1,1,0), 0.5*0.5) );
+	stamp_00.push_back( std::make_pair(V3i(-1,1,0), 0.5*0.5) );
+	stamp_00.push_back( std::make_pair(V3i(-1,-1,0), 0.5*0.5) );
+
+
+
+
+	std::vector<std::vector<std::pair<V3i, double>>*> stamps(8, 0);
+	stamps[0] = &stamp_00;
+	stamps[1] = &stamp_10;
+	stamps[2] = &stamp_11;
+	stamps[3] = &stamp_01;
+
+	/*
+	test.push_back( std::make_pair(V3i(0,0,0), 1.0) );
+	test.push_back( std::make_pair(V3i(1,0,0), 1.0) );
+	test.push_back( std::make_pair(V3i(1,1,0), 1.0) );
+	test.push_back( std::make_pair(V3i(0,1,0), 1.0) );
+	*/
+
+
+
+
+	// 2d --------------------
+	// iterate all coarse voxels
+	VoxelManager& vm_coarse = sys_coarse.getVoxelManager();
+	VoxelManager& vm_fine = getVoxelManager();
+	std::vector<Voxel>& voxels_coarse = vm_coarse.getVoxels();
+	for( auto&v_coarse:voxels_coarse )
+	{
+		// coordinate of the corresponding fine voxel
+		V3i coord_fine = v_coarse.coord*2;
+
+		// Now distribute the values of all coefficients onto all fine voxels, which are affected by
+		// the coarse voxel. These values will be weighted, as fine voxels are affected by multiple
+		// coarse voxels.
+
+		for( int coeff_index=0;coeff_index<getNumCoefficients();++coeff_index )
+		{
+			//int coeff_index = 2;
+			// retrieve value of the current coefficient at current coarse voxel
+			// this value is redistributed to all affected fine voxels
+			double value_coarse = 0.0;
+
+			int gi_coarse = vm_coarse.getGlobalIndex( v_coarse, coeff_index );
+
+			if( gi_coarse >= 0 )
+				// either the voxel is not a boundary voxel, or we
+				// have a boundary voxel with neumann BC, pointing to an
+				// interior voxel
+				value_coarse = x_coarse(gi_coarse);
+			// else: value remains zero which means we have a boundary voxel with dirichlet BC
+
+
+			// now iterate over all affected fine voxels. This depends on the grid location
+			int grid_index = m_stencil.getGridIndexFromCoefficient(coeff_index);
+			auto stamp = stamps[grid_index];
+			for( auto& tt:*stamp )
+			{
+				V3i v_fine_coord = coord_fine + std::get<0>(tt);
+				double weight = std::get<1>(tt);
+
+				if( !vm_fine.voxelIsValid(v_fine_coord) )
+					continue;
+
+				Voxel& v_fine = vm_fine.getVoxel(v_fine_coord);
+
+				// only set weights on voxels which are actually active
+				if( !vm_fine.isBoundaryCoefficient(v_fine, coeff_index) )
+				{
+					int gi_fine = vm_fine.getGlobalIndex(v_fine, coeff_index);
+					x_fine(gi_fine) += weight*value_coarse;
+					//x_fine(gi_fine) += weight;
+				}
+			} // for each stamp entry
+		} // for each coefficient
+
+
+
+	} // for each coarse voxel
+
+
+
+
+	return x_fine;
 }
 
 Eigen::VectorXd PNSystem::stripBoundary(const Eigen::VectorXd &x)

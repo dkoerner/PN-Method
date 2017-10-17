@@ -23,15 +23,14 @@ struct VoxelGridField : public Field
 		m_domain(domain),
 		m_voxelgrid()
 	{
-		m_step_x = V3d(m_domain.getVoxelSize()[0]*0.5, 0.0, 0.0);
-		m_step_y = V3d(0.0, m_domain.getVoxelSize()[1]*0.5, 0.0);
-		m_step_z = V3d(0.0, 0.0, m_domain.getVoxelSize()[2]*0.5);
-
 		V3i res= m_domain.getResolution();
 		m_voxelgrid.resize(res);
-		memcpy( m_voxelgrid.getRawPointer(), data, domain.numVoxels()*sizeof(std::complex<double>) );
+		if(data)
+			memcpy( m_voxelgrid.getRawPointer(), data, domain.numVoxels()*sizeof(std::complex<double>) );
+
 		m_voxelgrid.m_sampleLocation = offset.cast<float>();
 
+		/*
 		//double max_value = *std::max_element(std::begin(data), std::end(data));
 		m_max_value = 0.0;
 		for( int i=0;i<domain.numVoxels();++i )
@@ -40,6 +39,7 @@ struct VoxelGridField : public Field
 			if( value > m_max_value )
 				m_max_value = value;
 		}
+		*/
 	}
 
 	virtual std::complex<double> eval( const P3d& pWS )const override
@@ -48,61 +48,87 @@ struct VoxelGridField : public Field
 		return m_voxelgrid.evaluate(pVS);
 	}
 
+	/*
 	double getMax()const
 	{
 		return m_max_value;
 	}
+	*/
 
-	Eigen::MatrixXd test()
+	V3d getOffset()const
+	{
+		return m_voxelgrid.m_sampleLocation.cast<double>();
+	}
+
+	Eigen::MatrixXd getSlice( int k )
 	{
 		V3i res = m_domain.getResolution();
-		//Eigen::MatrixXd m(res[0],res[1]);
 		Eigen::MatrixXd m = Eigen::MatrixXd::Zero(res[0],res[1]);
 
-		for(int i=0;i<71;++i)
-			for(int j=0;j<71;++j)
+		for(int i=0;i<res[0];++i)
+			for(int j=0;j<res[1];++j)
 			{
-				//m(i, j) = m_voxelgrid.sample(i, j, 0).real();
-				//m(i, j) = double(i)/double(res[0]-1);
+				m(i, j) = m_voxelgrid.sample(i, j, k).real();
 			}
-
-		///*
-		for(int i=0;i<35;++i)
-			for(int j=0;j<71;++j)
-			{
-				double a = m_voxelgrid.sample(i, j, 0).real();
-				double b = m_voxelgrid.sample(res[0]-i-1, j, 0).real();
-
-				m(i, j) = std::abs(a-b);
-				//if( (a-b) > 1.0e-8 )
-				//	std::cout << "!!!!!!!!!!!!!!!\n";
-			}
-		//*/
 
 		return m;
 	}
 
-	Eigen::MatrixXd getData()
+	virtual Field::Ptr createRestricted()const override
 	{
-		V3i res = m_domain.getResolution();
-		Eigen::MatrixXd m = Eigen::MatrixXd::Zero(res[1],res[1]);
+		V3i res_fine = m_domain.getResolution();
+		bool is2D = res_fine[2] == 1;
 
-		for(int i=0;i<71;++i)
-			for(int j=0;j<71;++j)
-			{
-				m(i, j) = m_voxelgrid.sample(i, j, 0).real();
-			}
+		// for restriction, we require the resolution to be even,
+		// so that we can do it straight forwardly
+		if( (res_fine[0]%2!=0)||(res_fine[1]%2!=0)||(!is2D && (res_fine[2]%2!=0)))
+			throw std::runtime_error("VoxelGridField::createRestricted restriction currently requires even resolution");
 
-		return m;
+		V3i res_coarse( res_fine[0]/2, res_fine[1]/2, is2D ? 1:res_fine[2]/2 );
+
+		Domain domain_coarse( m_domain.getBound().getExtents(), res_coarse, m_domain.getBound().min );
+
+		Ptr result = std::make_shared<VoxelGridField>( (std::complex<double>*) 0, domain_coarse, getOffset() );
+
+		// create coarse from fine voxels
+		if(is2D)
+		{
+			for(int i_coarse=0;i_coarse<res_coarse[0];++i_coarse)
+				for(int j_coarse=0;j_coarse<res_coarse[1];++j_coarse)
+				{
+					auto v = m_voxelgrid.sample(i_coarse*2+0, j_coarse*2+0, 0);
+					v+= m_voxelgrid.sample(i_coarse*2+1, j_coarse*2+0, 0);
+					v+= m_voxelgrid.sample(i_coarse*2+1, j_coarse*2+1, 0);
+					v+= m_voxelgrid.sample(i_coarse*2+0, j_coarse*2+1, 0);
+					result->m_voxelgrid.lvalue( i_coarse, j_coarse, 0 ) = v/4.0;
+				}
+		}else
+		{
+			for(int i_coarse=0;i_coarse<res_coarse[0];++i_coarse)
+				for(int j_coarse=0;j_coarse<res_coarse[1];++j_coarse)
+					for(int k_coarse=0;k_coarse<res_coarse[2];++k_coarse)
+					{
+						auto v = m_voxelgrid.sample(i_coarse*2+0, j_coarse*2+0, k_coarse*2+0);
+						v+= m_voxelgrid.sample(i_coarse*2+1, j_coarse*2+0, k_coarse*2+0);
+						v+= m_voxelgrid.sample(i_coarse*2+1, j_coarse*2+1, k_coarse*2+0);
+						v+= m_voxelgrid.sample(i_coarse*2+0, j_coarse*2+1, k_coarse*2+0);
+
+						v+= m_voxelgrid.sample(i_coarse*2+0, j_coarse*2+0, k_coarse*2+1);
+						v+= m_voxelgrid.sample(i_coarse*2+1, j_coarse*2+0, k_coarse*2+1);
+						v+= m_voxelgrid.sample(i_coarse*2+1, j_coarse*2+1, k_coarse*2+1);
+						v+= m_voxelgrid.sample(i_coarse*2+0, j_coarse*2+1, k_coarse*2+1);
+						result->m_voxelgrid.lvalue( i_coarse, j_coarse, k_coarse ) = v/8.0;
+					}
+		}
+
+
+		return result;
 	}
 
 private:
 	Domain m_domain;
-	V3d m_step_x;
-	V3d m_step_y;
-	V3d m_step_z;
 	VoxelGrid<std::complex<double>> m_voxelgrid;
-	double m_max_value;
+	//double m_max_value;
 };
 
 

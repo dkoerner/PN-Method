@@ -27,6 +27,12 @@ struct Constant : public Field
 		return m_value;
 	}
 
+
+	virtual Field::Ptr createRestricted()const override
+	{
+		return std::make_shared<Constant>(m_value);
+	}
+
 private:
 	std::complex<double> m_value;
 };

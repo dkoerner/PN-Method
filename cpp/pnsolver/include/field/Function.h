@@ -30,6 +30,12 @@ struct Function : public Field
 		return m_fun(pWS);
 	}
 
+	virtual Field::Ptr createRestricted()const override
+	{
+		throw std::runtime_error("restriction step not implemented for Function");
+		return Ptr();
+	}
+
 
 private:
 	FunctionType m_fun;

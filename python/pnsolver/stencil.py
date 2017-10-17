@@ -405,14 +405,14 @@ def to_cpp( expr, info, level=0 ):
 		#'''
 		if loc.shift.isZero():
 			grid_index = info.pni.getGridIndex(loc.getOffset())
-			start_code = "+ctx.getGridOffset2({})".format(grid_index)
+			start_code = "+ctx.getVoxelSpaceOffsetFromGrid2({})".format(grid_index)
 			if hasattr(loc.start, "to_cpp_str"):
 				start_code = loc.start.to_cpp_str
 			return "domain.voxelToWorld(vd{})".format(start_code)
 		else:
 			grid_index = info.pni.getGridIndex(loc.start.getOffset())
 			shift = loc.shift.getVoxel()+loc.shift.getOffset()*0.5
-			return "domain.voxelToWorld(vd+ctx.getGridOffset2({})+V3d({}, {}, {}))".format(grid_index, shift[0], shift[1], shift[2])		#'''
+			return "domain.voxelToWorld(vd+ctx.getVoxelSpaceOffsetFromGrid2({})+V3d({}, {}, {}))".format(grid_index, shift[0], shift[1], shift[2])		#'''
 		
 	elif expr.__class__ == meh.Derivation:
 		raise ValueError("didnt expect any object of type Derivation")
@@ -1606,7 +1606,7 @@ def generate_stencil_code( stencil_name, filename, terms, pni ):
 							info.pni = pni
 							#info.location = pni.getLocation( np.array([0,0,0]), i )
 							info.location = GridLocation3D(StaggeredGridLocation(np.array([0,0,0]), pni.getOffset(i)), StaggeredGridLocation(), "check") 
-							info.location.start.to_cpp_str = "+ctx.getGridOffset2(i)"
+							info.location.start.to_cpp_str = "+ctx.getVoxelSpaceOffsetFromGrid2(i)"
 
 							info.vars = {}
 							# TODO: get rid of info.location alltogether and just use vec{x} ?

@@ -40,12 +40,12 @@ void stencil_fopn_p1_sg(PNSystem::Stencil::Context& ctx)
 	for( int i=0;i<4;++i )
 	{
 		Eigen::Matrix<std::complex<double>, 3, 3> M_3;
-		M_3(0, 0) = (fields.sigma_t->eval(domain.voxelToWorld(vd+ctx.getGridOffset2(i)))+
-			-(fields.sigma_s->eval(domain.voxelToWorld(vd+ctx.getGridOffset2(i)))*fields.f_p->eval(0, 0, domain.voxelToWorld(vd+ctx.getGridOffset2(i)))));
-		M_3(1, 1) = (fields.sigma_t->eval(domain.voxelToWorld(vd+ctx.getGridOffset2(i)))+
-			-(fields.sigma_s->eval(domain.voxelToWorld(vd+ctx.getGridOffset2(i)))*fields.f_p->eval(1, 0, domain.voxelToWorld(vd+ctx.getGridOffset2(i)))));
-		M_3(2, 2) = (fields.sigma_t->eval(domain.voxelToWorld(vd+ctx.getGridOffset2(i)))+
-			-(fields.sigma_s->eval(domain.voxelToWorld(vd+ctx.getGridOffset2(i)))*fields.f_p->eval(1, 0, domain.voxelToWorld(vd+ctx.getGridOffset2(i)))));
+		M_3(0, 0) = (fields.sigma_t->eval(domain.voxelToWorld(vd+ctx.getVoxelSpaceOffsetFromGrid2(i)))+
+			-(fields.sigma_s->eval(domain.voxelToWorld(vd+ctx.getVoxelSpaceOffsetFromGrid2(i)))*fields.f_p->eval(0, 0, domain.voxelToWorld(vd+ctx.getVoxelSpaceOffsetFromGrid2(i)))));
+		M_3(1, 1) = (fields.sigma_t->eval(domain.voxelToWorld(vd+ctx.getVoxelSpaceOffsetFromGrid2(i)))+
+			-(fields.sigma_s->eval(domain.voxelToWorld(vd+ctx.getVoxelSpaceOffsetFromGrid2(i)))*fields.f_p->eval(1, 0, domain.voxelToWorld(vd+ctx.getVoxelSpaceOffsetFromGrid2(i)))));
+		M_3(2, 2) = (fields.sigma_t->eval(domain.voxelToWorld(vd+ctx.getVoxelSpaceOffsetFromGrid2(i)))+
+			-(fields.sigma_s->eval(domain.voxelToWorld(vd+ctx.getVoxelSpaceOffsetFromGrid2(i)))*fields.f_p->eval(1, 0, domain.voxelToWorld(vd+ctx.getVoxelSpaceOffsetFromGrid2(i)))));
 		M_3_real_staggered[i] = (S*M_3*SInv).real();
 	}
 	Eigen::Matrix<double, 3, 3> M_3_real;
@@ -58,9 +58,9 @@ void stencil_fopn_p1_sg(PNSystem::Stencil::Context& ctx)
 	for( int i=0;i<4;++i )
 	{
 		Eigen::Matrix<std::complex<double>, 3, 1> b;
-		b(0, 0) = fields.q->eval(0, 0, domain.voxelToWorld(vd+ctx.getGridOffset2(i)));
-		b(1, 0) = fields.q->eval(1, -1, domain.voxelToWorld(vd+ctx.getGridOffset2(i)));
-		b(2, 0) = fields.q->eval(1, 1, domain.voxelToWorld(vd+ctx.getGridOffset2(i)));
+		b(0, 0) = fields.q->eval(0, 0, domain.voxelToWorld(vd+ctx.getVoxelSpaceOffsetFromGrid2(i)));
+		b(1, 0) = fields.q->eval(1, -1, domain.voxelToWorld(vd+ctx.getVoxelSpaceOffsetFromGrid2(i)));
+		b(2, 0) = fields.q->eval(1, 1, domain.voxelToWorld(vd+ctx.getVoxelSpaceOffsetFromGrid2(i)));
 		b_real_staggered[i] = (S*b).real();
 	}
 	Eigen::Matrix<double, 3, 1> b_real;

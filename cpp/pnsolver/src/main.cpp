@@ -29,6 +29,163 @@ Eigen::VectorXd to_vector( const std::vector<double>& values )
 }
 
 
+void buildUpAndDownsamplingMatrices( PNSystem& sys_fine, PNSystem::RealMatrix& downsampleMatrix, PNSystem::RealMatrix& upsampleMatrix )
+{
+	PNSystem::VoxelManager& vm_fine = sys_fine.getVoxelManager();
+	PNSystem::VoxelManager vm_coarse = vm_fine.downsample();
+
+
+	PNSystem::MatrixBuilderd downsampleMatrixBuilder;
+	PNSystem::MatrixBuilderd upsampleMatrixBuilder;
+
+	// downsample --------------------------
+
+
+	// offset and weights for coefficients at grid with offset=1,1
+	std::vector<std::pair<V3i, double>> stamp_11;
+	stamp_11.push_back( std::make_pair(V3i(0,0,0), 0.75*0.75) );
+	stamp_11.push_back( std::make_pair(V3i(0,1,0), 0.75*0.75) );
+	stamp_11.push_back( std::make_pair(V3i(1,1,0), 0.75*0.75) );
+	stamp_11.push_back( std::make_pair(V3i(1,0,0), 0.75*0.75) );
+	stamp_11.push_back( std::make_pair(V3i(0,2,0), 0.25*0.75) );
+	stamp_11.push_back( std::make_pair(V3i(1,2,0), 0.25*0.75) );
+	stamp_11.push_back( std::make_pair(V3i(0,-1,0), 0.25*0.75) );
+	stamp_11.push_back( std::make_pair(V3i(1,-1,0), 0.25*0.75) );
+	stamp_11.push_back( std::make_pair(V3i(2,0,0), 0.25*0.75) );
+	stamp_11.push_back( std::make_pair(V3i(2,1,0), 0.25*0.75) );
+	stamp_11.push_back( std::make_pair(V3i(-1,0,0), 0.25*0.75) );
+	stamp_11.push_back( std::make_pair(V3i(-1,1,0), 0.25*0.75) );
+	stamp_11.push_back( std::make_pair(V3i(2,2,0), 0.25*0.25) );
+	stamp_11.push_back( std::make_pair(V3i(-1,2,0), 0.25*0.25) );
+	stamp_11.push_back( std::make_pair(V3i(-1,-1,0), 0.25*0.25) );
+	stamp_11.push_back( std::make_pair(V3i(2,-1,0), 0.25*0.25) );
+
+	// offset and weights for coefficients at grid with offset=0,1
+	std::vector<std::pair<V3i, double>> stamp_01;
+	stamp_01.push_back( std::make_pair(V3i(-1,-1,0), 0.5*0.25) );
+	stamp_01.push_back( std::make_pair(V3i(-1,0,0), 0.5*0.75) );
+	stamp_01.push_back( std::make_pair(V3i(-1,1,0), 0.5*0.75) );
+	stamp_01.push_back( std::make_pair(V3i(-1,2,0), 0.5*0.25) );
+	stamp_01.push_back( std::make_pair(V3i(0,-1,0), 0.25) );
+	stamp_01.push_back( std::make_pair(V3i(0,0,0), 0.75) );
+	stamp_01.push_back( std::make_pair(V3i(0,1,0), 0.75) );
+	stamp_01.push_back( std::make_pair(V3i(0,2,0), 0.25) );
+	stamp_01.push_back( std::make_pair(V3i(1,-1,0), 0.5*0.25) );
+	stamp_01.push_back( std::make_pair(V3i(1,0,0), 0.5*0.75) );
+	stamp_01.push_back( std::make_pair(V3i(1,1,0), 0.5*0.75) );
+	stamp_01.push_back( std::make_pair(V3i(1,2,0), 0.5*0.25) );
+
+	// offset and weights for coefficients at grid with offset=1,0
+	std::vector<std::pair<V3i, double>> stamp_10;
+	stamp_10.push_back( std::make_pair(V3i(-1,-1,0), 0.5*0.25) );
+	stamp_10.push_back( std::make_pair(V3i(0,-1,0), 0.5*0.75) );
+	stamp_10.push_back( std::make_pair(V3i(1,-1,0), 0.5*0.75) );
+	stamp_10.push_back( std::make_pair(V3i(2,-1,0), 0.5*0.25) );
+	stamp_10.push_back( std::make_pair(V3i(-1,0,0), 0.25) );
+	stamp_10.push_back( std::make_pair(V3i(0,0,0), 0.75) );
+	stamp_10.push_back( std::make_pair(V3i(1,0,0), 0.75) );
+	stamp_10.push_back( std::make_pair(V3i(2,0,0), 0.25) );
+	stamp_10.push_back( std::make_pair(V3i(-1,1,0), 0.5*0.25) );
+	stamp_10.push_back( std::make_pair(V3i(0,1,0), 0.5*0.75) );
+	stamp_10.push_back( std::make_pair(V3i(1,1,0), 0.5*0.75) );
+	stamp_10.push_back( std::make_pair(V3i(2,1,0), 0.5*0.25) );
+
+	// offset and weights for coefficients at grid with offset=0,0
+	std::vector<std::pair<V3i, double>> stamp_00;
+	stamp_00.push_back( std::make_pair(V3i(0,0,0), 1.0) );
+	stamp_00.push_back( std::make_pair(V3i(0,-1,0), 0.5) );
+	stamp_00.push_back( std::make_pair(V3i(0,1,0), 0.5) );
+	stamp_00.push_back( std::make_pair(V3i(-1,0,0), 0.5) );
+	stamp_00.push_back( std::make_pair(V3i(1,0,0), 0.5) );
+	stamp_00.push_back( std::make_pair(V3i(1,-1,0), 0.5*0.5) );
+	stamp_00.push_back( std::make_pair(V3i(1,1,0), 0.5*0.5) );
+	stamp_00.push_back( std::make_pair(V3i(-1,1,0), 0.5*0.5) );
+	stamp_00.push_back( std::make_pair(V3i(-1,-1,0), 0.5*0.5) );
+
+
+
+
+	std::vector<std::vector<std::pair<V3i, double>>*> stamps(8, 0);
+	stamps[0] = &stamp_00;
+	stamps[1] = &stamp_10;
+	stamps[2] = &stamp_11;
+	stamps[3] = &stamp_01;
+
+
+
+	// 2d --------------------
+	// iterate all coarse voxels
+	std::vector<PNSystem::Voxel>& voxels_coarse = vm_coarse.getVoxels();
+	for( auto&v_coarse:voxels_coarse )
+	{
+		// coordinate of the corresponding fine voxel
+		V3i coord_fine = v_coarse.coord*2;
+
+		// Now compute the value of the coarse voxels coefficients from gathering the values from
+		// the fine voxels which are affecting the coarse voxels values. These values will be weighted,
+		// as fine voxels are affected by multiple coarse voxels.
+
+		for( int coeff_index=0;coeff_index<sys_fine.getNumCoefficients();++coeff_index )
+		{
+			//int coeff_index = 0;
+
+			// get the global index of the coarse voxel/coeff
+			int gi_coarse = vm_coarse.getGlobalIndex( v_coarse, coeff_index );
+
+			// initialize the value of the current coefficient at current coarse voxel
+			// this value is computed from all affected fine voxels
+			double weight_sum = 0.0;
+
+			// now iterate over all affected fine voxels. This depends on the grid location
+			int grid_index = sys_fine.getStencil().getGridIndexFromCoefficient(coeff_index);
+			auto stamp = stamps[grid_index];
+			std::vector<std::pair<int, double>> row_entries; // column index and value
+			for( auto& tt:*stamp )
+			{
+				V3i v_fine_coord = coord_fine + std::get<0>(tt);
+				double weight = std::get<1>(tt);
+
+				// using the stamps offset on boundary voxels may create invalid voxel coordinates
+				if( !vm_fine.voxelIsValid(v_fine_coord) )
+					continue;
+
+				PNSystem::Voxel& v_fine = vm_fine.getVoxel(v_fine_coord);
+
+				// retrieve global index of fine voxel/coeff
+				int gi_fine = vm_fine.getGlobalIndex(v_fine, coeff_index);
+				if( gi_fine >= 0 )
+				{
+					// either the fine voxel/coeff is not a boundary voxel/coeff,
+					// or we have a boundary voxel with neumann BC, pointing to an
+					// interior voxel
+					row_entries.push_back( std::make_pair(gi_fine, weight) );
+				}
+				// only set weights on voxels which are actually active
+				if( !vm_fine.isBoundaryCoefficient(v_fine, coeff_index)&&(gi_coarse>=0) )
+					upsampleMatrixBuilder.coeff(gi_fine, gi_coarse) += weight;
+
+				// else: value_fine remains zero, which means we have a boundary voxel with dirichlet BC
+				weight_sum += weight;
+			} // for each stamp entry
+
+			// build row
+			if( !vm_coarse.isBoundaryCoefficient(v_coarse, coeff_index) )
+				for( auto& it:row_entries )
+				{
+					int gi_fine = it.first;
+					double weight = it.second;
+					downsampleMatrixBuilder.coeff(gi_coarse, it.first) += weight/weight_sum;
+				}
+		} // for each coefficient
+	} // for each coarse voxel
+
+
+
+	//return x_coarse;
+	downsampleMatrix = downsampleMatrixBuilder.build( vm_coarse.getNumUnknowns(), vm_fine.getNumUnknowns() );
+	upsampleMatrix = upsampleMatrixBuilder.build( vm_fine.getNumUnknowns(), vm_coarse.getNumUnknowns() );
+}
+
 // returns the square root of the residual
 double run_cg_iterations( PNSystem::RealMatrix& A, Eigen::VectorXd& b, Eigen::VectorXd& x, Eigen::VectorXd& r, int numIterations, double tol )
 {
@@ -56,44 +213,27 @@ double run_cg_iterations( PNSystem::RealMatrix& A, Eigen::VectorXd& b, Eigen::Ve
 
 
 // returns the solution vector x, and the convergence plot per iteration
-std::tuple<Eigen::VectorXd, Eigen::VectorXd> solve_multigrid( PNSystem& sys_fine )
+std::tuple<Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd> solve_multigrid( PNSystem& sys_fine )
 {
 	Timer timer;
-	timer.start();
+	PNSystem::RealMatrix downsample;
+	PNSystem::RealMatrix upsample;
+
+	buildUpAndDownsamplingMatrices(sys_fine, downsample, upsample);
 
 	std::vector<double> solve_convergence;
+	std::vector<double> solve_convergence_timestamps;
 
-	V3i res_fine = sys_fine.getDomain().getResolution();
 
-	bool is2D = res_fine[2] == 1;
-
-	// for multigrid, we require the resolution to be even,
-	// so that we can do restriction and interpolation straigh forwardly
-	if( (res_fine[0]%2!=0)||(res_fine[1]%2!=0)||(!is2D && (res_fine[2]%2!=0)))
-		throw std::runtime_error("solve_multigrid multigrid currently requires even resolution");
-
-	V3i res_coarse( res_fine[0]/2, res_fine[1]/2, is2D ? 1:res_fine[2]/2 );
-
-	Domain domain_coarse( sys_fine.getDomain().getBound().getExtents(),
-						  res_coarse,
-						  sys_fine.getDomain().getBound().min );
 
 	// build coarse level using restriction step on fields
-	PNSystem sys_coarse(sys_fine.getStencil(), domain_coarse, sys_fine.getBoundaryConditions());
+	PNSystem sys_coarse(sys_fine.getStencil(), sys_fine.getDomain().downsample(), sys_fine.getBoundaryConditions());
 	sys_coarse.setFields( sys_fine.getFields().createRestricted() );
 	sys_coarse.build();
 
 	std::cout << "solve_multigrid: time for setup: " << timer.elapsedSeconds() << "s\n";
 
-	//the following two lines solve the system on the fine grid and return the restricted result
-	//NB: to visualize the solution, you have to use the correct coarse solution...
-	//Eigen::VectorXd x_restricted = restricted( sys_coarse, solve_cg( get_b_real_test() ));
-	//return sys_coarse.stripBoundary(x_restricted);
-
-	//the following two lines solve the system on the coarse grid and return the interpolated result
-	//Eigen::VectorXd x_interp = interpolate( sys_coarse, sys_coarse.solve_cg(sys_coarse.get_b_real_test()) );
-	//return stripBoundary(x_interp);
-
+	timer.start();
 	double tol = 1.0e-10; // convergence error tolerance
 	int maxNumCycles = 1000; // maximum number of V-cycles
 	int numSteps_fine = 10; // number of CG iterations on the fine level
@@ -120,34 +260,41 @@ std::tuple<Eigen::VectorXd, Eigen::VectorXd> solve_multigrid( PNSystem& sys_fine
 
 		// check convergence
 		solve_convergence.push_back(rmse);
+		solve_convergence_timestamps.push_back(timer.elapsedSeconds());
+		//std::cout << "i=" << i << " rmse=" << rmse << std::endl;
 		if(rmse < tol)
 			// done
 			break;
 
 		// get residual as right hand side on the coarse level
-		b_coarse = sys_fine.downsample(sys_coarse, r_fine);
+		//b_coarse = sys_fine.downsample(sys_coarse.getVoxelManager(), r_fine);
+		b_coarse = downsample*r_fine;
 
 		// solve correction equation on course level
-		run_cg_iterations( A_coarse, b_coarse, x_coarse, r_coarse, numSteps_coarse, tol );
+		run_cg_iterations( A_coarse, b_coarse, x_coarse, r_coarse, numSteps_coarse, 0.0 );
 
-		// x_course is the error correction on the course level.
+		// x_coarse is the error correction on the course level.
 		// We interpolate it and apply it to the current final level solution.
-		x_fine = x_fine + sys_fine.upsample(sys_coarse, x_coarse);
+		//x_fine = x_fine + sys_fine.upsample(sys_coarse.getVoxelManager(), x_coarse);
+		x_fine = x_fine + upsample*x_coarse;
 	}
 
 	timer.stop();
-	std::cout << "solve_multigrid: " << timer.elapsedSeconds() << "s\n";
-	return std::make_tuple( sys_fine.stripBoundary(x_fine), to_vector(solve_convergence) );
+	std::cout << "solve_multigrid: " << timer.elapsedSeconds() << "s numIterations=" << solve_convergence.size() <<  "\n";
+	return std::make_tuple( sys_fine.stripBoundary(x_fine),
+							to_vector(solve_convergence),
+							to_vector(solve_convergence_timestamps));
 }
 
 
 
-std::tuple<Eigen::VectorXd, Eigen::VectorXd> solve_cg( PNSystem& sys )
+std::tuple<Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd> solve_cg( PNSystem& sys )
 {
 	Timer timer;
 	timer.start();
 
 	std::vector<double> solve_convergence;
+	std::vector<double> solve_convergence_timestamps;
 
 	PNSystem::RealMatrix A = sys.get_A_real().transpose()*sys.get_A_real();
 	Eigen::VectorXd b = sys.get_A_real().transpose()*sys.get_b_real();
@@ -172,6 +319,7 @@ std::tuple<Eigen::VectorXd, Eigen::VectorXd> solve_cg( PNSystem& sys )
 			r = r - alpha*Ap;
 			double rsnew = r.squaredNorm();
 			solve_convergence.push_back(std::sqrt(rsnew));
+			solve_convergence_timestamps.push_back(timer.elapsedSeconds());
 			if( std::sqrt(rsnew) < tol )
 				break;
 			p = r + (rsnew/rsold)*p;
@@ -181,8 +329,98 @@ std::tuple<Eigen::VectorXd, Eigen::VectorXd> solve_cg( PNSystem& sys )
 
 	timer.stop();
 	std::cout << "solve_cg: " << timer.elapsedSeconds() << "s\n";
-	return std::make_tuple( sys.stripBoundary(x), to_vector(solve_convergence) );
+	return std::make_tuple( sys.stripBoundary(x),
+							to_vector(solve_convergence),
+							to_vector(solve_convergence_timestamps));
 }
+
+
+/*
+PNSystem::RealVector PNSystem::solve()
+{
+	std::cout << "PNSystem::solve solving for x...\n";
+
+	// ??
+	//Eigen::ConjugateGradient<RealMatrix> solver;
+	//Eigen::BiCGSTAB<RealMatrix> solver;
+	Eigen::SparseLU<RealMatrix> solver;
+	//solver.setMaxIterations(1000);
+	std::cout << "PNSystem::solve compute...\n";std::flush(std::cout);
+	solver.compute(get_A_real());
+	if(solver.info()!=Eigen::Success)
+	{
+		throw std::runtime_error("PNSystem::solve decomposition failed");
+	}
+	std::cout << "PNSystem::solve solve...\n";std::flush(std::cout);
+	RealVector x = solver.solve(get_b_real());
+	//std::cout << "iterations=" << solver.iterations() << std::endl;
+	if(solver.info()!=Eigen::Success)
+	{
+		throw std::runtime_error("PNSystem::solve solve failed");
+	}
+
+
+	// standard form version
+//	Eigen::ConjugateGradient<RealMatrix> solver;
+//	//Eigen::BiCGSTAB<RealMatrix> solver;
+//	//Eigen::SparseLU<RealMatrix> solver;
+//	//solver.setMaxIterations(1000);
+//	std::cout << "PNSystem::solve compute...\n";std::flush(std::cout);
+//	solver.compute(get_A_real().transpose()*get_A_real());
+//	if(solver.info()!=Eigen::Success)
+//	{
+//		throw std::runtime_error("PNSystem::solve decomposition failed");
+//	}
+//	std::cout << "PNSystem::solve solve...\n";std::flush(std::cout);
+//	RealVector x = solver.solve(get_A_real().transpose()*get_b_real());
+//	//std::cout << "iterations=" << solver.iterations() << std::endl;
+//	if(solver.info()!=Eigen::Success)
+//	{
+//		throw std::runtime_error("PNSystem::solve solve failed");
+//	}
+
+
+
+	// ..................
+	RealVector x2( m_domain.numVoxels()*m_stencil.numCoeffs,1);
+	std::vector<RealTriplet> triplets;
+	std::vector<Voxel>& voxels = m_voxelManager.getVoxels();
+	for( auto&v:voxels )
+	{
+		if( !m_domain.contains_voxel(v.coord) )
+			// boundary or mixed boundary voxel
+			continue;
+		for( int i=0;i<m_stencil.numCoeffs;++i )
+		{
+			// this is the new index, which wont include boundary voxels
+			V3i coord = v.coord;
+			V3i res = m_domain.getResolution();
+			int new_voxel_index = coord[0]*res[2]*res[1] + coord[1]*res[2] + coord[2];
+			// since we store only internal voxels, we know that they all have all coefficients defined
+			int new_global_index = new_voxel_index*m_stencil.numCoeffs + i;
+
+
+			// this is the current index, which includes boundary voxels
+			int index = m_voxelManager.getGlobalIndex(v, i);
+
+			if(index==-1)
+				throw std::runtime_error("PNSystem::solve didnt expect invalid coefficient index");
+			triplets.push_back(RealTriplet(new_global_index, 0, x.coeffRef(index, 0)));
+
+			if( (coord[0] == 21)&&(coord[1] == 38) )
+			{
+				//triplets.push_back(RealTriplet(new_global_index, 0, 1.0));
+				//std::cout <<
+			}
+
+		}
+	}
+	x2.setFromTriplets(triplets.begin(), triplets.end());
+
+	return x2;
+}
+*/
+
 
 PYBIND11_MODULE(pnsolver, m)
 {
@@ -208,8 +446,6 @@ PYBIND11_MODULE(pnsolver, m)
 	.def("getNumVoxels", &PNSystem::getNumVoxels )
 	.def("getOrder", &PNSystem::getOrder )
 	.def("build", &PNSystem::build )
-	.def("solve", &PNSystem::solve )
-	.def("solve_cg", &PNSystem::solve_cg )
 	.def("setField", &PNSystem::setField )
 	.def("get_A_real", &PNSystem::get_A_real )
 	.def("get_b_real", &PNSystem::get_b_real )

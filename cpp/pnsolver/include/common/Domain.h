@@ -97,6 +97,24 @@ struct Domain
 		return m_bound.min;
 	}
 
+	Domain downsample()const
+	{
+		V3i res_fine = getResolution();
+
+		bool is2D = res_fine[2] == 1;
+
+		// for multigrid, we require the resolution to be even,
+		// so that we can do restriction and interpolation straigh forwardly
+		if( (res_fine[0]%2!=0)||(res_fine[1]%2!=0)||(!is2D && (res_fine[2]%2!=0)))
+			throw std::runtime_error("Domain::downsample currently requires even resolution");
+
+		V3i res_coarse( res_fine[0]/2, res_fine[1]/2, is2D ? 1:res_fine[2]/2 );
+
+		return Domain(  getBound().getExtents(),
+						res_coarse,
+						getBound().min );
+	}
+
 private:
 	V3i m_resolution;
 	V3d m_voxelsize;

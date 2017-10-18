@@ -176,7 +176,7 @@ def write_problem(filename, problem):
 
 	scipy.io.savemat(filename, data)
 
-def write_pn_system(filename, sys, problem, x=None, convergence=None):
+def write_pn_system(filename, sys, problem, x=None, convergence=None, timestamps=None):
 	domain = problem["domain"]
 
 	A = sys.get_A_real_test()
@@ -216,6 +216,8 @@ def write_pn_system(filename, sys, problem, x=None, convergence=None):
 		data['x'] = x
 	if not convergence is None:
 		data["convergence"] = convergence
+	if not timestamps is None:
+		data["timestamps"] = timestamps
 
 
 	data["globalOffset"] = sys.getVoxelInfo("globalOffset").todense()
@@ -264,6 +266,8 @@ def load_pn_system( filename, silent = False ):
         result["A"] = data["A"]
     if "convergence" in data:
         result["convergence"] = data["convergence"]
+    if "timestamps" in data:
+        result["timestamps"] = data["timestamps"]
     if "info" in data:
         info = data["info"]
         result["order"] = info["order"][0][0][0][0]

@@ -34,12 +34,7 @@ PNSystem::PNSystem( Stencil stencil, const Domain& domain, bool neumannBC)
 	m_neumannBC(neumannBC),
 	m_voxelManager()
 {
-	// find out number of coefficients and mapping between sh bands l,m and linear indices ---
-	//m_numCoeffs = 0;
-
-
-	// voxelmanager needs to be initialized after the number of coefficients has been determined
-	m_voxelManager.init(this);
+	m_voxelManager.init(m_domain.getResolution(), m_stencil, neumannBC);
 
 
 	debugVoxel = V3i(-1, -1);
@@ -102,32 +97,6 @@ PNSystem::PNSystem( Stencil stencil, const Domain& domain, bool neumannBC)
 	m_fields.q->setField(0,0,std::make_shared<Function>(source_shcoeffs));
 	*/
 
-
-
-}
-
-
-PNSystem::MatrixBuilderd::MatrixAccessHelper PNSystem::coeff_A(V3i voxel_i, int coefficient_i, V3i voxel_j, int coefficient_j, bool debug)
-{
-	if( m_voxelManager.voxelIsValid(voxel_i) && m_voxelManager.voxelIsValid(voxel_j) )
-	{
-		int globalIndex_i = m_voxelManager.getGlobalIndex(m_voxelManager.getVoxel(voxel_i), coefficient_i);
-		int globalIndex_j = m_voxelManager.getGlobalIndex(m_voxelManager.getVoxel(voxel_j), coefficient_j);
-
-		if( (globalIndex_i >= 0)&&(globalIndex_j >= 0) )
-			return m_builder_A.coeff(globalIndex_i, globalIndex_j, debug);
-	}
-
-	return PNSystem::MatrixBuilderd::MatrixAccessHelper();
-}
-
-PNSystem::MatrixBuilderd::MatrixAccessHelper PNSystem::coeff_b(V3i voxel_i, int coefficient_i, bool debug)
-{
-	int globalIndex_i = m_voxelManager.getGlobalIndex(m_voxelManager.getVoxel(voxel_i), coefficient_i);
-
-	if( globalIndex_i >= 0 )
-		return m_builder_b.coeff(globalIndex_i, 0, debug);
-	return PNSystem::MatrixBuilderd::MatrixAccessHelper();
 }
 
 
@@ -180,172 +149,7 @@ void PNSystem::setFields(PNSystem::Fields fields)
 {
 	m_fields = fields;
 }
-/*
-struct ParticleTracer2D : public Task
-{
-	Eigen::MatrixXd accumulation_buffer;
-	PNSystem::Fields* fields;
-	const Domain* domain;
-	RNGd rng;
-	int numSamples;
 
-	ParticleTracer2D()
-	{
-	}
-
-	virtual void run() override
-	{
-		for( int i=0;i<numSamples;++i )
-			sample();
-	}
-
-	void sample()
-	{
-		// particle state
-		P2d pWS;
-		V2d d;
-		//double pdf_over_throughput = 1.0;
-
-
-		// create initial position
-
-		// randomly sample emission field to find the next spawning position
-		// assuming checkerboard emission field
-		pWS = P2d( rng.next1D() + 3.0, rng.next1D() + 3.0 );
-		// currently we sample a unit square, for which the pdf is 1.0
-		//pdf_over_throughput /= 1.0;
-
-		//P2d pV;
-		//pWS = m_domain.voxelToWorld(pVS);
-		// TODO: envmap sampling
-
-		// create initial direction (assuming isotropic emission)
-		{
-			V3d d_sphere = sampleSphere<double>(rng);
-			d = V2d(d_sphere[0], d_sphere[1]);
-			//pdf_over_throughput /= sampleSpherePDF();
-		}
-
-
-		// light tracing
-		//int depth = 0;
-		//while( depth++ == 0 )
-		while(true)
-		{
-			// PROPAGATE ==============================
-			// woodcock/delta tracking
-			// TODO: assuming VoxelGrid field
-			double sigma_t_max = std::dynamic_pointer_cast<VoxelGridField>(fields->sigma_t)->getMax();
-
-			double t = 0.0;
-			int event = -1; // 0 = absortion, 1=scattering
-
-			//int numSteps = 0;
-			//while( numSteps++ == 0 )
-			while(true)
-			{
-				double step = -log( 1.0-rng.next1D() )/sigma_t_max;
-				t += step;
-
-				pWS += t*d;
-
-				if( !domain->getBound().contains(pWS) )
-					break;
-
-				double sigma_t = fields->sigma_t->eval(pWS).real();
-
-				// russian roulette
-				double dice = rng.next1D();
-
-				if(dice<sigma_t/sigma_t_max)
-				{
-					// scattering or absorbtion
-					double sigma_a = fields->sigma_a->eval(pWS).real();
-					if(dice < sigma_a/sigma_t_max)
-						event = 0;
-					else
-						event = 1;
-					break;
-				}
-				else
-				{
-					// virtual particle: accumulate
-					accumulate(pWS);
-				}
-			}
-
-
-
-			if(event==-1)
-				// propagation step has moved particle out of domain-we stop tracing this particle
-				break;
-
-			if(event==0)
-				// particle has been absorbed
-				break;
-
-			// ACCUMULATE ==============================
-			accumulate(pWS);
-
-
-			// SCATTERING ==============================
-			// create new direction (assuming isotropic scattering)
-			{
-				V3d d_sphere = sampleSphere<double>(rng);
-				d = V2d(d_sphere[0], d_sphere[1]);
-				//pdf_over_throughput /= sampleSpherePDF();
-			}
-		} // path tracing while loop
-	}
-
-	void accumulate( const P2d& pWS )
-	{
-		P2d pVS = domain->worldToVoxel(pWS);
-		P2i voxel;
-		voxel = P2i( int(pVS[0]), int(pVS[1]) );
-
-		//accumlation_buffer
-		if( domain->contains_voxel(voxel) )
-		{
-			accumulation_buffer.coeffRef( voxel[0], voxel[1] ) += 1.0;
-		}
-	}
-};
-
-
-Eigen::MatrixXd PNSystem::computeGroundtruth(int numSamples)
-{
-	int numTasks = ThreadPool::instance()->getNumWorkers();
-	std::cout << "numTasks=" << numTasks << std::endl;
-
-	std::vector<ParticleTracer2D*> tasks;
-	for( int i=0;i<numTasks;++i )
-	{
-		ParticleTracer2D* pt = new ParticleTracer2D();
-		pt->accumulation_buffer = Eigen::MatrixXd::Zero(m_domain.resolution()[0], m_domain.resolution()[1]);
-		pt->fields = &m_fields;
-		pt->domain = &m_domain;
-		pt->rng = RNGd(123+i);
-		pt->numSamples = numSamples/numTasks;
-
-		tasks.push_back(pt);
-	}
-	//tasks[0]->run();
-	ThreadPool::instance()->enqueueAndWait(tasks);
-
-	Eigen::MatrixXd result = Eigen::MatrixXd::Zero(m_domain.resolution()[0], m_domain.resolution()[1]);
-	int count = 0;
-
-	for( auto t:tasks )
-	{
-		result += t->accumulation_buffer;
-		count += t->numSamples;
-		delete t;
-	}
-
-	return result/double(count);
-}
-*/
 PNSystem::Fields &PNSystem::getFields()
 {
 	return m_fields;
@@ -358,22 +162,22 @@ const Domain& PNSystem::getDomain()const
 
 PNSystem::RealMatrix& PNSystem::get_A_real()
 {
-	return m_builder_A.matrix;
+	return m_A;
 }
 
 PNSystem::RealVector& PNSystem::get_b_real()
 {
-	return m_builder_b.matrix;
+	return m_b;
 }
 
 PNSystem::RealMatrix PNSystem::get_A_real_test()
 {
-	return m_builder_A.matrix.transpose()*m_builder_A.matrix;
+	return m_A.transpose()*m_A;
 }
 
 Eigen::VectorXd PNSystem::get_b_real_test()
 {
-	return m_builder_A.matrix.transpose()*m_builder_b.matrix;
+	return m_A.transpose()*m_b;
 }
 
 
@@ -402,6 +206,10 @@ int PNSystem::getOrder() const
 void PNSystem::build()
 {
 	std::cout << "PNSystem::build building system matrices A and b...\n";
+	MatrixBuilderd builder_A;
+	MatrixBuilderd builder_b;
+
+
 	int min_x = 0;
 	int max_x = m_domain.getResolution()[0];
 	int min_y = 0;
@@ -432,11 +240,11 @@ void PNSystem::build()
 	{
 		if(v.debug)
 			std::cout << "Voxel=" << v.coord[0] << " " << v.coord[1] << " " << v.coord[2] << "==============================\n";
-		m_stencil.apply(Stencil::Context(*this, v));
+		m_stencil.apply(Stencil::Context(*this, v, builder_A, builder_b));
 	}
 
-	m_builder_A.build(m_voxelManager.getNumUnknowns(), m_voxelManager.getNumUnknowns());
-	m_builder_b.build(m_voxelManager.getNumUnknowns(), 1);
+	m_A = builder_A.build(m_voxelManager.getNumUnknowns(), m_voxelManager.getNumUnknowns());
+	m_b = builder_b.build(m_voxelManager.getNumUnknowns(), 1);
 }
 
 
@@ -478,436 +286,10 @@ PNSystem::RealMatrix PNSystem::getVoxelInfo(const std::string &info)
 			}
 
 	//std::cout << "!!!!!?????\n"; std::flush(std::cout);
-	indexMatrix.build(res[0]+numBoundaryLayers[0]*2, res[1]+numBoundaryLayers[1]*2);
+	RealMatrix m = indexMatrix.build(res[0]+numBoundaryLayers[0]*2, res[1]+numBoundaryLayers[1]*2);
 
 	//std::cout << indexMatrix.matrix.cols() << " " << indexMatrix.matrix.rows() << std::endl;
-	return indexMatrix.matrix;
-}
-
-PNSystem::RealVector PNSystem::solve()
-{
-	std::cout << "PNSystem::solve solving for x...\n";
-
-	///*
-	//Eigen::ConjugateGradient<RealMatrix> solver;
-	//Eigen::BiCGSTAB<RealMatrix> solver;
-	Eigen::SparseLU<RealMatrix> solver;
-	//solver.setMaxIterations(1000);
-	std::cout << "PNSystem::solve compute...\n";std::flush(std::cout);
-	solver.compute(get_A_real());
-	if(solver.info()!=Eigen::Success)
-	{
-		throw std::runtime_error("PNSystem::solve decomposition failed");
-	}
-	std::cout << "PNSystem::solve solve...\n";std::flush(std::cout);
-	RealVector x = solver.solve(get_b_real());
-	//std::cout << "iterations=" << solver.iterations() << std::endl;
-	if(solver.info()!=Eigen::Success)
-	{
-		throw std::runtime_error("PNSystem::solve solve failed");
-	}
-	//*/
-
-	/*
-	Eigen::ConjugateGradient<RealMatrix> solver;
-	//Eigen::BiCGSTAB<RealMatrix> solver;
-	//Eigen::SparseLU<RealMatrix> solver;
-	//solver.setMaxIterations(1000);
-	std::cout << "PNSystem::solve compute...\n";std::flush(std::cout);
-	solver.compute(get_A_real().transpose()*get_A_real());
-	if(solver.info()!=Eigen::Success)
-	{
-		throw std::runtime_error("PNSystem::solve decomposition failed");
-	}
-	std::cout << "PNSystem::solve solve...\n";std::flush(std::cout);
-	RealVector x = solver.solve(get_A_real().transpose()*get_b_real());
-	//std::cout << "iterations=" << solver.iterations() << std::endl;
-	if(solver.info()!=Eigen::Success)
-	{
-		throw std::runtime_error("PNSystem::solve solve failed");
-	}
-	*/
-
-
-
-	// ..................
-	RealVector x2( m_domain.numVoxels()*m_stencil.numCoeffs,1);
-	std::vector<RealTriplet> triplets;
-	std::vector<Voxel>& voxels = m_voxelManager.getVoxels();
-	for( auto&v:voxels )
-	{
-		if( !m_domain.contains_voxel(v.coord) )
-			// boundary or mixed boundary voxel
-			continue;
-		for( int i=0;i<m_stencil.numCoeffs;++i )
-		{
-			// this is the new index, which wont include boundary voxels
-			V3i coord = v.coord;
-			V3i res = m_domain.getResolution();
-			int new_voxel_index = coord[0]*res[2]*res[1] + coord[1]*res[2] + coord[2];
-			// since we store only internal voxels, we know that they all have all coefficients defined
-			int new_global_index = new_voxel_index*m_stencil.numCoeffs + i;
-
-
-			// this is the current index, which includes boundary voxels
-			int index = m_voxelManager.getGlobalIndex(v, i);
-
-			if(index==-1)
-				throw std::runtime_error("PNSystem::solve didnt expect invalid coefficient index");
-			triplets.push_back(RealTriplet(new_global_index, 0, x.coeffRef(index, 0)));
-
-			if( (coord[0] == 21)&&(coord[1] == 38) )
-			{
-				//triplets.push_back(RealTriplet(new_global_index, 0, 1.0));
-				//std::cout <<
-			}
-
-		}
-	}
-	x2.setFromTriplets(triplets.begin(), triplets.end());
-
-	return x2;
-}
-
-
-Eigen::VectorXd PNSystem::solve_cg( const Eigen::VectorXd& x0 )
-{
-	double tol = 1.0e-10;
-	//m_solve_convergence.clear();
-
-
-	RealMatrix A = get_A_real().transpose()*get_A_real();
-	RealVector b = get_A_real().transpose()*get_b_real();
-	Eigen::VectorXd x = x0;
-
-	Eigen::VectorXd r = b-A*x;
-	Eigen::VectorXd p = r;
-	Eigen::VectorXd Ap;
-	double rsold = r.squaredNorm();
-
-	int maxIterations = b.rows();
-	for( int i=0;i<maxIterations;++i )
-	{
-		Ap = A*p;
-		double alpha = rsold/p.dot(Ap);
-		x = x + alpha*p;
-		r = r - alpha*Ap;
-		double rsnew = r.squaredNorm();
-		//m_solve_convergence.push_back(std::sqrt(rsnew));
-		if( std::sqrt(rsnew) < tol )
-			break;
-		p = r + (rsnew/rsold)*p;
-		rsold = rsnew;
-	}
-
-	//return stripBoundary(x);
-	return x;
-}
-
-
-
-Eigen::VectorXd PNSystem::downsample( PNSystem& sys_coarse, const Eigen::VectorXd &x_fine )
-{
-	VoxelManager& vm_coarse = sys_coarse.getVoxelManager();
-	VoxelManager& vm_fine = getVoxelManager();
-
-
-	Eigen::VectorXd x_coarse( vm_coarse.getNumUnknowns() );
-	x_coarse.fill(0.0);
-
-	// offset and weights for coefficients at grid with offset=1,1
-	std::vector<std::pair<V3i, double>> stamp_11;
-	stamp_11.push_back( std::make_pair(V3i(0,0,0), 0.75*0.75) );
-	stamp_11.push_back( std::make_pair(V3i(0,1,0), 0.75*0.75) );
-	stamp_11.push_back( std::make_pair(V3i(1,1,0), 0.75*0.75) );
-	stamp_11.push_back( std::make_pair(V3i(1,0,0), 0.75*0.75) );
-	stamp_11.push_back( std::make_pair(V3i(0,2,0), 0.25*0.75) );
-	stamp_11.push_back( std::make_pair(V3i(1,2,0), 0.25*0.75) );
-	stamp_11.push_back( std::make_pair(V3i(0,-1,0), 0.25*0.75) );
-	stamp_11.push_back( std::make_pair(V3i(1,-1,0), 0.25*0.75) );
-	stamp_11.push_back( std::make_pair(V3i(2,0,0), 0.25*0.75) );
-	stamp_11.push_back( std::make_pair(V3i(2,1,0), 0.25*0.75) );
-	stamp_11.push_back( std::make_pair(V3i(-1,0,0), 0.25*0.75) );
-	stamp_11.push_back( std::make_pair(V3i(-1,1,0), 0.25*0.75) );
-	stamp_11.push_back( std::make_pair(V3i(2,2,0), 0.25*0.25) );
-	stamp_11.push_back( std::make_pair(V3i(-1,2,0), 0.25*0.25) );
-	stamp_11.push_back( std::make_pair(V3i(-1,-1,0), 0.25*0.25) );
-	stamp_11.push_back( std::make_pair(V3i(2,-1,0), 0.25*0.25) );
-
-	// offset and weights for coefficients at grid with offset=0,1
-	std::vector<std::pair<V3i, double>> stamp_01;
-	stamp_01.push_back( std::make_pair(V3i(-1,-1,0), 0.5*0.25) );
-	stamp_01.push_back( std::make_pair(V3i(-1,0,0), 0.5*0.75) );
-	stamp_01.push_back( std::make_pair(V3i(-1,1,0), 0.5*0.75) );
-	stamp_01.push_back( std::make_pair(V3i(-1,2,0), 0.5*0.25) );
-	stamp_01.push_back( std::make_pair(V3i(0,-1,0), 0.25) );
-	stamp_01.push_back( std::make_pair(V3i(0,0,0), 0.75) );
-	stamp_01.push_back( std::make_pair(V3i(0,1,0), 0.75) );
-	stamp_01.push_back( std::make_pair(V3i(0,2,0), 0.25) );
-	stamp_01.push_back( std::make_pair(V3i(1,-1,0), 0.5*0.25) );
-	stamp_01.push_back( std::make_pair(V3i(1,0,0), 0.5*0.75) );
-	stamp_01.push_back( std::make_pair(V3i(1,1,0), 0.5*0.75) );
-	stamp_01.push_back( std::make_pair(V3i(1,2,0), 0.5*0.25) );
-
-	// offset and weights for coefficients at grid with offset=1,0
-	std::vector<std::pair<V3i, double>> stamp_10;
-	stamp_10.push_back( std::make_pair(V3i(-1,-1,0), 0.5*0.25) );
-	stamp_10.push_back( std::make_pair(V3i(0,-1,0), 0.5*0.75) );
-	stamp_10.push_back( std::make_pair(V3i(1,-1,0), 0.5*0.75) );
-	stamp_10.push_back( std::make_pair(V3i(2,-1,0), 0.5*0.25) );
-	stamp_10.push_back( std::make_pair(V3i(-1,0,0), 0.25) );
-	stamp_10.push_back( std::make_pair(V3i(0,0,0), 0.75) );
-	stamp_10.push_back( std::make_pair(V3i(1,0,0), 0.75) );
-	stamp_10.push_back( std::make_pair(V3i(2,0,0), 0.25) );
-	stamp_10.push_back( std::make_pair(V3i(-1,1,0), 0.5*0.25) );
-	stamp_10.push_back( std::make_pair(V3i(0,1,0), 0.5*0.75) );
-	stamp_10.push_back( std::make_pair(V3i(1,1,0), 0.5*0.75) );
-	stamp_10.push_back( std::make_pair(V3i(2,1,0), 0.5*0.25) );
-
-	// offset and weights for coefficients at grid with offset=0,0
-	std::vector<std::pair<V3i, double>> stamp_00;
-	stamp_00.push_back( std::make_pair(V3i(0,0,0), 1.0) );
-	stamp_00.push_back( std::make_pair(V3i(0,-1,0), 0.5) );
-	stamp_00.push_back( std::make_pair(V3i(0,1,0), 0.5) );
-	stamp_00.push_back( std::make_pair(V3i(-1,0,0), 0.5) );
-	stamp_00.push_back( std::make_pair(V3i(1,0,0), 0.5) );
-	stamp_00.push_back( std::make_pair(V3i(1,-1,0), 0.5*0.5) );
-	stamp_00.push_back( std::make_pair(V3i(1,1,0), 0.5*0.5) );
-	stamp_00.push_back( std::make_pair(V3i(-1,1,0), 0.5*0.5) );
-	stamp_00.push_back( std::make_pair(V3i(-1,-1,0), 0.5*0.5) );
-
-
-
-
-	std::vector<std::vector<std::pair<V3i, double>>*> stamps(8, 0);
-	stamps[0] = &stamp_00;
-	stamps[1] = &stamp_10;
-	stamps[2] = &stamp_11;
-	stamps[3] = &stamp_01;
-
-	/*
-	test.push_back( std::make_pair(V3i(0,0,0), 1.0) );
-	test.push_back( std::make_pair(V3i(1,0,0), 1.0) );
-	test.push_back( std::make_pair(V3i(1,1,0), 1.0) );
-	test.push_back( std::make_pair(V3i(0,1,0), 1.0) );
-	*/
-
-
-
-
-	// 2d --------------------
-	// iterate all coarse voxels
-	std::vector<Voxel>& voxels_coarse = vm_coarse.getVoxels();
-	for( auto&v_coarse:voxels_coarse )
-	{
-		// coordinate of the corresponding fine voxel
-		V3i coord_fine = v_coarse.coord*2;
-
-		// Now compute the value of the coarse voxels coefficients from gathering the values from
-		// the fine voxels which are affecting the coarse voxels values. These values will be weighted,
-		// as fine voxels are affected by multiple coarse voxels.
-
-		for( int coeff_index=0;coeff_index<getNumCoefficients();++coeff_index )
-		{
-			//int coeff_index = 0;
-
-			// get the global index of the coarse voxel/coeff
-			int gi_coarse = vm_coarse.getGlobalIndex( v_coarse, coeff_index );
-
-			// we only set values on active coefficients. Active coefficients are coefficients,
-			// which correspond to an actual coefficient in the solution vector.
-			if( vm_coarse.isBoundaryCoefficient(v_coarse, coeff_index) )
-				continue;
-
-
-			// initialize the value of the current coefficient at current coarse voxel
-			// this value is computed from all affected fine voxels
-			double value_coarse = 0.0;
-			double weight_sum = 0.0;
-
-			// now iterate over all affected fine voxels. This depends on the grid location
-			int grid_index = m_stencil.getGridIndexFromCoefficient(coeff_index);
-			auto stamp = stamps[grid_index];
-			for( auto& tt:*stamp )
-			{
-				V3i v_fine_coord = coord_fine + std::get<0>(tt);
-				double weight = std::get<1>(tt);
-
-				// using the stamps offset on boundary voxels may create invalid voxel coordinates
-				if( !vm_fine.voxelIsValid(v_fine_coord) )
-					continue;
-
-				Voxel& v_fine = vm_fine.getVoxel(v_fine_coord);
-
-				// retrieve value of fine voxels
-				double value_fine = 0.0;
-				int gi_fine = vm_fine.getGlobalIndex(v_fine, coeff_index);
-				if( gi_fine >= 0 )
-					// either the fine voxel/coeff is not a boundary voxel/coeff,
-					// or we have a boundary voxel with neumann BC, pointing to an
-					// interior voxel
-					value_fine = x_fine(gi_fine);
-				// else: value_fine remains zero, which means we have a boundary voxel with dirichlet BC
-
-				value_coarse += value_fine*weight;
-				weight_sum += weight;
-			} // for each stamp entry
-
-			// now set (normalized) value
-			x_coarse(gi_coarse) = value_coarse/weight_sum;
-		} // for each coefficient
-	} // for each coarse voxel
-
-	return x_coarse;
-}
-
-Eigen::VectorXd PNSystem::upsample( PNSystem& sys_coarse, const Eigen::VectorXd &x_coarse )
-{
-	Eigen::VectorXd x_fine( m_voxelManager.getNumUnknowns() );
-	x_fine.fill(0.0);
-
-	// offset and weights for coefficients at grid with offset=1,1
-	std::vector<std::pair<V3i, double>> stamp_11;
-	stamp_11.push_back( std::make_pair(V3i(0,0,0), 0.75*0.75) );
-	stamp_11.push_back( std::make_pair(V3i(0,1,0), 0.75*0.75) );
-	stamp_11.push_back( std::make_pair(V3i(1,1,0), 0.75*0.75) );
-	stamp_11.push_back( std::make_pair(V3i(1,0,0), 0.75*0.75) );
-	stamp_11.push_back( std::make_pair(V3i(0,2,0), 0.25*0.75) );
-	stamp_11.push_back( std::make_pair(V3i(1,2,0), 0.25*0.75) );
-	stamp_11.push_back( std::make_pair(V3i(0,-1,0), 0.25*0.75) );
-	stamp_11.push_back( std::make_pair(V3i(1,-1,0), 0.25*0.75) );
-	stamp_11.push_back( std::make_pair(V3i(2,0,0), 0.25*0.75) );
-	stamp_11.push_back( std::make_pair(V3i(2,1,0), 0.25*0.75) );
-	stamp_11.push_back( std::make_pair(V3i(-1,0,0), 0.25*0.75) );
-	stamp_11.push_back( std::make_pair(V3i(-1,1,0), 0.25*0.75) );
-	stamp_11.push_back( std::make_pair(V3i(2,2,0), 0.25*0.25) );
-	stamp_11.push_back( std::make_pair(V3i(-1,2,0), 0.25*0.25) );
-	stamp_11.push_back( std::make_pair(V3i(-1,-1,0), 0.25*0.25) );
-	stamp_11.push_back( std::make_pair(V3i(2,-1,0), 0.25*0.25) );
-
-	// offset and weights for coefficients at grid with offset=0,1
-	std::vector<std::pair<V3i, double>> stamp_01;
-	stamp_01.push_back( std::make_pair(V3i(-1,-1,0), 0.5*0.25) );
-	stamp_01.push_back( std::make_pair(V3i(-1,0,0), 0.5*0.75) );
-	stamp_01.push_back( std::make_pair(V3i(-1,1,0), 0.5*0.75) );
-	stamp_01.push_back( std::make_pair(V3i(-1,2,0), 0.5*0.25) );
-	stamp_01.push_back( std::make_pair(V3i(0,-1,0), 0.25) );
-	stamp_01.push_back( std::make_pair(V3i(0,0,0), 0.75) );
-	stamp_01.push_back( std::make_pair(V3i(0,1,0), 0.75) );
-	stamp_01.push_back( std::make_pair(V3i(0,2,0), 0.25) );
-	stamp_01.push_back( std::make_pair(V3i(1,-1,0), 0.5*0.25) );
-	stamp_01.push_back( std::make_pair(V3i(1,0,0), 0.5*0.75) );
-	stamp_01.push_back( std::make_pair(V3i(1,1,0), 0.5*0.75) );
-	stamp_01.push_back( std::make_pair(V3i(1,2,0), 0.5*0.25) );
-
-	// offset and weights for coefficients at grid with offset=1,0
-	std::vector<std::pair<V3i, double>> stamp_10;
-	stamp_10.push_back( std::make_pair(V3i(-1,-1,0), 0.5*0.25) );
-	stamp_10.push_back( std::make_pair(V3i(0,-1,0), 0.5*0.75) );
-	stamp_10.push_back( std::make_pair(V3i(1,-1,0), 0.5*0.75) );
-	stamp_10.push_back( std::make_pair(V3i(2,-1,0), 0.5*0.25) );
-	stamp_10.push_back( std::make_pair(V3i(-1,0,0), 0.25) );
-	stamp_10.push_back( std::make_pair(V3i(0,0,0), 0.75) );
-	stamp_10.push_back( std::make_pair(V3i(1,0,0), 0.75) );
-	stamp_10.push_back( std::make_pair(V3i(2,0,0), 0.25) );
-	stamp_10.push_back( std::make_pair(V3i(-1,1,0), 0.5*0.25) );
-	stamp_10.push_back( std::make_pair(V3i(0,1,0), 0.5*0.75) );
-	stamp_10.push_back( std::make_pair(V3i(1,1,0), 0.5*0.75) );
-	stamp_10.push_back( std::make_pair(V3i(2,1,0), 0.5*0.25) );
-
-	// offset and weights for coefficients at grid with offset=0,0
-	std::vector<std::pair<V3i, double>> stamp_00;
-	stamp_00.push_back( std::make_pair(V3i(0,0,0), 1.0) );
-	stamp_00.push_back( std::make_pair(V3i(0,-1,0), 0.5) );
-	stamp_00.push_back( std::make_pair(V3i(0,1,0), 0.5) );
-	stamp_00.push_back( std::make_pair(V3i(-1,0,0), 0.5) );
-	stamp_00.push_back( std::make_pair(V3i(1,0,0), 0.5) );
-	stamp_00.push_back( std::make_pair(V3i(1,-1,0), 0.5*0.5) );
-	stamp_00.push_back( std::make_pair(V3i(1,1,0), 0.5*0.5) );
-	stamp_00.push_back( std::make_pair(V3i(-1,1,0), 0.5*0.5) );
-	stamp_00.push_back( std::make_pair(V3i(-1,-1,0), 0.5*0.5) );
-
-
-
-
-	std::vector<std::vector<std::pair<V3i, double>>*> stamps(8, 0);
-	stamps[0] = &stamp_00;
-	stamps[1] = &stamp_10;
-	stamps[2] = &stamp_11;
-	stamps[3] = &stamp_01;
-
-	/*
-	test.push_back( std::make_pair(V3i(0,0,0), 1.0) );
-	test.push_back( std::make_pair(V3i(1,0,0), 1.0) );
-	test.push_back( std::make_pair(V3i(1,1,0), 1.0) );
-	test.push_back( std::make_pair(V3i(0,1,0), 1.0) );
-	*/
-
-
-
-
-	// 2d --------------------
-	// iterate all coarse voxels
-	VoxelManager& vm_coarse = sys_coarse.getVoxelManager();
-	VoxelManager& vm_fine = getVoxelManager();
-	std::vector<Voxel>& voxels_coarse = vm_coarse.getVoxels();
-	for( auto&v_coarse:voxels_coarse )
-	{
-		// coordinate of the corresponding fine voxel
-		V3i coord_fine = v_coarse.coord*2;
-
-		// Now distribute the values of all coefficients onto all fine voxels, which are affected by
-		// the coarse voxel. These values will be weighted, as fine voxels are affected by multiple
-		// coarse voxels.
-
-		for( int coeff_index=0;coeff_index<getNumCoefficients();++coeff_index )
-		{
-			//int coeff_index = 2;
-			// retrieve value of the current coefficient at current coarse voxel
-			// this value is redistributed to all affected fine voxels
-			double value_coarse = 0.0;
-
-			int gi_coarse = vm_coarse.getGlobalIndex( v_coarse, coeff_index );
-
-			if( gi_coarse >= 0 )
-				// either the voxel is not a boundary voxel, or we
-				// have a boundary voxel with neumann BC, pointing to an
-				// interior voxel
-				value_coarse = x_coarse(gi_coarse);
-			// else: value remains zero which means we have a boundary voxel with dirichlet BC
-
-
-			// now iterate over all affected fine voxels. This depends on the grid location
-			int grid_index = m_stencil.getGridIndexFromCoefficient(coeff_index);
-			auto stamp = stamps[grid_index];
-			for( auto& tt:*stamp )
-			{
-				V3i v_fine_coord = coord_fine + std::get<0>(tt);
-				double weight = std::get<1>(tt);
-
-				if( !vm_fine.voxelIsValid(v_fine_coord) )
-					continue;
-
-				Voxel& v_fine = vm_fine.getVoxel(v_fine_coord);
-
-				// only set weights on voxels which are actually active
-				if( !vm_fine.isBoundaryCoefficient(v_fine, coeff_index) )
-				{
-					int gi_fine = vm_fine.getGlobalIndex(v_fine, coeff_index);
-					x_fine(gi_fine) += weight*value_coarse;
-					//x_fine(gi_fine) += weight;
-				}
-			} // for each stamp entry
-		} // for each coefficient
-
-
-
-	} // for each coarse voxel
-
-
-
-
-	return x_fine;
+	return m;
 }
 
 Eigen::VectorXd PNSystem::stripBoundary(const Eigen::VectorXd &x)
@@ -932,7 +314,7 @@ Eigen::VectorXd PNSystem::stripBoundary(const Eigen::VectorXd &x)
 			int index = m_voxelManager.getGlobalIndex(v, i);
 
 			if(index==-1)
-				throw std::runtime_error("PNSystem::solve didnt expect invalid coefficient index");
+				throw std::runtime_error("PNSystem::stripBoundary didnt expect invalid coefficient index");
 			x2.coeffRef(new_global_index, 0) = x.coeffRef(index, 0);
 		} // for each coefficient
 	} // for each voxel
@@ -954,21 +336,47 @@ PNSystem::Stencil& PNSystem::getStencil()
 
 // Stencil::Context --------------------------------------------
 
+
+
 PNSystem::MatrixBuilderd::MatrixAccessHelper PNSystem::Stencil::Context::coeff_A(int coeff_i, const V3i &voxel_j, int coeff_j)
 {
-	// check if row for coefficient i is actually supposed to be set by the stencil
-	// This is not the case with corner boundary voxels, where the equation for some coefficients are
-	// descibing the average with neighbouring coefficients. In this case we prevent the stencil from
-	// writing into those rows
-	if(sys.m_voxelManager.isBoundaryCoefficient(voxel, coeff_i))
-		return PNSystem::MatrixBuilderd::MatrixAccessHelper();
+	Voxel& voxel_i = voxel;
 
-	return sys.coeff_A(voxel.coord, coeff_i, voxel_j, coeff_j, voxel.debug);
+	if( sys.getVoxelManager().voxelIsValid(voxel_j) )
+	{
+		// check if row for coefficient i is actually supposed to be set by the stencil
+		// This is not the case with corner boundary voxels, where the equation for some coefficients are
+		// descibing the average with neighbouring coefficients. In this case we prevent the stencil from
+		// writing into those rows
+		if(!sys.getVoxelManager().isBoundaryCoefficient(voxel_i, coeff_i))
+		{
+			// getGlobalIndex applies BC, which means it either returns -1 or bends indices
+			int globalIndex_i = sys.getVoxelManager().getGlobalIndex(voxel_i, coeff_i);
+			int globalIndex_j = sys.getVoxelManager().getGlobalIndex(sys.getVoxelManager().getVoxel(voxel_j), coeff_j);
+
+			if( (globalIndex_i >= 0)&&(globalIndex_j >= 0) )
+				return m_builder_A.coeff(globalIndex_i, globalIndex_j);
+		}
+	}
+
+	return PNSystem::MatrixBuilderd::MatrixAccessHelper();
 }
 
 PNSystem::MatrixBuilderd::MatrixAccessHelper PNSystem::Stencil::Context::coeff_b(int coeff_i)
 {
-	return sys.coeff_b(voxel.coord, coeff_i, voxel.debug);
+	Voxel& voxel_i = voxel;
+
+	// check if row for coefficient i is actually supposed to be set by the stencil
+	// This is not the case with corner boundary voxels, where the equation for some coefficients are
+	// descibing the average with neighbouring coefficients. In this case we prevent the stencil from
+	// writing into those rows
+	if(!sys.getVoxelManager().isBoundaryCoefficient(voxel_i, coeff_i))
+	{
+		int globalIndex_i = sys.getVoxelManager().getGlobalIndex(voxel_i, coeff_i);
+		if( globalIndex_i >= 0 )
+			return m_builder_b.coeff(globalIndex_i, 0);
+	}
+	return PNSystem::MatrixBuilderd::MatrixAccessHelper();
 }
 
 
@@ -978,19 +386,24 @@ PNSystem::VoxelManager::VoxelManager()
 {
 }
 
-void PNSystem::VoxelManager::init(PNSystem *sys)
+void PNSystem::VoxelManager::init(const V3i& resolution, const Stencil& stencil, int boundaryConditions)
 {
-	this->sys = sys;
-	int numCoeffs = sys->getNumCoefficients();
-	m_resolution = sys->getDomain().getResolution();
-
+	std::cout << "_check00\n";
+	int numCoeffs = stencil.numCoeffs;
+	std::cout << "_check01\n";
+	m_resolution = resolution;
+	std::cout << "_check02\n";
+	m_boundaryConditions = boundaryConditions;
+	std::cout << "_check03\n";
+	m_stencil = &stencil;
+	std::cout << "_check0\n";
 
 	if( m_resolution[2] == 1 )
 		// in 2d we have zero boundary layers
-		m_numBoundaryLayers = V3i(sys->getStencil().width, sys->getStencil().width, 0);
+		m_numBoundaryLayers = V3i(stencil.width, stencil.width, 0);
 	else
-		m_numBoundaryLayers = V3i(sys->getStencil().width, sys->getStencil().width, sys->getStencil().width);
-
+		m_numBoundaryLayers = V3i(stencil.width, stencil.width, stencil.width);
+	std::cout << "_check1\n";
 	for( int i=-m_numBoundaryLayers[0];i<=m_numBoundaryLayers[0];++i )
 		for( int j=-m_numBoundaryLayers[1];j<=m_numBoundaryLayers[1];++j )
 			for( int k=-m_numBoundaryLayers[2];k<=m_numBoundaryLayers[2];++k )
@@ -1003,9 +416,9 @@ void PNSystem::VoxelManager::init(PNSystem *sys)
 						continue;
 
 				// type hasnt been registered, so we register it
-				m_voxelTypes.push_back(VoxelType(m_voxelTypes.size(), sys->getNumCoefficients(), boundaryLayer));
+				m_voxelTypes.push_back(VoxelType(m_voxelTypes.size(), numCoeffs, boundaryLayer));
 			}
-
+	std::cout << "_check2\n";
 	int numTypes = m_voxelTypes.size();
 
 	// establish reverse mapping, which we use during voxel creation
@@ -1015,16 +428,16 @@ void PNSystem::VoxelManager::init(PNSystem *sys)
 		m_layerToVoxelTypeIndex[vt.getBoundaryLayer()] = i;
 	}
 
-
+	std::cout << "_check3\n";
 	for( int i=0;i<numCoeffs;++i )
 	{
-		V3i offset = sys->m_stencil.getOffset(i);
+		V3i offset = stencil.getOffset(i);
 
 		// interior cells have all coefficients defined, therefore their indices are all set
 		getVoxelType(0,0,0).registerActiveCoefficient(i);
 
 
-		if(sys->getStencil().width > 0)
+		if(stencil.width > 0)
 		{
 			// here we make those coefficients non-boundary(active) coefficients, which sit directly on the boundary
 			// I think this is required for both, neumann and dirichlet BC
@@ -1075,11 +488,12 @@ void PNSystem::VoxelManager::init(PNSystem *sys)
 			{
 				getVoxelType(0,0,1).registerActiveCoefficient(i);
 			}else
-				throw std::runtime_error("unexpected");
+				throw std::runtime_error("PNSystem::VoxelManager::init unexpected");
 		} // if stencil.widh > 0 (if we need to register active coefficients in boundary voxels)
 
 	}
 
+	std::cout << "_check4\n";
 	// create all voxels ----------------------
 	int voxelIndex = 0;
 	int globalOffset = 0;
@@ -1109,6 +523,7 @@ void PNSystem::VoxelManager::init(PNSystem *sys)
 				m_voxels.push_back(v);
 				globalOffset += getNumCoeffs(m_voxels.back());
 			}
+	std::cout << "_check5\n";
 	// the value of globalOffset equals the number of cols and rows of our global system A
 	m_numUnknowns = globalOffset;
 }
@@ -1148,13 +563,13 @@ int PNSystem::VoxelManager::getGlobalIndex(const Voxel &voxel, int coeff)
 		return voxel.globalOffset + localOffset;
 
 
-	if( sys->getBoundaryConditions() == 0 )
+	if( m_boundaryConditions == 0 )
 		// dirichlet BC ---------------------
 		// we simply lookup the valid coefficients, the invalid ones are ignored when setting
 		// coefficients in A (which equates them to zero)
 		return -1;
 	else
-	if( sys->getBoundaryConditions() == 1 )
+	if( m_boundaryConditions == 1 )
 	{
 		// neumann bc -----------------
 		// a boundary coefficient was accessed
@@ -1167,11 +582,11 @@ int PNSystem::VoxelManager::getGlobalIndex(const Voxel &voxel, int coeff)
 		else
 		{
 			V3i step = V3i(-sgn(layer[0]), -sgn(layer[1]), -sgn(layer[2]));
-			return getGlobalIndex(sys->m_voxelManager.getVoxel(voxel.coord+step), coeff);
+			return getGlobalIndex(getVoxel(voxel.coord+step), coeff);
 		}
 	}
 
-	throw std::runtime_error("unexpected");
+	throw std::runtime_error("PNSystem::VoxelManager::getGlobalIndex unexpected");
 }
 
 
@@ -1194,8 +609,8 @@ V3i PNSystem::VoxelManager::getBoundaryLayer(const PNSystem::Voxel &v)
 		if( v.coord[i] < 0 )
 			dist[i] = v.coord[i];
 		else
-		if( v.coord[i] >= sys->getDomain().getResolution()[i] )
-			dist[i] = v.coord[i] - sys->getDomain().getResolution()[i] + 1;
+		if( v.coord[i] >= m_resolution[i] )
+			dist[i] = v.coord[i] - m_resolution[i] + 1;
 		else
 			dist[i] = 0;
 	}

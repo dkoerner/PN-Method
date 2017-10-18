@@ -89,23 +89,18 @@ struct PNSystem
 			matrix = Matrix();
 		}
 
-		void build( int numRows, int numCols )
+		Matrix build( int numRows, int numCols )
 		{
-			matrix = Matrix(numRows, numCols);
+			Matrix matrix(numRows, numCols);
 
 			// build sparse matrix from triplets
 			matrix.setFromTriplets(triplets.begin(), triplets.end());
-		}
 
-		void add( const MatrixBuilder<T>& other )
-		{
-			for( auto t:other.triplets )
-				triplets.push_back(t);
+			return matrix;
 		}
 
 		std::vector<Triplet> triplets;
-		V2i                  dimensions;
-		Matrix               matrix;
+		//Matrix               matrix;
 	};
 	typedef MatrixBuilder<double> MatrixBuilderd;
 
@@ -173,120 +168,16 @@ struct PNSystem
 		bool debug;
 	};
 
-	struct VoxelManager
-	{
-		struct VoxelType
-		{
-			VoxelType(int index = -1, int maxNumCoefficients = 0, const std::tuple<int, int, int> &boundaryLayer = std::make_tuple(0,0,0) );
-
-			int getIndex()const;
-
-			std::tuple<int, int, int>& getBoundaryLayer();
-
-			// This method is called during voxelmanager initialization when the voxeltypes are created.
-			// It changes the local coefficient indices and flags accordingly.
-			void registerActiveCoefficient( int coeff_index );
-			int getNumActiveCoefficients()const;
-			// returns true if the given coefficient is active and therefore
-			// has an index within the global system
-			bool isActiveCoefficient(int coeff_index)const;
-
-			// returns the coefficient index within a single voxel (local) for the specific voxel type
-			// returns -1 if the coefficient is not active and therefore has no index within the global system
-			int getLocalCoefficientIndex( int coeff_index )const;
-
-		private:
-			int m_index;
-
-			// this identifies the location of the voxel in respect to the domain for which we want to solve
-			// 0,0,0 means, that the voxel is an internal voxel and lies somewhere within
-			// 1,0,0 means that the voxel sits on the first layer of voxels north to the domain
-			// 2,0,0 means that the voxel sits on the second layer of voxels north to the domain etc.
-			std::tuple<int, int, int> m_boundaryLayer;
-
-			// this maps coefficient indices to a local coefficient index the reason is,
-			// that for some voxeltypes (on the boundary), not all coefficients have a
-			// row in the global system. Therefore voxels of these types skip certain
-			// coefficients which requires a remapping
-			std::vector<int> m_localCoefficientIndices;
-			// this stores a flag for every coefficient, saying if the coefficient is a boundary coefficient
-			// TODO: this is not necessary anymore. if the local coefficient is -1, we can conclude that we
-			// have a boundary coefficient
-			std::vector<bool> m_isBoundaryCoefficient;
-
-			// the number of active coefficients (coefficients with local index >=0)
-			int m_numNonBoundaryCoefficients;
-		};
-
-
-		VoxelManager();
-		void init(PNSystem* sys);
-		int getNumCoeffs(const Voxel& voxel);
-		int getGlobalIndex( const Voxel& voxel, int coeff );
-		bool isBoundaryCoefficient(const Voxel &voxel, int coeff ); // returns true, if the given coefficient is a boundary coefficient
-		V3i getNumBoundaryLayers()const;
-
-		Voxel &getVoxel(const V3i &coord);
-		bool voxelIsValid( const P3i& voxel )const
-		{
-			if( (voxel[0] < -m_numBoundaryLayers[0])||(voxel[0] >= m_resolution[0]+m_numBoundaryLayers[0])||
-				(voxel[1] < -m_numBoundaryLayers[1])||(voxel[1] >= m_resolution[1]+m_numBoundaryLayers[1])||
-				(voxel[2] < -m_numBoundaryLayers[2])||(voxel[2] >= m_resolution[2]+m_numBoundaryLayers[2]))
-				return false;
-			return true;
-		}
-		std::vector<Voxel>& getVoxels()
-		{
-			return m_voxels;
-		}
-
-		int getNumUnknowns()const
-		{
-			return m_numUnknowns;
-		}
-
-		V3i getVoxelMin()
-		{
-			return V3i(-m_numBoundaryLayers[0], -m_numBoundaryLayers[1], -m_numBoundaryLayers[2]);
-		}
-
-		V3i getVoxelMax()
-		{
-			return V3i(m_resolution[0]+m_numBoundaryLayers[0], m_resolution[1]+m_numBoundaryLayers[1], m_resolution[2]+m_numBoundaryLayers[2]);
-		}
-	private:
-
-		// returns boundary layer indices of the current voxel in x and y
-		// the indices are signed, indicating left or right side of the domain.
-		// if no layer is touched: zero is returned
-		V3i getBoundaryLayer( const Voxel& voxel );
-		VoxelType& getVoxelType(int boundaryLayer_x, int boundaryLayer_y, int boundaryLayer_z);
-		VoxelType& getVoxelType(const std::tuple<int, int, int>& boundaryLayer);
-
-		PNSystem* sys;
-
-
-		int m_numUnknowns; // number of cols and rows of A
-		V3i m_numBoundaryLayers;
-		V3i m_resolution;
-
-
-		std::vector<Voxel> m_voxels;
-		std::vector<VoxelType> m_voxelTypes;
-		std::map<std::tuple<int,int,int>, int> m_layerToVoxelTypeIndex;
-	};
-
-
-
-
 
 	struct Stencil
 	{
 		struct Context
 		{
-			Context( PNSystem& sys, Voxel& voxel ):
+			Context( PNSystem& sys, Voxel& voxel, MatrixBuilderd& builder_A, MatrixBuilderd& builder_b ):
 				sys(sys),
-				voxel(voxel)
+				voxel(voxel),
+				m_builder_A(builder_A),
+				m_builder_b(builder_b)
 			{
 				if(!sys.m_voxelManager.voxelIsValid(voxel.coord))
 					throw std::runtime_error("Stencil::Context::Context: voxel is expected to be valid.");
@@ -297,15 +188,6 @@ struct PNSystem
 				return voxel.coord;
 			}
 
-			/*
-			// returns the offset in voxelspace coordinates for the given coefficient index
-			V3d getVoxelSpaceOffsetFromCoefficient( int coeff )
-			{
-				return sys.getStencil().getOffset(coeff).cast<double>()*0.5;
-			}
-			*/
-
-
 			const Domain& getDomain()
 			{
 				return sys.getDomain();
@@ -315,14 +197,6 @@ struct PNSystem
 			{
 				return sys.getFields();
 			}
-
-			/*
-			// return the offset in voxelspace for the given staggered grid index
-			static V3d getVoxelSpaceOffsetFromGrid(int grid_index)
-			{
-				return PNSystem::getGridSpaceOffsetFromGrid(grid_index).cast<double>()*0.5;
-			}
-			*/
 
 			// return the offset in voxelspace for the given staggered grid index
 			static V3d& getVoxelSpaceOffsetFromGrid2(int grid_index)
@@ -336,6 +210,8 @@ struct PNSystem
 		private:
 			PNSystem& sys;
 			Voxel& voxel;
+			MatrixBuilderd& m_builder_A;
+			MatrixBuilderd& m_builder_b;
 			static V3d g_grid_offsets2[8];
 		};
 
@@ -403,10 +279,140 @@ struct PNSystem
 		std::vector<int> m_gridIndices; // maps each coefficient to a grid index
 	};
 
-	PNSystem(Stencil stencil, const Domain& domain, bool neumannBC);
+	struct VoxelManager
+	{
+		struct VoxelType
+		{
+			VoxelType(int index = -1, int maxNumCoefficients = 0, const std::tuple<int, int, int> &boundaryLayer = std::make_tuple(0,0,0) );
 
-	MatrixBuilderd::MatrixAccessHelper coeff_A(V3i voxel_i, int coefficient_i, V3i voxel_j, int coefficient_j, bool debug = false);
-	MatrixBuilderd::MatrixAccessHelper coeff_b(V3i voxel_i, int coefficient_i, bool debug = false);
+			int getIndex()const;
+
+			std::tuple<int, int, int>& getBoundaryLayer();
+
+			// This method is called during voxelmanager initialization when the voxeltypes are created.
+			// It changes the local coefficient indices and flags accordingly.
+			void registerActiveCoefficient( int coeff_index );
+			int getNumActiveCoefficients()const;
+			// returns true if the given coefficient is active and therefore
+			// has an index within the global system
+			bool isActiveCoefficient(int coeff_index)const;
+
+			// returns the coefficient index within a single voxel (local) for the specific voxel type
+			// returns -1 if the coefficient is not active and therefore has no index within the global system
+			int getLocalCoefficientIndex( int coeff_index )const;
+
+		private:
+			int m_index;
+
+			// this identifies the location of the voxel in respect to the domain for which we want to solve
+			// 0,0,0 means, that the voxel is an internal voxel and lies somewhere within
+			// 1,0,0 means that the voxel sits on the first layer of voxels north to the domain
+			// 2,0,0 means that the voxel sits on the second layer of voxels north to the domain etc.
+			std::tuple<int, int, int> m_boundaryLayer;
+
+			// this maps coefficient indices to a local coefficient index the reason is,
+			// that for some voxeltypes (on the boundary), not all coefficients have a
+			// row in the global system. Therefore voxels of these types skip certain
+			// coefficients which requires a remapping
+			std::vector<int> m_localCoefficientIndices;
+			// this stores a flag for every coefficient, saying if the coefficient is a boundary coefficient
+			// TODO: this is not necessary anymore. if the local coefficient is -1, we can conclude that we
+			// have a boundary coefficient
+			std::vector<bool> m_isBoundaryCoefficient;
+
+			// the number of active coefficients (coefficients with local index >=0)
+			int m_numNonBoundaryCoefficients;
+		};
+
+
+		VoxelManager();
+		void init(const V3i& resolution, const Stencil& stencil , int boundaryConditions);
+		int getNumCoeffs(const Voxel& voxel);
+		int getGlobalIndex( const Voxel& voxel, int coeff );
+		bool isBoundaryCoefficient(const Voxel &voxel, int coeff ); // returns true, if the given coefficient is a boundary coefficient
+		V3i getNumBoundaryLayers()const;
+
+		Voxel &getVoxel(const V3i &coord);
+		bool voxelIsValid( const P3i& voxel )const
+		{
+			if( (voxel[0] < -m_numBoundaryLayers[0])||(voxel[0] >= m_resolution[0]+m_numBoundaryLayers[0])||
+				(voxel[1] < -m_numBoundaryLayers[1])||(voxel[1] >= m_resolution[1]+m_numBoundaryLayers[1])||
+				(voxel[2] < -m_numBoundaryLayers[2])||(voxel[2] >= m_resolution[2]+m_numBoundaryLayers[2]))
+				return false;
+			return true;
+		}
+		std::vector<Voxel>& getVoxels()
+		{
+			return m_voxels;
+		}
+
+		int getNumUnknowns()const
+		{
+			return m_numUnknowns;
+		}
+
+		V3i getVoxelMin()
+		{
+			return V3i(-m_numBoundaryLayers[0], -m_numBoundaryLayers[1], -m_numBoundaryLayers[2]);
+		}
+
+		V3i getVoxelMax()
+		{
+			return V3i(m_resolution[0]+m_numBoundaryLayers[0], m_resolution[1]+m_numBoundaryLayers[1], m_resolution[2]+m_numBoundaryLayers[2]);
+		}
+
+		VoxelManager downsample()const
+		{
+			std::cout << "check0\n";
+			std::cout << m_resolution << std::endl;
+			V3i res_fine = m_resolution;
+
+			bool is2D = res_fine[2] == 1;
+
+			// for multigrid, we require the resolution to be even,
+			// so that we can do restriction and interpolation straigh forwardly
+			if( (res_fine[0]%2!=0)||(res_fine[1]%2!=0)||(!is2D && (res_fine[2]%2!=0)))
+				throw std::runtime_error("VoxelManager::downsample currently requires even resolution");
+
+			std::cout << "check1\n";
+			V3i res_coarse( res_fine[0]/2, res_fine[1]/2, is2D ? 1:res_fine[2]/2 );
+			VoxelManager vm;
+			std::cout << "check2\n";
+			vm.init( res_coarse, *m_stencil, m_boundaryConditions );
+			std::cout << "check3\n";
+			return vm;
+		}
+
+	private:
+
+		// returns boundary layer indices of the current voxel in x and y
+		// the indices are signed, indicating left or right side of the domain.
+		// if no layer is touched: zero is returned
+		V3i getBoundaryLayer( const Voxel& voxel );
+		VoxelType& getVoxelType(int boundaryLayer_x, int boundaryLayer_y, int boundaryLayer_z);
+		VoxelType& getVoxelType(const std::tuple<int, int, int>& boundaryLayer);
+
+		//PNSystem* sys;
+
+
+		int m_numUnknowns; // number of cols and rows of A
+		V3i m_numBoundaryLayers;
+		V3i m_resolution;
+		int m_boundaryConditions;
+		const Stencil* m_stencil;
+
+
+		std::vector<Voxel> m_voxels;
+		std::vector<VoxelType> m_voxelTypes;
+		std::map<std::tuple<int,int,int>, int> m_layerToVoxelTypeIndex;
+	};
+
+
+
+
+
+
+	PNSystem(Stencil stencil, const Domain& domain, bool neumannBC);
 
 
 
@@ -435,9 +441,6 @@ struct PNSystem
 
 	RealMatrix getVoxelInfo( const std::string& info );
 
-	// this function uses Eigen to solve the system
-	RealVector solve();
-	Eigen::VectorXd solve_cg(const Eigen::VectorXd &x0);
 	Eigen::VectorXd stripBoundary(const Eigen::VectorXd& x);
 
 
@@ -454,8 +457,6 @@ struct PNSystem
 
 	RealMatrix get_A_real_test();
 	Eigen::VectorXd get_b_real_test();
-	Eigen::VectorXd upsample(PNSystem &sys_coarse, const Eigen::VectorXd &x_coarse);
-	Eigen::VectorXd downsample( PNSystem& sys_coarse, const Eigen::VectorXd &x_fine );
 
 	void setDebugVoxel( const V3i& dv ); // this is used for debugging
 
@@ -493,8 +494,10 @@ private:
 
 
 	// the following matrices define the system Ax=b
-	MatrixBuilderd m_builder_A;
-	MatrixBuilderd m_builder_b;
+	RealMatrix m_A;
+	RealMatrix m_b;
+	RealMatrix m_downsampleMatrix;
+	RealMatrix m_upsampleMatrix;
 
 	VoxelManager m_voxelManager;
 

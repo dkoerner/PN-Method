@@ -53,8 +53,9 @@ def solve( stencil_name, problem, filename, do_neumannBC = False ):
 	#b = sys.get_b_real_test()
 	#x = sys.solve_cg( b )
 	#x = sys.solve_mg()
-	x, convergence, timestamps = pnsolver.solve_multigrid( sys )
+	#x, convergence, timestamps = pnsolver.solve_multigrid( sys )
 	#x, convergence, timestamps = pnsolver.solve_cg( sys )
+	x, convergence, timestamps = pnsolver.solve_sparseLU( sys )
 	x = x.reshape((x.shape[0], 1))
 	#print(x.shape)
 	#pass

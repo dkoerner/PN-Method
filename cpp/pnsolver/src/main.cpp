@@ -335,97 +335,47 @@ std::tuple<Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd> solve_cg( PNSystem
 }
 
 
-/*
-PNSystem::RealVector PNSystem::solve()
+std::tuple<Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd> solve_sparseLU( PNSystem& sys )
 {
-	std::cout << "PNSystem::solve solving for x...\n";
+	std::vector<double> solve_convergence;
+	std::vector<double> solve_convergence_timestamps;
 
-	// ??
+
+	Timer timer;
+	timer.start();
+
+
+
+
+
 	//Eigen::ConjugateGradient<RealMatrix> solver;
 	//Eigen::BiCGSTAB<RealMatrix> solver;
-	Eigen::SparseLU<RealMatrix> solver;
-	//solver.setMaxIterations(1000);
-	std::cout << "PNSystem::solve compute...\n";std::flush(std::cout);
-	solver.compute(get_A_real());
+	Eigen::SparseLU<PNSystem::RealMatrix> solver;
+	solver.compute(sys.get_A_real());
 	if(solver.info()!=Eigen::Success)
 	{
-		throw std::runtime_error("PNSystem::solve decomposition failed");
+		throw std::runtime_error("solve_sparseLU decomposition failed");
 	}
-	std::cout << "PNSystem::solve solve...\n";std::flush(std::cout);
-	RealVector x = solver.solve(get_b_real());
-	//std::cout << "iterations=" << solver.iterations() << std::endl;
+	Eigen::VectorXd x = solver.solve(sys.get_b_real());
 	if(solver.info()!=Eigen::Success)
 	{
-		throw std::runtime_error("PNSystem::solve solve failed");
+		throw std::runtime_error("solve_sparseLU solve failed");
 	}
 
 
-	// standard form version
-//	Eigen::ConjugateGradient<RealMatrix> solver;
-//	//Eigen::BiCGSTAB<RealMatrix> solver;
-//	//Eigen::SparseLU<RealMatrix> solver;
-//	//solver.setMaxIterations(1000);
-//	std::cout << "PNSystem::solve compute...\n";std::flush(std::cout);
-//	solver.compute(get_A_real().transpose()*get_A_real());
-//	if(solver.info()!=Eigen::Success)
-//	{
-//		throw std::runtime_error("PNSystem::solve decomposition failed");
-//	}
-//	std::cout << "PNSystem::solve solve...\n";std::flush(std::cout);
-//	RealVector x = solver.solve(get_A_real().transpose()*get_b_real());
-//	//std::cout << "iterations=" << solver.iterations() << std::endl;
-//	if(solver.info()!=Eigen::Success)
-//	{
-//		throw std::runtime_error("PNSystem::solve solve failed");
-//	}
+	timer.stop();
+	std::cout << "solve_sparseLU: " << timer.elapsedSeconds() << "s\n";
 
-
-
-	// ..................
-	RealVector x2( m_domain.numVoxels()*m_stencil.numCoeffs,1);
-	std::vector<RealTriplet> triplets;
-	std::vector<Voxel>& voxels = m_voxelManager.getVoxels();
-	for( auto&v:voxels )
-	{
-		if( !m_domain.contains_voxel(v.coord) )
-			// boundary or mixed boundary voxel
-			continue;
-		for( int i=0;i<m_stencil.numCoeffs;++i )
-		{
-			// this is the new index, which wont include boundary voxels
-			V3i coord = v.coord;
-			V3i res = m_domain.getResolution();
-			int new_voxel_index = coord[0]*res[2]*res[1] + coord[1]*res[2] + coord[2];
-			// since we store only internal voxels, we know that they all have all coefficients defined
-			int new_global_index = new_voxel_index*m_stencil.numCoeffs + i;
-
-
-			// this is the current index, which includes boundary voxels
-			int index = m_voxelManager.getGlobalIndex(v, i);
-
-			if(index==-1)
-				throw std::runtime_error("PNSystem::solve didnt expect invalid coefficient index");
-			triplets.push_back(RealTriplet(new_global_index, 0, x.coeffRef(index, 0)));
-
-			if( (coord[0] == 21)&&(coord[1] == 38) )
-			{
-				//triplets.push_back(RealTriplet(new_global_index, 0, 1.0));
-				//std::cout <<
-			}
-
-		}
-	}
-	x2.setFromTriplets(triplets.begin(), triplets.end());
-
-	return x2;
+	return std::make_tuple( sys.stripBoundary(x),
+							to_vector(solve_convergence),
+							to_vector(solve_convergence_timestamps));
 }
-*/
-
 
 PYBIND11_MODULE(pnsolver, m)
 {
 	m.def( "solve_multigrid", &solve_multigrid);
 	m.def( "solve_cg", &solve_cg);
+	m.def( "solve_sparseLU", &solve_sparseLU);
 
 
 	// PNSystem ==============================

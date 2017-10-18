@@ -388,22 +388,17 @@ PNSystem::VoxelManager::VoxelManager()
 
 void PNSystem::VoxelManager::init(const V3i& resolution, const Stencil& stencil, int boundaryConditions)
 {
-	std::cout << "_check00\n";
 	int numCoeffs = stencil.numCoeffs;
-	std::cout << "_check01\n";
 	m_resolution = resolution;
-	std::cout << "_check02\n";
 	m_boundaryConditions = boundaryConditions;
-	std::cout << "_check03\n";
 	m_stencil = &stencil;
-	std::cout << "_check0\n";
 
 	if( m_resolution[2] == 1 )
 		// in 2d we have zero boundary layers
 		m_numBoundaryLayers = V3i(stencil.width, stencil.width, 0);
 	else
 		m_numBoundaryLayers = V3i(stencil.width, stencil.width, stencil.width);
-	std::cout << "_check1\n";
+
 	for( int i=-m_numBoundaryLayers[0];i<=m_numBoundaryLayers[0];++i )
 		for( int j=-m_numBoundaryLayers[1];j<=m_numBoundaryLayers[1];++j )
 			for( int k=-m_numBoundaryLayers[2];k<=m_numBoundaryLayers[2];++k )
@@ -418,7 +413,7 @@ void PNSystem::VoxelManager::init(const V3i& resolution, const Stencil& stencil,
 				// type hasnt been registered, so we register it
 				m_voxelTypes.push_back(VoxelType(m_voxelTypes.size(), numCoeffs, boundaryLayer));
 			}
-	std::cout << "_check2\n";
+
 	int numTypes = m_voxelTypes.size();
 
 	// establish reverse mapping, which we use during voxel creation
@@ -428,7 +423,6 @@ void PNSystem::VoxelManager::init(const V3i& resolution, const Stencil& stencil,
 		m_layerToVoxelTypeIndex[vt.getBoundaryLayer()] = i;
 	}
 
-	std::cout << "_check3\n";
 	for( int i=0;i<numCoeffs;++i )
 	{
 		V3i offset = stencil.getOffset(i);
@@ -493,7 +487,6 @@ void PNSystem::VoxelManager::init(const V3i& resolution, const Stencil& stencil,
 
 	}
 
-	std::cout << "_check4\n";
 	// create all voxels ----------------------
 	int voxelIndex = 0;
 	int globalOffset = 0;
@@ -523,7 +516,7 @@ void PNSystem::VoxelManager::init(const V3i& resolution, const Stencil& stencil,
 				m_voxels.push_back(v);
 				globalOffset += getNumCoeffs(m_voxels.back());
 			}
-	std::cout << "_check5\n";
+
 	// the value of globalOffset equals the number of cols and rows of our global system A
 	m_numUnknowns = globalOffset;
 }

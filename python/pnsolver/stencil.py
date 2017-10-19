@@ -1925,9 +1925,9 @@ if __name__ == "__main__":
 	terms_fopn.append(rte_terms.fopn.source_term())
 	terms_fopn = rte_terms.splitAddition( terms_fopn )
 
-	for term in terms_fopn:
-		print("\n-------------------\n")
-		meh.print_expr(term)
+	#for term in terms_fopn:
+	#	print("\n-------------------\n")
+	#	meh.print_expr(term)
 
 
 	staggered_id = {True:"sg", False:"cg"}
@@ -1954,8 +1954,8 @@ if __name__ == "__main__":
 		stencil_name = "stencil_{}_p{}_{}".format(rte_form_name, order, staggered_id[is_staggered] )
 		filename = "{}/{}.cpp".format(path, stencil_name)
 
-		pni = PNInfo2D(order, is_staggered)
-		#pni = PNInfo3D(order, is_staggered)
+		#pni = PNInfo2D(order, is_staggered)
+		pni = PNInfo3D(order, is_staggered)
 
 
 		generate_stencil_code( stencil_name, filename, rte_form_terms, pni )

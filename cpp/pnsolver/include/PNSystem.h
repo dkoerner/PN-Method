@@ -331,6 +331,7 @@ struct PNSystem
 		int getGlobalIndex( const Voxel& voxel, int coeff );
 		bool isBoundaryCoefficient(const Voxel &voxel, int coeff ); // returns true, if the given coefficient is a boundary coefficient
 		V3i getNumBoundaryLayers()const;
+		bool is2D()const{return m_resolution[2] == 1;}
 
 		Voxel &getVoxel(const V3i &coord);
 		bool voxelIsValid( const P3i& voxel )const

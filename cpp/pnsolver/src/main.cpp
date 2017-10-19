@@ -591,8 +591,9 @@ void buildUpAndDownsamplingMatrices( PNSystem& sys_fine, PNSystem::RealMatrix& d
 	upsampleMatrix = upsampleMatrixBuilder.build( vm_fine.getNumUnknowns(), vm_coarse.getNumUnknowns() );
 }
 
+// runs a number of CG iterations on the given problem
 // returns the square root of the residual
-double run_cg_iterations( PNSystem::RealMatrix& A, Eigen::VectorXd& b, Eigen::VectorXd& x, Eigen::VectorXd& r, int numIterations, double tol )
+double run_cg_iterations( Eigen::SparseMatrix<double, Eigen::RowMajor>& A, Eigen::VectorXd& b, Eigen::VectorXd& x, Eigen::VectorXd& r, int numIterations, double tol )
 {
 	r = b-A*x;
 	Eigen::VectorXd p = r;
@@ -615,86 +616,35 @@ double run_cg_iterations( PNSystem::RealMatrix& A, Eigen::VectorXd& b, Eigen::Ve
 	return std::sqrt(rsold);
 }
 
-
-
-// returns the solution vector x, and the convergence plot per iteration
-std::tuple<Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd> solve_multigrid( PNSystem& sys_fine )
+// runs a number of Gauss-Seidel iterations on the given problem
+void run_gs_iterations( Eigen::SparseMatrix<double, Eigen::RowMajor> A, Eigen::VectorXd& b, Eigen::VectorXd& x, int numIterations )
 {
-	Timer timer;
-	PNSystem::RealMatrix downsample;
-	PNSystem::RealMatrix upsample;
-
-	buildUpAndDownsamplingMatrices(sys_fine, downsample, upsample);
-
-	std::vector<double> solve_convergence;
-	std::vector<double> solve_convergence_timestamps;
-
-
-
-	// build coarse level using restriction step on fields
-	PNSystem sys_coarse(sys_fine.getStencil(), sys_fine.getDomain().downsample(), sys_fine.getBoundaryConditions());
-	sys_coarse.setFields( sys_fine.getFields().createRestricted() );
-	sys_coarse.build();
-
-	std::cout << "solve_multigrid: time for setup: " << timer.elapsedSeconds() << "s\n";
-
-	timer.start();
-	double tol = 1.0e-10; // convergence error tolerance
-	int maxNumCycles = 1000; // maximum number of V-cycles
-	int numSteps_fine = 10; // number of CG iterations on the fine level
-	int numSteps_coarse = 10; // number of CG iterations on the coarse level
-
-	PNSystem::RealMatrix A_coarse = sys_coarse.get_A_real().transpose()*sys_coarse.get_A_real();
-	Eigen::VectorXd b_coarse( sys_coarse.getVoxelManager().getNumUnknowns() );
-	Eigen::VectorXd x_coarse( sys_coarse.getVoxelManager().getNumUnknowns() );
-	x_coarse.fill(0.0);
-	Eigen::VectorXd r_coarse( sys_coarse.getVoxelManager().getNumUnknowns() );
-
-	PNSystem::RealMatrix A_fine = sys_fine.get_A_real().transpose()*sys_fine.get_A_real();
-	Eigen::VectorXd b_fine = sys_fine.get_A_real().transpose()*sys_fine.get_b_real();
-	Eigen::VectorXd x_fine = b_fine; // initial guess for first fine level solve
-	Eigen::VectorXd r_fine( sys_fine.getVoxelManager().getNumUnknowns() );
-
-
-	// v-cycle
-	solve_convergence.clear();
-	for( int i=0;i<maxNumCycles;++i )
+	for( int k=0;k<numIterations;++k )
 	{
-		// solve on fine level
-		double rmse = run_cg_iterations( A_fine, b_fine, x_fine, r_fine, numSteps_fine, tol );
-
-		// check convergence
-		solve_convergence.push_back(rmse);
-		solve_convergence_timestamps.push_back(timer.elapsedSeconds());
-		//std::cout << "i=" << i << " rmse=" << rmse << std::endl;
-		if(rmse < tol)
-			// done
-			break;
-
-		// get residual as right hand side on the coarse level
-		//b_coarse = sys_fine.downsample(sys_coarse.getVoxelManager(), r_fine);
-		b_coarse = downsample*r_fine;
-
-		// solve correction equation on course level
-		run_cg_iterations( A_coarse, b_coarse, x_coarse, r_coarse, numSteps_coarse, 0.0 );
-
-		// x_coarse is the error correction on the course level.
-		// We interpolate it and apply it to the current final level solution.
-		//x_fine = x_fine + sys_fine.upsample(sys_coarse.getVoxelManager(), x_coarse);
-		x_fine = x_fine + upsample*x_coarse;
+		// iterate all rows
+		for( int i=0;i<A.rows();++i )
+		{
+			double aii = 0.0;
+			double sum = b(i);
+			// iterate all non-zero column elements (this is why we need RowMajor storage order for A)
+			for( Eigen::SparseMatrix<double, Eigen::RowMajor>::InnerIterator it(A, i);it;++it )
+			{
+				int j = it.col();
+				if( i != j )
+					sum -= it.value()*x.coeffRef(j);
+				else
+					aii = it.value();
+			}
+			x.coeffRef(i) = sum/aii;
+		}
 	}
-
-	timer.stop();
-	std::cout << "solve_multigrid: " << timer.elapsedSeconds() << "s numIterations=" << solve_convergence.size() <<  "\n";
-	return std::make_tuple( sys_fine.stripBoundary(x_fine),
-							to_vector(solve_convergence),
-							to_vector(solve_convergence_timestamps));
 }
 
 
 
 std::tuple<Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd> solve_cg( PNSystem& sys )
 {
+	std::cout << "solve_cg: solving..." << "s\n";
 	Timer timer;
 	timer.start();
 
@@ -733,7 +683,7 @@ std::tuple<Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd> solve_cg( PNSystem
 	} // end of cg solver
 
 	timer.stop();
-	std::cout << "solve_cg: " << timer.elapsedSeconds() << "s\n";
+	std::cout << "solve_cg: " << timer.elapsedSeconds() << "s #iterations=" << solve_convergence.size() << "\n";
 	return std::make_tuple( sys.stripBoundary(x),
 							to_vector(solve_convergence),
 							to_vector(solve_convergence_timestamps));
@@ -776,10 +726,205 @@ std::tuple<Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd> solve_sparseLU( PN
 							to_vector(solve_convergence_timestamps));
 }
 
+
+
+
+
+
+
+
+std::tuple<Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd> solve_gs(PNSystem& sys)
+{
+	Eigen::SparseMatrix<double, Eigen::RowMajor> A = sys.get_A_real().transpose()*sys.get_A_real();
+	Eigen::VectorXd b = sys.get_A_real().transpose()*sys.get_b_real();
+	Eigen::VectorXd x = b; // initial guess
+	Eigen::VectorXd r;
+
+	std::vector<double> solve_convergence;
+	std::vector<double> solve_convergence_timestamps;
+
+
+	int numIterations = 1000;
+	for( int k=0;k<numIterations;++k )
+	{
+		run_gs_iterations(A, b, x, 1);
+		r = b - A*x;
+		solve_convergence.push_back(r.norm());
+		solve_convergence_timestamps.push_back(0.0);
+	}
+
+	return std::make_tuple( sys.stripBoundary(x),
+							to_vector(solve_convergence),
+							to_vector(solve_convergence_timestamps));
+
+}
+
+struct MultigridLevel
+{
+	MultigridLevel():
+		next(0)
+	{
+
+	}
+
+	Eigen::SparseMatrix<double, Eigen::RowMajor> A;
+	Eigen::VectorXd      b;
+	Eigen::VectorXd      x;
+	Eigen::VectorXd      r;
+
+	PNSystem::RealMatrix upsample; // converts x to the next coarser grid
+	PNSystem::RealMatrix downsample; // converts from the next coarser grid to this grid
+
+	MultigridLevel* next;
+};
+
+struct ProfileTimer
+{
+	Timer resampling;
+	Timer smoothing;
+	Timer lowest_level_solve;
+
+	void print()
+	{
+		std::cout << "resampling time:" << resampling.elapsedSeconds() << "s\n";
+		std::cout << "lowest level solve time:" << lowest_level_solve.elapsedSeconds() << "s\n";
+		std::cout << "smoothing time:" << smoothing.elapsedSeconds() << "s\n";
+	}
+};
+
+
+void multigrid_cycle( MultigridLevel* lvl_fine, ProfileTimer* timers = 0 )
+{
+	MultigridLevel* lvl_coarse = lvl_fine->next;
+
+	// pre smoothing
+	//run_cg_iterations( lvl_fine->A, lvl_fine->b, lvl_fine->x, lvl_fine->r, 1, 0.0 );
+	if(timers)
+		timers->smoothing.start();
+	run_gs_iterations( lvl_fine->A, lvl_fine->b, lvl_fine->x, 5);
+	if(timers)
+		timers->smoothing.stop();
+
+
+	// compute residual on fine level
+	if(timers)
+		timers->resampling.start();
+	lvl_fine->r = lvl_fine->b - lvl_fine->A*lvl_fine->x;
+	if(timers)
+		timers->resampling.stop();
+	// restriction
+	lvl_coarse->b = lvl_fine->downsample*lvl_fine->r;
+
+	// compute approximate solution to the correction equation on the coarser grid
+	if( lvl_coarse->next == 0 )
+	{
+		// the coarse level is the last level...fully solve the thing
+		if(timers)
+			timers->lowest_level_solve.start();
+		run_cg_iterations( lvl_coarse->A, lvl_coarse->b, lvl_coarse->x, lvl_coarse->r, 1000, 1.0e-10 );
+		//run_gs_iterations( lvl_coarse->A, lvl_coarse->b, lvl_coarse->x, 1000, 1.0e-10 );
+		if(timers)
+			timers->lowest_level_solve.stop();
+	}else
+	{
+		lvl_coarse->x.fill(0.0);
+		for( int i=0;i<2;++i )
+			multigrid_cycle( lvl_coarse, timers );
+	}
+
+	// upsample correction and apply
+	if(timers)
+		timers->resampling.start();
+	lvl_fine->x = lvl_fine->x + lvl_fine->upsample*lvl_coarse->x;
+	if(timers)
+		timers->resampling.stop();
+
+	// post smoothing
+	//run_cg_iterations( lvl_fine->A, lvl_fine->b, lvl_fine->x, lvl_fine->r, 1, 0.0 );
+	if(timers)
+		timers->smoothing.start();
+	run_gs_iterations( lvl_fine->A, lvl_fine->b, lvl_fine->x, 5);
+	if(timers)
+		timers->smoothing.stop();
+
+}
+
+
+std::tuple<Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd> solve_multigrid(PNSystem& sys, int numLevels)
+{
+	ProfileTimer timers;
+	double tol = 1.0e-10; // convergence error tolerance
+	//int numLevels = 9; // for res=512
+	//int numLevels = 6; // for res=64
+	Timer timer;
+	std::vector<double> solve_convergence;
+	std::vector<double> solve_convergence_timestamps;
+	std::vector<MultigridLevel> levels(numLevels);
+
+	levels[0].A = sys.get_A_real().transpose()*sys.get_A_real();
+	levels[0].b = sys.get_A_real().transpose()*sys.get_b_real();
+	levels[0].x = levels[0].b;
+	levels[0].r = levels[0].b-levels[0].A*levels[0].x;
+	buildUpAndDownsamplingMatrices(sys, levels[0].downsample, levels[0].upsample);
+
+
+	PNSystem::Stencil& stencil = sys.getStencil();
+	int boundaryConditions = sys.getBoundaryConditions();
+	Domain domain = sys.getDomain();
+	PNSystem::Fields fields = sys.getFields();
+
+	// link up
+	for( int i=0;i<levels.size()-1;++i )
+	{
+		domain = domain.downsample();
+		fields = fields.createRestricted();
+		PNSystem sys_coarse(stencil, domain, boundaryConditions);
+		sys_coarse.setFields( fields );
+		sys_coarse.build();
+
+		levels[i+1].A = sys_coarse.get_A_real().transpose()*sys_coarse.get_A_real();
+		levels[i+1].b = sys_coarse.get_A_real().transpose()*sys_coarse.get_b_real();
+		levels[i+1].x = Eigen::VectorXd(sys_coarse.getVoxelManager().getNumUnknowns());
+		levels[i+1].x.fill(0.0);
+		levels[i+1].r = Eigen::VectorXd(sys_coarse.getVoxelManager().getNumUnknowns());
+		buildUpAndDownsamplingMatrices(sys_coarse, levels[i+1].downsample, levels[i+1].upsample);
+
+		levels[i].next = &levels[i+1];
+	}
+
+	timer.start();
+	int maxIter = 1000;
+	for( int i=0;i<maxIter;++i )
+	{
+		multigrid_cycle( &levels[0], &timers );
+		double rmse = (levels[0].b-levels[0].A*levels[0].x).norm();
+		solve_convergence.push_back( rmse );
+		solve_convergence_timestamps.push_back(timer.elapsedSeconds());
+		if(rmse<tol)
+			break;
+	}
+
+	timer.stop();
+	std::cout << "solve_multigrid_test: " << timer.elapsedSeconds() << "s #iterations=" << solve_convergence.size() << "\n";
+	timers.print();
+	return std::make_tuple( sys.stripBoundary(levels[0].x),
+							to_vector(solve_convergence),
+							to_vector(solve_convergence_timestamps));
+
+}
+
+
+
+
+
+
+
+
 PYBIND11_MODULE(pnsolver, m)
 {
 	m.def( "solve_multigrid", &solve_multigrid);
 	m.def( "solve_cg", &solve_cg);
+	m.def( "solve_gs", &solve_gs);
 	m.def( "solve_sparseLU", &solve_sparseLU);
 
 

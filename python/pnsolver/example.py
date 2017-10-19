@@ -53,7 +53,8 @@ def solve( stencil_name, problem, filename, do_neumannBC = False ):
 	#b = sys.get_b_real_test()
 	#x = sys.solve_cg( b )
 	#x = sys.solve_mg()
-	x, convergence, timestamps = pnsolver.solve_multigrid( sys )
+	x, convergence, timestamps = pnsolver.solve_multigrid( sys, 6 )
+	#x, convergence, timestamps = pnsolver.solve_gs( sys )
 	#x, convergence, timestamps = pnsolver.solve_cg( sys )
 	#x, convergence, timestamps = pnsolver.solve_sparseLU( sys )
 	x = x.reshape((x.shape[0], 1))
@@ -86,10 +87,10 @@ if __name__ == "__main__":
 	path = "C:/projects/epfl/epfl17/python/pnsolver/results/studies"
 
 	# define problem ----------------------------
-	#problem = problems.checkerboard()
+	problem = problems.checkerboard()
 	#util.write_problem(path+"/checkerboard_problem.mat", problem)
 	#exit(1)
-	problem = problems.checkerboard3d()
+	#problem = problems.checkerboard3d()
 	#problem = problems.vacuum()
 
 	

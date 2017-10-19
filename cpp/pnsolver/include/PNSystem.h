@@ -364,8 +364,6 @@ struct PNSystem
 
 		VoxelManager downsample()const
 		{
-			std::cout << "check0\n";
-			std::cout << m_resolution << std::endl;
 			V3i res_fine = m_resolution;
 
 			bool is2D = res_fine[2] == 1;
@@ -375,12 +373,9 @@ struct PNSystem
 			if( (res_fine[0]%2!=0)||(res_fine[1]%2!=0)||(!is2D && (res_fine[2]%2!=0)))
 				throw std::runtime_error("VoxelManager::downsample currently requires even resolution");
 
-			std::cout << "check1\n";
 			V3i res_coarse( res_fine[0]/2, res_fine[1]/2, is2D ? 1:res_fine[2]/2 );
 			VoxelManager vm;
-			std::cout << "check2\n";
 			vm.init( res_coarse, *m_stencil, m_boundaryConditions );
-			std::cout << "check3\n";
 			return vm;
 		}
 

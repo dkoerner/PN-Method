@@ -49,4 +49,4 @@ pybind11_add_module(pnsolver src/main.cpp
 							 src/util/voxelgrid.cpp
 							 src/util/mem.cpp
 							 src/math/sph.cpp
-							 src/mgtest.cpp)
+							 src/solver.cpp)

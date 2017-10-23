@@ -13,67 +13,37 @@
 #include <PNSystem.h>
 #include <util/timer.h>
 
+Eigen::VectorXd to_vector( const std::vector<double>& values );
+void buildUpAndDownsamplingMatrices( PNSystem& sys_fine, PNSystem::RealMatrix& downsampleMatrix, PNSystem::RealMatrix& upsampleMatrix );
 
 
-
-struct MGTEST
+struct Solver
 {
 
-	struct MultigridLevel
+	struct System
 	{
-		MultigridLevel( int index = 0 ):
-			next(0),
-			index(index)
+		System():
+			coarse(0)
 		{
 
 		}
 
-		size_t getMemory()
-		{
-			size_t result = 0;
-			result+=b.cols()*b.rows()*sizeof(double);
-			result+=x.cols()*x.rows()*sizeof(double);
-			result+=r.cols()*r.rows()*sizeof(double);
-			result+=A.data().size();
-			return result;
-		}
-
-		Eigen::SparseMatrix<double, Eigen::RowMajor> A;
+		Eigen::SparseMatrix<double, Eigen::RowMajor> A; // we have rowmajor matrix so that we can iterate over row elements
 		Eigen::VectorXd      b;
 		Eigen::VectorXd      x;
 		Eigen::VectorXd      r;
 
+
+		System* coarse; // used for multigrid
 		PNSystem::RealMatrix upsample; // converts x to the next coarser grid
 		PNSystem::RealMatrix downsample; // converts from the next coarser grid to this grid
-
-		MultigridLevel* next;
-		int index;
 	};
 
-	Eigen::VectorXd u_ref;
-
-	MGTEST( int numLevels = 1 )
+	Solver( int numLevels = 1 )
 	{
-		m_levels = std::vector<MultigridLevel>(numLevels);
+		m_levels = std::vector<System>(numLevels);
 		for( int i=0;i<m_levels.size()-1;++i )
-		{
-			//domain = domain.downsample();
-			//fields = fields.createRestricted();
-			//PNSystem sys_coarse(stencil, domain, boundaryConditions);
-			//sys_coarse.setFields( fields );
-			//sys_coarse.build();
-
-			//levels[i+1].A = sys_coarse.get_A_real().transpose()*sys_coarse.get_A_real();
-			//levels[i+1].b = sys_coarse.get_A_real().transpose()*sys_coarse.get_b_real();
-			//levels[i+1].x = Eigen::VectorXd(sys_coarse.getVoxelManager().getNumUnknowns());
-			//levels[i+1].x.fill(0.0);
-			//levels[i+1].r = Eigen::VectorXd(sys_coarse.getVoxelManager().getNumUnknowns());
-			//buildUpAndDownsamplingMatrices(sys_coarse, levels[i+1].downsample, levels[i+1].upsample);
-
-			m_levels[i].next = &m_levels[i+1];
-			m_levels[i].index = i;
-		}
-
+			m_levels[i].coarse = &m_levels[i+1];
 	}
 
 	void setMultigridLevel( int level, const Eigen::SparseMatrix<double, Eigen::RowMajor>& A, const Eigen::MatrixXd& u, const PNSystem::RealMatrix& downsample, const PNSystem::RealMatrix& upsample )
@@ -82,28 +52,6 @@ struct MGTEST
 		m_levels[level].x = u;
 		m_levels[level].downsample = downsample;
 		m_levels[level].upsample = upsample;
-	}
-
-
-
-	void memoryTest()
-	{
-		int level = 0;
-		size_t sum = 0;
-		for( auto&lvl:m_levels )
-		{
-			size_t mem = lvl.getMemory();
-			sum += mem;
-			std::cout << "level " << level << " :" << mem << std::endl;
-			++level;
-		}
-
-		std::cout << "sum=" << sum << std::endl;
-	}
-
-	void setRef( const Eigen::MatrixXd& u_ref2 )
-	{
-		u_ref = u_ref2;
 	}
 
 	void setb( const Eigen::VectorXd& b )
@@ -168,9 +116,9 @@ struct MGTEST
 		return result;
 	}
 
-	void multigrid_cycle( MultigridLevel* lvl_fine )
+	void multigrid_cycle( System* lvl_fine )
 	{
-		MultigridLevel* lvl_coarse = lvl_fine->next;
+		System* lvl_coarse = lvl_fine->coarse;
 
 		// pre smoothing
 		run_gs_iterations( lvl_fine->A, lvl_fine->b, lvl_fine->x, 1);
@@ -182,7 +130,7 @@ struct MGTEST
 		lvl_coarse->b = lvl_fine->downsample*lvl_fine->r;
 
 		// compute approximate solution to the correction equation on the coarser grid
-		if( lvl_coarse->next == 0 )
+		if( lvl_coarse->coarse == 0 )
 		{
 			// the coarse level is the last level...fully solve the thing
 			run_cg_iterations( lvl_coarse->A, lvl_coarse->b, lvl_coarse->x, lvl_coarse->r, 1000, 1.0e-10 );
@@ -441,7 +389,7 @@ struct MGTEST
 	//}
 
 
-	std::vector<MultigridLevel> m_levels;
+	std::vector<System> m_levels;
 
 
 };

@@ -47,4 +47,6 @@ pybind11_add_module(pnsolver src/main.cpp
 							 src/common/Domain.cpp
 							 src/util/threadpool.cpp
 							 src/util/voxelgrid.cpp
-							 src/math/sph.cpp)
+							 src/util/mem.cpp
+							 src/math/sph.cpp
+							 src/mgtest.cpp)

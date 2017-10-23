@@ -10,12 +10,16 @@
 #include <math/ray.h>
 
 #include <util/timer.h>
+#include <util/mem.h>
 
 #include<common/Domain.h>
 #include<field/VoxelGridField.h>
 #include<field/Constant.h>
 #include<field/SHEXP.h>
 #include <PNSystem.h>
+
+#include <mgtest.h>
+
 
 namespace py = pybind11;
 
@@ -37,86 +41,6 @@ void buildUpAndDownsamplingMatrices( PNSystem& sys_fine, PNSystem::RealMatrix& d
 
 	PNSystem::MatrixBuilderd downsampleMatrixBuilder;
 	PNSystem::MatrixBuilderd upsampleMatrixBuilder;
-
-	// downsample --------------------------
-
-
-	/*
-	// offset and weights for coefficients at grid with offset=1,1
-	std::vector<std::pair<V3i, double>> stamp_11;
-	stamp_11.push_back( std::make_pair(V3i(-1,-1,0), 0.25*0.25) );
-	stamp_11.push_back( std::make_pair(V3i(-1,0,0), 0.25*0.75) );
-	stamp_11.push_back( std::make_pair(V3i(-1,1,0), 0.25*0.75) );
-	stamp_11.push_back( std::make_pair(V3i(-1,2,0), 0.25*0.25) );
-
-	stamp_11.push_back( std::make_pair(V3i(0,-1,0), 0.25*0.75) );
-	stamp_11.push_back( std::make_pair(V3i(0,0,0), 0.75*0.75) );
-	stamp_11.push_back( std::make_pair(V3i(0,1,0), 0.75*0.75) );
-	stamp_11.push_back( std::make_pair(V3i(0,2,0), 0.25*0.75) );
-
-	stamp_11.push_back( std::make_pair(V3i(1,-1,0), 0.25*0.75) );
-	stamp_11.push_back( std::make_pair(V3i(1,0,0), 0.75*0.75) );
-	stamp_11.push_back( std::make_pair(V3i(1,1,0), 0.75*0.75) );
-	stamp_11.push_back( std::make_pair(V3i(1,2,0), 0.25*0.75) );
-
-	stamp_11.push_back( std::make_pair(V3i(2,-1,0), 0.25*0.25) );
-	stamp_11.push_back( std::make_pair(V3i(2,0,0), 0.25*0.75) );
-	stamp_11.push_back( std::make_pair(V3i(2,1,0), 0.25*0.75) );
-	stamp_11.push_back( std::make_pair(V3i(2,2,0), 0.25*0.25) );
-
-	// offset and weights for coefficients at grid with offset=0,1
-	std::vector<std::pair<V3i, double>> stamp_01;
-	stamp_01.push_back( std::make_pair(V3i(-1,-1,0), 0.5*0.25) );
-	stamp_01.push_back( std::make_pair(V3i(-1,0,0), 0.5*0.75) );
-	stamp_01.push_back( std::make_pair(V3i(-1,1,0), 0.5*0.75) );
-	stamp_01.push_back( std::make_pair(V3i(-1,2,0), 0.5*0.25) );
-	stamp_01.push_back( std::make_pair(V3i(0,-1,0), 0.25) );
-	stamp_01.push_back( std::make_pair(V3i(0,0,0), 0.75) );
-	stamp_01.push_back( std::make_pair(V3i(0,1,0), 0.75) );
-	stamp_01.push_back( std::make_pair(V3i(0,2,0), 0.25) );
-	stamp_01.push_back( std::make_pair(V3i(1,-1,0), 0.5*0.25) );
-	stamp_01.push_back( std::make_pair(V3i(1,0,0), 0.5*0.75) );
-	stamp_01.push_back( std::make_pair(V3i(1,1,0), 0.5*0.75) );
-	stamp_01.push_back( std::make_pair(V3i(1,2,0), 0.5*0.25) );
-
-	// offset and weights for coefficients at grid with offset=1,0
-	std::vector<std::pair<V3i, double>> stamp_10;
-	stamp_10.push_back( std::make_pair(V3i(-1,-1,0), 0.5*0.25) );
-	stamp_10.push_back( std::make_pair(V3i(-1,0,0), 0.25) );
-	stamp_10.push_back( std::make_pair(V3i(-1,1,0), 0.5*0.25) );
-	stamp_10.push_back( std::make_pair(V3i(0,1,0), 0.5*0.75) );
-	stamp_10.push_back( std::make_pair(V3i(0,-1,0), 0.5*0.75) );
-	stamp_10.push_back( std::make_pair(V3i(0,0,0), 0.75) );
-	stamp_10.push_back( std::make_pair(V3i(1,-1,0), 0.5*0.75) );
-	stamp_10.push_back( std::make_pair(V3i(1,0,0), 0.75) );
-	stamp_10.push_back( std::make_pair(V3i(1,1,0), 0.5*0.75) );
-	stamp_10.push_back( std::make_pair(V3i(2,-1,0), 0.5*0.25) );
-	stamp_10.push_back( std::make_pair(V3i(2,0,0), 0.25) );
-	stamp_10.push_back( std::make_pair(V3i(2,1,0), 0.5*0.25) );
-
-	// offset and weights for coefficients at grid with offset=0,0
-	std::vector<std::pair<V3i, double>> stamp_00;
-	stamp_00.push_back( std::make_pair(V3i(-1,0,0), 0.5) );
-	stamp_00.push_back( std::make_pair(V3i(-1,1,0), 0.5*0.5) );
-	stamp_00.push_back( std::make_pair(V3i(-1,-1,0), 0.5*0.5) );
-	stamp_00.push_back( std::make_pair(V3i(0,0,0), 1.0) );
-	stamp_00.push_back( std::make_pair(V3i(0,-1,0), 0.5) );
-	stamp_00.push_back( std::make_pair(V3i(0,1,0), 0.5) );
-	stamp_00.push_back( std::make_pair(V3i(1,0,0), 0.5) );
-	stamp_00.push_back( std::make_pair(V3i(1,-1,0), 0.5*0.5) );
-	stamp_00.push_back( std::make_pair(V3i(1,1,0), 0.5*0.5) );
-
-
-
-
-
-	std::vector<std::vector<std::pair<V3i, double>>*> stamps(8, 0);
-	stamps[0] = &stamp_00;
-	stamps[1] = &stamp_10;
-	stamps[2] = &stamp_11;
-	stamps[3] = &stamp_01;
-	*/
-
 
 	// 2d stamps
 	std::vector<std::vector<std::pair<V3i, double>>> stamps(8);
@@ -590,7 +514,7 @@ void buildUpAndDownsamplingMatrices( PNSystem& sys_fine, PNSystem::RealMatrix& d
 	downsampleMatrix = downsampleMatrixBuilder.build( vm_coarse.getNumUnknowns(), vm_fine.getNumUnknowns() );
 	upsampleMatrix = upsampleMatrixBuilder.build( vm_fine.getNumUnknowns(), vm_coarse.getNumUnknowns() );
 }
-
+/*
 // runs a number of CG iterations on the given problem
 // returns the square root of the residual
 double run_cg_iterations( Eigen::SparseMatrix<double, Eigen::RowMajor>& A, Eigen::VectorXd& b, Eigen::VectorXd& x, Eigen::VectorXd& r, int numIterations, double tol )
@@ -850,6 +774,7 @@ void multigrid_cycle( MultigridLevel* lvl_fine, ProfileTimer* timers = 0 )
 }
 
 
+
 std::tuple<Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd> solve_multigrid(PNSystem& sys, int numLevels)
 {
 	ProfileTimer timers;
@@ -912,20 +837,120 @@ std::tuple<Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd> solve_multigrid(PN
 							to_vector(solve_convergence_timestamps));
 
 }
+*/
+
+void setup_solver( MGTEST& mg, PNSystem& sys, int numLevels = 1 )
+{
+	mg = MGTEST(numLevels);
+
+	PNSystem::Stencil& stencil = sys.getStencil();
+	int boundaryConditions = sys.getBoundaryConditions();
+	Domain domain = sys.getDomain();
+	PNSystem::Fields fields = sys.getFields();
+
+	for( int i=0;i<numLevels;++i )
+	{
+		PNSystem::RealMatrix A;
+		Eigen::VectorXd x;
+		PNSystem::RealMatrix downsample;
+		PNSystem::RealMatrix upsample;
+
+		PNSystem sys_level(stencil, domain, boundaryConditions);
+		sys_level.setFields( fields );
+		sys_level.build();
+		buildUpAndDownsamplingMatrices(sys_level, downsample, upsample);
+
+		A = sys_level.get_A_real().transpose()*sys_level.get_A_real();
+		x = Eigen::VectorXd(sys_level.getVoxelManager().getNumUnknowns());
+		x.fill(0.0);
+
+		if( i==0 )
+		{
+			Eigen::VectorXd b = sys_level.get_A_real().transpose()*sys_level.get_b_real();
+			mg.setb(b);
+		}
+
+		mg.setMultigridLevel(i, A, x, downsample, upsample);
 
 
+		// downsample to next level
+		domain = domain.downsample();
+		fields = fields.createRestricted();
+	}
+
+	// saved for debugging
+	sys.debug_downsample = mg.m_levels[0].downsample;
+	sys.debug_upsample = mg.m_levels[0].upsample;
+}
+
+std::tuple<Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd> solve_multigrid(PNSystem& sys, int numLevels)
+{
+	MGTEST mg;
+	setup_solver(mg, sys, numLevels);
+	int maxIterations = 1000;
+	auto result = mg.solve(maxIterations);
+
+	sys.debug_x = std::get<0>(result);
+	sys.debug_x_downsampled = sys.debug_downsample*sys.debug_x;
+	sys.debug_x_up_sampled_downsampled = sys.debug_upsample*sys.debug_x_downsampled;
 
 
+	return std::make_tuple(sys.stripBoundary(std::get<0>(result)), std::get<1>(result), std::get<2>(result));
+}
 
+std::tuple<Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd> solve_gs(PNSystem& sys)
+{
+	MGTEST mg;
+	setup_solver(mg, sys);
+	auto result = mg.solve_gs();
+	return std::make_tuple(sys.stripBoundary(std::get<0>(result)), std::get<1>(result), std::get<2>(result));
+}
 
+std::tuple<Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd> solve_cg(PNSystem& sys)
+{
+	MGTEST mg;
+	setup_solver(mg, sys);
+	auto result = mg.solve_cg();
+	return std::make_tuple(sys.stripBoundary(std::get<0>(result)), std::get<1>(result), std::get<2>(result));
+}
+
+std::tuple<Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd> solve_cg_eigen(PNSystem& sys)
+{
+	MGTEST mg;
+	setup_solver(mg, sys);
+	auto result = mg.solve_cg_eigen();
+	return std::make_tuple(sys.stripBoundary(std::get<0>(result)), std::get<1>(result), std::get<2>(result));
+}
 
 
 PYBIND11_MODULE(pnsolver, m)
 {
 	m.def( "solve_multigrid", &solve_multigrid);
 	m.def( "solve_cg", &solve_cg);
+	m.def( "solve_cg_eigen", &solve_cg_eigen);
 	m.def( "solve_gs", &solve_gs);
-	m.def( "solve_sparseLU", &solve_sparseLU);
+	//m.def( "solve_sparseLU", &solve_sparseLU);
+	m.def( "physical_mem_used_by_process", &physical_mem_used_by_process);
+
+
+
+	// MGTEST ================================
+	py::class_<MGTEST> class_mgtest(m, "MGTEST");
+	class_mgtest
+	.def("__init__",
+	[](MGTEST &m, int numLevels)
+	{
+		new (&m) MGTEST(numLevels);
+	})
+	.def("setRef",&MGTEST::setRef)
+	.def("setMultigridLevel",&MGTEST::setMultigridLevel)
+	.def("setb",&MGTEST::setb)
+	.def("solve", &MGTEST::solve)
+	.def("solve_gs", &MGTEST::solve_gs)
+	.def("solve_cg", &MGTEST::solve_cg)
+	.def("memoryTest", &MGTEST::memoryTest)
+	;
+
 
 
 	// PNSystem ==============================
@@ -943,6 +968,7 @@ PYBIND11_MODULE(pnsolver, m)
 		new (&m) PNSystem(stencil, domain, neumannBC);
 	})
 	.def("getNumCoefficients", &PNSystem::getNumCoefficients )
+	.def("getResolution", &PNSystem::getResolution )
 	.def("getNumVoxels", &PNSystem::getNumVoxels )
 	.def("getOrder", &PNSystem::getOrder )
 	.def("build", &PNSystem::build )
@@ -952,6 +978,8 @@ PYBIND11_MODULE(pnsolver, m)
 	.def("get_A_real_test", &PNSystem::get_A_real_test )
 	.def("get_b_real_test", &PNSystem::get_b_real_test )
 	.def("setDebugVoxel", &PNSystem::setDebugVoxel )
+	.def("get_debug", &PNSystem::get_debug )
+
 	//.def("computeGroundtruth", &PNSystem::computeGroundtruth )
 	.def("getVoxelInfo", &PNSystem::getVoxelInfo )
 	;

@@ -6,7 +6,7 @@ import problems
 import util
 import pnsolver
 import itertools
-
+import scipy.io
 
 def setProblem( sys, problem ):
 	sys.setField( "sigma_t", problem["sigma_t"] )
@@ -53,18 +53,49 @@ def solve( stencil_name, problem, filename, do_neumannBC = False ):
 	#b = sys.get_b_real_test()
 	#x = sys.solve_cg( b )
 	#x = sys.solve_mg()
-	x, convergence, timestamps = pnsolver.solve_multigrid( sys, 6 )
-	#x, convergence, timestamps = pnsolver.solve_gs( sys )
-	#x, convergence, timestamps = pnsolver.solve_cg( sys )
 	#x, convergence, timestamps = pnsolver.solve_sparseLU( sys )
-	x = x.reshape((x.shape[0], 1))
+	#x = x.reshape((x.shape[0], 1))
+
+
+	data = {}
+
+	x, convergence, timestamps = pnsolver.solve_multigrid( sys, 6 )
+	data["convergence_mg"] = convergence
+	data["timestamps_mg"] = timestamps
+	data["x_mg"] = x.reshape((x.shape[0], 1))
+
+	x, convergence, timestamps = pnsolver.solve_gs( sys )
+	data["convergence_gs"] = convergence
+	data["timestamps_gs"] = timestamps
+
+	x, convergence, timestamps = pnsolver.solve_cg( sys )
+	data["convergence_cg"] = convergence
+	data["timestamps_cg"] = timestamps
+	data["x_cg"] = x.reshape((x.shape[0], 1))
+
+	x, convergence, timestamps = pnsolver.solve_cg_eigen( sys )
+	data["convergence_cg_eigen"] = convergence
+	data["timestamps_cg_eigen"] = timestamps
+
+
+	data["resolution"] = sys.getResolution()
+	data["numCoeffs"] = sys.getNumCoefficients()
+
+	a,b,c = sys.get_debug();
+	data["debug_x"] = a.reshape((a.shape[0], 1))
+	data["debug_x_upsampled_downsampled"] = c.reshape((c.shape[0], 1))
+
+	filename = "c:/projects/epfl/temp/multigrid/multigrid-master/checkerboard_test.mat"
+	scipy.io.savemat(filename, data)
+
+
 	#print(x.shape)
 	#pass
 	#except:
 	#	print("Solve failed...")
 
 	# write the result to disk for visualization ---------------
-	util.write_pn_system(filename, sys, problem, x, convergence, timestamps)
+	#util.write_pn_system(filename, sys, problem, x, convergence, timestamps)
 
 def groundtruth( problem, numSamples, filename ):
 	stencil_name = "noop"
@@ -81,9 +112,67 @@ def groundtruth( problem, numSamples, filename ):
 
 
 
+def memory():
+	import os
+	import psutil
+	process = psutil.Process(os.getpid())
+	return process.memory_info().rss
+
+def multigrid_debug_test():
+	#stencil_name = "noop"
+	#domain = pnsolver.Domain( np.array([1.0, 1.0, 1]), np.array([32, 32, 1]), np.array([0.0, 0.0, 0.0]))
+	#do_neumannBC = False
+	#sys = pnsolver.PNSystem(stencil_name, domain, do_neumannBC)
+	
+	numLevels = 9
+	mgtest = pnsolver.MGTEST(numLevels)
+
+	#'''
+	for l in range(numLevels):
+		filename = "c:/projects/epfl/temp/multigrid/multigrid-master/poisson_problem_lvl{}.mat".format(l)
+		data = scipy.io.loadmat(filename)
+		mgtest.setMultigridLevel(l, data["L"], data["u"], data['restrict_m'], data['interp_m'])
+	#'''
+
+
+	filename = "c:/projects/epfl/temp/multigrid/multigrid-master/poisson_problem_ref.mat"
+	data = scipy.io.loadmat(filename)
+	mgtest.setRef( data["u_exact"] )
+	mgtest.setb( data["f_gg"] )
+
+	data = {}
+
+	x, convergence, timestamps = mgtest.solve(100)
+	data["convergence_mg"] = convergence
+	data["timestamps_mg"] = timestamps
+	x, convergence, timestamps = mgtest.solve_gs()
+	data["convergence_gs"] = convergence
+	data["timestamps_gs"] = timestamps
+
+	x, convergence, timestamps = mgtest.solve_cg()
+	data["convergence_cg"] = convergence
+	data["timestamps_cg"] = timestamps
+
+
+	filename = "c:/projects/epfl/temp/multigrid/multigrid-master/poisson_test.mat"
+	scipy.io.savemat(filename, data)
+
+	#pnsolver.solve_multigrid(sys)
+	'''
+	
+
+	'''
+
+
+
 
 
 if __name__ == "__main__":
+
+
+	#multigrid_debug_test()
+	#exit(0)
+
 	path = "C:/projects/epfl/epfl17/python/pnsolver/results/studies"
 
 	# define problem ----------------------------

@@ -193,6 +193,11 @@ int PNSystem::getNumCoefficients()const
 	return m_stencil.numCoeffs;
 }
 
+V3i PNSystem::getResolution()const
+{
+	return m_domain.getResolution();
+}
+
 int PNSystem::getNumVoxels()const
 {
 	return m_domain.numVoxels();

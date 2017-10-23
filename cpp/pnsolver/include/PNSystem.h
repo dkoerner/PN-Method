@@ -36,6 +36,17 @@ struct PNSystem
 	struct VoxelSystem;
 	struct Fields;
 
+	PNSystem::RealMatrix debug_downsample;
+	PNSystem::RealMatrix debug_upsample;
+	Eigen::VectorXd debug_x;
+	Eigen::VectorXd debug_x_downsampled;
+	Eigen::VectorXd debug_x_up_sampled_downsampled;
+	std::tuple<Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd> get_debug()
+	{
+		//return std::make_tuple(stripBoundary(debug_x), stripBoundary(debug_x_downsampled), stripBoundary(debug_x_up_sampled_downsampled));
+		return std::make_tuple(stripBoundary(debug_x), debug_x_downsampled, stripBoundary(debug_x_up_sampled_downsampled));
+	}
+
 
 	template<typename T>
 	struct MatrixBuilder
@@ -442,6 +453,7 @@ struct PNSystem
 
 	const Domain& getDomain()const; // returns the spatial discretization used by the system
 	int getNumCoefficients()const; // returns the number of SH coefficients per voxel
+	V3i getResolution()const;
 	int getNumVoxels()const; // returns the number of voxels
 	int getOrder()const;
 

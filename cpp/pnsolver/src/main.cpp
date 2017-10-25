@@ -46,27 +46,26 @@ void setup_solver( Solver& mg, PNSystem& sys, int numLevels = 1 )
 		sys_level.build();
 		buildUpAndDownsamplingMatrices(sys_level, downsample, upsample);
 
+
 		A = sys_level.get_A_real().transpose()*sys_level.get_A_real();
+		Eigen::VectorXd b = sys_level.get_A_real().transpose()*sys_level.get_b_real();
+		//std::cout << "warning: not using ATA form\n";
+		//A = sys_level.get_A_real();
+		//Eigen::VectorXd b = sys_level.get_b_real();
+
 		x = Eigen::VectorXd(sys_level.getVoxelManager().getNumUnknowns());
 		x.fill(0.0);
 
-		if( i==0 )
-		{
-			Eigen::VectorXd b = sys_level.get_A_real().transpose()*sys_level.get_b_real();
-			mg.setb(b);
-		}
+		mg.setMultigridLevel(i, A, x, b, downsample, upsample);
 
-		mg.setMultigridLevel(i, A, x, downsample, upsample);
+		// used for blockgs test
+		mg.m_levels[i].m_voxelManager = sys_level.getVoxelManager();
 
 
 		// downsample to next level
 		domain = domain.downsample();
 		fields = fields.createRestricted();
 	}
-
-	// saved for debugging
-	sys.debug_downsample = mg.m_levels[0].downsample;
-	sys.debug_upsample = mg.m_levels[0].upsample;
 }
 
 std::tuple<Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd> solve_multigrid(PNSystem& sys, int numLevels)
@@ -76,19 +75,106 @@ std::tuple<Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd> solve_multigrid(PN
 	int maxIterations = 1000;
 	auto result = mg.solve(maxIterations);
 
-	sys.debug_x = std::get<0>(result);
-	sys.debug_x_downsampled = sys.debug_downsample*sys.debug_x;
-	sys.debug_x_up_sampled_downsampled = sys.debug_upsample*sys.debug_x_downsampled;
+	//sys.debug_x = std::get<0>(result);
+	//sys.debug_x_downsampled = sys.debug_downsample*sys.debug_x;
+	//sys.debug_x_up_sampled_downsampled = sys.debug_upsample*sys.debug_x_downsampled;
 
 
 	return std::make_tuple(sys.stripBoundary(std::get<0>(result)), std::get<1>(result), std::get<2>(result));
 }
+
+
+#include <cstdint>
+
+constexpr int64_t ipow(int64_t base, int exp, int64_t result = 1)
+{
+	if(base==0)
+		return 1;
+	return exp < 1 ? result : ipow(base*base, exp/2, (exp % 2) ? result*base : result);
+}
+
+
+std::tuple<Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd> solve_multigrid2(PNSystem& sys, int numLevels)
+{
+	Solver mg;
+	setup_solver(mg, sys, numLevels);
+
+	/*
+	for( int i=0;i<mg.m_levels.size();++i )
+	{
+		mg.m_levels[i].numPreSmoothingIterations = ipow(2,i);
+		std::cout << "level=" << i <<" #iter=" << mg.m_levels[i].numPreSmoothingIterations << std::endl;
+	}
+
+
+	int maxIterations = 1000;
+	auto result = mg.solve2(maxIterations);
+
+	return std::make_tuple(sys.stripBoundary(std::get<0>(result)), std::get<1>(result), std::get<2>(result));
+	*/
+
+	/*
+	Solver::System& lgs = mg.m_levels[0];
+
+	Timer timer;
+	std::vector<double> convergence;
+	std::vector<double> convergence_time;
+
+	convergence.push_back(lgs.computeRMSE());
+	convergence_time.push_back(0.0);
+
+	{
+		Solver::System& lgs = mg.m_levels[1];
+		mg.run_cg_iterations( lgs.A, lgs.x, lgs.b, lgs.r, 1000, 1.0e-10 );
+		mg.m_levels[0].x = mg.m_levels[0].upsample*lgs.x;
+	}
+
+	timer.start();
+
+	//std::vector<double> tolerances = {1.0e-10, 1.0e-5, 1.0e-6, 1.0e-7, 1.0e-8, 1.0e-9, 1.0e-10};
+
+//	for( int i=0;i<numLevels-1;++i )
+//	{
+//		int level = numLevels-1-i;
+//		Solver::System& lgs = mg.m_levels[level];
+//		double tol = 1.0e-10;
+//		//double tol = tolerances[level];
+//		mg.run_cg_iterations( lgs.A, lgs.x, lgs.b, lgs.r, 1000, tol );
+//		mg.m_levels[level-1].x = mg.m_levels[level-1].upsample*lgs.x;
+//	}
+	mg.run_cg_iterations( lgs.A, lgs.x, lgs.b, lgs.r, 1000, 1.0e-10 );
+
+
+	timer.stop();
+
+	convergence.push_back(lgs.computeRMSE());
+	convergence_time.push_back(timer.elapsedSeconds());
+
+
+
+	return std::make_tuple(sys.stripBoundary(lgs.x), to_vector(convergence), to_vector(convergence_time));
+	*/
+
+
+	int maxIterations = 1000;
+	auto result = mg.solve2(maxIterations);
+	return std::make_tuple(sys.stripBoundary(std::get<0>(result)), std::get<1>(result), std::get<2>(result));
+}
+
 
 std::tuple<Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd> solve_gs(PNSystem& sys)
 {
 	Solver solver;
 	setup_solver(solver, sys);
 	auto result = solver.solve_gs();
+	return std::make_tuple(sys.stripBoundary(std::get<0>(result)), std::get<1>(result), std::get<2>(result));
+}
+
+std::tuple<Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd> solve_blockgs(PNSystem& sys)
+{
+	Solver solver;
+	setup_solver(solver, sys);
+	auto result = solver.solve_blockgs();
 	return std::make_tuple(sys.stripBoundary(std::get<0>(result)), std::get<1>(result), std::get<2>(result));
 }
 
@@ -108,13 +194,24 @@ std::tuple<Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd> solve_cg_eigen(PNS
 	return std::make_tuple(sys.stripBoundary(std::get<0>(result)), std::get<1>(result), std::get<2>(result));
 }
 
+std::tuple<Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd> solve_sparseLU(PNSystem& sys)
+{
+	Solver solver;
+	setup_solver(solver, sys);
+	auto result = solver.solve_sparseLU();
+	return std::make_tuple(sys.stripBoundary(std::get<0>(result)), std::get<1>(result), std::get<2>(result));
+}
+
 
 PYBIND11_MODULE(pnsolver, m)
 {
 	m.def( "solve_multigrid", &solve_multigrid);
+	m.def( "solve_multigrid2", &solve_multigrid2);
 	m.def( "solve_cg", &solve_cg);
 	m.def( "solve_cg_eigen", &solve_cg_eigen);
 	m.def( "solve_gs", &solve_gs);
+	m.def( "solve_blockgs", &solve_blockgs);
+	m.def( "solve_sparseLU", &solve_sparseLU);
 
 
 
@@ -127,7 +224,6 @@ PYBIND11_MODULE(pnsolver, m)
 		new (&m) Solver(numLevels);
 	})
 	.def("setMultigridLevel",&Solver::setMultigridLevel)
-	.def("setb",&Solver::setb)
 	.def("solve", &Solver::solve)
 	.def("solve_gs", &Solver::solve_gs)
 	.def("solve_cg", &Solver::solve_cg)

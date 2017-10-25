@@ -394,15 +394,35 @@ PNSystem::VoxelManager::VoxelManager()
 void PNSystem::VoxelManager::init(const V3i& resolution, const Stencil& stencil, int boundaryConditions)
 {
 	int numCoeffs = stencil.numCoeffs;
+	int boundaryWidth = stencil.width;
+	std::vector<V3i> coefficientGridSpaceOffsets;
+	for( int i=0;i<numCoeffs;++i )
+		coefficientGridSpaceOffsets.push_back(stencil.getOffset(i));
+	init( resolution,
+		  numCoeffs,
+		  boundaryWidth,
+		  coefficientGridSpaceOffsets,
+		  boundaryConditions);
+}
+
+void PNSystem::VoxelManager::init(const V3i& resolution,
+								  int numCoeffs,
+								  int boundaryWidth,
+								  const std::vector<V3i>& coefficientGridSpaceOffsets,
+								  int boundaryConditions)
+{
+	m_numCoeffs = numCoeffs;
+	m_boundaryWidth = boundaryWidth;
+	m_coefficientGridSpaceOffsets = std::vector<V3i>(coefficientGridSpaceOffsets.begin(), coefficientGridSpaceOffsets.end());
 	m_resolution = resolution;
 	m_boundaryConditions = boundaryConditions;
-	m_stencil = &stencil;
+	//m_stencil = &stencil;
 
 	if( m_resolution[2] == 1 )
 		// in 2d we have zero boundary layers
-		m_numBoundaryLayers = V3i(stencil.width, stencil.width, 0);
+		m_numBoundaryLayers = V3i(boundaryWidth, boundaryWidth, 0);
 	else
-		m_numBoundaryLayers = V3i(stencil.width, stencil.width, stencil.width);
+		m_numBoundaryLayers = V3i(boundaryWidth, boundaryWidth, boundaryWidth);
 
 	for( int i=-m_numBoundaryLayers[0];i<=m_numBoundaryLayers[0];++i )
 		for( int j=-m_numBoundaryLayers[1];j<=m_numBoundaryLayers[1];++j )
@@ -430,13 +450,14 @@ void PNSystem::VoxelManager::init(const V3i& resolution, const Stencil& stencil,
 
 	for( int i=0;i<numCoeffs;++i )
 	{
-		V3i offset = stencil.getOffset(i);
+		//V3i offset = stencil.getOffset(i);
+		V3i offset = coefficientGridSpaceOffsets[i];
 
 		// interior cells have all coefficients defined, therefore their indices are all set
 		getVoxelType(0,0,0).registerActiveCoefficient(i);
 
 
-		if(stencil.width > 0)
+		if(boundaryWidth > 0)
 		{
 			// here we make those coefficients non-boundary(active) coefficients, which sit directly on the boundary
 			// I think this is required for both, neumann and dirichlet BC
@@ -488,7 +509,7 @@ void PNSystem::VoxelManager::init(const V3i& resolution, const Stencil& stencil,
 				getVoxelType(0,0,1).registerActiveCoefficient(i);
 			}else
 				throw std::runtime_error("PNSystem::VoxelManager::init unexpected");
-		} // if stencil.widh > 0 (if we need to register active coefficients in boundary voxels)
+		} // if boundaryWidth > 0 (if we need to register active coefficients in boundary voxels)
 
 	}
 

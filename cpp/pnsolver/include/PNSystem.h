@@ -338,6 +338,11 @@ struct PNSystem
 
 		VoxelManager();
 		void init(const V3i& resolution, const Stencil& stencil , int boundaryConditions);
+		void init(  const V3i& resolution,
+					int numCoeffs,
+					int boundaryWidth,
+					const std::vector<V3i>& coefficientGridSpaceOffsets,
+					int boundaryConditions);
 		int getNumCoeffs(const Voxel& voxel);
 		int getGlobalIndex( const Voxel& voxel, int coeff );
 		bool isBoundaryCoefficient(const Voxel &voxel, int coeff ); // returns true, if the given coefficient is a boundary coefficient
@@ -386,11 +391,17 @@ struct PNSystem
 
 			V3i res_coarse( res_fine[0]/2, res_fine[1]/2, is2D ? 1:res_fine[2]/2 );
 			VoxelManager vm;
-			vm.init( res_coarse, *m_stencil, m_boundaryConditions );
+			vm.init( res_coarse,
+					 m_numCoeffs,
+					 m_boundaryWidth,
+					 m_coefficientGridSpaceOffsets,
+					 m_boundaryConditions );
+
+
 			return vm;
 		}
 
-	private:
+	//private:
 
 		// returns boundary layer indices of the current voxel in x and y
 		// the indices are signed, indicating left or right side of the domain.
@@ -399,14 +410,14 @@ struct PNSystem
 		VoxelType& getVoxelType(int boundaryLayer_x, int boundaryLayer_y, int boundaryLayer_z);
 		VoxelType& getVoxelType(const std::tuple<int, int, int>& boundaryLayer);
 
-		//PNSystem* sys;
-
 
 		int m_numUnknowns; // number of cols and rows of A
 		V3i m_numBoundaryLayers;
 		V3i m_resolution;
 		int m_boundaryConditions;
-		const Stencil* m_stencil;
+		int m_numCoeffs;
+		int m_boundaryWidth;
+		std::vector<V3i> m_coefficientGridSpaceOffsets;
 
 
 		std::vector<Voxel> m_voxels;

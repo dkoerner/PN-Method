@@ -8,6 +8,8 @@ import util
 from scipy.ndimage.filters import gaussian_filter
 
 
+
+
 # This is the problem from the starmap paper. An emitting square at the center, surrounded by
 # some highly absorbing squares, embedded within a scattering medium.
 def checkerboard():
@@ -58,7 +60,9 @@ def checkerboard():
 	# here we set some general parameters 
 	size = 7.0
 	#res = 20
-	res = 64
+	#res = 512
+	#res = 64
+	res = 128
 	#res = 71
 	#res = 2
 	#res = 200
@@ -83,6 +87,59 @@ def checkerboard():
 
 	return problem
 
+
+def homogeneous():
+
+	def sigma_a( pWS ):
+		return 2.0
+
+	def sigma_s( pWS ):
+		return 2.0
+
+	def phase_shcoeffs( l, m, pWS ):
+		if l == 0 and m == 0:
+			return 1.0
+		return 0.0
+
+	def source_shcoeffs( l, m, pWS ):
+		if l==0 and m == 0:
+			x = pWS[0]
+			y = pWS[1]
+			if x > 3.0 and x < 4.0 and y > 3.0 and y < 4.0:
+				return 1.0
+			return 0.0
+		return 0.0
+
+	problem = {}
+
+	# here we set some general parameters 
+	size = 7.0
+	#res = 20
+	#res = 512
+	res = 64
+	#res = 71
+	#res = 2
+	#res = 200
+	#res = 150
+	#res = 200
+	domain = pnsolver.Domain( np.array([size, size, 1]), np.array([res, res, 1]), np.array([0.0, 0.0, 0.0]))
+	#voxel_area = domain.voxelSize()[0]*domain.voxelSize()[1]/0.01
+	#voxel_area = 1.0
+	#print("voxel_area={}".format(voxel_area))
+	#print("1/voxel_area={}".format(1.0/voxel_area))
+
+	problem["id"] = "checkerboard"
+	problem["domain"] = domain
+
+	# RTE parameters ------------
+	offset = np.array([1.0, 1.0, 1.0])
+	problem["sigma_t"] = pnsolver.VoxelGridField( util.rasterize(lambda pWS: sigma_a(pWS) + sigma_s(pWS), domain, dtype=complex), domain, offset*0.5 )
+	problem["sigma_a"] = pnsolver.VoxelGridField( util.rasterize(sigma_a, domain, dtype=complex), domain, offset*0.5 )
+	problem["sigma_s"] = pnsolver.VoxelGridField( util.rasterize(sigma_s, domain, dtype=complex), domain, offset*0.5 )
+	problem["f_p"] = [pnsolver.Constant(1.0)]
+	problem["q"] = [pnsolver.VoxelGridField( util.rasterize(lambda pWS: source_shcoeffs(0, 0, pWS), domain, dtype=complex), domain, offset*0.5 )]
+
+	return problem
 
 # This is the problem from the starmap paper. An emitting square at the center, surrounded by
 # some highly absorbing squares, embedded within a scattering medium.

@@ -181,8 +181,8 @@ def write_pn_system(filename, sys, problem, x=None, convergence=None, timestamps
 
 	A = sys.get_A_real_test()
 	b = sys.get_b_real_test()
-	#A = sys.get_boundary_A_real()
-	#b = sys.get_boundary_b_real()
+	#A = sys.get_A_real()
+	#b = sys.get_b_real()
 
 	info = {}
 	info["order"] = sys.getOrder()
@@ -194,6 +194,7 @@ def write_pn_system(filename, sys, problem, x=None, convergence=None, timestamps
 	data["info"] = info
 	if not A is None:
 		data['A'] = A
+		print(np.max(A))
 		'''
 		numRows = A.shape[0]
 		numCols = A.shape[1]
@@ -212,6 +213,7 @@ def write_pn_system(filename, sys, problem, x=None, convergence=None, timestamps
 
 	if not b is None:
 		data['b'] = b
+		print(np.max(b))
 	if not x is None:
 		data['x'] = x
 	if not convergence is None:

@@ -59,37 +59,52 @@ def solve( stencil_name, problem, filename, do_neumannBC = False ):
 
 	data = {}
 
-	x, convergence, timestamps = pnsolver.solve_multigrid( sys, 6 )
+	numLevels = 7
+	x, convergence, timestamps = pnsolver.solve_multigrid( sys, numLevels )
 	data["convergence_mg"] = convergence
 	data["timestamps_mg"] = timestamps
-	data["x_mg"] = x.reshape((x.shape[0], 1))
+
+
+	x, convergence, timestamps = pnsolver.solve_multigrid2( sys, numLevels )
+	data["convergence_mg2"] = convergence
+	data["timestamps_mg2"] = timestamps
+	#data["x_mg"] = x.reshape((x.shape[0], 1))
+	data["x"] = x.reshape((x.shape[0], 1))
 
 	x, convergence, timestamps = pnsolver.solve_gs( sys )
 	data["convergence_gs"] = convergence
 	data["timestamps_gs"] = timestamps
 
+	#x, convergence, timestamps = pnsolver.solve_blockgs( sys )
+	#data["convergence_mg2"] = convergence
+	#data["timestamps_mg2"] = timestamps
+
+
 	x, convergence, timestamps = pnsolver.solve_cg( sys )
 	data["convergence_cg"] = convergence
 	data["timestamps_cg"] = timestamps
-	data["x_cg"] = x.reshape((x.shape[0], 1))
+	#data["x_cg"] = x.reshape((x.shape[0], 1))
 
-	x, convergence, timestamps = pnsolver.solve_cg_eigen( sys )
-	data["convergence_cg_eigen"] = convergence
-	data["timestamps_cg_eigen"] = timestamps
+	#x, convergence, timestamps = pnsolver.solve_cg_eigen( sys )
+	#data["convergence_cg_eigen"] = convergence
+	#data["timestamps_cg_eigen"] = timestamps
+
+	#x, convergence, timestamps = pnsolver.solve_sparseLU( sys )
+	#data["convergence_cg_eigen"] = convergence
+	#data["timestamps_cg_eigen"] = timestamps
 
 
 	data["resolution"] = sys.getResolution()
 	data["numCoeffs"] = sys.getNumCoefficients()
 
-	a,b,c = sys.get_debug();
-	data["debug_x"] = a.reshape((a.shape[0], 1))
-	data["debug_x_upsampled_downsampled"] = c.reshape((c.shape[0], 1))
+	#a,b,c = sys.get_debug();
+	#data["debug_x"] = a.reshape((a.shape[0], 1))
+	#data["debug_x_upsampled_downsampled"] = c.reshape((c.shape[0], 1))
 
 	filename = "c:/projects/epfl/temp/multigrid/multigrid-master/checkerboard_test.mat"
+	#filename = "c:/projects/epfl/temp/multigrid/multigrid-master/homogeneous_test.mat"
 	scipy.io.savemat(filename, data)
 
-
-	#print(x.shape)
 	#pass
 	#except:
 	#	print("Solve failed...")
@@ -125,7 +140,7 @@ def multigrid_debug_test():
 	#sys = pnsolver.PNSystem(stencil_name, domain, do_neumannBC)
 	
 	numLevels = 9
-	mgtest = pnsolver.MGTEST(numLevels)
+	mgtest = pnsolver.Solver(numLevels)
 
 	#'''
 	for l in range(numLevels):
@@ -137,7 +152,7 @@ def multigrid_debug_test():
 
 	filename = "c:/projects/epfl/temp/multigrid/multigrid-master/poisson_problem_ref.mat"
 	data = scipy.io.loadmat(filename)
-	mgtest.setRef( data["u_exact"] )
+	#mgtest.setRef( data["u_exact"] )
 	mgtest.setb( data["f_gg"] )
 
 	data = {}
@@ -177,6 +192,7 @@ if __name__ == "__main__":
 
 	# define problem ----------------------------
 	problem = problems.checkerboard()
+	#problem = problems.homogeneous()
 	#util.write_problem(path+"/checkerboard_problem.mat", problem)
 	#exit(1)
 	#problem = problems.checkerboard3d()
@@ -200,6 +216,12 @@ if __name__ == "__main__":
 
 	
 	#'''
+	#rte_forms = ["fopn"]
+	#order = [1]
+	#staggered = [True]
+	#boundary_conditions = [False]
+
+
 	rte_forms = ["fopn"]
 	order = [1]
 	staggered = [True]

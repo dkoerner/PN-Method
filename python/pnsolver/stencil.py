@@ -1938,8 +1938,8 @@ if __name__ == "__main__":
 	#order = [0,1,2,3,4,5]
 	#order = [0,1,2,3,4]
 
-	rte_forms = ["fopn"]
-	order = [1]
+	rte_forms = ["sopn"]
+	order = [0]
 	staggered = [True]
 
 	test = itertools.product(rte_forms, order, staggered)

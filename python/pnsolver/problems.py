@@ -204,7 +204,7 @@ def checkerboard3d():
 	# here we set some general parameters 
 	size = 7.0
 	#res = 20
-	res = 100
+	res = 64
 	#res = 71
 	#res = 2
 	#res = 200
@@ -229,7 +229,52 @@ def checkerboard3d():
 
 	return problem
 
+def pointsource3d():
+	sigma_t = 8.0
+	albedo = 0.9
+	sigma_a = (1.0-albedo)*sigma_t
+	sigma_s = albedo*sigma_t
 
+
+	problem = {}
+
+	# here we set some general parameters 
+	size = 2.0
+	#res = 20
+	#res = 100
+	#res = 100
+	res = 80
+	#res = 71
+	#res = 2
+	#res = 200
+	#res = 150
+	#res = 200
+	domain = pnsolver.Domain( np.array([size, size, size]), np.array([res, res, res]), np.array([0.0, 0.0, 0.0]))
+
+	problem["id"] = "pointsource"
+	problem["domain"] = domain
+
+	# RTE parameters ------------
+	shape = (domain.getResolution()[0], domain.getResolution()[1], domain.getResolution()[2])
+	offset = np.array([1.0, 1.0, 1.0])
+
+	problem["sigma_t"] = pnsolver.Constant(sigma_t)
+	problem["sigma_a"] = pnsolver.Constant(sigma_a)
+	problem["sigma_s"] = pnsolver.Constant(sigma_s)
+	problem["f_p"] = [pnsolver.Constant(1.0)]
+
+	q_voxels = np.zeros(shape, dtype=complex)
+
+	vs = domain.getVoxelSize()
+	pointsource_center_WS = np.array([size*0.5, size*0.5, size*0.5])
+	pointsource_center_VS = domain.worldToVoxel(pointsource_center_WS)
+	center_voxel = np.array([int(pointsource_center_VS[0]), int(pointsource_center_VS[1]), int(pointsource_center_VS[2])])
+
+	q_voxels[center_voxel[0], center_voxel[1], center_voxel[2]] = 1.0/(vs[0]*vs[1]*vs[2])
+
+	problem["q"] = [pnsolver.VoxelGridField( q_voxels, domain, offset*0.5 )]
+
+	return problem
 
 def vacuum():
 

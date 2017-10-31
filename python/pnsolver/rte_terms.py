@@ -5,6 +5,10 @@ import numpy as np
 import meh
 import util
 
+class cda(object):
+	@staticmethod
+	def term0_projected_expr(debug = False):
+		pass
 
 
 class lspn(object):

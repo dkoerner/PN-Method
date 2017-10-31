@@ -149,6 +149,24 @@ def compare_matrices( A0, A1, id0, id1 ):
     mm = abs_imag_diff[max_index]
     print("imag: max={} max element=({}, {})".format(mm,max_index[0], max_index[1]))
 
+def compare_vectors( A0, A1, id0, id1 ):
+    if A0.shape != A1.shape:
+        raise ValueError("unmatched shape {}={} {}={}".format(id0, str(A0.shape), id1, str(A1.shape)))
+
+    if A0.dtype != A1.dtype:
+        raise ValueError("unmatched dtype")
+
+    diff = (A0-A1)
+    abs_real_diff = np.abs(np.real(diff))
+    abs_imag_diff = np.abs(np.imag(diff))
+
+    max_index = np.unravel_index(np.argmax(abs_real_diff), abs_real_diff.shape)
+    mm = abs_real_diff[max_index]
+    print("real: max={} max element=({}, {})".format(mm,max_index[0], max_index[1]))
+    #max_index = np.unravel_index(np.argmax(abs_imag_diff), abs_imag_diff.shape)
+    #mm = abs_imag_diff[max_index]
+    #print("imag: max={} max element=({}, {})".format(mm,max_index[0], max_index[1]))
+
 # I/O related =====================================================
 def rasterize( fun, domain, offset = np.array([0.5, 0.5, 0.5]), dtype=float ):
 	res = domain.getResolution()
@@ -179,8 +197,10 @@ def write_problem(filename, problem):
 def write_pn_system(filename, sys, problem, x=None, convergence=None, timestamps=None):
 	domain = problem["domain"]
 
-	A = sys.get_A_real_test()
-	b = sys.get_b_real_test()
+	A = None
+	b = None
+	#A = sys.get_A_real_test()
+	#b = sys.get_b_real_test()
 	#A = sys.get_A_real()
 	#b = sys.get_b_real()
 
@@ -188,13 +208,13 @@ def write_pn_system(filename, sys, problem, x=None, convergence=None, timestamps
 	info["order"] = sys.getOrder()
 	info["numCoeffs"] = sys.getNumCoefficients()
 	info["resolution"] = domain.getResolution()
+	info["size"] = domain.getSize()
 
 	data = {}
 	data["id"] = problem["id"]
 	data["info"] = info
 	if not A is None:
 		data['A'] = A
-		print(np.max(A))
 		'''
 		numRows = A.shape[0]
 		numCols = A.shape[1]
@@ -213,7 +233,6 @@ def write_pn_system(filename, sys, problem, x=None, convergence=None, timestamps
 
 	if not b is None:
 		data['b'] = b
-		print(np.max(b))
 	if not x is None:
 		data['x'] = x
 	if not convergence is None:
@@ -222,7 +241,7 @@ def write_pn_system(filename, sys, problem, x=None, convergence=None, timestamps
 		data["timestamps"] = timestamps
 
 
-	data["globalOffset"] = sys.getVoxelInfo("globalOffset").todense()
+	#data["globalOffset"] = sys.getVoxelInfo("globalOffset").todense()
 	'''
 	#data["globalOffset"] = sys.getVoxelInfo("coord.x").todense()
 	#data["globalOffset"] = sys.getVoxelInfo("coord.y").todense()
@@ -275,6 +294,10 @@ def load_pn_system( filename, silent = False ):
         result["order"] = info["order"][0][0][0][0]
         result["numCoeffs"] = info["numCoeffs"][0][0][0][0]
         result["resolution"] = np.array(info["resolution"][0][0][0])
+        try:
+            result["size"] = np.array(info["size"][0][0][0])
+        except:
+            pass
     else:
         result["order"] = 1
         result["numCoeffs"] = 3

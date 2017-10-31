@@ -8,6 +8,9 @@ import pnsolver
 import itertools
 import scipy.io
 
+
+
+
 def setProblem( sys, problem ):
 	sys.setField( "sigma_t", problem["sigma_t"] )
 	sys.setField( "sigma_a", problem["sigma_a"] )
@@ -40,7 +43,8 @@ def solve( stencil_name, problem, filename, do_neumannBC = False ):
 	#sys.setNeumannBoundaryConditions(do_neumannBC)
 
 	# build the system Ax=b using the cpp stencil -------------------
-	sys.build()
+	# build is now done in the solve functions
+	#sys.build()
 
 	#A = sys.get_boundary_A_real()
 	#b = sys.get_boundary_b_real()
@@ -60,29 +64,38 @@ def solve( stencil_name, problem, filename, do_neumannBC = False ):
 	data = {}
 
 	numLevels = 7
-	x, convergence, timestamps = pnsolver.solve_multigrid( sys, numLevels )
-	data["convergence_mg"] = convergence
-	data["timestamps_mg"] = timestamps
+	#x, convergence, timestamps = pnsolver.solve_multigrid( sys, numLevels )
+	#data["convergence_mg"] = convergence
+	#data["timestamps_mg"] = timestamps
 
 
-	x, convergence, timestamps = pnsolver.solve_multigrid2( sys, numLevels )
-	data["convergence_mg2"] = convergence
-	data["timestamps_mg2"] = timestamps
+	#x, convergence, timestamps = pnsolver.solve_multigrid2( sys, numLevels )
+	#data["convergence_mg2"] = convergence
+	#data["timestamps_mg2"] = timestamps
 	#data["x_mg"] = x.reshape((x.shape[0], 1))
-	data["x"] = x.reshape((x.shape[0], 1))
 
-	x, convergence, timestamps = pnsolver.solve_gs( sys )
-	data["convergence_gs"] = convergence
-	data["timestamps_gs"] = timestamps
+	#x, convergence, timestamps = pnsolver.solve_gs( sys )
+	#data["convergence_gs"] = convergence
+	#data["timestamps_gs"] = timestamps
 
 	#x, convergence, timestamps = pnsolver.solve_blockgs( sys )
 	#data["convergence_mg2"] = convergence
 	#data["timestamps_mg2"] = timestamps
 
 
-	x, convergence, timestamps = pnsolver.solve_cg( sys )
+	x, convergence, timestamps = pnsolver.solve_lscg( sys )
 	data["convergence_cg"] = convergence
 	data["timestamps_cg"] = timestamps
+
+
+	pnsolver.save_solution("test.pns", sys, x)
+	#x_test = pnsolver.getSolutionVector(pnsolver.load_solution("test.pns"))
+	#util.compare_vectors( x.reshape((x.shape[0], 1)), x_test.reshape((x.shape[0], 1)), "org", "new" )
+
+	data["x"] = x.reshape((x.shape[0], 1))
+
+
+
 	#data["x_cg"] = x.reshape((x.shape[0], 1))
 
 	#x, convergence, timestamps = pnsolver.solve_cg_eigen( sys )
@@ -101,16 +114,16 @@ def solve( stencil_name, problem, filename, do_neumannBC = False ):
 	#data["debug_x"] = a.reshape((a.shape[0], 1))
 	#data["debug_x_upsampled_downsampled"] = c.reshape((c.shape[0], 1))
 
-	filename = "c:/projects/epfl/temp/multigrid/multigrid-master/checkerboard_test.mat"
+	#filename = "c:/projects/epfl/temp/multigrid/multigrid-master/checkerboard_test.mat"
 	#filename = "c:/projects/epfl/temp/multigrid/multigrid-master/homogeneous_test.mat"
-	scipy.io.savemat(filename, data)
+	#scipy.io.savemat(filename, data)
 
 	#pass
 	#except:
 	#	print("Solve failed...")
 
 	# write the result to disk for visualization ---------------
-	#util.write_pn_system(filename, sys, problem, x, convergence, timestamps)
+	util.write_pn_system(filename, sys, problem, x, convergence, timestamps)
 
 def groundtruth( problem, numSamples, filename ):
 	stencil_name = "noop"
@@ -191,11 +204,12 @@ if __name__ == "__main__":
 	path = "C:/projects/epfl/epfl17/python/pnsolver/results/studies"
 
 	# define problem ----------------------------
-	problem = problems.checkerboard()
+	#problem = problems.checkerboard()
 	#problem = problems.homogeneous()
 	#util.write_problem(path+"/checkerboard_problem.mat", problem)
 	#exit(1)
-	#problem = problems.checkerboard3d()
+	problem = problems.checkerboard3d()
+	#problem = problems.pointsource3d()
 	#problem = problems.vacuum()
 
 	
@@ -227,6 +241,17 @@ if __name__ == "__main__":
 	staggered = [True]
 	boundary_conditions = [False]
 
+
+	#rte_forms = ["fopn"]
+	#order = [1,2,3,4,5]
+	#staggered = [True]
+	#boundary_conditions = [False]
+
+	#rte_forms = []
+	#order = []
+	#staggered = []
+	#boundary_conditions = []
+
 	test = itertools.product(rte_forms, order, staggered, boundary_conditions)
 	for c in test:
 		rte_form_name = c[0]
@@ -238,10 +263,16 @@ if __name__ == "__main__":
 		#stencil_name = "noop"
 		#print(stencil_name)
 		
-		#filename = "{}/{}12{}{}.mat".format(path, problem["id"], stencil_name, bc_id[do_neumannBC])
+		#filename = "{}/{}_{}{}.mat".format(path, problem["id"], stencil_name, bc_id[do_neumannBC])
 		filename = "{}/{}_test.mat".format(path, problem["id"], stencil_name)
 		#print("clear;filename=\"{}\";compute_condest;".format(filename))
 		solve(stencil_name, problem, filename, do_neumannBC=do_neumannBC)
+
+	#stencil_name = "stencil_cda"
+	#do_neumannBC = False
+	#filename = "{}/{}_{}.mat".format(path, problem["id"], stencil_name)
+	#solve(stencil_name, problem, filename, do_neumannBC=do_neumannBC)
+
 	#'''
 
 

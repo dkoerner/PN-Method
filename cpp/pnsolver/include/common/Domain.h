@@ -97,6 +97,11 @@ struct Domain
 		return m_bound.min;
 	}
 
+	V3d getSize()const
+	{
+		return m_bound.getExtents();
+	}
+
 	Domain downsample()const
 	{
 		V3i res_fine = getResolution();

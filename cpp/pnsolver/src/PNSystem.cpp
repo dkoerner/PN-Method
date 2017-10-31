@@ -245,7 +245,7 @@ void PNSystem::build()
 	{
 		if(v.debug)
 			std::cout << "Voxel=" << v.coord[0] << " " << v.coord[1] << " " << v.coord[2] << "==============================\n";
-		m_stencil.apply(Stencil::Context(*this, v, builder_A, builder_b));
+		m_stencil.apply(Stencil::Context(*this, v, &builder_A, &builder_b));
 	}
 
 	m_A = builder_A.build(m_voxelManager.getNumUnknowns(), m_voxelManager.getNumUnknowns());
@@ -297,8 +297,22 @@ PNSystem::RealMatrix PNSystem::getVoxelInfo(const std::string &info)
 	return m;
 }
 
-Eigen::VectorXd PNSystem::stripBoundary(const Eigen::VectorXd &x)
+int getIndex( const V3i& coord, int coeff_index, const V3i& res, int numCoeffs )
 {
+
+}
+
+
+void setCoeff( PNSystem::MatrixBuilderd& builder, int i, int j, double value )
+{
+	if( j<0 )
+		return;
+	builder.coeff(i,j) += value;
+}
+
+Eigen::VectorXd PNSystem::removeStaggering(const Eigen::VectorXd &x)
+{
+	/*
 	Eigen::VectorXd x2( m_domain.numVoxels()*m_stencil.numCoeffs,1);
 	std::vector<Voxel>& voxels = m_voxelManager.getVoxels();
 	for( auto&v:voxels )
@@ -316,7 +330,7 @@ Eigen::VectorXd PNSystem::stripBoundary(const Eigen::VectorXd &x)
 			int new_global_index = new_voxel_index*m_stencil.numCoeffs + i;
 
 			// this is the current index, which includes boundary voxels
-			int index = m_voxelManager.getGlobalIndex(v, i);
+			int index = m_voxelManager.getGlobalIndexBC(v, i);
 
 			if(index==-1)
 				throw std::runtime_error("PNSystem::stripBoundary didnt expect invalid coefficient index");
@@ -324,6 +338,113 @@ Eigen::VectorXd PNSystem::stripBoundary(const Eigen::VectorXd &x)
 		} // for each coefficient
 	} // for each voxel
 	return x2;
+	*/
+
+	///*
+	PNSystem::MatrixBuilderd builder;
+	VoxelManager& vm = getVoxelManager();
+
+	Eigen::VectorXd x2( m_domain.numVoxels()*m_stencil.numCoeffs,1);
+	std::vector<Voxel>& voxels = m_voxelManager.getVoxels();
+	V3i res = m_domain.getResolution();
+	for( auto&v:voxels )
+	{
+		if( !m_domain.contains_voxel(v.coord) )
+			// boundary or mixed boundary voxel
+			continue;
+		for( int coeff_index=0;coeff_index<m_stencil.numCoeffs;++coeff_index )
+		{
+			// this is the new index, which wont include boundary voxels
+			int new_voxel_index = v.coord[0]*res[2]*res[1] + v.coord[1]*res[2] + v.coord[2];
+			// since we store only internal voxels, we know that they all have all coefficients defined
+			int new_global_i = new_voxel_index*m_stencil.numCoeffs + coeff_index;
+
+
+			// in addition, we interpolate such that the coefficient is located at the voxel center
+			// for that we need the coefficient location
+			int grid_index = m_stencil.getGridIndexFromCoefficient(coeff_index);
+			std::vector<int> indices;
+			switch(grid_index)
+			{
+				case 0: // 0, 0, 1
+				{
+					indices.push_back(vm.getGlobalIndex(v.coord+V3i(0,0,0), coeff_index));
+					indices.push_back(vm.getGlobalIndex(v.coord+V3i(0,1,0), coeff_index));
+					indices.push_back(vm.getGlobalIndex(v.coord+V3i(1,0,0), coeff_index));
+					indices.push_back(vm.getGlobalIndex(v.coord+V3i(1,1,0), coeff_index));
+				}break;
+				case 1: // 1, 0, 1
+				{
+					indices.push_back(vm.getGlobalIndex(v.coord+V3i(0,0,0), coeff_index));
+					indices.push_back(vm.getGlobalIndex(v.coord+V3i(0,1,0), coeff_index));
+				}break;
+				case 2: // 1, 1, 1
+				{
+					indices.push_back(vm.getGlobalIndex(v.coord+V3i(0,0,0), coeff_index));
+				}break;
+				case 3: // 0, 1, 1
+				{
+					indices.push_back(vm.getGlobalIndex(v.coord+V3i(0,0,0), coeff_index));
+					indices.push_back(vm.getGlobalIndex(v.coord+V3i(1,0,0), coeff_index));
+				}break;
+				case 4: // 0, 0, 0
+				{
+					indices.push_back(vm.getGlobalIndex(v.coord+V3i(0,0,0), coeff_index));
+					indices.push_back(vm.getGlobalIndex(v.coord+V3i(1,0,0), coeff_index));
+					indices.push_back(vm.getGlobalIndex(v.coord+V3i(0,1,0), coeff_index));
+					indices.push_back(vm.getGlobalIndex(v.coord+V3i(0,0,1), coeff_index));
+					indices.push_back(vm.getGlobalIndex(v.coord+V3i(0,1,1), coeff_index));
+					indices.push_back(vm.getGlobalIndex(v.coord+V3i(1,0,1), coeff_index));
+					indices.push_back(vm.getGlobalIndex(v.coord+V3i(1,1,0), coeff_index));
+					indices.push_back(vm.getGlobalIndex(v.coord+V3i(1,1,1), coeff_index));
+				}break;
+				case 5: // 1, 0, 0
+				{
+					indices.push_back(vm.getGlobalIndex(v.coord+V3i(0,0,0), coeff_index));
+					indices.push_back(vm.getGlobalIndex(v.coord+V3i(0,1,0), coeff_index));
+					indices.push_back(vm.getGlobalIndex(v.coord+V3i(0,0,1), coeff_index));
+					indices.push_back(vm.getGlobalIndex(v.coord+V3i(0,1,1), coeff_index));
+				}break;
+				case 6: // 1, 1, 0
+				{
+					indices.push_back(vm.getGlobalIndex(v.coord+V3i(0,0,0), coeff_index));
+					indices.push_back(vm.getGlobalIndex(v.coord+V3i(0,0,1), coeff_index));
+				}break;
+				case 7: // 0, 1, 0
+				{
+					indices.push_back(vm.getGlobalIndex(v.coord+V3i(0,0,0), coeff_index));
+					indices.push_back(vm.getGlobalIndex(v.coord+V3i(1,0,0), coeff_index));
+					indices.push_back(vm.getGlobalIndex(v.coord+V3i(0,0,1), coeff_index));
+					indices.push_back(vm.getGlobalIndex(v.coord+V3i(1,0,1), coeff_index));
+				}break;
+			};
+
+			///*
+			int numValidIndices = 0;
+			for( auto& index:indices )
+				if( index>=0 )
+					++numValidIndices;
+			double weight = 1.0/double(numValidIndices);
+			for( auto& index:indices )
+			{
+				if( index>=0 )
+					builder.coeff(new_global_i, index) += weight;
+			}
+			//*/
+
+
+			// this is the current index, which includes boundary voxels
+			int index = m_voxelManager.getGlobalIndexBC(v, coeff_index);
+			if(index==-1)
+				throw std::runtime_error("PNSystem::stripBoundary didnt expect invalid coefficient index");
+			x2.coeffRef(new_global_i, 0) = x.coeffRef(index, 0);
+		} // for each coefficient
+	} // for each voxel
+
+
+	MatrixBuilderd::Matrix conv = builder.build( m_domain.numVoxels()*m_stencil.numCoeffs, getVoxelManager().getNumUnknowns() );
+	return conv*x;
+	//*/
 }
 
 
@@ -356,11 +477,11 @@ PNSystem::MatrixBuilderd::MatrixAccessHelper PNSystem::Stencil::Context::coeff_A
 		if(!sys.getVoxelManager().isBoundaryCoefficient(voxel_i, coeff_i))
 		{
 			// getGlobalIndex applies BC, which means it either returns -1 or bends indices
-			int globalIndex_i = sys.getVoxelManager().getGlobalIndex(voxel_i, coeff_i);
-			int globalIndex_j = sys.getVoxelManager().getGlobalIndex(sys.getVoxelManager().getVoxel(voxel_j), coeff_j);
+			int globalIndex_i = sys.getVoxelManager().getGlobalIndexBC(voxel_i, coeff_i);
+			int globalIndex_j = sys.getVoxelManager().getGlobalIndexBC(sys.getVoxelManager().getVoxel(voxel_j), coeff_j);
 
 			if( (globalIndex_i >= 0)&&(globalIndex_j >= 0) )
-				return m_builder_A.coeff(globalIndex_i, globalIndex_j);
+				return m_builder_A->coeff(globalIndex_i, globalIndex_j);
 		}
 	}
 
@@ -377,9 +498,9 @@ PNSystem::MatrixBuilderd::MatrixAccessHelper PNSystem::Stencil::Context::coeff_b
 	// writing into those rows
 	if(!sys.getVoxelManager().isBoundaryCoefficient(voxel_i, coeff_i))
 	{
-		int globalIndex_i = sys.getVoxelManager().getGlobalIndex(voxel_i, coeff_i);
+		int globalIndex_i = sys.getVoxelManager().getGlobalIndexBC(voxel_i, coeff_i);
 		if( globalIndex_i >= 0 )
-			return m_builder_b.coeff(globalIndex_i, 0);
+			return m_builder_b->coeff(globalIndex_i, 0);
 	}
 	return PNSystem::MatrixBuilderd::MatrixAccessHelper();
 }
@@ -572,7 +693,7 @@ int PNSystem::VoxelManager::getNumCoeffs(const Voxel& voxel)
 }
 
 
-int PNSystem::VoxelManager::getGlobalIndex(const Voxel &voxel, int coeff)
+int PNSystem::VoxelManager::getGlobalIndexBC(const Voxel &voxel, int coeff)
 {
 	VoxelType& vt = m_voxelTypes[voxel.type];
 
@@ -601,13 +722,35 @@ int PNSystem::VoxelManager::getGlobalIndex(const Voxel &voxel, int coeff)
 		else
 		{
 			V3i step = V3i(-sgn(layer[0]), -sgn(layer[1]), -sgn(layer[2]));
-			return getGlobalIndex(getVoxel(voxel.coord+step), coeff);
+			return getGlobalIndexBC(getVoxel(voxel.coord+step), coeff);
 		}
 	}
 
 	throw std::runtime_error("PNSystem::VoxelManager::getGlobalIndex unexpected");
 }
 
+int PNSystem::VoxelManager::getGlobalIndex(const Voxel &voxel, int coeff)
+{
+	VoxelType& vt = m_voxelTypes[voxel.type];
+	int localOffset = vt.getLocalCoefficientIndex(coeff);
+	if( localOffset >= 0 )
+		return voxel.globalOffset + localOffset;
+	return -1;
+}
+
+// returns global index as is
+int PNSystem::VoxelManager::getGlobalIndex(const V3i &coord, int coeff )
+{
+	return getGlobalIndex(getVoxel(coord), coeff);
+}
+
+/*
+int PNSystem::VoxelManager::getGlobalIndex( const V3i& coord, int coeff )
+{
+	Voxel& voxel = getVoxel(coord);
+	return getGlobalIndex();
+}
+*/
 
 
 bool PNSystem::VoxelManager::isBoundaryCoefficient(const Voxel& voxel, int coeff)

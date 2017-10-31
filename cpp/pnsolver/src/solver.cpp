@@ -439,7 +439,7 @@ void buildUpAndDownsamplingMatrices( PNSystem& sys_fine, PNSystem::RealMatrix& d
 			//int coeff_index = 0;
 
 			// get the global index of the coarse voxel/coeff
-			int gi_coarse = vm_coarse.getGlobalIndex( v_coarse, coeff_index );
+			int gi_coarse = vm_coarse.getGlobalIndexBC( v_coarse, coeff_index );
 
 			// initialize the value of the current coefficient at current coarse voxel
 			// this value is computed from all affected fine voxels
@@ -461,7 +461,7 @@ void buildUpAndDownsamplingMatrices( PNSystem& sys_fine, PNSystem::RealMatrix& d
 				PNSystem::Voxel& v_fine = vm_fine.getVoxel(v_fine_coord);
 
 				// retrieve global index of fine voxel/coeff
-				int gi_fine = vm_fine.getGlobalIndex(v_fine, coeff_index);
+				int gi_fine = vm_fine.getGlobalIndexBC(v_fine, coeff_index);
 				if( gi_fine >= 0 )
 				{
 					// either the fine voxel/coeff is not a boundary voxel/coeff,

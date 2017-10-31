@@ -54,7 +54,7 @@ struct RadianceField
 {
 	typedef std::shared_ptr<RadianceField> Ptr;
 
-	virtual std::complex<double> eval( const P3d& pWS, const V3d& omega )const=0;
+	virtual double eval( const P3d& pWS, const V3d& omega )const=0;
 };
 
 

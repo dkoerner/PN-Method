@@ -43,8 +43,8 @@ struct PNSystem
 	Eigen::VectorXd debug_x_up_sampled_downsampled;
 	std::tuple<Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd> get_debug()
 	{
-		//return std::make_tuple(stripBoundary(debug_x), stripBoundary(debug_x_downsampled), stripBoundary(debug_x_up_sampled_downsampled));
-		return std::make_tuple(stripBoundary(debug_x), debug_x_downsampled, stripBoundary(debug_x_up_sampled_downsampled));
+		//return std::make_tuple(removeStaggering(debug_x), stripBoundary(debug_x_downsampled), stripBoundary(debug_x_up_sampled_downsampled));
+		return std::make_tuple(removeStaggering(debug_x), debug_x_downsampled, removeStaggering(debug_x_up_sampled_downsampled));
 	}
 
 
@@ -88,6 +88,8 @@ struct PNSystem
 
 		MatrixAccessHelper coeff(int i,int j, bool debug = false)
 		{
+			if( (i<0)||(j<0) )
+				throw std::runtime_error("MatrixBuilder::coeff i<0 || j<0");
 			MatrixAccessHelper mah(&triplets, debug);
 			mah.i = i;
 			mah.j = j;
@@ -111,9 +113,9 @@ struct PNSystem
 		}
 
 		std::vector<Triplet> triplets;
-		//Matrix               matrix;
 	};
 	typedef MatrixBuilder<double> MatrixBuilderd;
+	typedef MatrixBuilder<std::complex<double>> MatrixBuildercd;
 
 
 
@@ -158,13 +160,7 @@ struct PNSystem
 		int m_order;
 	};
 
-	// This class serves as an interface to the stencil, which is used to
-	// build A and b. The idea is that the stencils apply function sets the coefficients for all the rows
-	// in the global system, which belong to the same voxel. This is because
-	// there is a coupling between coefficients within a single voxel and this coupling
-	// is expressed by the expanded RTE terms which are used to generate the stencil.
-	// So instead of generating a function, which sets a single row in the global system,
-	// it is more intuitive to have a function which sets a complete block-row per voxel.
+
 	struct Voxel
 	{
 		Voxel():
@@ -182,9 +178,16 @@ struct PNSystem
 
 	struct Stencil
 	{
+		// This class serves as an interface to the stencil, which is used to
+		// build A and b. The idea is that the stencils apply function sets the coefficients for all the rows
+		// in the global system, which belong to the same voxel. This is because
+		// there is a coupling between coefficients within a single voxel and this coupling
+		// is expressed by the expanded RTE terms which are used to generate the stencil.
+		// So instead of generating a function, which sets a single row in the global system,
+		// it is more intuitive to have a function which sets a complete block-row per voxel.
 		struct Context
 		{
-			Context( PNSystem& sys, Voxel& voxel, MatrixBuilderd& builder_A, MatrixBuilderd& builder_b ):
+			Context( PNSystem& sys, Voxel& voxel, MatrixBuilderd* builder_A, MatrixBuilderd* builder_b = 0 ):
 				sys(sys),
 				voxel(voxel),
 				m_builder_A(builder_A),
@@ -216,13 +219,13 @@ struct PNSystem
 			}
 
 			MatrixBuilderd::MatrixAccessHelper coeff_A(int coeff_i, const V3i &voxel_j, int coeff_j );
-			MatrixBuilderd::MatrixAccessHelper coeff_b( int coeff_i );
+			MatrixBuilderd::MatrixAccessHelper coeff_b(int coeff_i);
 
 		private:
 			PNSystem& sys;
 			Voxel& voxel;
-			MatrixBuilderd& m_builder_A;
-			MatrixBuilderd& m_builder_b;
+			MatrixBuilderd* m_builder_A;
+			MatrixBuilderd* m_builder_b;
 			static V3d g_grid_offsets2[8];
 		};
 
@@ -344,7 +347,9 @@ struct PNSystem
 					const std::vector<V3i>& coefficientGridSpaceOffsets,
 					int boundaryConditions);
 		int getNumCoeffs(const Voxel& voxel);
-		int getGlobalIndex( const Voxel& voxel, int coeff );
+		int getGlobalIndexBC( const Voxel& voxel, int coeff ); // returns the global index which is potentially bend from neumman BC
+		int getGlobalIndex(const Voxel &voxel, int coeff ); // returns global index as is
+		int getGlobalIndex(const V3i &coord, int coeff ); // returns global index as is
 		bool isBoundaryCoefficient(const Voxel &voxel, int coeff ); // returns true, if the given coefficient is a boundary coefficient
 		V3i getNumBoundaryLayers()const;
 		bool is2D()const{return m_resolution[2] == 1;}
@@ -459,7 +464,7 @@ struct PNSystem
 
 	RealMatrix getVoxelInfo( const std::string& info );
 
-	Eigen::VectorXd stripBoundary(const Eigen::VectorXd& x);
+	Eigen::VectorXd removeStaggering(const Eigen::VectorXd& x);
 
 
 	const Domain& getDomain()const; // returns the spatial discretization used by the system

@@ -423,8 +423,8 @@ struct Solver
 		double tol = 1.0e-10; // convergence error tolerance
 		int numIterations = b.rows();
 
-		solve_convergence.reserve(numIterations);
-		solve_convergence_timestamps.reserve(numIterations);
+		//solve_convergence.reserve(numIterations);
+		//solve_convergence_timestamps.reserve(numIterations);
 
 
 		timer.start();
@@ -440,8 +440,8 @@ struct Solver
 			double rsold = r.squaredNorm();
 			for( int i=0;i<numIterations;++i )
 			{
-				solve_convergence.push_back(std::sqrt(rsold));
-				solve_convergence_timestamps.push_back(timer.elapsedSeconds());
+				//solve_convergence.push_back(std::sqrt(rsold));
+				//solve_convergence_timestamps.push_back(timer.elapsedSeconds());
 
 				Ap = A*p;
 				double alpha = rsold/p.dot(Ap);
@@ -457,9 +457,13 @@ struct Solver
 
 		timer.stop();
 		std::cout << "solve_cg: " << timer.elapsedSeconds() << "s #iterations=" << solve_convergence.size() << "\n";
+		//return std::make_tuple( x,
+		//                        to_vector(solve_convergence),
+		//                        to_vector(solve_convergence_timestamps));
 		return std::make_tuple( x,
-		                        to_vector(solve_convergence),
-		                        to_vector(solve_convergence_timestamps));
+								Eigen::VectorXd(),
+								Eigen::VectorXd());
+
 	}
 
 

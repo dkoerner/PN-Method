@@ -13,6 +13,11 @@
 
 
 
+
+
+
+
+
 // This class implements the RadianceField interface and uses
 // an underlying SH representation, where each coefficient is
 // given as a (potentially spatially varying) scalarfield
@@ -38,7 +43,7 @@ struct SHEXP : public RadianceField
 		return m_coeffs.getField(l,m);
 	}
 
-	virtual std::complex<double> eval( const P3d& pWS, const V3d& omega )const override
+	virtual double eval( const P3d& pWS, const V3d& omega )const override
 	{
 		P2d theta_phi = sphericalCoordinates(omega);
 		double theta = theta_phi[0];
@@ -47,7 +52,7 @@ struct SHEXP : public RadianceField
 		for(int l=0;l<m_coeffs.getOrder()+1;++l)
 			for( int m=-l;m<=l;++m )
 				result+=m_coeffs.eval(l,m,pWS)*sph::sph_basis(l,m,theta, phi);
-		return result;
+		return result.real();
 	}
 
 private:

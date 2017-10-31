@@ -17,6 +17,7 @@
 #include<field/Constant.h>
 #include<field/SHEXP.h>
 #include <PNSystem.h>
+#include <PNSolution.h>
 
 #include <solver.h>
 
@@ -36,7 +37,6 @@ void setup_solver( Solver& mg, PNSystem& sys, int numLevels = 1 )
 
 	for( int i=0;i<numLevels;++i )
 	{
-		PNSystem::RealMatrix A;
 		Eigen::VectorXd x;
 		PNSystem::RealMatrix downsample;
 		PNSystem::RealMatrix upsample;
@@ -44,27 +44,38 @@ void setup_solver( Solver& mg, PNSystem& sys, int numLevels = 1 )
 		PNSystem sys_level(stencil, domain, boundaryConditions);
 		sys_level.setFields( fields );
 		sys_level.build();
-		buildUpAndDownsamplingMatrices(sys_level, downsample, upsample);
+
+		std::cout << "fetching A...\n";std::flush(std::cout);
+		PNSystem::RealMatrix& A_org = sys_level.get_A_real();
+		std::cout << "computing A^T...\n";std::flush(std::cout);
+		PNSystem::RealMatrix AT = A_org.transpose();
+		std::cout << "computing A^T*A...\n";std::flush(std::cout);
+		mg.m_levels[i].A = AT*A_org;
 
 
-		A = sys_level.get_A_real().transpose()*sys_level.get_A_real();
-		Eigen::VectorXd b = sys_level.get_A_real().transpose()*sys_level.get_b_real();
+		//std::cout << "computing b...\n";std::flush(std::cout);
+		mg.m_levels[i].b = AT*sys_level.get_b_real();
 		//std::cout << "warning: not using ATA form\n";
 		//A = sys_level.get_A_real();
 		//Eigen::VectorXd b = sys_level.get_b_real();
 
-		x = Eigen::VectorXd(sys_level.getVoxelManager().getNumUnknowns());
-		x.fill(0.0);
-
-		mg.setMultigridLevel(i, A, x, b, downsample, upsample);
+		//std::cout << "computing x...\n";std::flush(std::cout);
+		mg.m_levels[i].x = Eigen::VectorXd(sys_level.getVoxelManager().getNumUnknowns());
+		mg.m_levels[i].x.fill(0.0);
 
 		// used for blockgs test
-		mg.m_levels[i].m_voxelManager = sys_level.getVoxelManager();
-
+		//mg.m_levels[i].m_voxelManager = sys_level.getVoxelManager();
 
 		// downsample to next level
-		domain = domain.downsample();
-		fields = fields.createRestricted();
+		if(i<numLevels-1)
+		{
+			buildUpAndDownsamplingMatrices(sys_level, mg.m_levels[i].downsample, mg.m_levels[i].upsample);
+			domain = domain.downsample();
+			fields = fields.createRestricted();
+		}
+
+		//std::cout << "setting multigrid level...\n";std::flush(std::cout);
+		//mg.setMultigridLevel(i, A, x, b, downsample, upsample);
 	}
 }
 
@@ -80,7 +91,7 @@ std::tuple<Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd> solve_multigrid(PN
 	//sys.debug_x_up_sampled_downsampled = sys.debug_upsample*sys.debug_x_downsampled;
 
 
-	return std::make_tuple(sys.stripBoundary(std::get<0>(result)), std::get<1>(result), std::get<2>(result));
+	return std::make_tuple(sys.removeStaggering(std::get<0>(result)), std::get<1>(result), std::get<2>(result));
 }
 
 
@@ -110,7 +121,7 @@ std::tuple<Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd> solve_multigrid2(P
 	int maxIterations = 1000;
 	auto result = mg.solve2(maxIterations);
 
-	return std::make_tuple(sys.stripBoundary(std::get<0>(result)), std::get<1>(result), std::get<2>(result));
+	return std::make_tuple(sys.removeStaggering(std::get<0>(result)), std::get<1>(result), std::get<2>(result));
 	*/
 
 	/*
@@ -152,13 +163,13 @@ std::tuple<Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd> solve_multigrid2(P
 
 
 
-	return std::make_tuple(sys.stripBoundary(lgs.x), to_vector(convergence), to_vector(convergence_time));
+	return std::make_tuple(sys.removeStaggering(lgs.x), to_vector(convergence), to_vector(convergence_time));
 	*/
 
 
 	int maxIterations = 1000;
 	auto result = mg.solve2(maxIterations);
-	return std::make_tuple(sys.stripBoundary(std::get<0>(result)), std::get<1>(result), std::get<2>(result));
+	return std::make_tuple(sys.removeStaggering(std::get<0>(result)), std::get<1>(result), std::get<2>(result));
 }
 
 
@@ -167,7 +178,7 @@ std::tuple<Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd> solve_gs(PNSystem&
 	Solver solver;
 	setup_solver(solver, sys);
 	auto result = solver.solve_gs();
-	return std::make_tuple(sys.stripBoundary(std::get<0>(result)), std::get<1>(result), std::get<2>(result));
+	return std::make_tuple(sys.removeStaggering(std::get<0>(result)), std::get<1>(result), std::get<2>(result));
 }
 
 std::tuple<Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd> solve_blockgs(PNSystem& sys)
@@ -175,7 +186,7 @@ std::tuple<Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd> solve_blockgs(PNSy
 	Solver solver;
 	setup_solver(solver, sys);
 	auto result = solver.solve_blockgs();
-	return std::make_tuple(sys.stripBoundary(std::get<0>(result)), std::get<1>(result), std::get<2>(result));
+	return std::make_tuple(sys.removeStaggering(std::get<0>(result)), std::get<1>(result), std::get<2>(result));
 }
 
 std::tuple<Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd> solve_cg(PNSystem& sys)
@@ -183,7 +194,8 @@ std::tuple<Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd> solve_cg(PNSystem&
 	Solver solver;
 	setup_solver(solver, sys);
 	auto result = solver.solve_cg();
-	return std::make_tuple(sys.stripBoundary(std::get<0>(result)), std::get<1>(result), std::get<2>(result));
+	return std::make_tuple(sys.removeStaggering(std::get<0>(result)), std::get<1>(result), std::get<2>(result));
+	//return std::make_tuple(Eigen::VectorXd(), Eigen::VectorXd(), Eigen::VectorXd());
 }
 
 std::tuple<Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd> solve_cg_eigen(PNSystem& sys)
@@ -191,7 +203,7 @@ std::tuple<Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd> solve_cg_eigen(PNS
 	Solver solver;
 	setup_solver(solver, sys);
 	auto result = solver.solve_cg_eigen();
-	return std::make_tuple(sys.stripBoundary(std::get<0>(result)), std::get<1>(result), std::get<2>(result));
+	return std::make_tuple(sys.removeStaggering(std::get<0>(result)), std::get<1>(result), std::get<2>(result));
 }
 
 std::tuple<Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd> solve_sparseLU(PNSystem& sys)
@@ -199,9 +211,150 @@ std::tuple<Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd> solve_sparseLU(PNS
 	Solver solver;
 	setup_solver(solver, sys);
 	auto result = solver.solve_sparseLU();
-	return std::make_tuple(sys.stripBoundary(std::get<0>(result)), std::get<1>(result), std::get<2>(result));
+	return std::make_tuple(sys.removeStaggering(std::get<0>(result)), std::get<1>(result), std::get<2>(result));
 }
 
+std::tuple<Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd> solve_lscg(PNSystem& sys)
+{
+	PNSystem::Stencil& stencil = sys.getStencil();
+	int boundaryConditions = sys.getBoundaryConditions();
+	Domain domain = sys.getDomain();
+	PNSystem::Fields fields = sys.getFields();
+	sys.build();
+
+
+	std::vector<double> solve_convergence;
+	std::vector<double> solve_convergence_timestamps;
+
+	solve_convergence.push_back(sys.get_b_real().norm());
+	solve_convergence_timestamps.push_back(0.0);
+
+
+	Timer timer;
+	timer.start();
+
+	Eigen::LeastSquaresConjugateGradient<PNSystem::RealMatrix> solver;
+	solver.compute(sys.get_A_real());
+	if(solver.info()!=Eigen::Success)
+	{
+		throw std::runtime_error("solve_lscg decomposition failed");
+	}
+	Eigen::VectorXd x = solver.solve(sys.get_b_real());
+	if(solver.info()!=Eigen::Success)
+	{
+		throw std::runtime_error("solve_lscg solve failed");
+	}
+
+	timer.stop();
+	std::cout << "solve_lscg: " << timer.elapsedSeconds() << "s #iterations=" <<  solver.iterations() << "\n";
+
+	solve_convergence.push_back((sys.get_b_real() - sys.get_A_real()*x).norm());
+	solve_convergence_timestamps.push_back(timer.elapsedSeconds());
+
+
+	return std::make_tuple(sys.removeStaggering(x), to_vector(solve_convergence), to_vector(solve_convergence_timestamps));
+	//return std::make_tuple(sys.removeStaggering(x), Eigen::VectorXd(), Eigen::VectorXd());
+}
+
+
+
+
+// we need pnsystem to get:
+// -stencil
+//		-number of coefficients
+//		-coefficient offsets
+// -resolution
+PNSystem::MatrixBuildercd::Matrix buildBlockDiagonalMatrix( const Eigen::MatrixXcd& M, int numBlocks )
+{
+	if( M.rows() != M.cols() )
+		throw std::runtime_error("buildBlockDiagonalMatrix expected square matrix");
+
+
+	int numElementsPerBlock = M.rows();
+	PNSystem::MatrixBuildercd::Matrix M_sparse = M.sparseView();
+	PNSystem::MatrixBuildercd builder;
+	for(int k=0; k<M_sparse.outerSize(); ++k)
+	{
+		// Iterate over inside
+		for(PNSystem::MatrixBuildercd::Matrix::InnerIterator it (M_sparse,k); it; ++it)
+		{
+			for( int block_i=0;block_i<numBlocks;++block_i )
+			{
+				int global_i = block_i*numElementsPerBlock + it.row();
+				int global_j = block_i*numElementsPerBlock + it.col();
+				builder.coeff(global_i,global_j) += it.value();
+			}
+		}
+	}
+
+	return builder.build(numBlocks*numElementsPerBlock, numBlocks*numElementsPerBlock);
+}
+
+
+Eigen::MatrixXcd createComplexToRealConversionMatrix( int order )
+{
+	int numCoeffs = (order+1)*(order+1);
+
+	Eigen::MatrixXcd S = Eigen::MatrixXcd::Zero(numCoeffs, numCoeffs);
+
+
+	int count = 0;
+	for( int l=0;l<=order;++l )
+		for( int m=l;m>=0;--m )
+		{
+			// computes the real part coefficients for a row (defined by l,m) in the S matrix
+			// (see bottom of p.5 in the starmap paper)
+			if( m==0 )
+				S.coeffRef(count, sph::shIndex(l, m)) = 1.0;
+			else
+			{
+				S.coeffRef(count, sph::shIndex(l, m)) = std::pow(-1.0, double(m))/std::sqrt(2.0);
+				S.coeffRef(count, sph::shIndex(l, -m)) = std::pow(-1.0, 2.0*m)/std::sqrt(2.0);
+			}
+
+			++count;
+
+			// computes the imaginary part coefficients for a row (defined by l,m) in the S matrix
+			// (see bottom of p.5 in the starmap paper)
+			if( m>0 )
+			{
+				S.coeffRef(count, sph::shIndex(l, m)) = std::complex<double>(0.0, std::pow(-1.0, double(m))/std::sqrt(2.0));
+				S.coeffRef(count, sph::shIndex(l, -m)) = std::complex<double>(0.0, -std::pow(-1.0, 2.0*m)/std::sqrt(2.0));
+				++count;
+			}
+		}
+
+	return S;
+}
+
+Eigen::MatrixXcd createRealToComplexConversionMatrix( int order )
+{
+	return createComplexToRealConversionMatrix( order ).inverse();
+}
+
+void save_solution( const std::string& filename, PNSystem& sys, const Eigen::VectorXd& x )
+{
+	Eigen::VectorXcd x_complex = buildBlockDiagonalMatrix( createRealToComplexConversionMatrix(sys.getStencil().order), sys.getNumVoxels() )*x;
+	PNSolution solution( sys.getOrder(), sys.getResolution(), Box3d(sys.getDomain().getBoundMin(), sys.getDomain().getBoundMax()), x_complex.data() );
+	solution.save(filename);
+}
+
+PNSolution::Ptr load_solution( const std::string& filename )
+{
+	return std::make_shared<PNSolution>( PNSolution(filename) );
+}
+
+
+
+
+Eigen::VectorXd getSolutionVector( PNSolution::Ptr pns )
+{
+	V3i resolution = pns->getResolution();
+	int numVoxels = resolution[0]*resolution[1]*resolution[2];
+	return (buildBlockDiagonalMatrix( createComplexToRealConversionMatrix(pns->getOrder()), numVoxels )*
+									 Eigen::Map<Eigen::VectorXcd>( pns->data(), numVoxels*pns->getNumCoeffs() )).real();
+
+}
 
 PYBIND11_MODULE(pnsolver, m)
 {
@@ -212,6 +365,13 @@ PYBIND11_MODULE(pnsolver, m)
 	m.def( "solve_gs", &solve_gs);
 	m.def( "solve_blockgs", &solve_blockgs);
 	m.def( "solve_sparseLU", &solve_sparseLU);
+	m.def( "solve_lscg", &solve_lscg);
+	m.def( "createComplexToRealConversionMatrix", &createComplexToRealConversionMatrix);
+	m.def( "createRealToComplexConversionMatrix", &createRealToComplexConversionMatrix);
+	m.def( "save_solution", &save_solution);
+	m.def( "load_solution", &load_solution);
+	m.def( "getSolutionVector", &getSolutionVector);
+
 
 
 
@@ -230,6 +390,64 @@ PYBIND11_MODULE(pnsolver, m)
 	;
 
 
+	// PNSolution ==============================
+	py::class_<PNSolution, PNSolution::Ptr> class_pnsolution(m, "PNSolution");
+	class_pnsolution
+	.def("__init__",
+	///*
+	[](PNSolution &m,
+		int order,
+		const Eigen::Matrix<int, 3, 1>& resolution,
+		const Eigen::Matrix<double, 3, 1>& bound_min,
+		const Eigen::Matrix<double, 3, 1>& bound_max,
+		const Eigen::VectorXcd& data
+		)
+	//*/
+	/*
+	[](PNSolution &m,
+		const std::string& filename
+	)
+	*/
+	{
+		//int order, const V3i& resolution, const Box3d& bound, const std::complex<double> *data
+		new (&m) PNSolution( order, resolution, Box3d(bound_min, bound_max), data.data() );
+		//new (&m) PNSolution( filename );
+	})
+	.def("eval",
+	 [](PNSolution &m,
+		const Eigen::Matrix<double, 3, 1>& pWS,
+		const Eigen::Matrix<double, 3, 1>& direction )
+	 {
+		return m.eval(pWS, direction);
+	 })
+	.def("evalCoefficient",
+	 [](PNSolution &m,
+		const Eigen::Matrix<double, 3, 1>& pWS,
+		int coeff_index)
+	 {
+		return m.evalCoefficient(pWS, coeff_index);
+	 })
+	.def("save", &PNSolution::save)
+	.def("getResolution", &PNSolution::getResolution )
+	.def("getNumCoeffs", &PNSolution::getNumCoeffs )
+	.def("getBoundMin", &PNSolution::getBoundMin )
+	.def("getBoundMax", &PNSolution::getBoundMax )
+	/*
+	.def("voxelToLocal", &PNSolution::voxelToLocal )
+	.def("localToVoxel", &PNSolution::localToVoxel )
+	*/
+	.def("localToWorld",
+	[]( PNSolution &m,
+		const Eigen::Matrix<double, 3, 1>& pLS)
+	{
+		return m.localToWorld(pLS);
+	})
+	/*
+	.def("worldToLocal", &PNSolution::worldToLocal )
+	.def("voxelToWorld", &PNSolution::voxelToWorld )
+	.def("worldToVoxel", &PNSolution::worldToVoxel )
+	*/
+	;
 
 	// PNSystem ==============================
 	py::class_<PNSystem> class_pnsystem(m, "PNSystem");
@@ -281,6 +499,11 @@ PYBIND11_MODULE(pnsolver, m)
 		[](Domain &m, const Eigen::Matrix<int, 3, 1>& resolution)
 		{
 			m.setResolution(resolution);
+		})
+	.def("getSize",
+		[](Domain &m)
+		{
+			return m.getSize();
 		})
 	.def("getVoxelSize",
 		[](Domain &m)

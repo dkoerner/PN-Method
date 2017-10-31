@@ -91,7 +91,7 @@ std::tuple<Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd> solve_multigrid(PN
 	//sys.debug_x_up_sampled_downsampled = sys.debug_upsample*sys.debug_x_downsampled;
 
 
-	return std::make_tuple(sys.removeStaggering(std::get<0>(result)), std::get<1>(result), std::get<2>(result));
+	return std::make_tuple(std::get<0>(result), std::get<1>(result), std::get<2>(result));
 }
 
 
@@ -121,7 +121,7 @@ std::tuple<Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd> solve_multigrid2(P
 	int maxIterations = 1000;
 	auto result = mg.solve2(maxIterations);
 
-	return std::make_tuple(sys.removeStaggering(std::get<0>(result)), std::get<1>(result), std::get<2>(result));
+	return std::make_tuple(std::get<0>(result), std::get<1>(result), std::get<2>(result));
 	*/
 
 	/*
@@ -163,13 +163,13 @@ std::tuple<Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd> solve_multigrid2(P
 
 
 
-	return std::make_tuple(sys.removeStaggering(lgs.x), to_vector(convergence), to_vector(convergence_time));
+	return std::make_tuple(lgs.x, to_vector(convergence), to_vector(convergence_time));
 	*/
 
 
 	int maxIterations = 1000;
 	auto result = mg.solve2(maxIterations);
-	return std::make_tuple(sys.removeStaggering(std::get<0>(result)), std::get<1>(result), std::get<2>(result));
+	return std::make_tuple(std::get<0>(result), std::get<1>(result), std::get<2>(result));
 }
 
 
@@ -178,7 +178,7 @@ std::tuple<Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd> solve_gs(PNSystem&
 	Solver solver;
 	setup_solver(solver, sys);
 	auto result = solver.solve_gs();
-	return std::make_tuple(sys.removeStaggering(std::get<0>(result)), std::get<1>(result), std::get<2>(result));
+	return std::make_tuple(std::get<0>(result), std::get<1>(result), std::get<2>(result));
 }
 
 std::tuple<Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd> solve_blockgs(PNSystem& sys)
@@ -186,7 +186,7 @@ std::tuple<Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd> solve_blockgs(PNSy
 	Solver solver;
 	setup_solver(solver, sys);
 	auto result = solver.solve_blockgs();
-	return std::make_tuple(sys.removeStaggering(std::get<0>(result)), std::get<1>(result), std::get<2>(result));
+	return std::make_tuple(std::get<0>(result), std::get<1>(result), std::get<2>(result));
 }
 
 std::tuple<Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd> solve_cg(PNSystem& sys)
@@ -194,7 +194,7 @@ std::tuple<Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd> solve_cg(PNSystem&
 	Solver solver;
 	setup_solver(solver, sys);
 	auto result = solver.solve_cg();
-	return std::make_tuple(sys.removeStaggering(std::get<0>(result)), std::get<1>(result), std::get<2>(result));
+	return std::make_tuple(std::get<0>(result), std::get<1>(result), std::get<2>(result));
 	//return std::make_tuple(Eigen::VectorXd(), Eigen::VectorXd(), Eigen::VectorXd());
 }
 
@@ -203,7 +203,7 @@ std::tuple<Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd> solve_cg_eigen(PNS
 	Solver solver;
 	setup_solver(solver, sys);
 	auto result = solver.solve_cg_eigen();
-	return std::make_tuple(sys.removeStaggering(std::get<0>(result)), std::get<1>(result), std::get<2>(result));
+	return std::make_tuple(std::get<0>(result), std::get<1>(result), std::get<2>(result));
 }
 
 std::tuple<Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd> solve_sparseLU(PNSystem& sys)
@@ -211,7 +211,7 @@ std::tuple<Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd> solve_sparseLU(PNS
 	Solver solver;
 	setup_solver(solver, sys);
 	auto result = solver.solve_sparseLU();
-	return std::make_tuple(sys.removeStaggering(std::get<0>(result)), std::get<1>(result), std::get<2>(result));
+	return std::make_tuple(std::get<0>(result), std::get<1>(result), std::get<2>(result));
 }
 
 std::tuple<Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd> solve_lscg(PNSystem& sys)
@@ -252,8 +252,8 @@ std::tuple<Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd> solve_lscg(PNSyste
 	solve_convergence_timestamps.push_back(timer.elapsedSeconds());
 
 
-	return std::make_tuple(sys.removeStaggering(x), to_vector(solve_convergence), to_vector(solve_convergence_timestamps));
-	//return std::make_tuple(sys.removeStaggering(x), Eigen::VectorXd(), Eigen::VectorXd());
+	return std::make_tuple(x, to_vector(solve_convergence), to_vector(solve_convergence_timestamps));
+	//return std::make_tuple(x, Eigen::VectorXd(), Eigen::VectorXd());
 }
 
 
@@ -332,9 +332,14 @@ Eigen::MatrixXcd createRealToComplexConversionMatrix( int order )
 	return createComplexToRealConversionMatrix( order ).inverse();
 }
 
+// the solution vector x is the result from solving the system represented by sys.
+// in order to use it for rendering we have to apply the following steps:
+// -remove the staggering: change coefficients, such that they are all defined at the cell centers
+// -get rid of coefficients which live in boundary voxels outside the domain (these were required with staggered grids)
+// -convert coefficients from real to complex, to get the true SH coefficients of the radiance field (see p5 in starmap paper)
 void save_solution( const std::string& filename, PNSystem& sys, const Eigen::VectorXd& x )
 {
-	Eigen::VectorXcd x_complex = buildBlockDiagonalMatrix( createRealToComplexConversionMatrix(sys.getStencil().order), sys.getNumVoxels() )*x;
+	Eigen::VectorXcd x_complex = buildBlockDiagonalMatrix( createRealToComplexConversionMatrix(sys.getStencil().order), sys.getNumVoxels() )*sys.removeStaggering(x);
 	PNSolution solution( sys.getOrder(), sys.getResolution(), Box3d(sys.getDomain().getBoundMin(), sys.getDomain().getBoundMax()), x_complex.data() );
 	solution.save(filename);
 }

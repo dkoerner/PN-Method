@@ -89,6 +89,7 @@ def solve( stencil_name, problem, filename, do_neumannBC = False ):
 
 
 	pnsolver.save_solution("test.pns", sys, x)
+	pnsolver.save_fields("test.fields", sys) # stores the voxelgrids of the RTE parameters
 	#x_test = pnsolver.getSolutionVector(pnsolver.load_solution("test.pns"))
 	#util.compare_vectors( x.reshape((x.shape[0], 1)), x_test.reshape((x.shape[0], 1)), "org", "new" )
 

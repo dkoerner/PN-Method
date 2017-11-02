@@ -49,4 +49,4 @@ V3i stencil_cda_get_offset(int coeff)
 		default:throw std::runtime_error("unexpected coefficient index");break;
 	};
 }
-REGISTER_STENCIL(stencil_cda, 1, 1, 1)
+REGISTER_STENCIL(stencil_cda, 0, 1, 1)

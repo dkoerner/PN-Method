@@ -344,6 +344,20 @@ void save_solution( const std::string& filename, PNSystem& sys, const Eigen::Vec
 	solution.save(filename);
 }
 
+// this is temporary and was used to convert old matlab datasets
+void save_solution_special( const std::string& filename,
+							int order,
+							const Eigen::Vector3i& resolution,
+							const Eigen::Vector3d& bound_min,
+							const Eigen::Vector3d& bound_max,
+							const Eigen::VectorXd& x )
+{
+	int numVoxels = resolution[0]*resolution[1]*resolution[2];
+	Eigen::VectorXcd x_complex = buildBlockDiagonalMatrix( createRealToComplexConversionMatrix(order), numVoxels )*x;
+	PNSolution solution( order, resolution, Box3d(bound_min, bound_max), x_complex.data() );
+	solution.save(filename);
+}
+
 PNSolution::Ptr load_solution( const std::string& filename )
 {
 	return std::make_shared<PNSolution>( PNSolution(filename) );
@@ -374,6 +388,7 @@ PYBIND11_MODULE(pnsolver, m)
 	m.def( "createComplexToRealConversionMatrix", &createComplexToRealConversionMatrix);
 	m.def( "createRealToComplexConversionMatrix", &createRealToComplexConversionMatrix);
 	m.def( "save_solution", &save_solution);
+	m.def( "save_solution_special", &save_solution_special);
 	m.def( "load_solution", &load_solution);
 	m.def( "getSolutionVector", &getSolutionVector);
 

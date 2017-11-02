@@ -328,3 +328,26 @@ def extract_coefficient_field( x, res, numCoeffs, coeff = 0 ):
 				u0[voxel_i, voxel_j, voxel_k] = x[new_global_index, 0]
 	#return u0.reshape((res_x, res_y, res_z))
 	return u0
+
+
+# RTE related ======================================================
+
+
+def grosjean(r, sigma_t, albedo, direct_light = True, multiple_scattered_light = True):
+    sigma_a = (1.0-albedo)*sigma_t
+    sigma_s = albedo*sigma_t
+    ss = np.exp(-sigma_t*r)/(4.0*np.pi*r*r)
+    tmp = sigma_a+sigma_s
+    D = (2.0*sigma_a+sigma_s)/(3.0*tmp*tmp)
+    ms = 3.0*sigma_s*sigma_t*np.exp(-np.sqrt(sigma_a/D)*r)/(4.0*np.pi*(2.0*sigma_a+sigma_s)*r)
+    result = 0
+    if direct_light:
+    	result += ss
+    if multiple_scattered_light:
+    	result += ms
+    return result
+
+def cda_org( r, sigma_t, albedo ):
+    sigma_a = (1.0-albedo)*sigma_t
+    sigma_tr = np.sqrt(3.0*sigma_a*sigma_t)
+    return 3.0*sigma_t*np.exp(-sigma_tr*r)/(4.0*np.pi*r)

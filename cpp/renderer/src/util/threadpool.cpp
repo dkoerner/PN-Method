@@ -7,7 +7,7 @@
 
 
 
-
+int MonteCarloTaskInfo::g_seed = 123;
 
 
 

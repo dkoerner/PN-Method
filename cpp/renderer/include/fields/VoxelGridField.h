@@ -10,23 +10,23 @@
 
 #include <util/voxelgrid.h>
 
-#include <field/Field.h>
+#include <Field.h>
 
 #include <Eigen/Dense>
 
 
-struct VoxelGridField : public Field
+template<typename T>
+struct VoxelGridField : public Field<T>
 {
-	typedef std::shared_ptr<VoxelGridField> Ptr;
+	typedef std::shared_ptr<VoxelGridField<T>> Ptr;
 
-	VoxelGridField( std::complex<double>* data, const Domain& domain, V3d offset ):
-		m_domain(domain),
+	VoxelGridField( T* data, const V3i& resolution, V3d offset ):
+		m_resolution(resolution),
 		m_voxelgrid()
 	{
-		V3i res= m_domain.getResolution();
-		m_voxelgrid.resize(res);
+		m_voxelgrid.resize(m_resolution);
 		if(data)
-			memcpy( m_voxelgrid.getRawPointer(), data, domain.numVoxels()*sizeof(std::complex<double>) );
+			memcpy( m_voxelgrid.getRawPointer(), data, m_resolution[0]*m_resolution[1]*m_resolution[2]*sizeof(T) );
 
 		m_voxelgrid.m_sampleLocation = offset.cast<float>();
 
@@ -42,10 +42,15 @@ struct VoxelGridField : public Field
 		*/
 	}
 
-	virtual std::complex<double> eval( const P3d& pWS )const override
+	virtual std::pair<T, T> getValueRange()const
 	{
-		P3d pVS = m_domain.worldToVoxel(pWS);
-		return m_voxelgrid.evaluate(pVS);
+		throw std::runtime_error("getValueRange not implemented for VoxelGridField");
+		return std::make_pair(std::complex<double>(0.0), std::complex<double>(0.0));
+	}
+
+	virtual T eval( const P3d& pLS )const override
+	{
+		return m_voxelgrid.evaluate(localToVoxel(pLS));
 	}
 
 	/*
@@ -60,75 +65,16 @@ struct VoxelGridField : public Field
 		return m_voxelgrid.m_sampleLocation.cast<double>();
 	}
 
-	Eigen::MatrixXd getSlice( int k )
+	P3d localToVoxel(const P3d& pLS)const
 	{
-		V3i res = m_domain.getResolution();
-		Eigen::MatrixXd m = Eigen::MatrixXd::Zero(res[0],res[1]);
-
-		for(int i=0;i<res[0];++i)
-			for(int j=0;j<res[1];++j)
-			{
-				m(i, j) = m_voxelgrid.sample(i, j, k).real();
-			}
-
-		return m;
-	}
-
-	virtual Field::Ptr createRestricted()const override
-	{
-		V3i res_fine = m_domain.getResolution();
-		bool is2D = res_fine[2] == 1;
-
-		// for restriction, we require the resolution to be even,
-		// so that we can do it straight forwardly
-		if( (res_fine[0]%2!=0)||(res_fine[1]%2!=0)||(!is2D && (res_fine[2]%2!=0)))
-			throw std::runtime_error("VoxelGridField::createRestricted restriction currently requires even resolution");
-
-		V3i res_coarse( res_fine[0]/2, res_fine[1]/2, is2D ? 1:res_fine[2]/2 );
-
-		Domain domain_coarse( m_domain.getBound().getExtents(), res_coarse, m_domain.getBound().min );
-
-		Ptr result = std::make_shared<VoxelGridField>( (std::complex<double>*) 0, domain_coarse, getOffset() );
-
-		// create coarse from fine voxels
-		if(is2D)
-		{
-			for(int i_coarse=0;i_coarse<res_coarse[0];++i_coarse)
-				for(int j_coarse=0;j_coarse<res_coarse[1];++j_coarse)
-				{
-					auto v = m_voxelgrid.sample(i_coarse*2+0, j_coarse*2+0, 0);
-					v+= m_voxelgrid.sample(i_coarse*2+1, j_coarse*2+0, 0);
-					v+= m_voxelgrid.sample(i_coarse*2+1, j_coarse*2+1, 0);
-					v+= m_voxelgrid.sample(i_coarse*2+0, j_coarse*2+1, 0);
-					result->m_voxelgrid.lvalue( i_coarse, j_coarse, 0 ) = v/4.0;
-				}
-		}else
-		{
-			for(int i_coarse=0;i_coarse<res_coarse[0];++i_coarse)
-				for(int j_coarse=0;j_coarse<res_coarse[1];++j_coarse)
-					for(int k_coarse=0;k_coarse<res_coarse[2];++k_coarse)
-					{
-						auto v = m_voxelgrid.sample(i_coarse*2+0, j_coarse*2+0, k_coarse*2+0);
-						v+= m_voxelgrid.sample(i_coarse*2+1, j_coarse*2+0, k_coarse*2+0);
-						v+= m_voxelgrid.sample(i_coarse*2+1, j_coarse*2+1, k_coarse*2+0);
-						v+= m_voxelgrid.sample(i_coarse*2+0, j_coarse*2+1, k_coarse*2+0);
-
-						v+= m_voxelgrid.sample(i_coarse*2+0, j_coarse*2+0, k_coarse*2+1);
-						v+= m_voxelgrid.sample(i_coarse*2+1, j_coarse*2+0, k_coarse*2+1);
-						v+= m_voxelgrid.sample(i_coarse*2+1, j_coarse*2+1, k_coarse*2+1);
-						v+= m_voxelgrid.sample(i_coarse*2+0, j_coarse*2+1, k_coarse*2+1);
-						result->m_voxelgrid.lvalue( i_coarse, j_coarse, k_coarse ) = v/8.0;
-					}
-		}
-
-
-		return result;
+		return P3d(pLS[0]*m_resolution[0], pLS[1]*m_resolution[1], pLS[2]*m_resolution[2]);
 	}
 
 private:
-	Domain m_domain;
-	VoxelGrid<std::complex<double>> m_voxelgrid;
+	V3i m_resolution;
+	VoxelGrid<T> m_voxelgrid;
 	//double m_max_value;
 };
+typedef VoxelGridField<std::complex<double>> VoxelGridFieldcd;
 
 

@@ -35,6 +35,16 @@ void Volume::setLocalToWorld( const Transformd& localToWorld )
 	for( int i=0;i<8;++i )
 		m_bboxWS.expandBy( m_localToWorld*m_bboxLS.getCorner(i) );
 }
+P3d Volume::localToWorld(const P3d& pLS)const
+{
+	return m_localToWorld*pLS;
+}
+
+P3d Volume::worldToLocal(const P3d& pWS)const
+{
+	return m_worldToLocal*pWS;
+}
+
 void Volume::setBound( Box3d boundWS )
 {
 	setLocalToWorld( Transformd::from_aabb(boundWS) );
@@ -45,13 +55,11 @@ const Box3d& Volume::getBound()const
 }
 V3d Volume::evalExtinction( const P3d& pWS, bool debug )const
 {
-	P3d pLS = m_worldToLocal*pLS;
-	return m_field_extinction->eval(pLS);
+	return m_field_extinction->eval(worldToLocal(pWS));
 }
 V3d Volume::evalAlbedo( const P3d& pWS, bool debug )const
 {
-	P3d pLS = m_worldToLocal*pWS;
-	return m_field_albedo->eval(pLS);
+	return m_field_albedo->eval(worldToLocal(pWS));
 }
 double Volume::evalPhase( const P3d& pWS, const V3d& wi, const V3d& wo )const
 {

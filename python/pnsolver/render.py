@@ -67,6 +67,18 @@ def load_camera( filename, id ):
 	return camera
 
 
+def create_scene_pointlight():
+	volume = renderer.create_volume()
+	volume.setBound( np.array([0.0, 0.0, 0.0]), np.array([2.0, 2.0, 2.0]) )
+	sigma_t = 8.0
+	sigma_t_field = renderer.create_constant_field3d( np.array([sigma_t, sigma_t, sigma_t]) )
+	albedo = 0.9
+	albedo_field = renderer.create_constant_field3d( np.array([albedo, albedo, albedo]) )
+	volume.setExtinctionAlbedo( sigma_t_field, albedo_field )
+	power = 4.0*np.pi
+	light = renderer.create_point_light( np.array([1.0, 1.0, 1.0]), np.array([power, power, power]) )
+
+	return volume, light
 
 
 
@@ -80,16 +92,8 @@ if __name__ == "__main__":
 
 	# assemble scene to render
 	camera = load_camera( "results/pointsource/result_pointsource.scn", "cam1" )
-	volume = renderer.create_volume()
-	volume.setBound( np.array([0.0, 0.0, 0.0]), np.array([2.0, 2.0, 2.0]) )
-	sigma_t = 8.0
-	sigma_t_field = renderer.create_constant_field3d( np.array([sigma_t, sigma_t, sigma_t]) )
-	albedo = 0.9
-	albedo_field = renderer.create_constant_field3d( np.array([albedo, albedo, albedo]) )
-	volume.setExtinctionAlbedo( sigma_t_field, albedo_field )
-	power = 4.0*np.pi
-	light = renderer.create_point_light( np.array([1.0, 1.0, 1.0]), np.array([power, power, power]) )
 	integrator = renderer.create_simplept_integrator()
+	volume, light = create_scene_pointlight()
 
 	# get pnsolution
 	pns_p5 = renderer.load_pnsolution( "results/pointsource/pointsource_p5.pns" )
@@ -109,7 +113,8 @@ if __name__ == "__main__":
 	points[:, 1] = 1.0
 	points[:, 2] = 1.0
 
-	fluence = renderer.compute_fluence( volume, light, camera, integrator, points )
+	seed = 123
+	fluence = renderer.compute_fluence( volume, light, integrator, points, seed )
 	fluence_pns_p5 = power*renderer.compute_fluence_pnsolution( pns_p5, points )
 	fluence_pns_p3 = power*renderer.compute_fluence_pnsolution( pns_p3, points )
 	fluence_pns_p1 = power*renderer.compute_fluence_pnsolution( pns_p1, points )
@@ -151,3 +156,4 @@ if __name__ == "__main__":
 	plt.legend(loc='best')
 
 	plt.show()
+	fig.savefig("foo.pdf", bbox_inches='tight')

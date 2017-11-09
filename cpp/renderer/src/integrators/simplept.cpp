@@ -33,6 +33,13 @@ double delta_tracking( const Scene* scene, const Ray3d& ray, double maxt, int co
 
 V3d SimplePT::Li( const Scene* scene, RadianceQuery& rq, RNGd& rng )const
 {
+/*
+	return V3d( double(rq.pixel[0])/double(scene->camera->getResolutionX()),
+				double(rq.pixel[1])/double(scene->camera->getResolutionY()),
+				0.0);
+*/
+
+
 	//rq.transmittance = V3d(1.0, 1.0, 1.0);
 
 	if( rq.debug )

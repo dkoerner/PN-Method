@@ -16,6 +16,7 @@ struct Field
 
 typedef Field<double> Fieldd;
 typedef Field<V3d> Field3d;
+typedef Field<std::complex<double>> Fieldcd;
 
 
 

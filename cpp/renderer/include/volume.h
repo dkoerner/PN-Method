@@ -86,6 +86,9 @@ struct Volume
 
 	//virtual Transformd getLocalToWorld()const{return Transformd();}
 
+	P3d localToWorld(const P3d& pLS)const;
+	P3d worldToLocal(const P3d& pWS)const;
+
 	//Box3d getBound()const=0; // aa worldspace bounding box
 	void setLocalToWorld( const Transformd& localToWorld );
 	void setBound( Box3d boundWS );

@@ -14,6 +14,7 @@
 
 #include <lights/pointlight.h>
 #include <integrators/simplept.h>
+#include <fields/VoxelGridField.h>
 
 #include <util/threadpool.h>
 
@@ -133,12 +134,11 @@ void compute_fluence_thread( MonteCarloTaskInfo& ti, const GlobalComputeFluenceI
 
 
 
-Eigen::VectorXd compute_fluence( Volume::Ptr volume, Light::Ptr light, Camera::Ptr camera, Integrator::Ptr integrator, const Eigen::MatrixXd& points )
+Eigen::VectorXd compute_fluence( Volume::Ptr volume, Light::Ptr light, Integrator::Ptr integrator, const Eigen::MatrixXd& points, int seed )
 {
 	std::cout << "computing fluence:\n";
 	std::cout << volume->toString();
 	std::cout << light->toString();
-	std::cout << camera->toString();
 	std::cout << integrator->toString();
 
 	int numPoints = points.rows();
@@ -155,7 +155,7 @@ Eigen::VectorXd compute_fluence( Volume::Ptr volume, Light::Ptr light, Camera::P
 	}
 
 	Scene scene;
-	scene.camera = camera.get();
+	scene.camera = 0;
 	scene.integrator = integrator.get();
 	scene.light = light.get();
 	scene.volume = volume.get();
@@ -164,6 +164,8 @@ Eigen::VectorXd compute_fluence( Volume::Ptr volume, Light::Ptr light, Camera::P
 	gi.scene = &scene;
 	gi.fluence = &fluence;
 	gi.sensor_points = &sensor_points;
+
+	MonteCarloTaskInfo::g_seed = seed;
 
 	int numSamples = 10000;
 
@@ -176,6 +178,38 @@ Eigen::VectorXd compute_fluence( Volume::Ptr volume, Light::Ptr light, Camera::P
 		result.coeffRef(i) = luminance(fluence[i]);
 	return result;
 }
+
+/*
+Image::Ptr render_radiance_distribution_at_point(Volume::Ptr volume, Light::Ptr light, Integrator::Ptr integrator, const P3d& pWS, int seed)
+{
+	std::cout << "render_radiance_distribution_at_point:\n";
+	std::cout << volume->toString();
+	std::cout << light->toString();
+	std::cout << integrator->toString();
+
+	V2i resolution(512, 256);
+	Image::Ptr result = std::make_shared<Image>(resolution);
+
+	Scene scene;
+	scene.camera = 0;
+	scene.integrator = integrator.get();
+	scene.light = light.get();
+	scene.volume = volume.get();
+
+	GlobalRenderInfo gi;
+	gi.scene = &scene;
+	gi.image = result.get();
+	gi.crop_window = Box2i( V2i(0,0), camera->getResolution() );
+	//gi.debug_pixel = V2i(256, 256);
+
+	int numSamples = 1;
+
+	Terminator terminator(numSamples);
+	std::cout << "rendering image..."<< std::endl;std::flush(std::cout);
+	runGenericTasks<MonteCarloTaskInfo, GlobalRenderInfo>( render_thread, &gi, terminator, ThreadPool::getNumSystemCores() );
+	return result;
+}
+*/
 
 
 
@@ -246,11 +280,12 @@ void render_thread( MonteCarloTaskInfo& ti, const GlobalRenderInfo* gi )
 	} // pixel y
 
 
+
 	++ti.samples;
 }
 
 
-Image::Ptr render( Volume::Ptr volume, Light::Ptr light, Camera::Ptr camera, Integrator::Ptr integrator )
+Image::Ptr render( Volume::Ptr volume, Light::Ptr light, Camera::Ptr camera, Integrator::Ptr integrator, int numSamples )
 {
 	std::cout << "rendering:\n";
 	std::cout << volume->toString();
@@ -259,7 +294,6 @@ Image::Ptr render( Volume::Ptr volume, Light::Ptr light, Camera::Ptr camera, Int
 	std::cout << integrator->toString();
 
 	Image::Ptr result = std::make_shared<Image>(camera->getResolution());
-
 
 	Scene scene;
 	scene.camera = camera.get();
@@ -271,11 +305,12 @@ Image::Ptr render( Volume::Ptr volume, Light::Ptr light, Camera::Ptr camera, Int
 	gi.scene = &scene;
 	gi.image = result.get();
 	gi.crop_window = Box2i( V2i(0,0), camera->getResolution() );
-	//gi.debug_pixel = V2i(256, 256);
+	//gi.debug_pixel = V2i(1, 0);
 
-	int numSamples = 1;
+	//int numSamples = 1;
 
 	Terminator terminator(numSamples);
+	//Terminator terminator(90.0);
 	std::cout << "rendering image..."<< std::endl;std::flush(std::cout);
 	runGenericTasks<MonteCarloTaskInfo, GlobalRenderInfo>( render_thread, &gi, terminator, ThreadPool::getNumSystemCores() );
 
@@ -372,6 +407,13 @@ Camera::Ptr create_perspective_camera( int xres, int yres, double hfov )
 	return std::make_shared<PerspectiveCamera>(xres, yres, hfov);
 }
 
+
+Camera::Ptr create_sphere_camera( const Eigen::Vector3d& pWS, int xres, int yres )
+{
+	return std::make_shared<SphereCamera>( pWS, xres, yres );
+}
+
+
 Integrator::Ptr create_simplept_integrator()
 {
 	int maxDepth = std::numeric_limits<int>::max();
@@ -390,21 +432,161 @@ Field3d::Ptr create_constant_field3d( const Eigen::Vector3d& value )
 }
 
 
-void test( Camera::Ptr cam )
-{
-	P2d pRS(256.5, 256.5);
-	Ray3d ray;
-	cam->sampleRay(pRS, ray);
-
-	std::cout << "ray=" << ray.toString() << std::endl;
-	std::cout << "ray(3.0)=" << ray(3.0).toString() << std::endl;
-}
-
-
 PNSolution::Ptr load_pnsolution( const std::string& filename )
 {
 	return std::make_shared<PNSolution>(filename);
 }
+
+
+Image::Ptr load_image( const std::string& filename )
+{
+	return std::make_shared<Image>(filename);
+}
+
+
+ImageSampler::Ptr create_image_sampler( Image::Ptr image )
+{
+	return std::make_shared<ImageSampler>(image);
+}
+
+#include <math/shvector.h>
+
+#include <mitsuba/core/shvector.h>
+
+struct SHTest
+{
+	typedef std::shared_ptr<SHTest> Ptr;
+
+	SHTest( int order, int depth ):
+		m_order(order),
+		shsampler(new SHSampler(order+1, depth)),
+		shsampler2(new PNSolution::SHSampler(order+1, depth)),
+		shv(order+1),
+		mitsuba_shvector(order+1),
+		mitsuba_shsampler(new mitsuba::SHSampler(order+1, depth)),
+		rng(123)
+	{
+		SHVector::staticInitialization();
+		mitsuba::SHVector::staticInitialization();
+		PNSolution::SHVector::staticInit();
+
+		/*
+		shv(0,0) = 1.23;
+		shv(1,-1) = 1.0;
+		shv(1,0) = .42;
+		shv(1,1) = 0.1;
+		*/
+		for( int l=0;l<=order;++l )
+			for( int m=-l;m<=l;++m )
+			{
+				double value = rng.next1D()*2.0-1.0;
+				//std::cout << "SHTest::SHTest f(" << l << ", " << m << ") = " << value << std::endl;
+				shv(l,m) = value;
+				mitsuba_shvector(l,m) = value;
+			}
+
+
+		//shv(1,-1) = 1.0;
+		//shv(1,0) = 3.42;
+		//shv(1,1) = -0.86;
+	}
+
+	void setCoeffs( const Eigen::VectorXd& coeffs )
+	{
+		//if( coeffs.rows() != shv. )
+		int index = 0;
+		for( int l=0;l<=m_order;++l )
+			for( int m=-l;m<=l;++m,++index )
+			{
+				double value = coeffs.coeffRef(index);
+				shv(l,m) = value;
+				mitsuba_shvector(l,m) = value;
+			}
+	}
+
+	double eval( double theta, double phi )
+	{
+		//V3d t = sphericalDirection(theta, phi);
+		//return shv.eval(t);
+		return PNSolution::SHVector::eval( theta, phi, shv.m_coeffs.data(), m_order );
+		//return mitsuba_shvector.eval(theta, phi);
+	}
+
+	//Eigen::Vector3d sample()
+	std::tuple<double, double, double, double, double> sample()
+	{
+		double r1 = rng.next1D();
+		double r2 = rng.next1D();
+
+		P2d sample(r1, r2);
+		//double pdf = shsampler->warp(shv, sample);
+		double pdf = shsampler2->warp(shv.m_coeffs.data(), sample);
+
+		//mitsuba::Point2 sample2(r1, r2);
+		//double pdf2 = mitsuba_shsampler->warp(mitsuba_shvector, sample2);
+		/*
+		//V3d test = sphericalDirection(sample[0], sample[1]);
+		//return Eigen::Vector3d(test[0], test[1], test[2]);
+		return std::make_pair(sample[0], sample[1]);
+		*/
+		return std::make_tuple(sample[0], sample[1], pdf, r1, r2);
+		//return std::make_tuple(sample2[0], sample2[1], pdf2, r1, r2);
+	}
+
+	//Eigen::Vector3d sample()
+	std::tuple<double, double, double, double, double> sample2( double r1, double r2)
+	{
+		//double r1 = rng.next1D();
+		//double r2 = rng.next1D();
+
+		P2d sample(r1, r2);
+		double pdf = shsampler->warp(shv, sample);
+
+		return std::make_tuple(sample[0], sample[1], pdf, r1, r2);
+	}
+
+	double pdf(double r1, double r2)
+	{
+		//P2d sample(r1, r2);
+		//double pdf = shsampler->warp(shv, sample);
+
+		mitsuba::Point2 sample2(r1, r2);
+		double pdf2 = mitsuba_shsampler->warp(mitsuba_shvector, sample2);
+		/*
+		//V3d test = sphericalDirection(sample[0], sample[1]);
+		//return Eigen::Vector3d(test[0], test[1], test[2]);
+		return std::make_pair(sample[0], sample[1]);
+		*/
+		//return std::make_tuple(sample[0], sample[1], pdf);
+		return pdf2;
+	}
+
+	Eigen::MatrixXd get_blocks( int depth, bool use_org )
+	{
+		return shsampler->getBlocks(depth, shv, use_org);
+
+	}
+
+	SHVector shv;
+	SHSampler* shsampler;
+	PNSolution::SHSampler* shsampler2;
+	RNGd rng;
+
+	mitsuba::SHVector mitsuba_shvector;
+	mitsuba::SHSampler* mitsuba_shsampler;
+
+	int m_order;
+
+};
+
+
+
+SHTest::Ptr create_shtest( int order, int depth )
+{
+	return std::make_shared<SHTest>( order, depth );
+}
+
+
 
 
 PYBIND11_MODULE(renderer, m)
@@ -439,17 +621,141 @@ PYBIND11_MODULE(renderer, m)
 			m.setBound(Box3d(min, max));
 		})
 		.def( "setExtinctionAlbedo", &Volume::setExtinctionAlbedo )
+		.def("worldToLocal",
+		[]( Volume &m, const Eigen::Vector3d& pWS )
+		{
+			Eigen::Vector3d pLS = m.worldToLocal(pWS);
+			return pLS;
+		})
+		.def("localToWorld",
+		[]( Volume &m, const Eigen::Vector3d& pLS )
+		{
+			Eigen::Vector3d pWS = m.localToWorld(pLS);
+			return pWS;
+		})
 	;
 
 	// Image ============================================================
 	py::class_<Image, Image::Ptr> class_image(m, "Image");
 	class_image
 		.def( "save", &Image::save )
+		.def( "asMatrix",
+		[]( Image& m )
+		{
+			int channel = 0;
+			V2i res = m.getResolution();
+			Eigen::MatrixXd result( res[1], res[0] );
+
+			for( int i=0;i<res[0];++i )
+				for( int j=0;j<res[1];++j )
+					result.coeffRef(j, i) = m.pixel(i, j)[channel];
+
+			return result;
+		})
+		.def( "uvToRaster",
+		[]( Image& m, const Eigen::Vector2d& uv )
+		{
+			Eigen::Vector2d pRaster = m.uvToRaster(uv);
+			return pRaster;
+		})
+		.def( "rasterToUV",
+		[]( Image& m, const Eigen::Vector2d& pRaster )
+		{
+			Eigen::Vector2d uv = m.rasterToUV(pRaster);
+			return uv;
+		})
+		.def( "eval",
+		[]( Image& m, const Eigen::Vector2d& pRaster )
+		{
+			Eigen::Vector3d result = m.eval(pRaster);
+			return result;
+		})
+
+	;
+
+	// ImageSampler ============================================================
+	py::class_<ImageSampler, ImageSampler::Ptr> class_imagesampler(m, "ImageSampler");
+	class_imagesampler
+		.def( "sample",
+		[]( ImageSampler& m, double r1, double r2 )
+		{
+			double pdf=0.0;
+			Eigen::Vector2d pRaster = m.sample(pdf, P2d(r1, r2));
+			return pRaster;
+		})
+		/*
+		.def( "asMatrix",
+		[]( ImageSampler& m )
+		{
+			Image map( V2i(xres, yres) );
+			Eigen::MatrixXd result( res[1], res[0] );
+			for( int i=0;i<xres;++i )
+				for( int j=0;j<yres;++j )
+				{
+					double pdf = m_colDpdf[i]*m_rowDpdf[i][j];
+					double c = pdf;
+					map.pixel(j, i) = V3d(c, c, c);
+				}
+			map.save( "c:/projects/epfl/epfl17/temp/test_is.exr" );
+
+
+			int channel = 0;
+			V2i res = m.getResolution();
+			Eigen::MatrixXd result( res[1], res[0] );
+
+			for( int i=0;i<res[0];++i )
+				for( int j=0;j<res[1];++j )
+					result.coeffRef(j, i) = m.pixel(i, j)[channel];
+
+			return result;
+		})
+		*/
 	;
 
 	// Field3d ============================================================
 	py::class_<Field3d, Field3d::Ptr> class_field3d(m, "Field3d");
 	class_field3d
+	;
+	py::class_<Fieldcd, Fieldcd::Ptr> class_fieldcd(m, "Fieldcd");
+	class_fieldcd
+	.def("eval",
+	 [](Fieldcd &m,
+		const Eigen::Matrix<double, 3, 1>& pWS )
+	 {
+		return m.eval(pWS);
+	 })
+	;
+
+	// VoxelGrid ============================================================
+	py::class_<VoxelGridFieldcd, VoxelGridFieldcd::Ptr> class_VoxelGridFieldcd(m, "VoxelGridFieldcd", class_fieldcd);
+	class_VoxelGridFieldcd
+	.def("__init__",
+	[](VoxelGridFieldcd &m, py::array b)
+	{
+		typedef Eigen::Stride<Eigen::Dynamic, Eigen::Dynamic> Strides;
+
+		// location within voxel (center)
+		Eigen::Matrix<double, 3, 1> offset(0.5, 0.5, 0.5);
+
+		// Request a buffer descriptor from Python
+		py::buffer_info info = b.request();
+
+		// Some sanity checks ...
+		if (info.format != py::format_descriptor<std::complex<double>>::format())
+			throw std::runtime_error("Incompatible format: expected a complex array!");
+
+		if (info.ndim != 3)
+			throw std::runtime_error("Incompatible buffer dimension!");
+
+		V3i resolution( int(info.shape[0]),
+						int(info.shape[1]),
+						int(info.shape[2]) );
+
+		auto data = static_cast<std::complex<double> *>(info.ptr);
+		new (&m) VoxelGridFieldcd( data, resolution, offset );
+	})
+	//.def("test", &VoxelGridField::test)
+	//.def("getSlice", &VoxelGridField::getSlice)
 	;
 
 	// PNSolution ==============================
@@ -482,12 +788,26 @@ PYBIND11_MODULE(renderer, m)
 	 {
 		return m.eval(pWS, direction);
 	 })
+	.def("sample",
+	 [](PNSolution &m,
+		const Eigen::Matrix<double, 3, 1>& pWS,
+		const Eigen::Matrix<double, 2, 1>& sample)
+	 {
+		double pdf=0.0;
+		return m.sample(pWS, pdf, sample);
+	 })
 	.def("evalCoefficient",
 	 [](PNSolution &m,
 		const Eigen::Matrix<double, 3, 1>& pWS,
 		int coeff_index)
 	 {
 		return m.evalCoefficient(pWS, coeff_index);
+	 })
+	.def("evalCoefficients",
+	 [](PNSolution &m,
+		const Eigen::Matrix<double, 3, 1>& pWS)
+	 {
+		return m.evalCoefficients(pWS);
 	 })
 	.def("save", &PNSolution::save)
 	.def("getResolution", &PNSolution::getResolution )
@@ -511,15 +831,28 @@ PYBIND11_MODULE(renderer, m)
 	*/
 	;
 
+	// SHTest ============================================================
+	py::class_<SHTest, SHTest::Ptr> class_shtest(m, "SHTest");
+	class_shtest
+		.def( "eval", &SHTest::eval )
+		.def( "sample", &SHTest::sample )
+		.def( "sample2", &SHTest::sample2 )
+		.def( "pdf", &SHTest::pdf )
+		.def( "setCoeffs", &SHTest::setCoeffs )
+		.def( "get_blocks", &SHTest::get_blocks )
+	;
+
+
 	// main render function
 	m.def( "render", &render );
 	m.def( "compute_fluence", &compute_fluence );
-	m.def( "test", &test );
+	m.def( "create_shtest", &create_shtest );
 	// lights
 	m.def( "create_point_light", &create_point_light );
 	//m.def( "create_directional_light", &create_directional_light );
 	// cameras
 	m.def( "create_perspective_camera", &create_perspective_camera );
+	m.def( "create_sphere_camera", &create_sphere_camera );
 	// integrators
 	m.def( "create_simplept_integrator", &create_simplept_integrator );
 	// volumes
@@ -529,6 +862,12 @@ PYBIND11_MODULE(renderer, m)
 	// pnsolution
 	m.def( "load_pnsolution", &load_pnsolution );
 	m.def( "compute_fluence_pnsolution", &compute_fluence_pnsolution );
+	// image
+	m.def( "load_image", &load_image );
+	m.def( "create_image_sampler", &create_image_sampler );
+	m.def( "blur_image", &blur_image )
+	;
+
 
 
 }

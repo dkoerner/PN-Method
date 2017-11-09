@@ -176,7 +176,7 @@ struct MonteCarloTaskInfo
 		taskid(taskid),
 		numTasks(numTasks),
 		samples(0),
-		rng(123+taskid)
+		rng(g_seed+taskid)
 	{
 	}
 
@@ -190,6 +190,7 @@ struct MonteCarloTaskInfo
 	int numTasks;
 	int samples;
 	RNGd rng;
+	static int g_seed;
 };
 
 

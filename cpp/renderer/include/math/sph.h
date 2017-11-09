@@ -17,6 +17,8 @@ namespace sph
 		return l * (l + 1) + m;
 	}
 
+	double P(int l, int m, double x);
+
     complex sph_basis( int l, int m, double theta, double phi );
 }
 

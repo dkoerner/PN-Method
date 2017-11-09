@@ -50,7 +50,6 @@ struct Camera
 	V2i         m_resolution;
 	V2d         m_invResolution;
 	Transformd  m_cameraToWorld;  // camera space to world space
-	Transformd  m_rasterToCamera; // normalized raster space to camera
 	double      m_nearClip;
 	double      m_farClip;
 };
@@ -109,6 +108,8 @@ struct OrthographicCamera : public Camera
 		ss << "OrthographicCamera " << std::endl;
 		return ss.str();
 	}
+
+	Transformd  m_rasterToCamera; // normalized raster space to camera
 };
 
 
@@ -189,9 +190,35 @@ struct PerspectiveCamera : public Camera
 	double m_hfov;
 	double m_apertureRadius;
 	double m_z_direction; // this is -1 if camera points into negative z, or 1 if camera points into positive z direction
-
+	Transformd  m_rasterToCamera; // normalized raster space to camera
 };
 
+struct SphereCamera : public Camera
+{
+	typedef std::shared_ptr<SphereCamera> Ptr;
+
+	SphereCamera( const P3d& pWS, int xres, int yres, double near=1e-4f, double far=1000.0 ) :
+		Camera(xres, yres, near, far),
+		m_pWS(pWS)
+	{
+	}
+
+	virtual std::string toString()const
+	{
+		return "SphereCamera";
+	}
+
+	virtual void sampleRay( const Point2d& rasterP, Ray3d& ray, bool debug = false )const
+	{
+		double phi = rasterP[0]/double(getResolutionX())*2.0*M_PI;
+		double theta = rasterP[1]/double(getResolutionY())*M_PI;
+		ray = Ray3d( m_pWS,
+					 sphericalDirection(theta, phi));
+	}
+
+private:
+	P3d m_pWS;
+};
 
 /*
 Camera::Ptr createView(const V3d& viewDir, const Box3d& bound, V2i res, double hfov );

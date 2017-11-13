@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <functional>
 
 #include <math/common.h>
 #include <math/vector.h>
@@ -16,33 +17,9 @@
 
 // datastructure for working with the solution from a PNSolver
 // basically a voxelgrid with a constant number of elements per voxel
-// TODO: switch everything to real only
 struct PNSolution
 {
 	typedef std::shared_ptr<PNSolution> Ptr;
-
-
-	struct SHVector
-	{
-		static double eval(double theta, double phi, double* coeffs, int order);
-		static double& get( int l, int m, double* coeffs );
-		static const double& get( int l, int m, const double* coeffs );
-		static void staticInit();
-		static void staticShutdown();
-		static double legendreP(int l, int m, double x);
-	private:
-		static double factorial(int x);
-		inline static double normalization(int l, int m)
-		{
-			if (l < m_normTableSize)
-				return m_normalization[l*(l+1)/2 + m];
-			else
-				return computeNormalization(l, m);
-		}
-		static double computeNormalization(int l, int m);
-		static double *m_normalization;
-		static int m_normTableSize;
-	};
 
 	struct SHSampler
 	{
@@ -92,12 +69,13 @@ struct PNSolution
 	};
 
 	PNSolution(const std::string& filename);
-	PNSolution(int order, const V3i& resolution, const Box3d& bound, const std::complex<double> *data);
+	PNSolution(int order, const V3i& resolution, const Box3d& bound, const double *data);
 
 	// evaluation ---
 	// evaluate <- evalute SH function for given direction at given worldspace position (does interpolation of SH coefficients)
 	double eval(const P3d &pWS, const V3d &direction)const;
-	std::complex<double> evalCoefficient(const P3d &pWS, int coeff_index)const;
+	double evalCoefficient(const P3d &pWS, int coeff_index)const;
+	void evalCoefficients(const P3d &pWS, double* result)const;
 	Eigen::VectorXd evalCoefficients(const P3d &pWS)const;
 
 	// sampling ---
@@ -125,7 +103,11 @@ struct PNSolution
 	V3i getResolution()const;
 	P3d getBoundMin()const;
 	P3d getBoundMax()const;
-	std::complex<double>* data();
+	double* data();
+
+	// temp
+	//void test();
+	//double test_real_conversion( int l, int m, double theta, double phi );
 private:
 
 	int getIndex( const V3i& voxel_coord ) const;
@@ -134,7 +116,7 @@ private:
 	V3i m_resolution;
 	Box3d m_bound;
 	V3d m_extend;
-	std::vector<std::complex<double>> m_data; // number of voxels*number of coefficients
+	std::vector<double> m_data;
 	SHSampler m_shsampler;
 };
 

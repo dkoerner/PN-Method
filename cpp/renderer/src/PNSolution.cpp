@@ -59,16 +59,17 @@ double PNSolution::eval( const P3d& pWS, const V3d& direction )const
 
 
 	// evaluate SH
-	P2d theta_phi = sphericalCoordinates(direction);
+	double theta, phi;
+	sphericalCoordinates(direction, theta, phi);
 
-	std::complex<double> result = 0.0;
+
+	double result = 0.0;
 	int coeff_index = 0;
 	for( int l=0;l<=m_order;++l )
 		for( int m=-l;m<=l;++m,++coeff_index )
 		{
-			std::complex<double> coeff = 0.0;
-
 			//lerp coefficient
+			double coeff = 0.0;
 			coeff += m_data[voxel_indices[0] + coeff_index]*(1.0-tx)*(1.0-ty)*(1.0-tz);
 			coeff += m_data[voxel_indices[1] + coeff_index]*tx*(1.0-ty)*(1.0-tz);
 			coeff += m_data[voxel_indices[2] + coeff_index]*(1.0-tx)*ty*(1.0-tz);
@@ -79,17 +80,15 @@ double PNSolution::eval( const P3d& pWS, const V3d& direction )const
 			coeff += m_data[voxel_indices[7] + coeff_index]*tx*ty*tz;
 
 			// now do the SH accumulation
-			result += coeff*sph::sph_basis(l, m, theta_phi[0], theta_phi[1]);
+			result += coeff*sph::basis_real(l, m, theta, phi);
 		}
-
-
 
 	// NB: here we apply a normalization. This is required to have the intergal over
 	// the sphere match the zero coefficient
-	return result.real()/std::sqrt(4.0*M_PI);
+	return result/std::sqrt(4.0*M_PI);
 }
 
-std::complex<double> PNSolution::evalCoefficient(const P3d &pWS, int coeff_index)const
+double PNSolution::evalCoefficient(const P3d &pWS, int coeff_index)const
 {
 	P3d pVS = worldToVoxel(pWS);
 
@@ -127,10 +126,8 @@ std::complex<double> PNSolution::evalCoefficient(const P3d &pWS, int coeff_index
 							getIndex(V3i(c2[0], c2[1], c2[2])),
 						   };
 
-
-	std::complex<double> coeff = 0.0;
-
 	//lerp coefficient
+	double coeff = 0.0;
 	coeff += m_data[voxel_indices[0] + coeff_index]*(1.0-tx)*(1.0-ty)*(1.0-tz);
 	coeff += m_data[voxel_indices[1] + coeff_index]*tx*(1.0-ty)*(1.0-tz);
 	coeff += m_data[voxel_indices[2] + coeff_index]*(1.0-tx)*ty*(1.0-tz);
@@ -143,7 +140,7 @@ std::complex<double> PNSolution::evalCoefficient(const P3d &pWS, int coeff_index
 	return coeff;
 }
 
-Eigen::VectorXd PNSolution::evalCoefficients(const P3d &pWS)const
+void PNSolution::evalCoefficients(const P3d &pWS, double* result)const
 {
 	P3d pVS = worldToVoxel(pWS);
 
@@ -183,12 +180,11 @@ Eigen::VectorXd PNSolution::evalCoefficients(const P3d &pWS)const
 
 
 
-	Eigen::VectorXd result(m_numCoeffs);
 	int coeff_index = 0;
 	for( int l=0;l<=m_order;++l )
 		for( int m=-l;m<=l;++m,++coeff_index )
 		{
-			std::complex<double> coeff = 0.0;
+			double coeff = 0.0;
 
 			//lerp coefficient
 			coeff += m_data[voxel_indices[0] + coeff_index]*(1.0-tx)*(1.0-ty)*(1.0-tz);
@@ -200,9 +196,14 @@ Eigen::VectorXd PNSolution::evalCoefficients(const P3d &pWS)const
 			coeff += m_data[voxel_indices[6] + coeff_index]*(1.0-tx)*ty*tz;
 			coeff += m_data[voxel_indices[7] + coeff_index]*tx*ty*tz;
 
-			result.coeffRef(coeff_index) = coeff.real();
+			result[coeff_index] = coeff;
 		}
+}
 
+Eigen::VectorXd PNSolution::evalCoefficients(const P3d &pWS)const
+{
+	Eigen::VectorXd result(m_numCoeffs);
+	evalCoefficients(pWS, result.data());
 	return result;
 }
 
@@ -269,20 +270,24 @@ bool PNSolution::contains_voxel( const P3i& voxel )const
 }
 
 
-PNSolution::PNSolution(int order, const V3i& resolution, const Box3d& bound, const std::complex<double> *data):
+PNSolution::PNSolution(int order, const V3i& resolution, const Box3d& bound, const double *data):
 	m_order(order),
 	m_numCoeffs((order + 1) * (order + 1)),
 	m_resolution(resolution),
 	m_bound(bound),
 	m_shsampler(order+1)
 {
-	m_data = std::vector<std::complex<double>>(data, data+m_resolution[0]*m_resolution[1]*m_resolution[2]*m_numCoeffs);
+	sph::staticInit();
+
+	m_data = std::vector<double>(data, data+m_resolution[0]*m_resolution[1]*m_resolution[2]*m_numCoeffs);
 	m_extend = m_bound.getExtents();
 }
 
 PNSolution::PNSolution(const std::string& filename):
 	m_shsampler(1)
 {
+	sph::staticInit();
+
 	std::ifstream file( filename.c_str(), std::ofstream::in|std::ofstream::binary );
 	file.read((char *)&m_order, sizeof(int));
 	file.read((char *)&m_resolution, sizeof(V3i));
@@ -290,29 +295,11 @@ PNSolution::PNSolution(const std::string& filename):
 	m_numCoeffs = (m_order + 1) * (m_order + 1);
 	m_extend = m_bound.getExtents();
 	m_data.resize(m_resolution[0]*m_resolution[1]*m_resolution[2]*m_numCoeffs);
-	file.read((char *)m_data.data(), sizeof(std::complex<double>)*m_data.size());
+	file.read((char *)m_data.data(), sizeof(double)*m_data.size());
+
 	m_shsampler = SHSampler(m_order+1);
 }
 
-/*
-PNSolution PNSolution::read( const std::string& filename )
-{
-	std::ifstream file( filename.c_str(), std::ofstream::in|std::ofstream::binary );
-	int order=0;
-	V3i resolution;
-	Box3d bound;
-
-	file.read((char *)&order, sizeof(int));
-	file.read((char *)&resolution, sizeof(V3i));
-	file.read((char *)&bound, sizeof(Box3d));
-
-	int numCoeffs = (order + 1) * (order + 1);
-	std::vector<std::complex<double>> data(resolution[0]*resolution[1]*resolution[2]*numCoeffs);
-	file.read((char *)data.data(), sizeof(std::complex<double>)*data.size());
-
-	return PNSolution(order, resolution, bound, data.data());
-}
-*/
 
 void PNSolution::save( const std::string& filename )
 {
@@ -320,8 +307,9 @@ void PNSolution::save( const std::string& filename )
 	file.write( (const char*)&m_order, sizeof(int) );
 	file.write( (const char*)&m_resolution, sizeof(V3i) );
 	file.write( (const char*)&m_bound, sizeof(Box3d) );
-	file.write( (const char*)m_data.data(), sizeof(std::complex<double>)*m_data.size() );
+	file.write( (const char*)m_data.data(), sizeof(double)*m_data.size() );
 }
+
 
 int PNSolution::getOrder()const
 {
@@ -348,154 +336,10 @@ P3d PNSolution::getBoundMax()const
 	return m_bound.max;
 }
 
-std::complex<double>* PNSolution::data()
+double* PNSolution::data()
 {
 	return m_data.data();
 }
-
-
-
-
-
-/*
-V3d PNSolution::sample( double& pdf, RNGd& rng )
-{
-
-}
-*/
-
-
-
-// PNSolution::SHVector ---------------------------------
-double PNSolution::SHVector::eval(double theta, double phi, double* coeffs, int order)
-{
-	int numBands = order+1;
-	double result = 0;
-	double cosTheta = std::cos(theta);
-	double *sinPhi = (double *) alloca(sizeof(double)*numBands),
-		  *cosPhi = (double *) alloca(sizeof(double)*numBands);
-
-	for (int m=0; m<numBands; ++m)
-	{
-		sinPhi[m] = std::sin((m+1) * phi);
-		cosPhi[m] = std::cos((m+1) * phi);
-	}
-
-	for (int l=0; l<numBands; ++l)
-	{
-		for (int m=1; m<=l; ++m)
-		{
-			double L = legendreP(l, m, cosTheta) * normalization(l, m);
-			result += get(l, -m, coeffs) * SQRT_TWO * sinPhi[m-1] * L;
-			result += get(l, m, coeffs)  * SQRT_TWO * cosPhi[m-1] * L;
-		}
-
-		result += get(l, 0, coeffs) * legendreP(l, 0, cosTheta) * normalization(l, 0);
-	}
-	return result;
-}
-
-double& PNSolution::SHVector::get( int l, int m, double* coeffs )
-{
-	return coeffs[l*(l+1) + m];
-}
-
-const double& PNSolution::SHVector::get( int l, int m, const double* coeffs )
-{
-	return coeffs[l*(l+1) + m];
-}
-
-double PNSolution::SHVector::legendreP(int l, int m, double x)
-{
-	double p_mm = 1;
-
-	if (m > 0) {
-		double somx2 = std::sqrt((1 - x) * (1 + x));
-		double fact = 1;
-		for (int i=1; i<=m; i++) {
-			p_mm *= (-fact) * somx2;
-			fact += 2;
-		}
-	}
-
-	if (l == m)
-		return p_mm;
-
-	double p_mmp1 = x * (2*m + 1) * p_mm;
-	if (l == m+1)
-		return p_mmp1;
-
-	double p_ll = 0;
-	for (int ll=m+2; ll <= l; ++ll) {
-		p_ll = ((2*ll-1)*x*p_mmp1 - (ll+m-1) * p_mm) / (ll-m);
-		p_mm = p_mmp1;
-		p_mmp1 = p_ll;
-	}
-
-	return p_ll;
-}
-
-double PNSolution::SHVector::computeNormalization(int l, int m)
-{
-	//SAssert(m>=0);
-	return std::sqrt(
-			((2*l+1) * factorial(l-m))
-		/    (4 * (double) M_PI * factorial(l+m)));
-}
-
-
-
-
-// Compute the factorial for an integer @x. It is assumed x is at least 0.
-// This implementation precomputes the results for low values of x, in which
-// case this is a constant time lookup.
-//
-// The vast majority of SH evaluations will hit these precomputed values.
-double PNSolution::SHVector::factorial(int x)
-{
-	// Number of precomputed factorials and double-factorials that can be
-	// returned in constant time.
-	const int kCacheSize = 16;
-
-	const double factorial_cache[kCacheSize] = {1, 1, 2, 6, 24, 120, 720, 5040,
-											  40320, 362880, 3628800, 39916800,
-											  479001600, 6227020800,
-											  87178291200, 1307674368000};
-
-	if (x < kCacheSize)
-	{
-		return factorial_cache[x];
-	}else
-	{
-		double s = 1.0;
-		for (int n = 2; n <= x; n++)
-		{
-			s *= n;
-		}
-		return s;
-	}
-}
-
-
-void PNSolution::SHVector::staticInit()
-{
-	m_normalization = new double[m_normTableSize*(m_normTableSize+1)/2];
-	for (int l=0; l<m_normTableSize; ++l)
-		for (int m=0; m<=l; ++m)
-			m_normalization[l*(l+1)/2 + m] = computeNormalization(l, m);
-
-}
-
-void PNSolution::SHVector::staticShutdown()
-{
-	delete[] m_normalization;
-	m_normalization = NULL;
-}
-
-double *PNSolution::SHVector::m_normalization = NULL;
-int PNSolution::SHVector::m_normTableSize = 10;
-
-
 
 
 
@@ -553,7 +397,7 @@ double PNSolution::SHSampler::integrate(int depth, int zBlock, int phiBlock, con
 		for (int m=-l; m<=l; ++m)
 		{
 			double basisIntegral = m_normalization[I(l, std::abs(m))]*lookupIntegral(depth, zBlock, phiBlock, l, m);
-			result += basisIntegral * SHVector::get(l, m, coeffs);
+			result += basisIntegral * sph::get(l, m, coeffs);
 		}
 	}
 	return result;
@@ -745,8 +589,8 @@ double *PNSolution::SHSampler::legendreIntegrals(double a, double b)
 	{
 		for (int m=0; m<=l; ++m)
 		{
-			Pa[I(l,m)] = SHVector::legendreP(l, m, a);
-			Pb[I(l,m)] = SHVector::legendreP(l, m, b);
+			Pa[I(l,m)] = sph::legendreP(l, m, a);
+			Pb[I(l,m)] = sph::legendreP(l, m, b);
 		}
 	}
 
@@ -771,3 +615,53 @@ double *PNSolution::SHSampler::legendreIntegrals(double a, double b)
 
 	return P;
 }
+
+
+
+
+/*
+double PNSolution::test_real_conversion( int l, int m, double theta, double phi )
+{
+	if (m < 0)
+		return (std::complex<double>(0.0, 1.0)/std::sqrt(2.0)*SHVector::csp(m)*sph::sph_basis(l, m, theta, phi)-
+				std::complex<double>(0.0, 1.0)/std::sqrt(2.0)*sph::sph_basis(l, -m, theta, phi) ).real();
+	else
+	if(m == 0)
+		return (sph::sph_basis(l, 0, theta, phi)).real();
+	else
+	if(m > 0)
+		return (1.0/std::sqrt(2.0)*SHVector::csp(m)*sph::sph_basis(l, -m, theta, phi)+
+				1.0/std::sqrt(2.0)*sph::sph_basis(l, m, theta, phi) ).real();
+	throw std::runtime_error("asdsad");
+}
+*/
+
+/*
+void PNSolution::test()
+{
+	P3d pWS(1.1, 1.0, 1.0);
+
+	double theta = M_PI*0.4;
+	double phi = 2.0*M_PI*0.4;
+	V3d d = sphericalDirection(theta, phi);
+
+
+	Eigen::VectorXd Y_real_vector(m_numCoeffs);
+	Eigen::VectorXcd Y_complex_vector(m_numCoeffs);
+	for( int l=0;l<=m_order;++l )
+		for( int m=-l;m<=l;++m )
+		{
+			double sph_real_basis = SHVector::sph_basis_real(l, m, theta, phi);
+			std::complex<double> sph_complex_basis = sph::sph_basis(l, m, theta, phi);
+			Y_real_vector.coeffRef(SHVector::index(l, m)) = sph_real_basis;
+			Y_complex_vector.coeffRef(SHVector::index(l, m)) = sph_complex_basis;
+		}
+
+	Eigen::VectorXd Y_real_vector_check = (this->m_complex2RealConversionMatrix*Y_complex_vector).real();
+
+	std::cout << "conversion: " << std::endl;
+	for( int i=0;i<m_numCoeffs;++i )
+		std::cout << Y_real_vector.coeffRef(i) << " " << Y_real_vector_check.coeffRef(i) << std::endl;
+
+}
+*/

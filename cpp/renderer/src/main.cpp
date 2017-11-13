@@ -18,6 +18,8 @@
 
 #include <util/threadpool.h>
 
+#include <math/sph.h>
+
 #include <PNSolution.h>
 
 namespace py = pybind11;
@@ -468,7 +470,7 @@ struct SHTest
 	{
 		SHVector::staticInitialization();
 		mitsuba::SHVector::staticInitialization();
-		PNSolution::SHVector::staticInit();
+		sph::staticInit();
 
 		/*
 		shv(0,0) = 1.23;
@@ -508,7 +510,7 @@ struct SHTest
 	{
 		//V3d t = sphericalDirection(theta, phi);
 		//return shv.eval(t);
-		return PNSolution::SHVector::eval( theta, phi, shv.m_coeffs.data(), m_order );
+		return sph::eval( theta, phi, shv.m_coeffs.data(), m_order );
 		//return mitsuba_shvector.eval(theta, phi);
 	}
 
@@ -768,7 +770,7 @@ PYBIND11_MODULE(renderer, m)
 		const Eigen::Matrix<int, 3, 1>& resolution,
 		const Eigen::Matrix<double, 3, 1>& bound_min,
 		const Eigen::Matrix<double, 3, 1>& bound_max,
-		const Eigen::VectorXcd& data
+		const Eigen::VectorXd& data
 		)
 	//*/
 	/*
@@ -829,6 +831,7 @@ PYBIND11_MODULE(renderer, m)
 	.def("voxelToWorld", &PNSolution::voxelToWorld )
 	.def("worldToVoxel", &PNSolution::worldToVoxel )
 	*/
+	//.def("test", &PNSolution::test )
 	;
 
 	// SHTest ============================================================

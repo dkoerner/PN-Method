@@ -38,6 +38,7 @@ pybind11_add_module(renderer src/main.cpp
 							 src/lights/directionallight.cpp
 							 src/scene.cpp
 							 src/volume.cpp
+							 src/Integrator.cpp
 							 src/Image.cpp
 							 src/PNSolution.cpp
 	                         )

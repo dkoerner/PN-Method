@@ -70,6 +70,16 @@ struct GlobalIntegratePNSolutionInfo
 	std::vector<V3d>* fluence;
 };
 
+struct GlobalComputeUncollidedLightInfo
+{
+	GlobalComputeUncollidedLightInfo()
+	{
+	}
+
+	const Scene* scene;
+	VoxelGrid3d* grid;
+};
+
 
 double luminance( const V3d& c )
 {
@@ -184,39 +194,6 @@ Eigen::VectorXd compute_fluence( Volume::Ptr volume, Light::Ptr light, Integrato
 		result.coeffRef(i) = luminance(fluence[i]);
 	return result;
 }
-
-/*
-Image::Ptr render_radiance_distribution_at_point(Volume::Ptr volume, Light::Ptr light, Integrator::Ptr integrator, const P3d& pWS, int seed)
-{
-	std::cout << "render_radiance_distribution_at_point:\n";
-	std::cout << volume->toString();
-	std::cout << light->toString();
-	std::cout << integrator->toString();
-
-	V2i resolution(512, 256);
-	Image::Ptr result = std::make_shared<Image>(resolution);
-
-	Scene scene;
-	scene.camera = 0;
-	scene.integrator = integrator.get();
-	scene.light = light.get();
-	scene.volume = volume.get();
-
-	GlobalRenderInfo gi;
-	gi.scene = &scene;
-	gi.image = result.get();
-	gi.crop_window = Box2i( V2i(0,0), camera->getResolution() );
-	//gi.debug_pixel = V2i(256, 256);
-
-	int numSamples = 1;
-
-	Terminator terminator(numSamples);
-	std::cout << "rendering image..."<< std::endl;std::flush(std::cout);
-	runGenericTasks<MonteCarloTaskInfo, GlobalRenderInfo>( render_thread, &gi, terminator, ThreadPool::getNumSystemCores() );
-	return result;
-}
-*/
-
 
 
 
@@ -398,6 +375,80 @@ Eigen::VectorXd compute_fluence_pnsolution( PNSolution::Ptr pns, const Eigen::Ma
 }
 
 
+
+
+void compute_unscattered_light_thread( MonteCarloTaskInfo& taskinfo, const GlobalComputeUncollidedLightInfo* gi )
+{
+	V3i res = gi->grid->getResolution();
+	int numPoints = res[0]*res[1]*res[2];
+
+	// note that y goes from bottom=0 to top=max (rasterspace)
+	for (int point_index = taskinfo.taskid; point_index < numPoints; point_index += taskinfo.numTasks)
+	{
+		bool debug = false;
+
+		// retrieve worldspace position of current voxel
+		int i,j,k;
+		gi->grid->getCoordFromIndex( point_index, i, j, k );
+		P3d pLS = gi->grid->voxelToLocal( V3d(i+0.5, j+0.5, k+0.5) );
+		P3d pWS = gi->scene->volume->localToWorld(pLS);
+
+		// now compute uncollided light by using next event estimation routine
+		TraceInfo ti;
+		ti.scene = gi->scene;
+		ti.current_vertex.setPosition( pWS,
+									   gi->scene->volume->evalExtinction(pWS),
+									   gi->scene->volume->evalAlbedo(pWS) );
+
+		V3d f = nee(ti, taskinfo.rng);
+
+
+		if( std::isnan(luminance(f)) )
+			std::cout << "compute_unscattered_light_thread: got NaN value @ index=" << point_index << " sample=" << taskinfo.samples << std::endl;
+
+		// update pixel color
+		V3d& c = gi->grid->sample(i, j, k);
+		c += (f - c)/double(taskinfo.samples+1);
+	} // point
+
+
+	++taskinfo.samples;
+
+}
+
+
+
+
+
+VoxelGridField3d::Ptr compute_unscattered_light( Volume::Ptr volume,
+												 Light::Ptr light,
+												 Integrator::Ptr integrator,
+												 int numSamples )
+{
+	std::cout << "compute_unscattered_light:\n";
+	std::cout << volume->toString();
+	std::cout << light->toString();
+	std::cout << integrator->toString();
+
+	VoxelGridField3d::Ptr result = std::make_shared<VoxelGridField3d>( V3i(1,1,1), (V3d*)0);
+
+	Scene scene;
+	scene.integrator = integrator.get();
+	scene.light = light.get();
+	scene.volume = volume.get();
+
+	GlobalComputeUncollidedLightInfo gi;
+	gi.scene = &scene;
+	gi.grid = &result->getVoxelGrid();
+
+	Terminator terminator(numSamples);
+	std::cout << "computing uncollided light..."<< std::endl;std::flush(std::cout);
+	runGenericTasks<MonteCarloTaskInfo, GlobalComputeUncollidedLightInfo>( compute_unscattered_light_thread, &gi, terminator, ThreadPool::getNumSystemCores() );
+
+	return result;
+}
+
+
 Light::Ptr create_point_light( const Eigen::Vector3d& position, const Eigen::Vector3d& power )
 {
 	return std::make_shared<PointLight>(position, power);
@@ -462,29 +513,22 @@ Field3d::Ptr load_bgeo( const std::string& filename )
 
 	houio::math::V3i res = sigma_t->getResolution();
 	int numVoxels = res.x*res.y*res.z;
-	houio::math::Box3f bound = sigma_t->bound();
-	//std::vector<V3d> data(sigma_t->getRawPointer(), sigma_t->getRawPointer()+res.x*res.y*res.z);
 
 	std::vector<V3d> data(numVoxels);
 	for( int i=0;i<res.x;++i )
 		for( int j=0;j<res.y;++j )
 			for( int k=0;k<res.z;++k )
 			{
-				// numpy indexing (k ist fastest)
-				int index_dst = (res.x-i-1)*res.y*res.z + j*res.z + (res.z-k-1);
-				//int index_src = k*res.x*res.y + j*res.x + i;
 				float value = sigma_t->sample(i, j, k);
+				// numpy indexing (k ist fastest)
+				// TODO: figure out, why we have to flip i and k indices...
+				int index_dst = (res.x-i-1)*res.y*res.z + j*res.z + (res.z-k-1);
 				data[index_dst] = V3d(value, value, value);
 			}
 
-	//for( int i=0;i<numVoxels;++i,++ptr )
-	//	data[i] = V3d(*ptr, *ptr, *ptr);
 
-
-
-	VoxelGridField3d::Ptr result = std::make_shared<VoxelGridField3d>(  data.data(),
-																		V3i(res.x, res.y, res.z),
-																		V3d(0.5, 0.5, 0.5));
+	VoxelGridField3d::Ptr result = std::make_shared<VoxelGridField3d>(  V3i(res.x, res.y, res.z),
+																		data.data());
 	return result;
 }
 
@@ -794,11 +838,41 @@ PYBIND11_MODULE(renderer, m)
 	 })
 	;
 
-	// VoxelGrid ============================================================
+	// VoxelGrid (complex valued) ============================================================
 	py::class_<VoxelGridFieldcd, VoxelGridFieldcd::Ptr> class_VoxelGridFieldcd(m, "VoxelGridFieldcd", class_fieldcd);
 	class_VoxelGridFieldcd
 	.def("__init__",
 	[](VoxelGridFieldcd &m, py::array b)
+	{
+		typedef Eigen::Stride<Eigen::Dynamic, Eigen::Dynamic> Strides;
+
+		// Request a buffer descriptor from Python
+		py::buffer_info info = b.request();
+
+		// Some sanity checks ...
+		if (info.format != py::format_descriptor<std::complex<double>>::format())
+			throw std::runtime_error("Incompatible format: expected a complex array!");
+
+		if (info.ndim != 3)
+			throw std::runtime_error("Incompatible buffer dimension!");
+
+		V3i resolution( int(info.shape[0]),
+						int(info.shape[1]),
+						int(info.shape[2]) );
+
+		auto data = static_cast<std::complex<double> *>(info.ptr);
+		new (&m) VoxelGridFieldcd( resolution, data );
+	})
+	//.def("test", &VoxelGridField::test)
+	//.def("getSlice", &VoxelGridField::getSlice)
+	;
+
+	// VoxelGrid (real valued) ============================================================
+	py::class_<VoxelGridField3d, VoxelGridField3d::Ptr> class_VoxelGridField3d(m, "VoxelGridField3d", class_field3d);
+	class_VoxelGridField3d
+	/*
+	.def("__init__",
+	[](VoxelGridField3d &m, py::array b)
 	{
 		typedef Eigen::Stride<Eigen::Dynamic, Eigen::Dynamic> Strides;
 
@@ -822,9 +896,11 @@ PYBIND11_MODULE(renderer, m)
 		auto data = static_cast<std::complex<double> *>(info.ptr);
 		new (&m) VoxelGridFieldcd( data, resolution, offset );
 	})
+	*/
 	//.def("test", &VoxelGridField::test)
 	//.def("getSlice", &VoxelGridField::getSlice)
 	;
+
 
 	// PNSolution ==============================
 	py::class_<PNSolution, PNSolution::Ptr> class_pnsolution(m, "PNSolution");
@@ -931,6 +1007,7 @@ PYBIND11_MODULE(renderer, m)
 	m.def( "render", &render );
 	m.def( "compute_fluence", &compute_fluence );
 	m.def( "create_shtest", &create_shtest );
+	m.def( "compute_unscattered_light", &compute_unscattered_light );
 	// lights
 	m.def( "create_point_light", &create_point_light );
 	m.def( "create_directional_light", &create_directional_light );

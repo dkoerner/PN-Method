@@ -4,33 +4,6 @@
 
 
 
-
-// returns sigma_t at sampled position (is invalid when we exceeded maxt)
-double delta_tracking( const Scene* scene, const Ray3d& ray, double maxt, int component, RNGd& rng, V3d& sigma_t )
-{
-	double sigma_t_max = scene->volume->getMaxExtinction()[component];
-
-	double t = 0.0;
-	while(true)
-	{
-		double step = -log( 1.0-rng.next1D() )/sigma_t_max;
-		t += step;
-
-		if(t>= maxt)
-			break;
-
-		sigma_t = scene->volume->evalExtinction(ray(t));
-
-		// russian roulette
-		if(rng.next1D()<sigma_t[component]/sigma_t_max)
-			break;
-	}
-
-	return t;
-}
-
-
-
 V3d SimplePT::Li( const Scene* scene, RadianceQuery& rq, RNGd& rng )const
 {
 /*

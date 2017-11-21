@@ -25,6 +25,15 @@ struct Volume;
 struct Integrator;
 struct Scene
 {
+	Scene():
+		camera(0),
+		light(0),
+		volume(0),
+		integrator(0)
+	{
+
+	}
+
 	// scene info
 	//std::string id;
 	//Box3d bound;   // bounding box of the scene (used for view finding)

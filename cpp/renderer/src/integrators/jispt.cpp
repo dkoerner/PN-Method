@@ -7,8 +7,6 @@
 
 
 
-
-
 V3d JISPT::Li( const Scene* scene, RadianceQuery& rq, RNGd& rng )const
 {
 /*

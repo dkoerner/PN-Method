@@ -50,3 +50,4 @@ V3d PNISPT::Li( const Scene* scene, RadianceQuery& rq, RNGd& rng )const
 
 	return V3d(0.0, 0.0, 0.0);
 }
+

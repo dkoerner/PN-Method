@@ -194,14 +194,24 @@ Vector3i VoxelGrid<T>::getResolution()const
 template<typename T>
 void VoxelGrid<T>::getCoordFromIndex( int index, int& x, int& y, int& z ) const
 {
+	/*
 	div_t divresult;
-
 	divresult = div( index, m_resolution.x()*m_resolution.y() );
-
 	z = divresult.quot;
 	divresult = div( divresult.rem, m_resolution.x() );
 	y = divresult.quot;
 	x = divresult.rem;
+	*/
+
+
+	// numpy indexing (k ist fastest)
+	div_t divresult;
+	divresult = div( index, m_resolution.y()*m_resolution.z() );
+	x = divresult.quot;
+	divresult = div( divresult.rem, m_resolution.z() );
+	y = divresult.quot;
+	z = divresult.rem;
+
 }
 
 template<typename T>
@@ -248,7 +258,7 @@ typedef VoxelGrid<float> ScalarVoxelGrid;
 typedef VoxelGrid<Vector3f> VoxelGrid3f;
 typedef VoxelGrid<Vector4f> VoxelGrid4f;
 typedef VoxelGrid<double> VoxelGridd;
-typedef VoxelGrid<Vector3d> VoxelGrid3d;
+typedef VoxelGrid<V3d> VoxelGrid3d;
 
 
 

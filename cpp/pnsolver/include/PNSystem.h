@@ -36,18 +36,6 @@ struct PNSystem
 	struct VoxelSystem;
 	struct Fields;
 
-	PNSystem::RealMatrix debug_downsample;
-	PNSystem::RealMatrix debug_upsample;
-	Eigen::VectorXd debug_x;
-	Eigen::VectorXd debug_x_downsampled;
-	Eigen::VectorXd debug_x_up_sampled_downsampled;
-	std::tuple<Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd> get_debug()
-	{
-		//return std::make_tuple(removeStaggering(debug_x), stripBoundary(debug_x_downsampled), stripBoundary(debug_x_up_sampled_downsampled));
-		return std::make_tuple(removeStaggering(debug_x), debug_x_downsampled, removeStaggering(debug_x_up_sampled_downsampled));
-	}
-
-
 	template<typename T>
 	struct MatrixBuilder
 	{

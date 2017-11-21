@@ -485,7 +485,6 @@ PYBIND11_MODULE(pnsolver, m)
 	.def("get_A_real_test", &PNSystem::get_A_real_test )
 	.def("get_b_real_test", &PNSystem::get_b_real_test )
 	.def("setDebugVoxel", &PNSystem::setDebugVoxel )
-	.def("get_debug", &PNSystem::get_debug )
 	//.def("computeGroundtruth", &PNSystem::computeGroundtruth )
 	.def("getVoxelInfo", &PNSystem::getVoxelInfo )
 	;

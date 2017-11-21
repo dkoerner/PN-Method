@@ -13,10 +13,14 @@
 #include <Image.h>
 
 #include <lights/pointlight.h>
+#include <lights/directionallight.h>
 #include <integrators/simplept.h>
+#include <integrators/pnispt.h>
+#include <integrators/jispt.h>
 #include <fields/VoxelGridField.h>
 
 #include <util/threadpool.h>
+#include <houio/HouGeoIO.h>
 
 #include <math/sph.h>
 
@@ -169,7 +173,7 @@ Eigen::VectorXd compute_fluence( Volume::Ptr volume, Light::Ptr light, Integrato
 
 	MonteCarloTaskInfo::g_seed = seed;
 
-	int numSamples = 10000;
+	int numSamples = 100;
 
 	Terminator terminator(numSamples);
 	std::cout << "computing fluence..."<< std::endl;std::flush(std::cout);
@@ -398,11 +402,12 @@ Light::Ptr create_point_light( const Eigen::Vector3d& position, const Eigen::Vec
 {
 	return std::make_shared<PointLight>(position, power);
 }
-/*
-Light::Ptr create_directional_light()
+
+Light::Ptr create_directional_light(const Eigen::Vector3d& direction, const Eigen::Vector3d& radiance)
 {
+	return std::make_shared<DirectionalLight>(direction, radiance);
 }
-*/
+
 
 Camera::Ptr create_perspective_camera( int xres, int yres, double hfov )
 {
@@ -423,6 +428,21 @@ Integrator::Ptr create_simplept_integrator()
 	return std::make_shared<SimplePT>(maxDepth, doSingleScattering);
 }
 
+Integrator::Ptr create_pnispt_integrator( PNSolution::Ptr pns )
+{
+	int maxDepth = std::numeric_limits<int>::max();
+	bool doSingleScattering = true;
+	return std::make_shared<PNISPT>(pns, maxDepth, doSingleScattering);
+}
+
+Integrator::Ptr create_jispt_integrator()
+{
+	int maxDepth = std::numeric_limits<int>::max();
+	bool doSingleScattering = true;
+	return std::make_shared<JISPT>(maxDepth, doSingleScattering);
+}
+
+
 Volume::Ptr create_volume()
 {
 	return std::make_shared<Volume>();
@@ -433,6 +453,40 @@ Field3d::Ptr create_constant_field3d( const Eigen::Vector3d& value )
 	return std::make_shared<ConstantField3d>(value);
 }
 
+Field3d::Ptr load_bgeo( const std::string& filename )
+{
+	houio::ScalarField::Ptr sigma_t = houio::HouGeoIO::importVolume(filename);
+
+	if(!sigma_t)
+		throw std::runtime_error("load_bgeo");
+
+	houio::math::V3i res = sigma_t->getResolution();
+	int numVoxels = res.x*res.y*res.z;
+	houio::math::Box3f bound = sigma_t->bound();
+	//std::vector<V3d> data(sigma_t->getRawPointer(), sigma_t->getRawPointer()+res.x*res.y*res.z);
+
+	std::vector<V3d> data(numVoxels);
+	for( int i=0;i<res.x;++i )
+		for( int j=0;j<res.y;++j )
+			for( int k=0;k<res.z;++k )
+			{
+				// numpy indexing (k ist fastest)
+				int index_dst = (res.x-i-1)*res.y*res.z + j*res.z + (res.z-k-1);
+				//int index_src = k*res.x*res.y + j*res.x + i;
+				float value = sigma_t->sample(i, j, k);
+				data[index_dst] = V3d(value, value, value);
+			}
+
+	//for( int i=0;i<numVoxels;++i,++ptr )
+	//	data[i] = V3d(*ptr, *ptr, *ptr);
+
+
+
+	VoxelGridField3d::Ptr result = std::make_shared<VoxelGridField3d>(  data.data(),
+																		V3i(res.x, res.y, res.z),
+																		V3d(0.5, 0.5, 0.5));
+	return result;
+}
 
 PNSolution::Ptr load_pnsolution( const std::string& filename )
 {
@@ -445,6 +499,17 @@ Image::Ptr load_image( const std::string& filename )
 	return std::make_shared<Image>(filename);
 }
 
+void save_exr( const std::string& filename, const Eigen::MatrixXd& values )
+{
+	Image::Ptr img = std::make_shared<Image>( V2i(values.rows(), values.cols()) );
+	for( int i=0;i<values.rows();++i )
+		for( int j=0;j<values.cols();++j )
+		{
+			double value = values.coeffRef(i, j);
+			img->pixel(j, i) = V3d(value, value, value);
+		}
+	img->save(filename);
+}
 
 ImageSampler::Ptr create_image_sampler( Image::Ptr image )
 {
@@ -635,6 +700,7 @@ PYBIND11_MODULE(renderer, m)
 			Eigen::Vector3d pWS = m.localToWorld(pLS);
 			return pWS;
 		})
+		.def("getSlice", &Volume::getSlice )
 	;
 
 	// Image ============================================================
@@ -798,6 +864,20 @@ PYBIND11_MODULE(renderer, m)
 		double pdf=0.0;
 		return m.sample(pWS, pdf, sample);
 	 })
+	.def("pdf",
+	 [](PNSolution &m,
+		const Eigen::Matrix<double, 3, 1>& pWS,
+		const Eigen::Matrix<double, 3, 1>& direction)
+	 {
+		return m.pdf(pWS, direction);
+	 })
+	.def("getBlocks",
+	 [](PNSolution &m,
+		const Eigen::Matrix<double, 3, 1>& pWS,
+		 int depth)
+	 {
+		return m.getBlocks(pWS, depth);
+	 })
 	.def("evalCoefficient",
 	 [](PNSolution &m,
 		const Eigen::Matrix<double, 3, 1>& pWS,
@@ -832,6 +912,7 @@ PYBIND11_MODULE(renderer, m)
 	.def("worldToVoxel", &PNSolution::worldToVoxel )
 	*/
 	//.def("test", &PNSolution::test )
+	.def("setFilter", &PNSolution::setFilter )
 	;
 
 	// SHTest ============================================================
@@ -852,21 +933,25 @@ PYBIND11_MODULE(renderer, m)
 	m.def( "create_shtest", &create_shtest );
 	// lights
 	m.def( "create_point_light", &create_point_light );
-	//m.def( "create_directional_light", &create_directional_light );
+	m.def( "create_directional_light", &create_directional_light );
 	// cameras
 	m.def( "create_perspective_camera", &create_perspective_camera );
 	m.def( "create_sphere_camera", &create_sphere_camera );
 	// integrators
 	m.def( "create_simplept_integrator", &create_simplept_integrator );
+	m.def( "create_pnispt_integrator", &create_pnispt_integrator );
+	m.def( "create_jispt_integrator", &create_jispt_integrator );
 	// volumes
 	m.def( "create_volume", &create_volume );
 	// fields
 	m.def( "create_constant_field3d", &create_constant_field3d );
+	m.def( "load_bgeo", &load_bgeo );
 	// pnsolution
 	m.def( "load_pnsolution", &load_pnsolution );
 	m.def( "compute_fluence_pnsolution", &compute_fluence_pnsolution );
 	// image
 	m.def( "load_image", &load_image );
+	m.def( "save_exr", &save_exr );
 	m.def( "create_image_sampler", &create_image_sampler );
 	m.def( "blur_image", &blur_image )
 	;

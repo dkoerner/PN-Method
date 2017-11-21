@@ -45,14 +45,18 @@ struct SHEXP : public RadianceField
 
 	virtual double eval( const P3d& pWS, const V3d& omega )const override
 	{
+		/*
 		P2d theta_phi = sphericalCoordinates(omega);
 		double theta = theta_phi[0];
 		double phi = theta_phi[1];
 		std::complex<double> result = 0.0;
 		for(int l=0;l<m_coeffs.getOrder()+1;++l)
 			for( int m=-l;m<=l;++m )
-				result+=m_coeffs.eval(l,m,pWS)*sph::sph_basis(l,m,theta, phi);
+				result+=m_coeffs.eval(l,m,pWS)*sph::basis(l,m,theta, phi);
 		return result.real();
+		*/
+		throw std::runtime_error("not implemented");
+		return 0.0;
 	}
 
 private:

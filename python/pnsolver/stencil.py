@@ -1923,7 +1923,12 @@ if __name__ == "__main__":
 	terms_fopn.append(rte_terms.fopn.collision_term())
 	terms_fopn.append(rte_terms.fopn.scattering_term())
 	terms_fopn.append(rte_terms.fopn.source_term())
+	
+	
 	terms_fopn = rte_terms.splitAddition( terms_fopn )
+
+	#for t in terms_fopn:
+	#	print(meh.latex(t) + "+")
 
 	#for term in terms_fopn:
 	#	print("\n-------------------\n")
@@ -1940,6 +1945,7 @@ if __name__ == "__main__":
 
 	rte_forms = ["fopn"]
 	order = [1]
+	#order = [1,2,3,4,5]
 	staggered = [True]
 
 	test = itertools.product(rte_forms, order, staggered)

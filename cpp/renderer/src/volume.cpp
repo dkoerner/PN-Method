@@ -1,7 +1,7 @@
 #include <volume.h>
 
 
-
+#include <fields/VoxelGridField.h>
 
 
 
@@ -17,8 +17,25 @@ Volume::Volume():
 }
 void Volume::setExtinctionAlbedo( Field3d::Ptr extinction, Field3d::Ptr albedo )
 {
-	std::pair<V3d, V3d> valueRange = extinction->getValueRange();
-	m_extinction_max = std::get<1>(valueRange);
+	//std::pair<V3d, V3d> valueRange = extinction->getValueRange();
+	//m_extinction_max = std::get<1>(valueRange);
+
+	if( std::dynamic_pointer_cast<VoxelGridField3d>(extinction) )
+	{
+		std::cout << "!!!!!!!!!!\n";
+		VoxelGridField3d::Ptr vg = std::dynamic_pointer_cast<VoxelGridField3d>(extinction);
+		V3d* data = vg->getData();
+		int numElements = vg->getResolution()[0]*vg->getResolution()[1]*vg->getResolution()[2];
+		m_extinction_max = V3d(0.0, 0.0, 0.0);
+		for( int i=0;i<numElements;++i )
+		{
+			for( int j=0;j<3;++j )
+				m_extinction_max[j] = std::max(m_extinction_max[j], data[i][j]);
+		}
+		for( int j=0;j<3;++j )
+			std::cout << m_extinction_max[0] << std::endl;
+	}else
+		m_extinction_max = extinction->getMaxValue();
 
 	m_field_extinction = extinction;
 	m_field_albedo = albedo;
@@ -112,4 +129,27 @@ std::string Volume::toString()const
 	//ss << "extinction field=" << m_field_extinction->toString() << std::endl;
 	//ss << "albedo field=" << m_field_albedo->toString() << std::endl;
 	return ss.str();
+}
+
+
+Eigen::MatrixXd Volume::getSlice( double offset )const
+{
+	Eigen::MatrixXd result(200, 200);
+
+	for( int i=0;i<result.rows();++i )
+		for( int j=0;j<result.cols();++j )
+		{
+			double t0 = double(i)/double(result.rows()-1);
+			double t1 = double(j)/double(result.cols()-1);
+			P3d pLS;
+
+
+			//pLS = P3d((offset + 1.0)*0.5, t0, t1); // XY plane
+			//pLS = P3d(t0, (offset + 1.0)*0.5, t1); // ZX plane
+			pLS = P3d(t1, t0, (offset + 1.0)*0.5); // YZ plane
+
+			result.coeffRef(i, j) = this->evalExtinction(localToWorld(pLS))[0];
+		}
+
+	return result;
 }

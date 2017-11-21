@@ -1,37 +1,15 @@
-#include <integrators/simplept.h>
+#include <integrators/jispt.h>
 
 
 
 
 
 
-// returns sigma_t at sampled position (is invalid when we exceeded maxt)
-double delta_tracking( const Scene* scene, const Ray3d& ray, double maxt, int component, RNGd& rng, V3d& sigma_t )
-{
-	double sigma_t_max = scene->volume->getMaxExtinction()[component];
-
-	double t = 0.0;
-	while(true)
-	{
-		double step = -log( 1.0-rng.next1D() )/sigma_t_max;
-		t += step;
-
-		if(t>= maxt)
-			break;
-
-		sigma_t = scene->volume->evalExtinction(ray(t));
-
-		// russian roulette
-		if(rng.next1D()<sigma_t[component]/sigma_t_max)
-			break;
-	}
-
-	return t;
-}
 
 
 
-V3d SimplePT::Li( const Scene* scene, RadianceQuery& rq, RNGd& rng )const
+
+V3d JISPT::Li( const Scene* scene, RadianceQuery& rq, RNGd& rng )const
 {
 /*
 	return V3d( double(rq.pixel[0])/double(scene->camera->getResolutionX()),
@@ -54,7 +32,7 @@ V3d SimplePT::Li( const Scene* scene, RadianceQuery& rq, RNGd& rng )const
 	if( scene->volume->intersectBound(rq.ray, mint, maxt, rq.debug) )
 	{
 		// start tracing
-		TraceInfo ti;
+		JISTraceInfo ti;
 		ti.depth = 0;
 		ti.current_vertex = Vertex();
 		P3d pWS = rq.ray(mint+Epsilon);
@@ -73,3 +51,12 @@ V3d SimplePT::Li( const Scene* scene, RadianceQuery& rq, RNGd& rng )const
 
 	return V3d(0.0, 0.0, 0.0);
 }
+
+
+
+
+
+
+
+
+

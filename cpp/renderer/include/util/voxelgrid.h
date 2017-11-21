@@ -171,6 +171,8 @@ T VoxelGrid<T>::evaluate( const P3d &vsP )const
 	c1[2] = std::max(0, std::min(c1.z(), res.z()-1));
 	c2[2] = std::max(0, std::min(c2.z(), res.z()-1));
 
+	return sample( c1.x(), c1.y(), c1.z() );
+	/*
 	//lerp...
 	return lerp( lerp( lerp( sample( c1.x(), c1.y(), c1.z() ),
 							 sample( c2.x(), c1.y(), c1.z() ), (real_t)tx ),
@@ -180,6 +182,7 @@ T VoxelGrid<T>::evaluate( const P3d &vsP )const
 							 sample( c2.x(), c1.y(), c2.z() ), (real_t)tx ),
 					   lerp( sample( c1.x(), c2.y(), c2.z() ),
 							 sample( c2.x(), c2.y(), c2.z() ), (real_t)tx ), (real_t)ty ), (real_t)tz );
+	*/
 }
 
 template<typename T>

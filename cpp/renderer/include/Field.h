@@ -11,7 +11,8 @@ struct Field
 	virtual T eval( const P3d& pLS )const=0; // NB: here field uses local space
 
 	// this is required for delta tracking where we need to know the maximum
-	virtual std::pair<T, T> getValueRange()const=0;
+	//virtual std::pair<T, T> getValueRange()const=0;
+	virtual T getMaxValue()const=0;
 };
 
 typedef Field<double> Fieldd;
@@ -36,9 +37,10 @@ struct ConstantField : public Field<T>
 	{
 		return m_value;
 	}
-	virtual std::pair<T, T> getValueRange()const
+	//virtual std::pair<T, T> getValueRange()const
+	virtual T getMaxValue()const
 	{
-		return std::make_pair(m_value, m_value);
+		return m_value;
 	}
 
 private:

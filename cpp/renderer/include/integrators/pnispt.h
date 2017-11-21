@@ -1,59 +1,17 @@
 #pragma once
-#include <integrator.h>
+#include <integrators/simplept.h>
 
 #include <scene.h>
 #include <math/frame.h>
 
 #include <volume.h>
 
-
-// returns sigma_t at sampled position (is invalid when we exceeded maxt)
-double delta_tracking( const Scene* scene, const Ray3d& ray, double maxt, int component, RNGd& rng, V3d& sigma_t );
-
-struct Vertex
-{
-	enum EVertexType
-	{
-		EInvalid = 0,
-		ESurface = 1,
-		EVolume = 2
-	};
-
-	void setPosition( const P3d& position, V3d sigma_t, V3d albedo )
-	{
-		m_p = position;
-		m_type = EVolume;
-		m_sigma_t = sigma_t;
-		m_albedo = albedo;
-		m_sigma_s = sigma_t.cwiseProduct(albedo);
-	}
-	void setPosition( const P3d& position, const Framed& frame)
-	{
-		m_p = position;
-		m_type = ESurface;
-	}
-
-	const P3d& getPosition()const
-	{
-		return m_p;
-	}
-
-	EVertexType getType()const
-	{
-		return m_type;
-	}
-
-//		private:
-	P3d m_p; // position in worldspace
-	EVertexType m_type; // volume or surface scattering point
-	V3d m_sigma_t;
-	V3d m_sigma_s;
-	V3d m_albedo;
-};
+#include <PNSolution.h>
 
 
 
-struct TraceInfo
+
+struct TraceInfoPNIS
 {
 	Vertex current_vertex;
 	V3d current_direction;
@@ -63,8 +21,9 @@ struct TraceInfo
 	int depth;
 	const Scene* scene;
 	bool debug;
+	const PNSolution* pns;
 
-	TraceInfo():
+	TraceInfoPNIS():
 	    throughput_over_pdf(1.0, 1.0, 1.0),
 	    debug(false)
 	{
@@ -123,8 +82,10 @@ struct TraceInfo
 		if( current_vertex.getType() == Vertex::EVolume )
 		{
 			V3d wi = current_direction;
-			double pdf;
-			double phase_over_pdf = scene->volume->samplePhase(current_vertex.getPosition(), wi, current_direction, pdf, rng);
+			double direction_pdf;
+			current_direction = -pns->sample( current_vertex.getPosition(), direction_pdf, P2d(rng.next1D(), rng.next1D()) );
+			//double phase_over_pdf = scene->volume->samplePhase(current_vertex.getPosition(), wi, current_direction, pdf, rng);
+			double phase_over_pdf = scene->volume->evalPhase(current_vertex.getPosition(), wi, current_direction)/direction_pdf;
 			throughput_over_pdf = phase_over_pdf*throughput_over_pdf.cwiseProduct(current_vertex.m_sigma_s);
 			return true;
 		}else
@@ -162,19 +123,22 @@ struct TraceInfo
 
 // intersects the volume bound and starts volume path tracing within the volume
 // will stop once the path exits the volume
-struct SimplePT : public Integrator
+struct PNISPT : public Integrator
 {
-	typedef std::shared_ptr<SimplePT> Ptr;
+	typedef std::shared_ptr<PNISPT> Ptr;
 
-	SimplePT( int maxDepth = std::numeric_limits<int>::max(), bool doSingleScattering = true ):
+	PNISPT( PNSolution::Ptr pns,
+	        int maxDepth = std::numeric_limits<int>::max(),
+	        bool doSingleScattering = true ):
 	    Integrator(),
+	    m_pns(pns),
 	    m_maxDepth(maxDepth),
 	    m_doSingleScattering(doSingleScattering)
 	{
 	}
 
 
-	V3d trace( TraceInfo& ti, RNGd& rng )const
+	V3d trace( TraceInfoPNIS& ti, RNGd& rng )const
 	{
 		V3d L(0.0f, 0.0f, 0.0f);
 
@@ -236,11 +200,12 @@ struct SimplePT : public Integrator
 	virtual std::string toString()const override
 	{
 		std::ostringstream ss;
-		ss << "SimplePT singleScattering=" << m_doSingleScattering << " maxDepth=" << m_maxDepth << std::endl;
+		ss << "PNISPT singleScattering=" << m_doSingleScattering << " maxDepth=" << m_maxDepth << std::endl;
 		return ss.str();
 	}
 
 private:
+	PNSolution::Ptr m_pns;
 	bool m_doSingleScattering;
 	int m_maxDepth;
 };

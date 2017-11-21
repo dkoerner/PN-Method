@@ -103,6 +103,8 @@ struct Volume
 
 	std::string toString()const;
 
+	Eigen::MatrixXd getSlice( double offset )const;
+
 private:
 	// rgb dependent albedo and extinction values (evaluated in local space)
 	Field3d::Ptr       m_field_extinction;

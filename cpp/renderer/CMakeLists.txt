@@ -14,7 +14,6 @@ include_directories( ${CMAKE_INSTALL_PREFIX}/include/OpenEXR )
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/include )
 
 
-
 # temp: mitsubacore
 include_directories( c:/libs/mitsuba/include )
 #ADD_DEFINITIONS( -DSINGLE_PRECISION )
@@ -33,7 +32,10 @@ pybind11_add_module(renderer src/main.cpp
 							 src/util/threadpool.cpp
 							 src/util/voxelgrid.cpp
 							 src/integrators/simplept.cpp
+							 src/integrators/pnispt.cpp
+							 src/integrators/jispt.cpp
 							 src/lights/pointlight.cpp
+							 src/lights/directionallight.cpp
 							 src/scene.cpp
 							 src/volume.cpp
 							 src/Image.cpp
@@ -53,3 +55,6 @@ target_link_libraries(renderer c:/libs-msvs2017/lib/libboost_filesystem-vc141-mt
 
 # temp: mitsubacore
 target_link_libraries(renderer c:/libs/mitsuba-buildmvs17/Release/libcore.lib )
+
+# temp: houio for bgeo loading and writing
+target_link_libraries(renderer c:/libs-msvs2017/lib/houio.lib )

@@ -13,6 +13,7 @@ include_directories( ${CMAKE_INSTALL_PREFIX}/include/eigen3 )
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/include )
 add_definitions(-DEIGEN_INITIALIZE_MATRICES_BY_NAN)
 
+
 pybind11_add_module(pnsolver src/main.cpp
 	                         src/PNSystem.cpp
 							 src/PNSolution.cpp

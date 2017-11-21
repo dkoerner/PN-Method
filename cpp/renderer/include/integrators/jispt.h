@@ -1,5 +1,6 @@
 #pragma once
-#include <integrator.h>
+#include <integrators/simplept.h>
+
 
 #include <scene.h>
 #include <math/frame.h>
@@ -7,53 +8,10 @@
 #include <volume.h>
 
 
-// returns sigma_t at sampled position (is invalid when we exceeded maxt)
-double delta_tracking( const Scene* scene, const Ray3d& ray, double maxt, int component, RNGd& rng, V3d& sigma_t );
-
-struct Vertex
-{
-	enum EVertexType
-	{
-		EInvalid = 0,
-		ESurface = 1,
-		EVolume = 2
-	};
-
-	void setPosition( const P3d& position, V3d sigma_t, V3d albedo )
-	{
-		m_p = position;
-		m_type = EVolume;
-		m_sigma_t = sigma_t;
-		m_albedo = albedo;
-		m_sigma_s = sigma_t.cwiseProduct(albedo);
-	}
-	void setPosition( const P3d& position, const Framed& frame)
-	{
-		m_p = position;
-		m_type = ESurface;
-	}
-
-	const P3d& getPosition()const
-	{
-		return m_p;
-	}
-
-	EVertexType getType()const
-	{
-		return m_type;
-	}
-
-//		private:
-	P3d m_p; // position in worldspace
-	EVertexType m_type; // volume or surface scattering point
-	V3d m_sigma_t;
-	V3d m_sigma_s;
-	V3d m_albedo;
-};
 
 
 
-struct TraceInfo
+struct JISTraceInfo
 {
 	Vertex current_vertex;
 	V3d current_direction;
@@ -64,7 +22,7 @@ struct TraceInfo
 	const Scene* scene;
 	bool debug;
 
-	TraceInfo():
+	JISTraceInfo():
 	    throughput_over_pdf(1.0, 1.0, 1.0),
 	    debug(false)
 	{
@@ -162,11 +120,11 @@ struct TraceInfo
 
 // intersects the volume bound and starts volume path tracing within the volume
 // will stop once the path exits the volume
-struct SimplePT : public Integrator
+struct JISPT : public Integrator
 {
-	typedef std::shared_ptr<SimplePT> Ptr;
+	typedef std::shared_ptr<JISPT> Ptr;
 
-	SimplePT( int maxDepth = std::numeric_limits<int>::max(), bool doSingleScattering = true ):
+	JISPT( int maxDepth = std::numeric_limits<int>::max(), bool doSingleScattering = true ):
 	    Integrator(),
 	    m_maxDepth(maxDepth),
 	    m_doSingleScattering(doSingleScattering)
@@ -174,7 +132,7 @@ struct SimplePT : public Integrator
 	}
 
 
-	V3d trace( TraceInfo& ti, RNGd& rng )const
+	V3d trace( JISTraceInfo& ti, RNGd& rng )const
 	{
 		V3d L(0.0f, 0.0f, 0.0f);
 
@@ -244,4 +202,3 @@ private:
 	bool m_doSingleScattering;
 	int m_maxDepth;
 };
-

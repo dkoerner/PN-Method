@@ -388,6 +388,16 @@ TPoint<T, 2> sphericalCoordinates(const TVector<T, 3> &v)
 	return result;
 }
 
+/// Compute a direction for the given coordinates in spherical coordinates
+template<typename T>
+void sphericalCoordinates(const TVector<T, 3> &v, T& theta, T& phi)
+{
+	theta = std::acos(v.z());
+	phi = std::atan2(v.y(), v.x());
+	if (phi < 0)
+		phi += 2*M_PI;
+}
+
 // up needs to be normalized
 template<typename T>
 Eigen::Matrix<T, 4, 4> lookAt( const TPoint<T, 3>& origin, const TPoint<T, 3>& target, const TVector<T, 3>& up = TVector<T, 3>(0.0, 1.0, 0.0) )

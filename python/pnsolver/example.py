@@ -63,7 +63,7 @@ def solve( stencil_name, problem, filename, do_neumannBC = False ):
 
 	data = {}
 
-	numLevels = 7
+	#numLevels = 7
 	#x, convergence, timestamps = pnsolver.solve_multigrid( sys, numLevels )
 	#data["convergence_mg"] = convergence
 	#data["timestamps_mg"] = timestamps
@@ -88,12 +88,13 @@ def solve( stencil_name, problem, filename, do_neumannBC = False ):
 	data["timestamps_cg"] = timestamps
 
 
-	pnsolver.save_solution("test.pns", sys, x)
-	pnsolver.save_fields("test.fields", sys) # stores the voxelgrids of the RTE parameters
+	#pnsolver.save_solution("test.pns", sys, x)
+	pnsolver.save_solution(filename, sys, x)
+	#pnsolver.save_fields("test.fields", sys) # stores the voxelgrids of the RTE parameters
 	#x_test = pnsolver.getSolutionVector(pnsolver.load_solution("test.pns"))
 	#util.compare_vectors( x.reshape((x.shape[0], 1)), x_test.reshape((x.shape[0], 1)), "org", "new" )
 
-	data["x"] = x.reshape((x.shape[0], 1))
+	#data["x"] = x.reshape((x.shape[0], 1))
 
 
 
@@ -108,8 +109,8 @@ def solve( stencil_name, problem, filename, do_neumannBC = False ):
 	#data["timestamps_cg_eigen"] = timestamps
 
 
-	data["resolution"] = sys.getResolution()
-	data["numCoeffs"] = sys.getNumCoefficients()
+	#data["resolution"] = sys.getResolution()
+	#data["numCoeffs"] = sys.getNumCoefficients()
 
 	#a,b,c = sys.get_debug();
 	#data["debug_x"] = a.reshape((a.shape[0], 1))
@@ -124,7 +125,7 @@ def solve( stencil_name, problem, filename, do_neumannBC = False ):
 	#	print("Solve failed...")
 
 	# write the result to disk for visualization ---------------
-	util.write_pn_system(filename, sys, problem, x, convergence, timestamps)
+	#util.write_pn_system(filename, sys, problem, x, convergence, timestamps)
 
 def groundtruth( problem, numSamples, filename ):
 	stencil_name = "noop"
@@ -209,8 +210,8 @@ if __name__ == "__main__":
 	#problem = problems.homogeneous()
 	#util.write_problem(path+"/checkerboard_problem.mat", problem)
 	#exit(1)
-	problem = problems.checkerboard3d()
-	#problem = problems.pointsource3d()
+	#problem = problems.checkerboard3d()
+	problem = problems.pointsource3d()
 	#problem = problems.vacuum()
 
 	
@@ -237,22 +238,23 @@ if __name__ == "__main__":
 	#boundary_conditions = [False]
 
 
-	rte_forms = ["fopn"]
-	order = [1]
-	staggered = [True]
-	boundary_conditions = [False]
-
-
 	#rte_forms = ["fopn"]
-	#order = [1,2,3,4,5]
+	#order = [1]
 	#staggered = [True]
 	#boundary_conditions = [False]
+
+
+	rte_forms = ["fopn"]
+	order = [1,2,3,4,5]
+	staggered = [True]
+	boundary_conditions = [False]
 
 	#rte_forms = []
 	#order = []
 	#staggered = []
 	#boundary_conditions = []
 
+	'''
 	test = itertools.product(rte_forms, order, staggered, boundary_conditions)
 	for c in test:
 		rte_form_name = c[0]
@@ -265,92 +267,19 @@ if __name__ == "__main__":
 		#print(stencil_name)
 		
 		#filename = "{}/{}_{}{}.mat".format(path, problem["id"], stencil_name, bc_id[do_neumannBC])
-		filename = "{}/{}_test.mat".format(path, problem["id"], stencil_name)
+		#filename = "{}/{}_test.mat".format(path, problem["id"], stencil_name)
+		filename = "C:/projects/epfl/epfl17/python/pnsolver/results/pointsource/{}_p{}.pns".format(problem["id"], order)
 		#print("clear;filename=\"{}\";compute_condest;".format(filename))
 		solve(stencil_name, problem, filename, do_neumannBC=do_neumannBC)
+	'''
 
-	#stencil_name = "stencil_cda"
-	#do_neumannBC = False
+	stencil_name = "stencil_cda"
+	do_neumannBC = False
 	#filename = "{}/{}_{}.mat".format(path, problem["id"], stencil_name)
-	#solve(stencil_name, problem, filename, do_neumannBC=do_neumannBC)
-
-	#'''
-
-
-	#postfix = ""
-	#postfix = "_allvacuum"
-	#postfix = "_sigmas=0"
-	#postfix = "_sigmat=const"
-	#postfix = "_blurred"
-	#postfix = ""
-	#postfix = "_nonrasterized"
-	#postfix = "_sopn_cg"
-	#postfix = "_sopn_sg_x0"
-	#postfix = "_sopn_sg_vacuum2"
-	#postfix = "_sopn_sg_u"
-	#postfix = "_fopn_sg_u"
-	#postfix = "_p1_complex_sg"
-
-	#postfix = "_sopn_p0_sg"
-	#postfix = "_sopn_p1_sg"
-	#postfix = "_sopn_p2_sg"
-	#postfix = "_sopn_p3_sg"
-
-	#postfix = "_fopn_p0_sg"
-	#postfix = "_fopn_p1_sg"
-	#postfix = "_fopn_p2_sg"
-	#postfix = "_fopn_p3_sg"
-	#postfix = "_fopn_p4_sg"
-	#postfix = "_fopn_p5_sg"
-
-	#postfix = "_fopn_p1_sg1"
-	#postfix = "_fopn_p2_sg1"
-	#postfix = "_fopn_p3_sg1"
-	#postfix = "_fopn_p4_sg1"
-
-	#postfix = "_fopn_p1_cg"
-	#postfix = "_fopn_p2_cg"
-	#postfix = "_fopn_p3_cg"
-	#postfix = "_fopn_p4_cg"
-	#postfix = "_fopn_p5_cg"
+	filename = "C:/projects/epfl/epfl17/python/pnsolver/results/pointsource/{}_cda.pns".format(problem["id"])
+	solve(stencil_name, problem, filename, do_neumannBC=do_neumannBC)
 
 
-	#postfix = "_fopn_p3_sg1"
-	#postfix = "_fopn_p1"
-	#postfix = "_fopn_p2"
-	#postfix = "_fopn_p3"
-	#postfix = "_fopn_p4"
-	#postfix = "_fopn_p5"
-	#postfix = "_sopn_p1"
-	#postfix = "_sopn_p1_not13"
-	#postfix = "_sopn_p2"
-	#postfix = "_sopn_p3"
-	#postfix = "_cg_u"
-	
-	
-
-	'''
-	# compare matrices A
-	filename_a = "c:/projects/epfl/epfl17/python/pnsolver/results/studies/checkerboard_test.mat"
-	filename_b = "c:/projects/epfl/epfl17/python/pnsolver/results/studies/checkerboard_test_org.mat"
-	data_a = util.load_pn_system(filename_a)
-	data_b = util.load_pn_system(filename_b)
-	A_a = data_a["A"]
-	A_b = data_b["A"]
-	b_a = data_a["b"]
-	b_b = data_b["b"]
-
-	#print("comparing A ----")
-	#util.compare_matrices( A_a, A_b, "new", "original" )
-	#gg = 2131
-	#print(A_a[gg,gg])
-	#print(A_b[gg,gg])
-	#print("comparing b ----")
-	#util.compare_matrices( b_a, b_b, "new", "original" )
-	#print(b_a[6603,0])
-	#print(b_b[6603,0])
-
-	'''
 
 
 

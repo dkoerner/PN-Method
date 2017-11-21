@@ -35,6 +35,7 @@ struct PNSolution
 		// sample, even if $f$ is a distribution) will be returned.
 		//
 		double warp(const double *coeffs, P2d &sample) const;
+		double pdf( const double *coeffs, const P2d& sample )const;
 
 	//protected:
 		~SHSampler();
@@ -59,7 +60,9 @@ struct PNSolution
 		double integrateChilds(int depth, int i, int j, const double *coeffs) const;
 
 		int indexofSmallestElement(double array[], int size);
-	protected:
+
+		Eigen::MatrixXd getBlocks(int depth, const double* coeffs)const;
+	//protected:
 		int m_bands;
 		int m_depth;
 		double ***m_phiMap;
@@ -80,8 +83,13 @@ struct PNSolution
 
 	// sampling ---
 	// samples a direction at the given worldspace position
-	V3d sample( const P3d& pWS, double& pdf, RNGd& rng );
-	V3d sample( const P3d& pWS, double& pdf, const P2d& sample );
+	V3d sample( const P3d& pWS, double& pdf, RNGd& rng )const;
+	V3d sample( const P3d& pWS, double& pdf, const P2d& sample )const;
+	double pdf( const P3d& pWS, const V3d& direction )const;
+	Eigen::MatrixXd getBlocks( const P3d& pWS, int depth )const;
+
+	// filtering ---
+	void setFilter( const std::string& name, double width );
 
 
 	// io ---
@@ -117,6 +125,7 @@ private:
 	Box3d m_bound;
 	V3d m_extend;
 	std::vector<double> m_data;
+	std::vector<double> m_coeffs_filter; // SH coefficients of the filter kernel
 	SHSampler m_shsampler;
 };
 

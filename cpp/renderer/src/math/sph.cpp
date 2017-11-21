@@ -247,13 +247,13 @@ namespace sph
 		return p_ll;
 	}
 
-	void convolve(const double *coeffs, const double *coeffs_filter, int order, double *coeffs_result)
+	void convolve(double *coeffs, const double *coeffs_filter, int order)
 	{
 		for (int l=0; l<=order; ++l)
 		{
 			double alpha = std::sqrt(4 * (double) M_PI / (2*l + 1));
 			for (int m=-l; m<=l; ++m)
-				get(l, m, coeffs_result) *= alpha * get(l, 0, coeffs_filter);
+				get(l, m, coeffs) *= alpha * get(l, 0, coeffs_filter);
 		}
 	}
 

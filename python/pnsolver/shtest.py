@@ -6,10 +6,17 @@ import random
 
 import render
 
+from scipy.special import sph_harm
+
 # just for plotting
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+
+
+
+
+
 
 
 
@@ -35,12 +42,103 @@ def plot_spherical_function( fun, vmin=-0.5, vmax=0.5 ):
 
 
 
+def csp( m ):
+	if m % 2 == 0:
+		return 1.0
+	else:
+		return -1.0
 
+
+def sph_real( l, m, theta, phi ):
+	# https://en.wikipedia.org/wiki/Spherical_harmonics#Real_form
+	# NB: We dont include the condon-shortley-phase as it seems to be already part of sph_harm.
+	if m < 0:
+		return np.sqrt(2.0)*np.imag(sph_harm(np.abs(m), l, phi, theta))
+	elif m == 0:
+		return np.real(sph_harm(0, l, phi, theta))
+	elif m > 0:
+		return np.sqrt(2.0)*np.real(sph_harm(m, l, phi, theta))
+
+
+def sph_real2( l, m, theta, phi ):
+	# https://en.wikipedia.org/wiki/Spherical_harmonics#Real_form
+	# NB: We dont include the condon-shortley-phase as it seems to be already part of sph_harm.
+	if m < 0:
+		return np.real(np.complex(0.0, 1.0)/np.sqrt(2.0)*( csp(m)*sph_harm(-np.abs(m), l, phi, theta)-sph_harm(np.abs(m), l, phi, theta) ))
+	elif m == 0:
+		return np.real(sph_harm(0, l, phi, theta))
+	elif m > 0:
+		#return np.sqrt(2.0)*csp(m)*np.real(sph_harm(m, l, phi, theta))
+		return np.real(1.0/np.sqrt(2.0)*( csp(m)*sph_harm(-np.abs(m), l, phi, theta)+sph_harm(np.abs(m), l, phi, theta) ))
+
+
+def sph_real3( l, m, theta, phi ):
+	# https://en.wikipedia.org/wiki/Spherical_harmonics#Real_form
+	# NB: We dont include the condon-shortley-phase as it seems to be already part of sph_harm.
+	if m < 0:
+		return np.real(np.complex(0.0, 1.0)/np.sqrt(2.0)*( csp(m)*sph_harm(m, l, phi, theta)-sph_harm(-m, l, phi, theta) ))
+	elif m == 0:
+		return np.real(sph_harm(0, l, phi, theta))
+	elif m > 0:
+		#return np.sqrt(2.0)*csp(m)*np.real(sph_harm(m, l, phi, theta))
+		return np.real(1.0/np.sqrt(2.0)*( csp(m)*sph_harm(-m, l, phi, theta)+sph_harm(m, l, phi, theta) ))
+
+
+def clamped_sh( pns, theta, phi ):
+    # NB: the negative direction...
+    value = pns.eval(pWS, -util.sphericalDirection(theta, phi))
+    if value < 0.0:
+        value = 0.0
+    return value
+
+def plot_spherical_function( fun, vmin=-0.5, vmax=0.5 ):
+    # plot sh functions
+    theta = np.arange(0.0, 1.0, 0.01)*np.pi
+    phi = np.arange(0.0, 1.0, 0.01)*2.0*np.pi
+
+    f_img = np.zeros((theta.shape[0], phi.shape[0]))
+    for j in range(phi.shape[0]):
+        for i in range(theta.shape[0]):
+            f_img[i, j] = fun(theta[i], phi[j])
+    #return plt.imshow(f_img, interpolation="nearest", cmap='jet', vmin=vmin, vmax=vmax)
+    #vmin = np.min(f_img)
+    #vmax = np.max(f_img)
+    #print("vmin={} vmax={}".format(vmin, vmax))
+    return f_img
+    #return plt.imshow(f_img, origin='lower',zorder=1, interpolation="nearest", cmap='jet', vmin=vmin, vmax=vmax, extent=[0.0,2.0*np.pi,0.0,np.pi])
 
 
 if __name__ == "__main__":
 
-	pWS = np.array([1.1, 1.0, 1.0])
+	'''
+	theta = np.pi*0.4
+	phi = 2.0*np.pi*0.4
+
+	order = 1
+	for l in range(order+1):
+		for m in range(-l,l+1):
+			#print("l={} m={} sph_real={}".format(l, m, sph_real(l, m, theta, phi)))
+			print("l={} m={} sph_complex_basis={}".format(l, m, sph_harm(m, l, phi, theta)))
+			#a = np.conj(sph_harm(m, l, phi, theta))
+			#b = csp(m)*sph_harm(-m, l, phi, theta)
+			#print("l={} m={} a={} b={}".format(l, m, a, b))
+	print("\n\n")
+	'''
+
+
+
+	#l = 1
+	#m = -1
+
+	#print("sph_complex={}".format(sph_harm(m, l, phi, theta)))
+
+	
+
+	#c = np.complex(0.0, 1.0)/np.sqrt(2.0)*csp(m)*sph_harm(m, l, phi, theta)
+	#-np.complex(0.0, 1.0)/np.sqrt(2.0)*csp(m)*sph_harm(-m, l, phi, theta)
+
+	#exit(1)
+	#print(c)
 
 	
 	
@@ -57,9 +155,9 @@ if __name__ == "__main__":
 	#exit(1)
 	'''
 
-	img_groundtruth = renderer.load_image("test.exr")
-	img_groundtruth = renderer.blur_image(img_groundtruth, 3.0)
-	img_groundtruth_sampler = renderer.create_image_sampler(img_groundtruth)
+	#img_groundtruth = renderer.load_image("test.exr")
+	#img_groundtruth = renderer.blur_image(img_groundtruth, 3.0)
+	#img_groundtruth_sampler = renderer.create_image_sampler(img_groundtruth)
 
 
 
@@ -103,39 +201,6 @@ if __name__ == "__main__":
 
 
 	#'''
-	# visualize samples and the sampled sh function ------------------
-	samples_theta = []
-	samples_phi = []
-
-	numSamples = 10000
-	for i in range(numSamples):
-		#theta, phi, pdf, r1, r2 = sh.sample()
-		#d = -pns_p1.sample(pWS, np.array([random.random(), random.random()]))
-		#theta, phi = util.sphericalCoordinates(d)
-
-		#pRaster = img_groundtruth_sampler.sample( random.random(), random.random() )
-		#pRaster+= np.array([random.random(), random.random()])
-		#uv = img_radiance.rasterToUV(pRaster)
-		#theta = uv[1]*np.pi
-		#phi = uv[0]*2.0*np.pi
-		#samples_theta.append(theta)
-		#samples_phi.append(phi)
-		pass
-	#for i in range(res):
-	#	for j in range(res):
-	#i = res-10
-	#j = res-10
-	#r1 = i/float(res)
-	#r2 = j/float(res)
-	#theta, phi, pdf, a, b = sh.sample2( r1, r2 )
-	#if (i==res-10) and (j==res-10):
-	#	print(sh.eval(theta, phi))
-	#samples_theta.append(theta)
-	#samples_phi.append(phi)
-
-
-	#print("theta min={} max={}".format(np.min(samples_theta), np.max(samples_theta)))
-	#print("phi min={} max={}".format(np.min(samples_phi), np.max(samples_phi)))
 
 	def clamped_groundtruth( theta, phi ):
 		uv = np.array([phi/(2.0*np.pi), theta/np.pi])
@@ -153,23 +218,45 @@ if __name__ == "__main__":
 			value = 0.0
 		return value
 
-	for i in range(4):
-		pns = renderer.load_pnsolution( "results/pointsource/pointsource_p{}.pns".format(i+1) )
+	pns = renderer.load_pnsolution( "results/pointsource/pointsource_p5.pns" )
+	#pWS = np.array([1.1, 1.0, 1.0])
+	for i in range(14):
+		random.seed(1233*i)
+		pWS = np.array([random.random()*2.0, random.random()*2.0, random.random()*2.0])
+
+		# visualize samples and the sampled sh function ------------------
+		samples_theta = []
+		samples_phi = []
+
+		numSamples = 10000
+		for i in range(numSamples):
+			d = -pns.sample(pWS, np.array([random.random(), random.random()]))
+			theta, phi = util.sphericalCoordinates(d)
+			samples_theta.append(theta)
+			samples_phi.append(phi)
+			#pass
+
+
 
 		fig = plt.figure(figsize=(8,8));
 		ax = fig.add_subplot(121)
 
-		img_view = plot_spherical_function( lambda theta, phi: clamped_groundtruth(theta, phi) )
-		#plt.scatter(samples_phi, samples_theta, c='r', label="sdda",zorder=2, marker='.', s=1.0)
-		divider = make_axes_locatable(ax)
-		cax = divider.append_axes("right", size="5%", pad=0.05)
-		plt.colorbar(img_view, cax=cax)
+		img = plot_spherical_function( lambda theta, phi: clamped_sh(pns, theta, phi) )
+		img_view = plt.imshow(img, origin='lower',zorder=1, interpolation="nearest", cmap='jet', vmin=0.0, vmax=np.max(img), extent=[0.0,2.0*np.pi,0.0,np.pi])
+		plt.scatter(samples_phi, samples_theta, c='r', label="sdda",zorder=2, marker='.', s=1.0)
+		#divider = make_axes_locatable(ax)
+		#cax = divider.append_axes("right", size="5%", pad=0.05)
+		#plt.colorbar(img_view, cax=cax)
 
 		ax = fig.add_subplot(122)
-		img_view = plot_spherical_function( lambda theta, phi: clamped_sh(pns, theta, phi) )
-		divider = make_axes_locatable(ax)
-		cax = divider.append_axes("right", size="5%", pad=0.05)
-		plt.colorbar(img_view, cax=cax)
+
+		img = plot_spherical_function( lambda theta, phi: pns.pdf(pWS, -util.sphericalDirection(theta, phi)) )
+		img_view = plt.imshow(img, origin='lower',zorder=1, interpolation="nearest", cmap='jet', vmin=0.0, vmax=np.max(img), extent=[0.0,2.0*np.pi,0.0,np.pi])
+		#img_view = plt.imshow(pns.getBlocks(pWS, 3), origin='lower',zorder=1, interpolation="nearest", cmap='jet', vmin=0.0, vmax=np.max(img), extent=[0.0,2.0*np.pi,0.0,np.pi])
+		#plt.scatter(samples_phi, samples_theta, c='r', label="sdda",zorder=2, marker='.', s=1.0)
+		#divider = make_axes_locatable(ax)
+		#cax = divider.append_axes("right", size="5%", pad=0.05)
+		#plt.colorbar(img_view, cax=cax)
 
 
 

@@ -193,8 +193,9 @@ std::tuple<Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd> solve_cg(PNSystem&
 {
 	Solver solver;
 	setup_solver(solver, sys);
-	auto result = solver.solve_cg();
-	return std::make_tuple(std::get<0>(result), std::get<1>(result), std::get<2>(result));
+	return solver.solve_cg();
+	//auto result = solver.solve_cg();
+	//return std::make_tuple(std::get<0>(result), std::get<1>(result), std::get<2>(result));
 	//return std::make_tuple(Eigen::VectorXd(), Eigen::VectorXd(), Eigen::VectorXd());
 }
 
@@ -222,6 +223,8 @@ std::tuple<Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd> solve_lscg(PNSyste
 	PNSystem::Fields fields = sys.getFields();
 	sys.build();
 
+
+	std::cout << "solve_lscg\n";
 
 	std::vector<double> solve_convergence;
 	std::vector<double> solve_convergence_timestamps;
@@ -253,17 +256,12 @@ std::tuple<Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd> solve_lscg(PNSyste
 
 
 	return std::make_tuple(x, to_vector(solve_convergence), to_vector(solve_convergence_timestamps));
-	//return std::make_tuple(x, Eigen::VectorXd(), Eigen::VectorXd());
 }
 
 
 
 
-// we need pnsystem to get:
-// -stencil
-//		-number of coefficients
-//		-coefficient offsets
-// -resolution
+
 PNSystem::MatrixBuildercd::Matrix buildBlockDiagonalMatrix( const Eigen::MatrixXcd& M, int numBlocks )
 {
 	if( M.rows() != M.cols() )
@@ -290,7 +288,12 @@ PNSystem::MatrixBuildercd::Matrix buildBlockDiagonalMatrix( const Eigen::MatrixX
 	return builder.build(numBlocks*numElementsPerBlock, numBlocks*numElementsPerBlock);
 }
 
-
+// this function creates the S matrix from the starmap paper. It can be used to convert complex
+// coefficients to real coefficients. The problem here is that it differs from sph::complex2RealConversionMatrix
+// which requires us to first convert from real to complex using the inverse of S (from starmap) and then convert
+// from complex to real using sph::complex2RealConversionMatrix.
+// TODO: use sph::complex2RealConversionMatrix as S during stencil generation, in order to get rid of any conversion
+// alltogether.
 Eigen::MatrixXcd createComplexToRealConversionMatrix( int order )
 {
 	int numCoeffs = (order+1)*(order+1);
@@ -305,11 +308,11 @@ Eigen::MatrixXcd createComplexToRealConversionMatrix( int order )
 			// computes the real part coefficients for a row (defined by l,m) in the S matrix
 			// (see bottom of p.5 in the starmap paper)
 			if( m==0 )
-				S.coeffRef(count, sph::shIndex(l, m)) = 1.0;
+				S.coeffRef(count, sph::index(l, m)) = 1.0;
 			else
 			{
-				S.coeffRef(count, sph::shIndex(l, m)) = std::pow(-1.0, double(m))/std::sqrt(2.0);
-				S.coeffRef(count, sph::shIndex(l, -m)) = std::pow(-1.0, 2.0*m)/std::sqrt(2.0);
+				S.coeffRef(count, sph::index(l, m)) = std::pow(-1.0, double(m))/std::sqrt(2.0);
+				S.coeffRef(count, sph::index(l, -m)) = std::pow(-1.0, 2.0*m)/std::sqrt(2.0);
 			}
 
 			++count;
@@ -318,8 +321,8 @@ Eigen::MatrixXcd createComplexToRealConversionMatrix( int order )
 			// (see bottom of p.5 in the starmap paper)
 			if( m>0 )
 			{
-				S.coeffRef(count, sph::shIndex(l, m)) = std::complex<double>(0.0, std::pow(-1.0, double(m))/std::sqrt(2.0));
-				S.coeffRef(count, sph::shIndex(l, -m)) = std::complex<double>(0.0, -std::pow(-1.0, 2.0*m)/std::sqrt(2.0));
+				S.coeffRef(count, sph::index(l, m)) = std::complex<double>(0.0, std::pow(-1.0, double(m))/std::sqrt(2.0));
+				S.coeffRef(count, sph::index(l, -m)) = std::complex<double>(0.0, -std::pow(-1.0, 2.0*m)/std::sqrt(2.0));
 				++count;
 			}
 		}
@@ -339,24 +342,23 @@ Eigen::MatrixXcd createRealToComplexConversionMatrix( int order )
 // -convert coefficients from real to complex, to get the true SH coefficients of the radiance field (see p5 in starmap paper)
 void save_solution( const std::string& filename, PNSystem& sys, const Eigen::VectorXd& x )
 {
-	Eigen::VectorXcd x_complex = buildBlockDiagonalMatrix( createRealToComplexConversionMatrix(sys.getStencil().order), sys.getNumVoxels() )*sys.removeStaggering(x);
-	PNSolution solution( sys.getOrder(), sys.getResolution(), Box3d(sys.getDomain().getBoundMin(), sys.getDomain().getBoundMax()), x_complex.data() );
+	// the solution is given in real valued coefficients. However, the complex->real conversion matrix used during stencil
+	// generation is that from the starmap paper, which is different than our conversion matrix. Therefore we need to first
+	// convert from real to complex using the inverse starmap transform, and then we can use our conversion matrix to convert
+	// from complex to real again.This requires us to first convert from real to complex using the inverse of S (from starmap)
+	// and then convert from complex to real using sph::complex2RealConversionMatrix.
+
+	// TODO: use our own conversion matrix during stencil generation straight away...
+
+
+	Eigen::VectorXcd x_complex =buildBlockDiagonalMatrix( createRealToComplexConversionMatrix(sys.getStencil().order), sys.getNumVoxels() )*
+								sys.removeStaggering(x);
+	Eigen::VectorXd x_real = (buildBlockDiagonalMatrix( sph::buildComplexToRealConversionMatrix(sys.getStencil().order), sys.getNumVoxels() )*
+							 x_complex).real();
+	PNSolution solution( sys.getOrder(), sys.getResolution(), Box3d(sys.getDomain().getBoundMin(), sys.getDomain().getBoundMax()), x_real.data() );
 	solution.save(filename);
 }
 
-// this is temporary and was used to convert old matlab datasets
-void save_solution_special( const std::string& filename,
-							int order,
-							const Eigen::Vector3i& resolution,
-							const Eigen::Vector3d& bound_min,
-							const Eigen::Vector3d& bound_max,
-							const Eigen::VectorXd& x )
-{
-	int numVoxels = resolution[0]*resolution[1]*resolution[2];
-	Eigen::VectorXcd x_complex = buildBlockDiagonalMatrix( createRealToComplexConversionMatrix(order), numVoxels )*x;
-	PNSolution solution( order, resolution, Box3d(bound_min, bound_max), x_complex.data() );
-	solution.save(filename);
-}
 
 PNSolution::Ptr load_solution( const std::string& filename )
 {
@@ -365,7 +367,7 @@ PNSolution::Ptr load_solution( const std::string& filename )
 
 
 
-
+/*
 Eigen::VectorXd getSolutionVector( PNSolution::Ptr pns )
 {
 	V3i resolution = pns->getResolution();
@@ -374,27 +376,33 @@ Eigen::VectorXd getSolutionVector( PNSolution::Ptr pns )
 									 Eigen::Map<Eigen::VectorXcd>( pns->data(), numVoxels*pns->getNumCoeffs() )).real();
 
 }
+*/
 
 PYBIND11_MODULE(pnsolver, m)
 {
+	/*
 	m.def( "solve_multigrid", &solve_multigrid);
 	m.def( "solve_multigrid2", &solve_multigrid2);
+	*/
 	m.def( "solve_cg", &solve_cg);
+	/*
 	m.def( "solve_cg_eigen", &solve_cg_eigen);
 	m.def( "solve_gs", &solve_gs);
 	m.def( "solve_blockgs", &solve_blockgs);
 	m.def( "solve_sparseLU", &solve_sparseLU);
+	*/
 	m.def( "solve_lscg", &solve_lscg);
+	/*
 	m.def( "createComplexToRealConversionMatrix", &createComplexToRealConversionMatrix);
 	m.def( "createRealToComplexConversionMatrix", &createRealToComplexConversionMatrix);
+	*/
 	m.def( "save_solution", &save_solution);
-	m.def( "save_solution_special", &save_solution_special);
-	m.def( "load_solution", &load_solution);
-	m.def( "getSolutionVector", &getSolutionVector);
+	//m.def( "load_solution", &load_solution);
+	//m.def( "getSolutionVector", &getSolutionVector);
 
 
 
-
+	/*
 	// Solver ================================
 	py::class_<Solver> class_solver(m, "Solver");
 	class_solver
@@ -408,7 +416,7 @@ PYBIND11_MODULE(pnsolver, m)
 	.def("solve_gs", &Solver::solve_gs)
 	.def("solve_cg", &Solver::solve_cg)
 	;
-
+	*/
 
 	// PNSolution ==============================
 	py::class_<PNSolution, PNSolution::Ptr> class_pnsolution(m, "PNSolution");
@@ -420,18 +428,10 @@ PYBIND11_MODULE(pnsolver, m)
 		const Eigen::Matrix<int, 3, 1>& resolution,
 		const Eigen::Matrix<double, 3, 1>& bound_min,
 		const Eigen::Matrix<double, 3, 1>& bound_max,
-		const Eigen::VectorXcd& data
+		const Eigen::VectorXd& data
 		)
-	//*/
-	/*
-	[](PNSolution &m,
-		const std::string& filename
-	)
-	*/
 	{
-		//int order, const V3i& resolution, const Box3d& bound, const std::complex<double> *data
 		new (&m) PNSolution( order, resolution, Box3d(bound_min, bound_max), data.data() );
-		//new (&m) PNSolution( filename );
 	})
 	.def("eval",
 	 [](PNSolution &m,
@@ -452,21 +452,12 @@ PYBIND11_MODULE(pnsolver, m)
 	.def("getNumCoeffs", &PNSolution::getNumCoeffs )
 	.def("getBoundMin", &PNSolution::getBoundMin )
 	.def("getBoundMax", &PNSolution::getBoundMax )
-	/*
-	.def("voxelToLocal", &PNSolution::voxelToLocal )
-	.def("localToVoxel", &PNSolution::localToVoxel )
-	*/
 	.def("localToWorld",
 	[]( PNSolution &m,
 		const Eigen::Matrix<double, 3, 1>& pLS)
 	{
 		return m.localToWorld(pLS);
 	})
-	/*
-	.def("worldToLocal", &PNSolution::worldToLocal )
-	.def("voxelToWorld", &PNSolution::voxelToWorld )
-	.def("worldToVoxel", &PNSolution::worldToVoxel )
-	*/
 	;
 
 	// PNSystem ==============================
@@ -495,7 +486,6 @@ PYBIND11_MODULE(pnsolver, m)
 	.def("get_b_real_test", &PNSystem::get_b_real_test )
 	.def("setDebugVoxel", &PNSystem::setDebugVoxel )
 	.def("get_debug", &PNSystem::get_debug )
-
 	//.def("computeGroundtruth", &PNSystem::computeGroundtruth )
 	.def("getVoxelInfo", &PNSystem::getVoxelInfo )
 	;
@@ -568,7 +558,7 @@ PYBIND11_MODULE(pnsolver, m)
 	})
 	;
 
-	// VoxelGrid ============================================================
+	//VoxelGrid ============================================================
 	py::class_<VoxelGridField, VoxelGridField::Ptr> class_VoxelGridField(m, "VoxelGridField", class_field);
 	class_VoxelGridField
 	.def("__init__",

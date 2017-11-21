@@ -42,10 +42,12 @@ struct VoxelGridField : public Field<T>
 		*/
 	}
 
-	virtual std::pair<T, T> getValueRange()const
+	//virtual std::pair<T, T> getValueRange()const
+	virtual T getMaxValue()const
 	{
-		throw std::runtime_error("getValueRange not implemented for VoxelGridField");
-		return std::make_pair(std::complex<double>(0.0), std::complex<double>(0.0));
+		throw std::runtime_error("getMaxValue not implemented for VoxelGridField");
+		return T(0.0);
+		//return std::make_pair(T(0.0), T(0.0));
 	}
 
 	virtual T eval( const P3d& pLS )const override
@@ -65,6 +67,17 @@ struct VoxelGridField : public Field<T>
 		return m_voxelgrid.m_sampleLocation.cast<double>();
 	}
 
+	V3i getResolution()const
+	{
+		return m_resolution;
+	}
+
+	T* getData()
+	{
+		return m_voxelgrid.getRawPointer();
+	}
+
+
 	P3d localToVoxel(const P3d& pLS)const
 	{
 		return P3d(pLS[0]*m_resolution[0], pLS[1]*m_resolution[1], pLS[2]*m_resolution[2]);
@@ -75,6 +88,8 @@ private:
 	VoxelGrid<T> m_voxelgrid;
 	//double m_max_value;
 };
+typedef VoxelGridField<double> VoxelGridFieldd;
+typedef VoxelGridField<V3d> VoxelGridField3d;
 typedef VoxelGridField<std::complex<double>> VoxelGridFieldcd;
 
 

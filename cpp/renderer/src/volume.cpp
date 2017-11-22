@@ -22,7 +22,6 @@ void Volume::setExtinctionAlbedo( Field3d::Ptr extinction, Field3d::Ptr albedo )
 
 	if( std::dynamic_pointer_cast<VoxelGridField3d>(extinction) )
 	{
-		std::cout << "!!!!!!!!!!\n";
 		VoxelGridField3d::Ptr vg = std::dynamic_pointer_cast<VoxelGridField3d>(extinction);
 		V3d* data = vg->getData();
 		int numElements = vg->getResolution()[0]*vg->getResolution()[1]*vg->getResolution()[2];
@@ -32,8 +31,8 @@ void Volume::setExtinctionAlbedo( Field3d::Ptr extinction, Field3d::Ptr albedo )
 			for( int j=0;j<3;++j )
 				m_extinction_max[j] = std::max(m_extinction_max[j], data[i][j]);
 		}
-		for( int j=0;j<3;++j )
-			std::cout << m_extinction_max[0] << std::endl;
+		//for( int j=0;j<3;++j )
+		//	std::cout << m_extinction_max[0] << std::endl;
 	}else
 		m_extinction_max = extinction->getMaxValue();
 

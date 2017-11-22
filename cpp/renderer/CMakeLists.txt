@@ -36,12 +36,14 @@ pybind11_add_module(renderer src/main.cpp
 							 src/integrators/jispt.cpp
 							 src/lights/pointlight.cpp
 							 src/lights/directionallight.cpp
+							 src/fields/VoxelGridField.cpp
 							 src/scene.cpp
 							 src/volume.cpp
 							 src/Integrator.cpp
 							 src/Image.cpp
 							 src/PNSolution.cpp
 	                         )
+
 target_link_libraries(renderer c:/libs-msvs2017/lib/Half.lib
 	                           c:/libs-msvs2017/lib/Iex-2_1.lib
 							   c:/libs-msvs2017/lib/IexMath-2_1.lib

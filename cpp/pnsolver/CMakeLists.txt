@@ -16,6 +16,7 @@ add_definitions(-DEIGEN_INITIALIZE_MATRICES_BY_NAN)
 
 pybind11_add_module(pnsolver src/main.cpp
 	                         src/PNSystem.cpp
+							 src/PNVolume.cpp
 							 src/PNSolution.cpp
 							 src/stencil_fopn_p0_cg.cpp
 							 src/stencil_fopn_p0_sg.cpp
@@ -42,11 +43,7 @@ pybind11_add_module(pnsolver src/main.cpp
 							 src/stencil_sopn_p5_cg.cpp
 							 src/stencil_sopn_p5_sg.cpp
 							 src/stencil_cda.cpp
-							 src/field/Field.cpp
-							 src/field/VoxelGridField.cpp
-							 src/field/Constant.cpp
-							 src/field/Function.cpp
-							 src/field/SHEXP.cpp
+							 src/fields/VoxelGridField.cpp
 							 src/common/Domain.cpp
 							 src/util/threadpool.cpp
 							 src/util/voxelgrid.cpp

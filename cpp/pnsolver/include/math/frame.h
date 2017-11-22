@@ -1,6 +1,6 @@
 #pragma once
 
-#include <svpt/math/vector.h>
+#include <math/vector.h>
 
 
 /**

@@ -8,16 +8,20 @@
 #include <math/common.h>
 #include <math/vector.h>
 #include <math/ray.h>
+#include <math/sph.h>
 
 #include <util/timer.h>
 #include <util/mem.h>
 
 #include<common/Domain.h>
-#include<field/VoxelGridField.h>
-#include<field/Constant.h>
-#include<field/SHEXP.h>
+
+#include<fields/VoxelGridField.h>
+//#include<field/Constant.h>
+//#include<field/SHEXP.h>
+
 #include <PNSystem.h>
 #include <PNSolution.h>
+#include <PNVolume.h>
 
 #include <solver.h>
 
@@ -33,16 +37,17 @@ void setup_solver( Solver& mg, PNSystem& sys, int numLevels = 1 )
 	PNSystem::Stencil& stencil = sys.getStencil();
 	int boundaryConditions = sys.getBoundaryConditions();
 	Domain domain = sys.getDomain();
-	PNSystem::Fields fields = sys.getFields();
+	//PNSystem::Fields fields = sys.getFields();
 
 	for( int i=0;i<numLevels;++i )
 	{
+		/*
 		Eigen::VectorXd x;
 		PNSystem::RealMatrix downsample;
 		PNSystem::RealMatrix upsample;
 
 		PNSystem sys_level(stencil, domain, boundaryConditions);
-		sys_level.setFields( fields );
+		//sys_level.setFields( fields );
 		sys_level.build();
 
 		std::cout << "fetching A...\n";std::flush(std::cout);
@@ -71,11 +76,12 @@ void setup_solver( Solver& mg, PNSystem& sys, int numLevels = 1 )
 		{
 			buildUpAndDownsamplingMatrices(sys_level, mg.m_levels[i].downsample, mg.m_levels[i].upsample);
 			domain = domain.downsample();
-			fields = fields.createRestricted();
+			//fields = fields.createRestricted();
 		}
 
 		//std::cout << "setting multigrid level...\n";std::flush(std::cout);
 		//mg.setMultigridLevel(i, A, x, b, downsample, upsample);
+		*/
 	}
 }
 
@@ -217,19 +223,14 @@ std::tuple<Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd> solve_sparseLU(PNS
 
 std::tuple<Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd> solve_lscg(PNSystem& sys)
 {
-	PNSystem::Stencil& stencil = sys.getStencil();
-	int boundaryConditions = sys.getBoundaryConditions();
-	Domain domain = sys.getDomain();
-	PNSystem::Fields fields = sys.getFields();
 	sys.build();
-
 
 	std::cout << "solve_lscg\n";
 
 	std::vector<double> solve_convergence;
 	std::vector<double> solve_convergence_timestamps;
 
-	solve_convergence.push_back(sys.get_b_real().norm());
+	solve_convergence.push_back(sys.get_b().norm());
 	solve_convergence_timestamps.push_back(0.0);
 
 
@@ -237,12 +238,12 @@ std::tuple<Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd> solve_lscg(PNSyste
 	timer.start();
 
 	Eigen::LeastSquaresConjugateGradient<PNSystem::RealMatrix> solver;
-	solver.compute(sys.get_A_real());
+	solver.compute(sys.get_A());
 	if(solver.info()!=Eigen::Success)
 	{
 		throw std::runtime_error("solve_lscg decomposition failed");
 	}
-	Eigen::VectorXd x = solver.solve(sys.get_b_real());
+	Eigen::VectorXd x = solver.solve(sys.get_b());
 	if(solver.info()!=Eigen::Success)
 	{
 		throw std::runtime_error("solve_lscg solve failed");
@@ -251,7 +252,7 @@ std::tuple<Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd> solve_lscg(PNSyste
 	timer.stop();
 	std::cout << "solve_lscg: " << timer.elapsedSeconds() << "s #iterations=" <<  solver.iterations() << "\n";
 
-	solve_convergence.push_back((sys.get_b_real() - sys.get_A_real()*x).norm());
+	solve_convergence.push_back((sys.get_b() - sys.get_A()*x).norm());
 	solve_convergence_timestamps.push_back(timer.elapsedSeconds());
 
 
@@ -464,7 +465,7 @@ PYBIND11_MODULE(pnsolver, m)
 	py::class_<PNSystem> class_pnsystem(m, "PNSystem");
 	class_pnsystem
 	.def("__init__",
-	[](PNSystem &m, const std::string& stencil_name, Domain &domain, bool neumannBC)
+	[](PNSystem &m, const std::string& stencil_name, PNVolume::Ptr problem, bool neumannBC)
 	{
 		PNSystem::Stencil stencil;
 
@@ -472,16 +473,16 @@ PYBIND11_MODULE(pnsolver, m)
 			stencil = PNSystem::Stencil::noop();
 		else
 			stencil = PNSystem::findStencil(stencil_name);
-		new (&m) PNSystem(stencil, domain, neumannBC);
+		new (&m) PNSystem(stencil, problem, neumannBC);
 	})
 	.def("getNumCoefficients", &PNSystem::getNumCoefficients )
 	.def("getResolution", &PNSystem::getResolution )
 	.def("getNumVoxels", &PNSystem::getNumVoxels )
 	.def("getOrder", &PNSystem::getOrder )
 	.def("build", &PNSystem::build )
-	.def("setField", &PNSystem::setField )
-	.def("get_A_real", &PNSystem::get_A_real )
-	.def("get_b_real", &PNSystem::get_b_real )
+	//.def("setField", &PNSystem::setField )
+	.def("get_A", &PNSystem::get_A )
+	.def("get_b", &PNSystem::get_b )
 	.def("get_A_real_test", &PNSystem::get_A_real_test )
 	.def("get_b_real_test", &PNSystem::get_b_real_test )
 	.def("setDebugVoxel", &PNSystem::setDebugVoxel )
@@ -547,6 +548,7 @@ PYBIND11_MODULE(pnsolver, m)
 	;
 
 
+	/*
 	// Field ============================================================
 	py::class_<Field, Field::Ptr> class_field(m, "Field");
 	class_field
@@ -556,7 +558,9 @@ PYBIND11_MODULE(pnsolver, m)
 		return m.eval(pWS);
 	})
 	;
+	*/
 
+	/*
 	//VoxelGrid ============================================================
 	py::class_<VoxelGridField, VoxelGridField::Ptr> class_VoxelGridField(m, "VoxelGridField", class_field);
 	class_VoxelGridField
@@ -585,35 +589,87 @@ PYBIND11_MODULE(pnsolver, m)
 	.def("test", &VoxelGridField::test)
 	.def("getSlice", &VoxelGridField::getSlice)
 	;
+	*/
 
-	// Constant ============================================================
-	py::class_<Constant, Constant::Ptr> class_constant(m, "Constant", class_field);
-	class_constant
+	// Field ============================================================
+
+	// V3d ---
+	py::class_<Field3d, Field3d::Ptr> class_field3d(m, "Field3d");
+	class_field3d
+	;
+
+	// complex valued ---
+	py::class_<Fieldcd, Fieldcd::Ptr> class_fieldcd(m, "Fieldcd");
+	class_fieldcd
+	.def("eval",
+	 [](Fieldcd &m,
+		const Eigen::Matrix<double, 3, 1>& pWS )
+	 {
+		return m.eval(pWS);
+	 })
+	;
+
+	// ConstantField ============================================================
+
+	// V3d ---
+	py::class_<ConstantField3d, ConstantField3d::Ptr> class_ConstantField3d(m, "ConstantField3d", class_field3d);
+	class_ConstantField3d
+		.def("__init__",
+		[](ConstantField3d &m, const Eigen::Vector3d& v)
+		{
+			new (&m) ConstantField3d(v);
+		})
+	;
+
+	// complex ---
+
+	// VoxelGridField ========================================================
+
+	// V3d valued ---
+	py::class_<VoxelGridField3d, VoxelGridField3d::Ptr> class_VoxelGridField3d(m, "VoxelGridField3d", class_field3d);
+	class_VoxelGridField3d
 	.def("__init__",
-	[](Constant &m, std::complex<double> value)
+	[](VoxelGridField3d &m, py::array b)
 	{
-		new (&m) Constant(value);
-	});
+		typedef Eigen::Stride<Eigen::Dynamic, Eigen::Dynamic> Strides;
 
-	// RadianceField ============================================================
-	py::class_<RadianceField, RadianceField::Ptr> class_radiancefield(m, "RadianceField");
-	class_radiancefield
-	.def("__call__",
-	[](RadianceField &m, const Eigen::Matrix<double, 3, 1>& pWS, const Eigen::Matrix<double, 3, 1>& omega)
-	{
-		return m.eval(pWS, omega);
+		// Request a buffer descriptor from Python
+		py::buffer_info info = b.request();
+
+		// Some sanity checks ...
+		if (info.format != py::format_descriptor<double>::format())
+			throw std::runtime_error("Incompatible format: expected a double array!");
+
+		if (info.ndim != 4)
+			throw std::runtime_error("Incompatible buffer dimension!");
+
+		if (info.shape[3] != 3)
+			throw std::runtime_error("Incompatible buffer dimension!");
+
+		V3i resolution( int(info.shape[0]),
+						int(info.shape[1]),
+						int(info.shape[2]) );
+
+		auto data = static_cast<double*>(info.ptr);
+		new (&m) VoxelGridField3d(resolution, (V3d*)data);
 	})
 	;
 
-	// SHEXP ============================================================
-	py::class_<SHEXP, SHEXP::Ptr> class_shexp(m, "SHEXP", class_radiancefield);
-	class_shexp
-	.def("__init__",
-	[](SHEXP &m, int order)
-	{
-		new (&m) SHEXP(order);
-	})
-	.def("setCoefficientField", &SHEXP::setCoefficientField)
-	.def("getCoefficientField", &SHEXP::getCoefficientField)
+
+
+
+
+	// PNVolume =====================================================
+	py::class_<PNVolume, PNVolume::Ptr> class_PNVolume(m, "PNVolume");
+	class_PNVolume
+		.def("__init__",
+		[](PNVolume &m, const Domain& domain)
+		{
+			new (&m) PNVolume(domain);
+		})
+		.def("setExtinctionAlbedo", &PNVolume::setExtinctionAlbedo)
+		.def("setEmission", &PNVolume::setEmission)
+		.def("setPhase", &PNVolume::setPhase)
 	;
+
 }

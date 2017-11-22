@@ -8,8 +8,8 @@
 #include <Eigen/IterativeLinearSolvers>
 
 #include <common/Domain.h>
-#include <field/Field.h>
-#include <field/Constant.h>
+//#include <field/Field.h>
+//#include <field/Constant.h>
 #include <PNSystem.h>
 #include <util/timer.h>
 

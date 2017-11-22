@@ -2,6 +2,8 @@
 
 #include <math/common.h>
 #include <Eigen/Dense>
+#include <util/string.h>
+
 
 
 /* ===================================================================

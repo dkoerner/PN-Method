@@ -1,6 +1,6 @@
 #include <PNSystem.h>
-#include <field/Function.h>
-#include <field/VoxelGridField.h> // used only for getting maximum value of sigma_t
+//#include <field/Function.h>
+//#include <field/VoxelGridField.h> // used only for getting maximum value of sigma_t
 
 #include<Eigen/IterativeLinearSolvers>
 #include<Eigen/SparseLU>
@@ -26,19 +26,21 @@ V3d PNSystem::Stencil::Context::g_grid_offsets2[8] ={V3d(0.0, 0.0, 0.5),
 													V3d(0.0, 0.5, 0.0)};
 
 
-PNSystem::PNSystem( Stencil stencil, const Domain& domain, bool neumannBC)
+PNSystem::PNSystem(Stencil stencil, PNVolume::Ptr problem, bool neumannBC)
 	:
-	m_domain(domain),
-	m_fields(stencil.order),
+	 m_problem(problem),
+	//m_domain(volume),
+	//m_fields(stencil.order),
 	m_stencil(stencil),
 	m_neumannBC(neumannBC),
 	m_voxelManager()
 {
-	m_voxelManager.init(m_domain.getResolution(), m_stencil, neumannBC);
+	m_voxelManager.init(problem->getDomain().getResolution(), m_stencil, neumannBC);
 
 
 	debugVoxel = V3i(-1, -1);
 
+	/*
 	// TEMP: testing with non-rasterized rte parameters
 	Function::FunctionType sigma_a = [](const P3d& pWS)
 	{
@@ -88,6 +90,7 @@ PNSystem::PNSystem( Stencil stencil, const Domain& domain, bool neumannBC)
 		return 0.0;
 
 	};
+	*/
 
 	/*
 	m_fields.sigma_a = std::make_shared<Function>(sigma_a);
@@ -119,11 +122,10 @@ V3i PNSystem::getGridSpaceOffsetFromGrid(int grid_index)
 	return g_grid_offsets[grid_index];
 }
 
-
+/*
 void PNSystem::setField( const std::string& id, Field::Ptr field )
 {
 	//std::cout << "WARNING: PNSystem::setField currently ignored. Using explicit RTE functions.\n";
-	///*
 	if( id == "sigma_t" )
 		m_fields.sigma_t = field;
 	else
@@ -142,8 +144,8 @@ void PNSystem::setField( const std::string& id, Field::Ptr field )
 		m_fields.q->setField(0,0,field);
 	else
 		throw std::runtime_error("PNSystem::setField unable to set field " + id);
-	//*/
 }
+
 
 void PNSystem::setFields(PNSystem::Fields fields)
 {
@@ -154,18 +156,18 @@ PNSystem::Fields &PNSystem::getFields()
 {
 	return m_fields;
 }
-
+*/
 const Domain& PNSystem::getDomain()const
 {
-	return m_domain;
+	return m_problem->getDomain();
 }
 
-PNSystem::RealMatrix& PNSystem::get_A_real()
+PNSystem::RealMatrix& PNSystem::get_A()
 {
 	return m_A;
 }
 
-PNSystem::RealVector& PNSystem::get_b_real()
+PNSystem::RealVector& PNSystem::get_b()
 {
 	return m_b;
 }
@@ -195,12 +197,12 @@ int PNSystem::getNumCoefficients()const
 
 V3i PNSystem::getResolution()const
 {
-	return m_domain.getResolution();
+	return m_problem->getDomain().getResolution();
 }
 
 int PNSystem::getNumVoxels()const
 {
-	return m_domain.numVoxels();
+	return m_problem->getDomain().numVoxels();
 }
 
 int PNSystem::getOrder() const
@@ -216,11 +218,11 @@ void PNSystem::build()
 
 
 	int min_x = 0;
-	int max_x = m_domain.getResolution()[0];
+	int max_x = m_problem->getDomain().getResolution()[0];
 	int min_y = 0;
-	int max_y = m_domain.getResolution()[1];
+	int max_y = m_problem->getDomain().getResolution()[1];
 	int min_z = 0;
-	int max_z = m_domain.getResolution()[2];
+	int max_z = m_problem->getDomain().getResolution()[2];
 
 	if( (debugVoxel.x() != -1)&&(debugVoxel.y() != -1)&&(debugVoxel.z() != -1) )
 	{
@@ -258,7 +260,7 @@ PNSystem::RealMatrix PNSystem::getVoxelInfo(const std::string &info)
 {
 	MatrixBuilderd indexMatrix;
 
-	V3i res = m_domain.getResolution();
+	V3i res = m_problem->getDomain().getResolution();
 	V3i numBoundaryLayers = m_voxelManager.getNumBoundaryLayers();
 	for( int i=-numBoundaryLayers[0];i<res[0]+numBoundaryLayers[0];++i )
 		for( int j=-numBoundaryLayers[1];j<res[1]+numBoundaryLayers[1];++j )
@@ -290,10 +292,7 @@ PNSystem::RealMatrix PNSystem::getVoxelInfo(const std::string &info)
 				indexMatrix.coeff(i+numBoundaryLayers[0],j+numBoundaryLayers[1]) += value;
 			}
 
-	//std::cout << "!!!!!?????\n"; std::flush(std::cout);
 	RealMatrix m = indexMatrix.build(res[0]+numBoundaryLayers[0]*2, res[1]+numBoundaryLayers[1]*2);
-
-	//std::cout << indexMatrix.matrix.cols() << " " << indexMatrix.matrix.rows() << std::endl;
 	return m;
 }
 
@@ -344,12 +343,12 @@ Eigen::VectorXd PNSystem::removeStaggering(const Eigen::VectorXd &x)
 	PNSystem::MatrixBuilderd builder;
 	VoxelManager& vm = getVoxelManager();
 
-	Eigen::VectorXd x2( m_domain.numVoxels()*m_stencil.numCoeffs,1);
+	Eigen::VectorXd x2( m_problem->getDomain().numVoxels()*m_stencil.numCoeffs,1);
 	std::vector<Voxel>& voxels = m_voxelManager.getVoxels();
-	V3i res = m_domain.getResolution();
+	V3i res = m_problem->getDomain().getResolution();
 	for( auto&v:voxels )
 	{
-		if( !m_domain.contains_voxel(v.coord) )
+		if( !m_problem->getDomain().contains_voxel(v.coord) )
 			// boundary or mixed boundary voxel
 			continue;
 		for( int coeff_index=0;coeff_index<m_stencil.numCoeffs;++coeff_index )
@@ -442,7 +441,7 @@ Eigen::VectorXd PNSystem::removeStaggering(const Eigen::VectorXd &x)
 	} // for each voxel
 
 
-	MatrixBuilderd::Matrix conv = builder.build( m_domain.numVoxels()*m_stencil.numCoeffs, getVoxelManager().getNumUnknowns() );
+	MatrixBuilderd::Matrix conv = builder.build( m_problem->getDomain().numVoxels()*m_stencil.numCoeffs, getVoxelManager().getNumUnknowns() );
 	return conv*x;
 	//*/
 }
@@ -457,6 +456,11 @@ int PNSystem::getBoundaryConditions()
 PNSystem::Stencil& PNSystem::getStencil()
 {
 	return m_stencil;
+}
+
+PNVolume::Ptr PNSystem::getProblem()
+{
+	return m_problem;
 }
 
 

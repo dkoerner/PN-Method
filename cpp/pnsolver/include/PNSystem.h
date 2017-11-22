@@ -5,8 +5,8 @@
 #include <Eigen/Sparse>
 
 #include <common/Domain.h>
-#include <field/Field.h>
-#include <field/Constant.h>
+#include <fields/Field.h>
+#include <PNVolume.h>
 
 
 #define REGISTER_STENCIL(name, order, numCoeffs, width) \
@@ -34,7 +34,7 @@ struct PNSystem
 	typedef Eigen::Triplet<std::complex<double>> ComplexTriplet;
 	typedef Eigen::Triplet<double> RealTriplet;
 	struct VoxelSystem;
-	struct Fields;
+	//struct Fields;
 
 	template<typename T>
 	struct MatrixBuilder
@@ -106,7 +106,7 @@ struct PNSystem
 	typedef MatrixBuilder<std::complex<double>> MatrixBuildercd;
 
 
-
+	/*
 	// This structure holds all (potentially spatially varying) RTE parameters,
 	// such as sigma_s, sigma_t etc.
 	// For this it uses a generic Field class, which can be a constant, Voxelgrid, etc.
@@ -147,6 +147,7 @@ struct PNSystem
 		SHCoefficientFieldArray::Ptr q;
 		int m_order;
 	};
+	*/
 
 
 	struct Voxel
@@ -195,9 +196,15 @@ struct PNSystem
 				return sys.getDomain();
 			}
 
+			/*
 			Fields& getFields()
 			{
 				return sys.getFields();
+			}
+			*/
+			PNVolume& getProblem()
+			{
+				return *sys.getProblem().get();
 			}
 
 			// return the offset in voxelspace for the given staggered grid index
@@ -423,7 +430,7 @@ struct PNSystem
 
 
 
-	PNSystem(Stencil stencil, const Domain& domain, bool neumannBC);
+	PNSystem(Stencil stencil, PNVolume::Ptr problem, bool neumannBC);
 
 
 
@@ -432,6 +439,9 @@ struct PNSystem
 
 
 	Stencil& getStencil();
+	PNVolume::Ptr getProblem();
+
+	/*
 	Fields& getFields();
 
 	// This method is used to set RTE parameters. Allowed ids are:
@@ -442,6 +452,7 @@ struct PNSystem
 	// q (setting only l=0 and m=0 field of a SHCoefficientFieldArray)
 	void setField( const std::string& id, Field::Ptr field );
 	void setFields( Fields fields );
+	*/
 
 	int getBoundaryConditions();
 
@@ -464,8 +475,8 @@ struct PNSystem
 
 	// the following methods are used to allow python to access the build result
 	// (used for storing to disk etc.)
-	RealMatrix& get_A_real();
-	RealVector& get_b_real();
+	RealMatrix& get_A();
+	RealVector& get_b();
 
 	RealMatrix get_A_real_test();
 	Eigen::VectorXd get_b_real_test();
@@ -498,8 +509,9 @@ private:
 
 
 	// computational domain, problem and stencil
-	const Domain m_domain; // defines the spatial discretization
-	Fields m_fields; // the RTE parameters. Those have to be set by the client code through ::setField
+	//const Domain m_domain; // defines the spatial discretization
+	//Fields m_fields; // the RTE parameters. Those have to be set by the client code through ::setField
+	PNVolume::Ptr m_problem;
 	bool m_neumannBC;
 	Stencil m_stencil;
 	bool m_debug;

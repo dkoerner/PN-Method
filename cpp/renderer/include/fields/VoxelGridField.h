@@ -10,7 +10,7 @@
 
 #include <util/voxelgrid.h>
 
-#include <Field.h>
+#include <fields/Field.h>
 
 #include <Eigen/Dense>
 
@@ -21,12 +21,11 @@ struct VoxelGridField : public Field<T>
 	typedef std::shared_ptr<VoxelGridField<T>> Ptr;
 
 	VoxelGridField( const V3i& resolution, T* data ):
-		m_resolution(resolution),
 		m_voxelgrid()
 	{
-		m_voxelgrid.resize(m_resolution);
+		m_voxelgrid.resize(resolution);
 		if(data)
-			memcpy( m_voxelgrid.getRawPointer(), data, m_resolution[0]*m_resolution[1]*m_resolution[2]*sizeof(T) );
+			memcpy( m_voxelgrid.getRawPointer(), data, resolution[0]*resolution[1]*resolution[2]*sizeof(T) );
 
 		/*
 		//double max_value = *std::max_element(std::begin(data), std::end(data));
@@ -39,6 +38,12 @@ struct VoxelGridField : public Field<T>
 		}
 		*/
 	}
+
+	VoxelGridField(const std::string& filename):
+		m_voxelgrid(filename)
+	{
+	}
+
 
 	//virtual std::pair<T, T> getValueRange()const
 	virtual T getMaxValue()const
@@ -62,7 +67,7 @@ struct VoxelGridField : public Field<T>
 
 	V3i getResolution()const
 	{
-		return m_resolution;
+		return m_voxelgrid.getResolution();
 	}
 
 	VoxelGrid<T>& getVoxelGrid()
@@ -78,16 +83,20 @@ struct VoxelGridField : public Field<T>
 
 	P3d localToVoxel(const P3d& pLS)const
 	{
-		return P3d(pLS[0]*m_resolution[0], pLS[1]*m_resolution[1], pLS[2]*m_resolution[2]);
+		return m_voxelgrid.localToVoxel(pLS);
 	}
 
 	P3d voxelToLocal(const P3d& pVS)const
 	{
-		return P3d(pVS[0]/m_resolution[0], pVS[1]/m_resolution[1], pVS[2]/m_resolution[2]);
+		return m_voxelgrid.voxelToLocal(pLS);
+	}
+
+	void save( const std::string& filename )
+	{
+		m_voxelgrid.save(filename);
 	}
 
 private:
-	V3i m_resolution;
 	VoxelGrid<T> m_voxelgrid;
 	//double m_max_value;
 };

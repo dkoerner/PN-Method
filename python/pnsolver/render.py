@@ -77,24 +77,30 @@ def create_scene_pointlight( power, sigma_t, albedo ):
 	return volume, light
 
 def create_scene_nebulae():
-	light_pos = np.array([-0.5, -0.5, -0.5])
-	power = 4.0*np.pi
 	albedo = 0.9
-
-	radiance = 1.0
-	light_dir = np.array([0.0, -1.0, 0.0])
 
 	#offset = -0.5
 	offset = 0.0
 
 	volume = renderer.create_volume()
 	volume.setBound( np.array([-0.5, -0.5, -0.5+offset]), np.array([0.5, 0.5, 0.5+offset]) )
-	sigma_t_field = renderer.load_bgeo("nebulae200.bgeo")
+	sigma_t_field = renderer.load_bgeo("c:/projects/epfl/epfl17/python/pnsolver/results/nebulae/nebulae64.bgeo")
+	#sigma_t_field.save("c:/projects/epfl/epfl17/python/pnsolver/results/nebulae/nebulae64_extinction.grid")
+
 	#sigma_t_field = renderer.load_bgeo("test_sphere.bgeo")
 	albedo_field = renderer.create_constant_field3d( np.array([albedo, albedo, albedo]) )
 	volume.setExtinctionAlbedo( sigma_t_field, albedo_field )
+
+	# point light
+	#light_pos = np.array([-0.5, -0.5, -0.5])
+	#power = 4.0*np.pi
 	#light = renderer.create_point_light( light_pos, np.array([power, power, power]) )
+
+	# directional light
+	radiance = 1.0
+	light_dir = np.array([0.0, -1.0, 0.0])
 	light = renderer.create_directional_light( light_dir, np.array([radiance, radiance, radiance]) )
+
 	return volume, light
 
 
@@ -184,22 +190,57 @@ if __name__ == "__main__":
 
 
 
+	'''
+	sigma_t_field = renderer.load_bgeo("nebulae200.bgeo")
+	bound_min = np.array([-0.5, -0.5, -0.5])
+	bound_max = np.array([0.5, 0.5, 0.5])
+	renderer.save_bgeo("nebulae200_test.bgeo", sigma_t_field, bound_min, bound_max)
+	exit(1)
+	'''
+
+	'''
+	pns = renderer.load_pnsolution( "c:/projects/epfl/epfl17/python/pnsolver/results/checkerboard/checkerboard_p5.pns" )
+	#pns = renderer.load_pnsolution( "c:/projects/epfl/epfl17/python/pnsolver/results/pointsource/pointsource_p1.pns" )
+	cf = pns.getCoefficientField(0)
+	img = cf[:,:,25]
+	print(img.shape)
+
+	fig = plt.figure(figsize=(8,8));
+	ax = fig.add_subplot(111)
+
+	#img_view = plt.imshow(img, origin='lower',zorder=1, interpolation="nearest", cmap='jet', vmin=np.min(img), vmax=np.max(img))
+	img_view = plt.imshow(img, origin='lower',zorder=1, interpolation="nearest", cmap='jet', norm=LogNorm(vmin=np.min(img), vmax=np.max(img)))
+
+	plt.show()
+
+	exit(1)
+	'''
+
+
+
 
 	integrator = renderer.create_simplept_integrator()
-	camera = load_camera("c:/projects/epfl/epfl17/python/pnsolver/results/nebulae/nebulae.scn")
-	#camera = renderer.create_perspective_camera(512, 512, 45.0)
 	volume, light = create_scene_nebulae()
+
+
 	numSamples = 100
-	img = renderer.render( volume, light, camera, integrator, numSamples )
-	img.save("test.exr")
 
-	#fig = plt.figure(figsize=(8,8));
-	#ax = fig.add_subplot(111)
-	#sigma_t = volume.getSlice(0.5)
-	#img_view = plt.imshow(sigma_t, origin='lower',zorder=1, interpolation="nearest", cmap='gray', vmin=0.0, vmax=60.0)
-	#plt.show()
+	# render unscattered light into emission field for PN solver ---
+	unscattered_light_field = renderer.compute_unscattered_light( volume, light, integrator, numSamples, np.array([64, 64, 64]) )
+	bound_min = np.array([-0.5, -0.5, -0.5])
+	bound_max = np.array([0.5, 0.5, 0.5])
+	#renderer.save_bgeo("c:/projects/epfl/epfl17/python/pnsolver/results/nebulae/nebulae64_emission.bgeo", unscattered_light_field, bound_min, bound_max)
+	unscattered_light_field.save("c:/projects/epfl/epfl17/python/pnsolver/results/nebulae/nebulae64_emission.grid")
+
+	#test = renderer.load_voxelgridfield3d("c:/projects/epfl/epfl17/python/pnsolver/results/nebulae/nebulae64_emission.grid")
+	#renderer.save_bgeo("c:/projects/epfl/epfl17/python/pnsolver/results/nebulae/nebulae64_emission_2.bgeo", test, bound_min, bound_max)
 
 
+	# render groundtruth image ---
+	#camera = load_camera("c:/projects/epfl/epfl17/python/pnsolver/results/nebulae/nebulae.scn")
+	#camera = renderer.create_perspective_camera(512, 512, 45.0)
+	#img = renderer.render( volume, light, camera, integrator, numSamples )
+	#img.save("test.exr")
 
 	exit(1)
 

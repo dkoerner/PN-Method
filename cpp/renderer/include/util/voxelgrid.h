@@ -16,10 +16,12 @@ struct VoxelGrid
 
 	static Ptr        create( Vector3i res = Vector3i(10) );
 
-	static Ptr        load( const std::string &filename );
+	//static Ptr        load( const std::string &filename );
+	void              load( const std::string &filename );
 	void              save( const std::string &filename );
 
 	VoxelGrid();
+	VoxelGrid( const std::string& filename );
 
 	T                 evaluate(const P3d &vsP )const;
 	T                 sample( int i, int j, int k )const;
@@ -58,6 +60,13 @@ VoxelGrid<T>::VoxelGrid() : m_sampleLocation(0.5f)
 }
 
 template<typename T>
+VoxelGrid<T>::VoxelGrid( const std::string& filename ) : m_sampleLocation(0.5f)
+{
+	load(filename);
+}
+
+/*
+template<typename T>
 typename VoxelGrid<T>::Ptr VoxelGrid<T>::load( const std::string &filename )
 {
 	VoxelGrid<T>::Ptr field = VoxelGrid<T>::create();
@@ -83,6 +92,27 @@ typename VoxelGrid<T>::Ptr VoxelGrid<T>::load( const std::string &filename )
 	in.read( (char *)&field->m_data[0], size*sizeof(T) );
 
 	return field;
+}
+*/
+
+template<typename T>
+void VoxelGrid<T>::load( const std::string &filename )
+{
+	// load resolution, data from file
+	std::ifstream in( filename.c_str(), std::ios_base::in | std::ios_base::binary );
+
+	if( !in.good() )
+		throw std::runtime_error("VoxelGrid<T>::load failed to open stream");
+
+	in.read( (char *)&m_resolution, sizeof(int)*3 );
+	int dataType = 0;
+	in.read( (char *)&dataType, sizeof(int) );
+
+	if( dataType != m_dataType )
+		throw std::runtime_error( "VoxelGrid<T>::load: error: datatype in doesnt match." );
+
+	resize(m_resolution);
+	in.read( (char *)&m_data[0], m_resolution.x()*m_resolution.y()*m_resolution.z()*sizeof(T) );
 }
 
 template<typename T>
@@ -171,8 +201,6 @@ T VoxelGrid<T>::evaluate( const P3d &vsP )const
 	c1[2] = std::max(0, std::min(c1.z(), res.z()-1));
 	c2[2] = std::max(0, std::min(c2.z(), res.z()-1));
 
-	return sample( c1.x(), c1.y(), c1.z() );
-	/*
 	//lerp...
 	return lerp( lerp( lerp( sample( c1.x(), c1.y(), c1.z() ),
 							 sample( c2.x(), c1.y(), c1.z() ), (real_t)tx ),
@@ -182,7 +210,6 @@ T VoxelGrid<T>::evaluate( const P3d &vsP )const
 							 sample( c2.x(), c1.y(), c2.z() ), (real_t)tx ),
 					   lerp( sample( c1.x(), c2.y(), c2.z() ),
 							 sample( c2.x(), c2.y(), c2.z() ), (real_t)tx ), (real_t)ty ), (real_t)tz );
-	*/
 }
 
 template<typename T>
@@ -194,24 +221,14 @@ Vector3i VoxelGrid<T>::getResolution()const
 template<typename T>
 void VoxelGrid<T>::getCoordFromIndex( int index, int& x, int& y, int& z ) const
 {
-	/*
 	div_t divresult;
+
 	divresult = div( index, m_resolution.x()*m_resolution.y() );
+
 	z = divresult.quot;
 	divresult = div( divresult.rem, m_resolution.x() );
 	y = divresult.quot;
 	x = divresult.rem;
-	*/
-
-
-	// numpy indexing (k ist fastest)
-	div_t divresult;
-	divresult = div( index, m_resolution.y()*m_resolution.z() );
-	x = divresult.quot;
-	divresult = div( divresult.rem, m_resolution.z() );
-	y = divresult.quot;
-	z = divresult.rem;
-
 }
 
 template<typename T>
@@ -258,7 +275,7 @@ typedef VoxelGrid<float> ScalarVoxelGrid;
 typedef VoxelGrid<Vector3f> VoxelGrid3f;
 typedef VoxelGrid<Vector4f> VoxelGrid4f;
 typedef VoxelGrid<double> VoxelGridd;
-typedef VoxelGrid<V3d> VoxelGrid3d;
+typedef VoxelGrid<Vector3d> VoxelGrid3d;
 
 
 

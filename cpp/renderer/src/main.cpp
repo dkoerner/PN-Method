@@ -17,6 +17,7 @@
 #include <integrators/simplept.h>
 #include <integrators/pnispt.h>
 #include <integrators/jispt.h>
+
 #include <fields/VoxelGridField.h>
 
 #include <util/threadpool.h>
@@ -400,6 +401,15 @@ void compute_unscattered_light_thread( MonteCarloTaskInfo& taskinfo, const Globa
 									   gi->scene->volume->evalExtinction(pWS),
 									   gi->scene->volume->evalAlbedo(pWS) );
 
+		// TODO: properly integrate over solid angle
+		// what we do here is basically computing the SH coefficients of the
+		// emitted light. For this we need to integrate over product between
+		// the outgoing radiance and the SH-basis functions at all directions
+		// of solid angle sphere
+		ti.current_direction = V3d(0.0, 0.0, 1.0);
+
+		// TODO: solid angle integral...
+		// nee gives the uncollided light multiplied by phase function
 		V3d f = nee(ti, taskinfo.rng);
 
 
@@ -407,8 +417,9 @@ void compute_unscattered_light_thread( MonteCarloTaskInfo& taskinfo, const Globa
 			std::cout << "compute_unscattered_light_thread: got NaN value @ index=" << point_index << " sample=" << taskinfo.samples << std::endl;
 
 		// update pixel color
-		V3d& c = gi->grid->sample(i, j, k);
+		V3d& c = gi->grid->lvalue(i, j, k);
 		c += (f - c)/double(taskinfo.samples+1);
+		//c = V3d(double(i)/double(res[0]));
 	} // point
 
 
@@ -419,18 +430,23 @@ void compute_unscattered_light_thread( MonteCarloTaskInfo& taskinfo, const Globa
 
 
 
-
+//
+// computes the emission field from unscattered light
+// the unscattered light is estimated and multiplied by sigma_s*phase
+// TODO: generalize this to arbitrary phase functions
+//
 VoxelGridField3d::Ptr compute_unscattered_light( Volume::Ptr volume,
 												 Light::Ptr light,
 												 Integrator::Ptr integrator,
-												 int numSamples )
+												 int numSamples,
+												 Eigen::Vector3i resolution)
 {
 	std::cout << "compute_unscattered_light:\n";
 	std::cout << volume->toString();
 	std::cout << light->toString();
 	std::cout << integrator->toString();
 
-	VoxelGridField3d::Ptr result = std::make_shared<VoxelGridField3d>( V3i(1,1,1), (V3d*)0);
+	VoxelGridField3d::Ptr result = std::make_shared<VoxelGridField3d>( V3i(resolution.x(), resolution.y(), resolution.z()), (V3d*)0);
 
 	Scene scene;
 	scene.integrator = integrator.get();
@@ -530,6 +546,25 @@ Field3d::Ptr load_bgeo( const std::string& filename )
 	VoxelGridField3d::Ptr result = std::make_shared<VoxelGridField3d>(  V3i(res.x, res.y, res.z),
 																		data.data());
 	return result;
+}
+
+void save_bgeo( const std::string& filename, VoxelGridField3d::Ptr field, Eigen::Vector3d bound_min, Eigen::Vector3d bound_max )
+{
+	V3i res = field->getResolution();
+	houio::ScalarField::Ptr sigma_t = houio::ScalarField::create( houio::math::V3i(res[0], res[1], res[2]),
+																  houio::math::Box3f( houio::math::V3f(bound_min[0], bound_min[1], bound_min[2]),
+																					  houio::math::V3f(bound_max[0], bound_max[1], bound_max[2])));
+
+	int component = 0;
+	for( int i=0;i<res.x();++i )
+		for( int j=0;j<res.y();++j )
+			for( int k=0;k<res.z();++k )
+			{
+				// TODO: figure out, why we have to flip i and k indices...
+				sigma_t->lvalue(i, j, k) = field->getVoxelGrid().lvalue(res.x()-i-1, j, res.z()-k-1)[component];
+			}
+
+	houio::HouGeoIO::xport( filename, sigma_t );
 }
 
 PNSolution::Ptr load_pnsolution( const std::string& filename )
@@ -698,6 +733,10 @@ SHTest::Ptr create_shtest( int order, int depth )
 }
 
 
+VoxelGridField3d::Ptr load_voxelgridfield3d(const std::string& filename)
+{
+	return std::make_shared<VoxelGridField3d>(filename);
+}
 
 
 PYBIND11_MODULE(renderer, m)
@@ -870,35 +909,43 @@ PYBIND11_MODULE(renderer, m)
 	// VoxelGrid (real valued) ============================================================
 	py::class_<VoxelGridField3d, VoxelGridField3d::Ptr> class_VoxelGridField3d(m, "VoxelGridField3d", class_field3d);
 	class_VoxelGridField3d
-	/*
-	.def("__init__",
-	[](VoxelGridField3d &m, py::array b)
-	{
-		typedef Eigen::Stride<Eigen::Dynamic, Eigen::Dynamic> Strides;
+		.def("__init__",
+		[](VoxelGridField3d &m, py::array b)
+		{
+			typedef Eigen::Stride<Eigen::Dynamic, Eigen::Dynamic> Strides;
 
-		// location within voxel (center)
-		Eigen::Matrix<double, 3, 1> offset(0.5, 0.5, 0.5);
+			// Request a buffer descriptor from Python
+			py::buffer_info info = b.request();
 
-		// Request a buffer descriptor from Python
-		py::buffer_info info = b.request();
+			// Some sanity checks ...
+			if (info.format != py::format_descriptor<double>::format())
+				throw std::runtime_error("Incompatible format: expected a double array!");
 
-		// Some sanity checks ...
-		if (info.format != py::format_descriptor<std::complex<double>>::format())
-			throw std::runtime_error("Incompatible format: expected a complex array!");
+			if (info.ndim != 4)
+				throw std::runtime_error("Incompatible buffer dimension!");
 
-		if (info.ndim != 3)
-			throw std::runtime_error("Incompatible buffer dimension!");
+			if (info.shape[3] != 3)
+				throw std::runtime_error("Incompatible buffer dimension!");
 
-		V3i resolution( int(info.shape[0]),
-						int(info.shape[1]),
-						int(info.shape[2]) );
+			V3i resolution( int(info.shape[0]),
+							int(info.shape[1]),
+							int(info.shape[2]) );
 
-		auto data = static_cast<std::complex<double> *>(info.ptr);
-		new (&m) VoxelGridFieldcd( data, resolution, offset );
-	})
-	*/
-	//.def("test", &VoxelGridField::test)
-	//.def("getSlice", &VoxelGridField::getSlice)
+			auto data = static_cast<double*>(info.ptr);
+			new (&m) VoxelGridField3d(resolution, (V3d*)data);
+		})
+		.def("save", &VoxelGridField3d::save)
+		.def("asArray",
+			[]( VoxelGridField3d &m )
+			{
+				V3i res = m.getResolution();
+				py::array b( py::dtype::of<double>(),
+							{res[0], res[1], res[2], 3},
+							{int(sizeof(double))*res[2]*res[1]*3, int(sizeof(double))*res[2]*3, int(sizeof(double))*3, int(sizeof(double))},
+							m.getData());
+				return b;
+			}
+		)
 	;
 
 
@@ -989,6 +1036,28 @@ PYBIND11_MODULE(renderer, m)
 	*/
 	//.def("test", &PNSolution::test )
 	.def("setFilter", &PNSolution::setFilter )
+	.def("getCoefficientField",
+		[]( PNSolution &m, int coeff_index )
+		{
+			int numCoeffs = m.getNumCoeffs();
+			V3i res = m.getResolution();
+			std::vector<double> data(res[0]*res[1]*res[2]);
+
+			for( int i=0;i<res[0];++i )
+				for( int j=0;j<res[1];++j )
+					for( int k=0;k<res[2];++k )
+					{
+						int index_dst = i*res[2]*res[1] + j*res[2] + k;
+						int index_src = m.getIndex(V3i(i, j, k))+coeff_index;
+						data[index_dst] = m.data()[index_src];
+					}
+			py::array b( //py::dtype(std::string("float64")),
+						py::dtype::of<double>(),
+					   {res[0], res[1], res[2]},
+					   {int(sizeof(double))*res[2]*res[1], int(sizeof(double))*res[2], int(sizeof(double))},
+					   data.data());
+			return b;
+		})
 	;
 
 	// SHTest ============================================================
@@ -1023,6 +1092,8 @@ PYBIND11_MODULE(renderer, m)
 	// fields
 	m.def( "create_constant_field3d", &create_constant_field3d );
 	m.def( "load_bgeo", &load_bgeo );
+	m.def( "save_bgeo", &save_bgeo );
+	m.def( "load_voxelgridfield3d", &load_voxelgridfield3d );
 	// pnsolution
 	m.def( "load_pnsolution", &load_pnsolution );
 	m.def( "compute_fluence_pnsolution", &compute_fluence_pnsolution );

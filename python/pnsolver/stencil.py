@@ -1430,15 +1430,21 @@ def fun_to_cpp( expr, info, level ):
 			# we assume that a matrix f.id+"_real" has been created in code
 			return "{}_real.coeffRef({}, {})".format(f.id, i, j)
 	elif symbol == "\\sigma_t":
-		return "fields.{}->eval({})".format("sigma_t", arg_str)
+		#return "fields.{}->eval({})".format("sigma_t", arg_str)
+		return "problem.evalExtinction({})[color_channel]".format(arg_str)
 	elif symbol == "\\sigma_a":
-		return "fields.{}->eval({})".format("sigma_a", arg_str)
+		#return "fields.{}->eval({})".format("sigma_a", arg_str)
+		return "problem.evalAbsorption({})[color_channel]".format(arg_str)
 	elif symbol == "\\sigma_s":
-		return "fields.{}->eval({})".format("sigma_s", arg_str)
+		#return "fields.{}->eval({})".format("sigma_s", arg_str)
+		return "problem.evalScattering({})[color_channel]".format(arg_str)
 	elif symbol == "q":
-		return "fields.{}->eval({})".format("q", arg_str)
+		#return "fields.{}->eval({})".format("q", arg_str)
+		return "problem.evalEmission({})[color_channel]".format(arg_str)
 	elif symbol == "f_p":
-		return "fields.{}->eval({})".format("f_p", arg_str)
+		#return "fields.{}->eval({})".format("f_p", arg_str)
+		return "problem.evalPhase({})[color_channel]".format(arg_str)
+
 	else:
 		raise ValueError("unable to convert function {} to c++ code.".format(symbol))
 
@@ -1470,8 +1476,9 @@ def generate_stencil_code( stencil_name, filename, terms, pni ):
 	file.write( "\tV3i vi = ctx.getVoxelCoord();\n" )
 	file.write( "\tV3d vd = vi.cast<double>();\n" )
 	file.write( "\tconst Domain& domain = ctx.getDomain();\n" )
-	file.write( "\tconst PNSystem::Fields& fields = ctx.getFields();\n" )
+	file.write( "\tconst PNVolume& problem = ctx.getProblem();\n" )
 	file.write( "\tV3d h_inv( 1.0/({}*domain.getVoxelSize()[0]), 1.0/({}*domain.getVoxelSize()[1]), 1.0/({}*domain.getVoxelSize()[2]) );\n".format(pni.stencil_half_steps, pni.stencil_half_steps, pni.stencil_half_steps) )
+	file.write( "\tint color_channel = 0;\n" )
 	file.write( "\n" )
 
 	file.write( "\tEigen::Matrix<std::complex<double>, {}, {}> S;\n".format(pni.getS().shape[0], pni.getS().shape[1]) )
@@ -1944,8 +1951,8 @@ if __name__ == "__main__":
 	#order = [0,1,2,3,4]
 
 	rte_forms = ["fopn"]
-	order = [1]
-	#order = [1,2,3,4,5]
+	#order = [1]
+	order = [1,2,3,4,5]
 	staggered = [True]
 
 	test = itertools.product(rte_forms, order, staggered)

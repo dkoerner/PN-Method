@@ -16,8 +16,6 @@
 #include<common/Domain.h>
 
 #include<fields/VoxelGridField.h>
-//#include<field/Constant.h>
-//#include<field/SHEXP.h>
 
 #include <PNSystem.h>
 #include <PNSolution.h>
@@ -367,6 +365,11 @@ PNSolution::Ptr load_solution( const std::string& filename )
 }
 
 
+VoxelGridField3d::Ptr load_voxelgridfield3d(const std::string& filename)
+{
+	return std::make_shared<VoxelGridField3d>(filename);
+}
+
 
 /*
 Eigen::VectorXd getSolutionVector( PNSolution::Ptr pns )
@@ -398,6 +401,7 @@ PYBIND11_MODULE(pnsolver, m)
 	m.def( "createRealToComplexConversionMatrix", &createRealToComplexConversionMatrix);
 	*/
 	m.def( "save_solution", &save_solution);
+	m.def( "load_voxelgridfield3d", &load_voxelgridfield3d );
 	//m.def( "load_solution", &load_solution);
 	//m.def( "getSolutionVector", &getSolutionVector);
 
@@ -459,6 +463,28 @@ PYBIND11_MODULE(pnsolver, m)
 	{
 		return m.localToWorld(pLS);
 	})
+	.def("getCoefficientField",
+		[]( PNSolution &m, int coeff_index )
+		{
+			int numCoeffs = m.getNumCoeffs();
+			V3i res = m.getResolution();
+			std::vector<double> data(res[0]*res[1]*res[2]);
+
+			for( int i=0;i<res[0];++i )
+				for( int j=0;j<res[1];++j )
+					for( int k=0;k<res[2];++k )
+					{
+						int index_dst = i*res[2]*res[1] + j*res[2] + k;
+						int index_src = m.getIndex(V3i(i, j, k))+coeff_index;
+						data[index_dst] = m.data()[index_src];
+					}
+			py::array b( //py::dtype(std::string("float64")),
+						py::dtype::of<double>(),
+					   {res[0], res[1], res[2]},
+					   {int(sizeof(double))*res[2]*res[1], int(sizeof(double))*res[2], int(sizeof(double))},
+					   data.data());
+			return b;
+		})
 	;
 
 	// PNSystem ==============================
@@ -653,6 +679,7 @@ PYBIND11_MODULE(pnsolver, m)
 		auto data = static_cast<double*>(info.ptr);
 		new (&m) VoxelGridField3d(resolution, (V3d*)data);
 	})
+	.def("save", &VoxelGridField3d::save)
 	;
 
 

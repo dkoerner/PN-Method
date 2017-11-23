@@ -180,6 +180,19 @@ def rasterize( fun, domain, offset = np.array([0.5, 0.5, 0.5]), dtype=float ):
 				voxels[i, j, k] = fun(pWS)
 	return voxels
 
+def rasterize3d( domain, fun, dtype=float ):
+	res = domain.getResolution()
+	offset = np.array([0.5, 0.5, 0.5])
+	shape = (res[0], res[1], res[2], 3)
+	voxels = np.zeros(shape, dtype=dtype)
+	for i in range(0, res[0]):
+		for j in range(0, res[1]):
+			for k in range(0, res[2]):
+				pVS = np.array([i, j, k]) + offset
+				pWS = domain.voxelToWorld(pVS)
+				voxels[i, j, k, :] = fun(pWS)
+	return voxels
+
 def write_problem(filename, problem):
 	data = {}
 	data["sigma_t"] = problem["sigma_t"].getData()

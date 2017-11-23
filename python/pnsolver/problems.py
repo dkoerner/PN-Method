@@ -199,7 +199,7 @@ def checkerboard3d():
 			return 0.0
 		return 0.0
 
-	problem = {}
+	#problem = {}
 
 	# here we set some general parameters 
 	size = 7.0
@@ -216,27 +216,34 @@ def checkerboard3d():
 	#print("voxel_area={}".format(voxel_area))
 	#print("1/voxel_area={}".format(1.0/voxel_area))
 
-	problem["id"] = "checkerboard"
-	problem["domain"] = domain
+	#problem["id"] = "checkerboard"
+	#problem["domain"] = domain
 
 	# RTE parameters ------------
-	offset = np.array([1.0, 1.0, 1.0])
-	problem["sigma_t"] = pnsolver.VoxelGridField( util.rasterize(lambda pWS: sigma_a(pWS) + sigma_s(pWS), domain, dtype=complex), domain, offset*0.5 )
-	problem["sigma_a"] = pnsolver.VoxelGridField( util.rasterize(sigma_a, domain, dtype=complex), domain, offset*0.5 )
-	problem["sigma_s"] = pnsolver.VoxelGridField( util.rasterize(sigma_s, domain, dtype=complex), domain, offset*0.5 )
-	problem["f_p"] = [pnsolver.Constant(1.0)]
-	problem["q"] = [pnsolver.VoxelGridField( util.rasterize(lambda pWS: source_shcoeffs(0, 0, pWS), domain, dtype=complex), domain, offset*0.5 )]
+	#offset = np.array([1.0, 1.0, 1.0])
+	#problem["sigma_t"] = pnsolver.VoxelGridField( util.rasterize(lambda pWS: sigma_a(pWS) + sigma_s(pWS), domain, dtype=complex), domain, offset*0.5 )
+	#problem["sigma_a"] = pnsolver.VoxelGridField( util.rasterize(sigma_a, domain, dtype=complex), domain, offset*0.5 )
+	#problem["sigma_s"] = pnsolver.VoxelGridField( util.rasterize(sigma_s, domain, dtype=complex), domain, offset*0.5 )
+	#problem["f_p"] = [pnsolver.Constant(1.0)]
+	#problem["q"] = [pnsolver.VoxelGridField( util.rasterize(lambda pWS: source_shcoeffs(0, 0, pWS), domain, dtype=complex), domain, offset*0.5 )]
 
-	return problem
+	t = pnsolver.PNVolume( domain )
+
+	absorption_voxels = util.rasterize3d( domain, lambda pWS: sigma_a(pWS) )
+	scattering_voxels = util.rasterize3d( domain, lambda pWS: sigma_s(pWS) )
+	extinction_voxels = absorption_voxels+scattering_voxels
+
+	extinction_field = pnsolver.VoxelGridField3d(extinction_voxels)
+	albedo_field = pnsolver.VoxelGridField3d(scattering_voxels/extinction_voxels)
+
+	t.setExtinctionAlbedo( extinction_field, albedo_field )
+	t.setPhase( 0, 0, pnsolver.ConstantField3d(np.array([1.0, 1.0, 1.0])) )
+	emission_voxels = util.rasterize3d( domain, lambda pWS: source_shcoeffs(0, 0, pWS) )
+	t.setEmission( 0, 0, pnsolver.VoxelGridField3d(emission_voxels) )
+
+	return t
 
 def pointsource3d():
-	sigma_t = 8.0
-	albedo = 0.9
-	sigma_a = (1.0-albedo)*sigma_t
-	sigma_s = albedo*sigma_t
-
-
-	problem = {}
 
 	# here we set some general parameters 
 	size = 2.0
@@ -251,30 +258,56 @@ def pointsource3d():
 	#res = 200
 	domain = pnsolver.Domain( np.array([size, size, size]), np.array([res, res, res]), np.array([0.0, 0.0, 0.0]))
 
-	problem["id"] = "pointsource"
-	problem["domain"] = domain
+	t = pnsolver.PNVolume( domain )
 
 	# RTE parameters ------------
-	shape = (domain.getResolution()[0], domain.getResolution()[1], domain.getResolution()[2])
-	offset = np.array([1.0, 1.0, 1.0])
+	sigma_t = 8.0
+	albedo = 0.9
+	extinction_field = pnsolver.ConstantField3d(np.array([sigma_t, sigma_t, sigma_t]))
+	albedo_field = pnsolver.ConstantField3d(np.array([albedo, albedo, albedo]))
+	t.setExtinctionAlbedo( extinction_field, albedo_field )
+	t.setPhase( 0, 0, pnsolver.ConstantField3d(np.array([1.0, 1.0, 1.0])) )
 
-	problem["sigma_t"] = pnsolver.Constant(sigma_t)
-	problem["sigma_a"] = pnsolver.Constant(sigma_a)
-	problem["sigma_s"] = pnsolver.Constant(sigma_s)
-	problem["f_p"] = [pnsolver.Constant(1.0)]
-
-	q_voxels = np.zeros(shape, dtype=complex)
-
+	# the emission field is a 3d voxelgrid where the center voxel is set to an emission value
+	shape = (domain.getResolution()[0], domain.getResolution()[1], domain.getResolution()[2], 3)
+	q_voxels = np.zeros(shape) # real valued 
 	vs = domain.getVoxelSize()
 	pointsource_center_WS = np.array([size*0.5, size*0.5, size*0.5])
 	pointsource_center_VS = domain.worldToVoxel(pointsource_center_WS)
 	center_voxel = np.array([int(pointsource_center_VS[0]), int(pointsource_center_VS[1]), int(pointsource_center_VS[2])])
+	q_voxels[center_voxel[0], center_voxel[1], center_voxel[2], :] = 1.0/(vs[0]*vs[1]*vs[2])
+	t.setEmission( 0, 0, pnsolver.VoxelGridField3d(q_voxels) )
 
-	q_voxels[center_voxel[0], center_voxel[1], center_voxel[2]] = 1.0/(vs[0]*vs[1]*vs[2])
+	return t
 
-	problem["q"] = [pnsolver.VoxelGridField( q_voxels, domain, offset*0.5 )]
 
-	return problem
+def nebulae():
+	size = 1.0
+	res = 64
+	domain = pnsolver.Domain( np.array([size, size, size]), np.array([res, res, res]), np.array([0.0, 0.0, 0.0]))
+	t = pnsolver.PNVolume( domain )
+
+	#sigma_t = 8.0
+	#extinction_field = pnsolver.ConstantField3d(np.array([sigma_t, sigma_t, sigma_t]))
+	#extinction_field = pnsolver.load_voxelgridfield3d("c:/projects/epfl/epfl17/python/pnsolver/results/nebulae/nebulae_extinction.vgrid.3d")
+	#extinction_field = pnsolver.load_bgeo("c:/projects/epfl/epfl17/python/pnsolver/results/nebulae/nebulae64.bgeo")
+	extinction_field = pnsolver.load_voxelgridfield3d("c:/projects/epfl/epfl17/python/pnsolver/results/nebulae/nebulae64_extinction.grid")
+	
+	albedo = 0.9
+	albedo_field = pnsolver.ConstantField3d(np.array([albedo, albedo, albedo]))
+	t.setExtinctionAlbedo( extinction_field, albedo_field )
+
+	t.setPhase( 0, 0, pnsolver.ConstantField3d(np.array([1.0, 1.0, 1.0])) )
+
+	# the emissionfield has been generated by computing the single scattered light
+	emission_field = pnsolver.load_voxelgridfield3d("c:/projects/epfl/epfl17/python/pnsolver/results/nebulae/nebulae64_emission.grid")
+	t.setEmission( 0, 0, emission_field )
+
+	return t
+
+
+
+
 
 def vacuum():
 

@@ -12,6 +12,7 @@ import scipy.io
 
 
 def setProblem( sys, problem ):
+
 	sys.setField( "sigma_t", problem["sigma_t"] )
 	sys.setField( "sigma_a", problem["sigma_a"] )
 	sys.setField( "sigma_s", problem["sigma_s"] )
@@ -36,10 +37,10 @@ def setProblem( sys, problem ):
 def solve( stencil_name, problem, filename, do_neumannBC = False ):
 	# initialize the solver -----------------------------------
 	# NB: the truncation order has been baked into the cpp code as it is linked directly with the stencil
-	sys = pnsolver.PNSystem(stencil_name, problem["domain"], do_neumannBC)
+	sys = pnsolver.PNSystem(stencil_name, problem, do_neumannBC)
 
 	# set the RTE parameter fields ---------------------------------------------
-	setProblem(sys, problem)
+	#setProblem(sys, problem)
 	#sys.setNeumannBoundaryConditions(do_neumannBC)
 
 	# build the system Ax=b using the cpp stencil -------------------
@@ -211,8 +212,13 @@ if __name__ == "__main__":
 	#util.write_problem(path+"/checkerboard_problem.mat", problem)
 	#exit(1)
 	#problem = problems.checkerboard3d()
-	problem = problems.pointsource3d()
+	#problem = problems.pointsource3d()
+	problem = problems.nebulae()
 	#problem = problems.vacuum()
+
+	#problem_id = "pointsource"
+	#problem_id = "checkerboard"
+	problem_id = "nebulae"
 
 	
 	#filename = "{}/{}_groundtruth.mat".format(path, problem["id"] )
@@ -245,7 +251,9 @@ if __name__ == "__main__":
 
 
 	rte_forms = ["fopn"]
-	order = [1,2,3,4,5]
+	#order = [1,2,3,4,5]
+	#order = [3,4,5]
+	order = [1]
 	staggered = [True]
 	boundary_conditions = [False]
 
@@ -254,7 +262,7 @@ if __name__ == "__main__":
 	#staggered = []
 	#boundary_conditions = []
 
-	'''
+	#'''
 	test = itertools.product(rte_forms, order, staggered, boundary_conditions)
 	for c in test:
 		rte_form_name = c[0]
@@ -268,16 +276,16 @@ if __name__ == "__main__":
 		
 		#filename = "{}/{}_{}{}.mat".format(path, problem["id"], stencil_name, bc_id[do_neumannBC])
 		#filename = "{}/{}_test.mat".format(path, problem["id"], stencil_name)
-		filename = "C:/projects/epfl/epfl17/python/pnsolver/results/pointsource/{}_p{}.pns".format(problem["id"], order)
+		filename = "C:/projects/epfl/epfl17/python/pnsolver/results/{}/{}_p{}.pns".format(problem_id, problem_id, order)
 		#print("clear;filename=\"{}\";compute_condest;".format(filename))
 		solve(stencil_name, problem, filename, do_neumannBC=do_neumannBC)
-	'''
+	#'''
 
-	stencil_name = "stencil_cda"
-	do_neumannBC = False
-	#filename = "{}/{}_{}.mat".format(path, problem["id"], stencil_name)
-	filename = "C:/projects/epfl/epfl17/python/pnsolver/results/pointsource/{}_cda.pns".format(problem["id"])
-	solve(stencil_name, problem, filename, do_neumannBC=do_neumannBC)
+	#stencil_name = "stencil_cda"
+	#do_neumannBC = False
+	##filename = "{}/{}_{}.mat".format(path, problem["id"], stencil_name)
+	#filename = "C:/projects/epfl/epfl17/python/pnsolver/results/pointsource/{}_cda2.pns".format(problem_id)
+	#solve(stencil_name, problem, filename, do_neumannBC=do_neumannBC)
 
 
 

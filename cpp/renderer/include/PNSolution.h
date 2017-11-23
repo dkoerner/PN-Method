@@ -111,14 +111,14 @@ struct PNSolution
 	V3i getResolution()const;
 	P3d getBoundMin()const;
 	P3d getBoundMax()const;
+	int getIndex( const V3i& voxel_coord ) const;
 	double* data();
 
 	// temp
 	//void test();
 	//double test_real_conversion( int l, int m, double theta, double phi );
-private:
+//private:
 
-	int getIndex( const V3i& voxel_coord ) const;
 	int m_order; // SH order
 	int m_numCoeffs;
 	V3i m_resolution;

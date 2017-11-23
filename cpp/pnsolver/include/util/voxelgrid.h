@@ -16,10 +16,12 @@ struct VoxelGrid
 
 	static Ptr        create( Vector3i res = Vector3i(10) );
 
-	static Ptr        load( const std::string &filename );
+	//static Ptr        load( const std::string &filename );
+	void              load( const std::string &filename );
 	void              save( const std::string &filename );
 
 	VoxelGrid();
+	VoxelGrid( const std::string& filename );
 
 	T                 evaluate(const P3d &vsP )const;
 	T                 sample( int i, int j, int k )const;
@@ -58,6 +60,13 @@ VoxelGrid<T>::VoxelGrid() : m_sampleLocation(0.5f)
 }
 
 template<typename T>
+VoxelGrid<T>::VoxelGrid( const std::string& filename ) : m_sampleLocation(0.5f)
+{
+	load(filename);
+}
+
+/*
+template<typename T>
 typename VoxelGrid<T>::Ptr VoxelGrid<T>::load( const std::string &filename )
 {
 	VoxelGrid<T>::Ptr field = VoxelGrid<T>::create();
@@ -83,6 +92,27 @@ typename VoxelGrid<T>::Ptr VoxelGrid<T>::load( const std::string &filename )
 	in.read( (char *)&field->m_data[0], size*sizeof(T) );
 
 	return field;
+}
+*/
+
+template<typename T>
+void VoxelGrid<T>::load( const std::string &filename )
+{
+	// load resolution, data from file
+	std::ifstream in( filename.c_str(), std::ios_base::in | std::ios_base::binary );
+
+	if( !in.good() )
+		throw std::runtime_error("VoxelGrid<T>::load failed to open stream");
+
+	in.read( (char *)&m_resolution, sizeof(int)*3 );
+	int dataType = 0;
+	in.read( (char *)&dataType, sizeof(int) );
+
+	if( dataType != m_dataType )
+		throw std::runtime_error( "VoxelGrid<T>::load: error: datatype in doesnt match." );
+
+	resize(m_resolution);
+	in.read( (char *)&m_data[0], m_resolution.x()*m_resolution.y()*m_resolution.z()*sizeof(T) );
 }
 
 template<typename T>

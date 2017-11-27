@@ -1,0 +1,140 @@
+% ---------------------------------------------------------------------
+% EG author guidelines plus sample file for EG publication using LaTeX2e input
+% D.Fellner, v2.02, Jan 25, 2017
+
+
+%\title[EG \LaTeX\ Author Guidelines]%
+%{\LaTeX\ Author Guidelines for EUROGRAPHICS Proceedings Manuscripts}
+
+% for anonymous conference submission please enter your SUBMISSION ID
+% instead of the author's name (and leave the affiliation blank) !!
+%\author[D. Fellner \& S. Behnke]
+%{\parbox{\textwidth}{\centering D.\,W. Fellner\thanks{Chairman Eurographics Publications Board}$^{1,2}$
+%        and S. Behnke$^{2}$ 
+%        S. Spencer$^2$\thanks{Chairman Siggraph Publications Board}
+%        }
+%        \\
+%% For Computer Graphics Forum: Please use the abbreviation of your first name.
+%{\parbox{\textwidth}{\centering $^1$TU Darmstadt \& Fraunhofer IGD, Germany\\
+%         $^2$Graz University of Technology, Institute of Computer Graphics and Knowledge Visualization, Austria
+%%        $^2$ Another Department to illustrate the use in papers from authors
+%%             with different affiliations
+%       }
+%}
+%}
+
+
+% ------------------------------------------------------------------------
+
+% if the Editors-in-Chief have given you the data, you may uncomment
+% the following five lines and insert it here
+%
+% \volume{36}   % the volume in which the issue will be published;
+% \issue{1}     % the issue number of the publication
+% \pStartPage{1}      % set starting page
+
+
+%-------------------------------------------------------------------------
+\begin{document}
+
+% uncomment for using teaser
+% \teaser{
+%  \includegraphics[width=\linewidth]{eg_new}
+%  \centering
+%   \caption{New EG Logo}
+% \label{fig:teaser}
+%}
+
+%\maketitle
+
+%-------------------------------------------------------------------------
+
+%\begin{abstract}
+%TODO
+
+%\begin{classification} % according to http://www.acm.org/class/1998/
+%\CCScat{Computer Graphics}{I.3.7}{Three-Dimensional Graphics and Realism}{Raytracing}
+%\end{classification}
+
+%\end{abstract}
+
+
+%-------------------------------------------------------------------------
+\input{introduction.tex}
+
+%-------------------------------------------------------------------------
+\section{Previous work}
+
+\subsection*{Deterministic Methods}
+
+\begin{itemize}
+  \item Lattice Boltzmann Methods \cite{Geist04}
+  \item Discrete Ordinates
+  \item Diffusion \cite{Stam95} \cite{Jakob10} \cite{Koerner14}
+  \item $PN$-Method \cite{Kajiya84} 
+  \item Heuristics \cite{Kaplanyan10} \cite{Elek14}
+\end{itemize}
+
+\subsection*{Path-guiding}
+
+\begin{itemize}
+  \item Russian roulette and splitting \cite{Vorba16}
+  \item Learning using SD-Trees \cite{Pegoraro08} \cite{Mueller17} or Gaussian mixture models \cite{Vorba14}
+  \item Zero-Variance sampling \cite{Krivanek14}
+  \item Reinforcement learning \cite{Dahm17}
+\end{itemize}
+
+
+
+
+%-------------------------------------------------------------------------
+\section{Radiative Transfer and $PN$-Equations}
+
+In order to compute a rendered image, the radiance field $L$ is evaluated. Its evolution throught space is given by the radiative transfer equation (RTE):
+
+-give RTE
+%\begin{}
+%\end{}
+
+
+The radiance field $L$ is typically solved with probabilistic Monte-Carlo methods, such as path-tracing. With these methods, computational demand is directly linked to the average length of paths and the presence of light transport paths which are hard to find with random sampling. The path length increases for dense, highly scattering media and hard-to-sample paths exist with highly anisotropic phase functions or complex visbility in the scene.
+
+Deterministic methods are derived by discretizing the radiance field $L$ and the RTE in spatial- and spherical domain. The result is a system of linear equations of the form $A\vec{x}=b$ where $\vec{x}$ represents the radiance field in the discretized problem. The matrix $A$ and right hand side $b$ are found by assembling a global system from all discretization elements. Deterministic methods suffer from discretization artefacts and only give an accurate solution in the discretization limit. However, they are fast to compute and noise free.
+
+The $PN$-equations are found by projecting the radiance field and the RTE into a truncated spherical harmonics (SH). A regular grid is used for spatial discretization. The SH-expansion of the radiance field $L$ is:
+
+\begin{equation}
+L\left(x, \omega \right) = \sum_{l=0}^{N}
+\sum_{m=-l}^{l}
+L\left(x\right)^{lm}
+Y\left(\omega\right)^{l,m}
+\end{equation}
+
+where $N$ is the truncation order, $L^{lm}$ is a set SH coefficients and $Y^{l,m}$ is the SH-basis function.
+
+
+
+\section{System Overview}
+\section{Stencil Generation}
+\section{Staggered Grid Solver}
+\section{Path-guiding}
+\section{Results}
+\section{Conclusion and future work}
+
+\begin{itemize}
+  \item Extension to surface rendering by dealing vacuum regions and extending to anisotropic RTE.
+\end{itemize}
+
+%-------------------------------------------------------------------------
+
+\bibliographystyle{eg-alpha}
+%\bibliographystyle{eg-alpha-doi}
+
+\bibliography{bibliography}
+
+%-------------------------------------------------------------------------
+%\newpage
+
+
+
+\end{document}

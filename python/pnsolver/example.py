@@ -63,6 +63,8 @@ def solve( stencil_name, problem, filename, do_neumannBC = False ):
 
 
 	data = {}
+	#tol = 1.0e-10
+	tol = 1.0
 
 	#numLevels = 7
 	#x, convergence, timestamps = pnsolver.solve_multigrid( sys, numLevels )
@@ -84,9 +86,17 @@ def solve( stencil_name, problem, filename, do_neumannBC = False ):
 	#data["timestamps_mg2"] = timestamps
 
 
-	x, convergence, timestamps = pnsolver.solve_lscg( sys )
+	#x, convergence, timestamps = pnsolver.solve_lscg( sys )
+	#data["convergence_cg"] = convergence
+	#data["timestamps_cg"] = timestamps
+
+	x, convergence, timestamps = pnsolver.solve_cg( sys, tol )
 	data["convergence_cg"] = convergence
 	data["timestamps_cg"] = timestamps
+
+	#x, convergence, timestamps = pnsolver.solve_lscg_own( sys )
+	#data["convergence_cg"] = convergence
+	#data["timestamps_cg"] = timestamps
 
 
 	#pnsolver.save_solution("test.pns", sys, x)
@@ -211,10 +221,10 @@ if __name__ == "__main__":
 	#problem = problems.homogeneous()
 	#util.write_problem(path+"/checkerboard_problem.mat", problem)
 	#exit(1)
-	#problem = problems.checkerboard3d()
+
 	#problem = problems.pointsource3d()
+	#problem = problems.checkerboard3d()
 	problem = problems.nebulae()
-	#problem = problems.vacuum()
 
 	#problem_id = "pointsource"
 	#problem_id = "checkerboard"
@@ -276,7 +286,7 @@ if __name__ == "__main__":
 		
 		#filename = "{}/{}_{}{}.mat".format(path, problem["id"], stencil_name, bc_id[do_neumannBC])
 		#filename = "{}/{}_test.mat".format(path, problem["id"], stencil_name)
-		filename = "C:/projects/epfl/epfl17/python/pnsolver/results/{}/{}_p{}.pns".format(problem_id, problem_id, order)
+		filename = "C:/projects/epfl/epfl17/python/pnsolver/results/{}/{}_p{}_2.pns".format(problem_id, problem_id, order)
 		#print("clear;filename=\"{}\";compute_condest;".format(filename))
 		solve(stencil_name, problem, filename, do_neumannBC=do_neumannBC)
 	#'''

@@ -193,14 +193,111 @@ std::tuple<Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd> solve_blockgs(PNSy
 	return std::make_tuple(std::get<0>(result), std::get<1>(result), std::get<2>(result));
 }
 
-std::tuple<Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd> solve_cg(PNSystem& sys)
+std::tuple<Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd> solve_cg(PNSystem& sys, double tol )
 {
-	Solver solver;
-	setup_solver(solver, sys);
-	return solver.solve_cg();
-	//auto result = solver.solve_cg();
-	//return std::make_tuple(std::get<0>(result), std::get<1>(result), std::get<2>(result));
-	//return std::make_tuple(Eigen::VectorXd(), Eigen::VectorXd(), Eigen::VectorXd());
+	sys.build();
+
+	Timer timer;
+
+	std::cout << "computing A^T...\n";std::flush(std::cout);
+	PNSystem::RealMatrix AT = sys.get_A().transpose();
+
+
+	// we solve using ATA
+	std::cout << "computing A^T*A...\n";std::flush(std::cout);
+	PNSystem::RealMatrix A = AT*sys.get_A();
+	Eigen::VectorXd b = AT*sys.get_b();
+
+	Eigen::VectorXd x = Eigen::VectorXd(b.rows()); // initial guess
+	x.fill(0.0);
+	Eigen::VectorXd r( x.rows() );
+
+
+	std::cout << "solving...\n";std::flush(std::cout);
+
+	//double tol = 1.0e-10; // convergence error tolerance
+	int iteration = 0;
+	int numIterations = b.rows();
+
+	timer.start();
+	// cg solver
+	{
+		r = b-A*x;
+		Eigen::VectorXd p = r;
+		Eigen::VectorXd Ap;
+		double rsold = r.squaredNorm();
+		for( iteration=0;iteration<numIterations;++iteration )
+		{
+			Ap = A*p;
+			double alpha = rsold/p.dot(Ap);
+			x = x + alpha*p;
+			r = r - alpha*Ap;
+			double rsnew = r.squaredNorm();
+			std::cout << "rmse=" << std::sqrt(rsnew) << std::endl;
+			if( std::sqrt(rsnew) < tol )
+				break;
+			p = r + (rsnew/rsold)*p;
+			rsold = rsnew;
+		}
+	} // end of cg solver
+	timer.stop();
+	std::cout << "solve_cg: " << timer.elapsedSeconds() << "s #iterations=" << iteration << "\n";
+
+	return std::make_tuple( x,
+							Eigen::VectorXd(),
+							Eigen::VectorXd());
+}
+
+std::tuple<Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd> solve_lscg_own(PNSystem& sys, double tol)
+{
+	sys.build();
+
+	Timer timer;
+
+
+	PNSystem::RealMatrix& A = sys.get_A();
+	Eigen::VectorXd b = sys.get_b();
+
+	// we solve using ATA
+	PNSystem::RealMatrix AT = A.transpose();
+
+	Eigen::VectorXd x = Eigen::VectorXd(b.rows()); // initial guess
+	x.fill(0.0);
+	Eigen::VectorXd r( x.rows() );
+
+
+	std::cout << "solving...\n";std::flush(std::cout);
+
+	//double tol = 1.0e-10; // convergence error tolerance
+	int iteration = 0;
+	int numIterations = b.rows();
+
+	timer.start();
+	// cg solver
+	{
+		r = AT*(b-A*x);
+		Eigen::VectorXd p = r;
+		Eigen::VectorXd Ap;
+		double rsold = r.squaredNorm();
+		for( iteration=0;iteration<numIterations;++iteration )
+		{
+			Ap = AT*(A*p);
+			double alpha = rsold/p.dot(Ap);
+			x = x + alpha*p;
+			r = r - alpha*Ap;
+			double rsnew = r.squaredNorm();
+			if( std::sqrt(rsnew) < tol )
+				break;
+			p = r + (rsnew/rsold)*p;
+			rsold = rsnew;
+		}
+	} // end of cg solver
+	timer.stop();
+	std::cout << "solve_cg: " << timer.elapsedSeconds() << "s #iterations=" << iteration << "\n";
+
+	return std::make_tuple( x,
+							Eigen::VectorXd(),
+							Eigen::VectorXd());
 }
 
 std::tuple<Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd> solve_cg_eigen(PNSystem& sys)
@@ -236,6 +333,7 @@ std::tuple<Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd> solve_lscg(PNSyste
 	timer.start();
 
 	Eigen::LeastSquaresConjugateGradient<PNSystem::RealMatrix> solver;
+	//solver.setMaxIterations(1);
 	solver.compute(sys.get_A());
 	if(solver.info()!=Eigen::Success)
 	{
@@ -349,12 +447,13 @@ void save_solution( const std::string& filename, PNSystem& sys, const Eigen::Vec
 
 	// TODO: use our own conversion matrix during stencil generation straight away...
 
-
 	Eigen::VectorXcd x_complex =buildBlockDiagonalMatrix( createRealToComplexConversionMatrix(sys.getStencil().order), sys.getNumVoxels() )*
 								sys.removeStaggering(x);
+
 	Eigen::VectorXd x_real = (buildBlockDiagonalMatrix( sph::buildComplexToRealConversionMatrix(sys.getStencil().order), sys.getNumVoxels() )*
 							 x_complex).real();
 	PNSolution solution( sys.getOrder(), sys.getResolution(), Box3d(sys.getDomain().getBoundMin(), sys.getDomain().getBoundMax()), x_real.data() );
+
 	solution.save(filename);
 }
 
@@ -396,6 +495,8 @@ PYBIND11_MODULE(pnsolver, m)
 	m.def( "solve_sparseLU", &solve_sparseLU);
 	*/
 	m.def( "solve_lscg", &solve_lscg);
+	m.def( "solve_lscg_own", &solve_lscg_own);
+
 	/*
 	m.def( "createComplexToRealConversionMatrix", &createComplexToRealConversionMatrix);
 	m.def( "createRealToComplexConversionMatrix", &createRealToComplexConversionMatrix);

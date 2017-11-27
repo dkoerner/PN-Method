@@ -9,7 +9,6 @@ import util
 import rte_terms
 import meh
 import itertools
-import pnsolver
 import os
 
 
@@ -1951,8 +1950,8 @@ if __name__ == "__main__":
 	#order = [0,1,2,3,4]
 
 	rte_forms = ["fopn"]
-	#order = [1]
-	order = [1,2,3,4,5]
+	order = [1]
+	#order = [1,2,3,4,5]
 	staggered = [True]
 
 	test = itertools.product(rte_forms, order, staggered)

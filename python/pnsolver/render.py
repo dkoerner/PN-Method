@@ -190,27 +190,41 @@ if __name__ == "__main__":
 
 
 
-	'''
-	sigma_t_field = renderer.load_bgeo("nebulae200.bgeo")
 	bound_min = np.array([-0.5, -0.5, -0.5])
 	bound_max = np.array([0.5, 0.5, 0.5])
+	'''
+	sigma_t_field = renderer.load_bgeo("nebulae200.bgeo")
 	renderer.save_bgeo("nebulae200_test.bgeo", sigma_t_field, bound_min, bound_max)
 	exit(1)
 	'''
 
-	'''
-	pns = renderer.load_pnsolution( "c:/projects/epfl/epfl17/python/pnsolver/results/checkerboard/checkerboard_p5.pns" )
+	#'''
+	#pns = renderer.load_pnsolution( "c:/projects/epfl/epfl17/python/pnsolver/results/checkerboard/checkerboard_p1.pns" )
+	pns = renderer.load_pnsolution( "c:/projects/epfl/epfl17/python/pnsolver/results/nebulae/nebulae_p1_2.pns" )
+	#pns2 = renderer.load_pnsolution( "c:/projects/epfl/epfl17/python/pnsolver/results/checkerboard/checkerboard_p1_2.pns" )
 	#pns = renderer.load_pnsolution( "c:/projects/epfl/epfl17/python/pnsolver/results/pointsource/pointsource_p1.pns" )
-	cf = pns.getCoefficientField(0)
-	img = cf[:,:,25]
-	print(img.shape)
+	img = pns.getCoefficientField(0)
 
+	result = np.zeros( (img.shape[0], img.shape[1], img.shape[2], 3) )
+	result[:,:,:,0] = img
+	result[:,:,:,1] = img
+	result[:,:,:,2] = img
+
+	renderer.save_bgeo( "c:/projects/epfl/epfl17/python/pnsolver/results/nebulae/nebulae_p1_2.pns.bgeo", renderer.VoxelGridField3d(result), bound_min, bound_max )
+	exit(1)
+
+	#img2 = pns2.getCoefficientField(0)[:,:,25]
+
+
+	'''
 	fig = plt.figure(figsize=(8,8));
-	ax = fig.add_subplot(111)
 
-	#img_view = plt.imshow(img, origin='lower',zorder=1, interpolation="nearest", cmap='jet', vmin=np.min(img), vmax=np.max(img))
-	img_view = plt.imshow(img, origin='lower',zorder=1, interpolation="nearest", cmap='jet', norm=LogNorm(vmin=np.min(img), vmax=np.max(img)))
+	ax = fig.add_subplot(121)
+	#img_view = plt.imshow(img, origin='lower',zorder=1, interpolation="nearest", cmap='jet', norm=LogNorm(vmin=np.min(img), vmax=np.max(img)))
+	img_view = plt.imshow(img, origin='lower',zorder=1, interpolation="nearest", cmap='jet', vmin=np.min(img), vmax=np.max(img))
 
+	#ax = fig.add_subplot(122)
+	#img_view = plt.imshow(img2, origin='lower',zorder=1, interpolation="nearest", cmap='jet', norm=LogNorm(vmin=np.min(img2), vmax=np.max(img2)))
 	plt.show()
 
 	exit(1)

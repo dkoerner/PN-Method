@@ -62,7 +62,7 @@ def solve( stencil_name, problem, filename, do_neumannBC = False ):
 	#x = x.reshape((x.shape[0], 1))
 
 
-	data = {}
+	#tol = 1.0e-10
 	#tol = 1.0e-10
 	tol = 1.0
 
@@ -90,20 +90,40 @@ def solve( stencil_name, problem, filename, do_neumannBC = False ):
 	#data["convergence_cg"] = convergence
 	#data["timestamps_cg"] = timestamps
 
-	x, convergence, timestamps = pnsolver.solve_cg( sys, tol )
-	data["convergence_cg"] = convergence
-	data["timestamps_cg"] = timestamps
+	#x, convergence, timestamps = pnsolver.solve_ls_cg_eigen( sys, tol )
+	#data["convergence_cg"] = convergence
+	#data["timestamps_cg"] = timestamps
+
+	#x, convergence, timestamps = pnsolver.solve_cg( sys, tol )
+	#data["convergence_cg"] = convergence
+	#data["timestamps_cg"] = timestamps
+
+	#x, convergence, timestamps = pnsolver.solve_ls_cg( sys, tol )
+	#x, convergence, timestamps = pnsolver.solve_gs( sys, tol, 10000 )
+	#x, convergence, timestamps = pnsolver.solve_mg( sys, tol, 100 )
+	x, convergence, timestamps = pnsolver.solve_ls_cg( sys, tol)
+
+
+	#sys.build()
+	#data = {}
+	#data["A"] = sys.get_A()
+	#data["b"] = sys.get_b()
+	#scipy.io.savemat("{}.mat".format(filename), data)
+
+
 
 	#x, convergence, timestamps = pnsolver.solve_lscg_own( sys )
 	#data["convergence_cg"] = convergence
 	#data["timestamps_cg"] = timestamps
 
 
-	#pnsolver.save_solution("test.pns", sys, x)
 	pnsolver.save_solution(filename, sys, x)
-	#pnsolver.save_fields("test.fields", sys) # stores the voxelgrids of the RTE parameters
-	#x_test = pnsolver.getSolutionVector(pnsolver.load_solution("test.pns"))
-	#util.compare_vectors( x.reshape((x.shape[0], 1)), x_test.reshape((x.shape[0], 1)), "org", "new" )
+
+
+	data = {}
+	data["convergence"] = convergence
+	data["timestamps"] = timestamps
+	scipy.io.savemat(filename+".ls_cg.mat", data)
 
 	#data["x"] = x.reshape((x.shape[0], 1))
 
@@ -129,7 +149,6 @@ def solve( stencil_name, problem, filename, do_neumannBC = False ):
 
 	#filename = "c:/projects/epfl/temp/multigrid/multigrid-master/checkerboard_test.mat"
 	#filename = "c:/projects/epfl/temp/multigrid/multigrid-master/homogeneous_test.mat"
-	#scipy.io.savemat(filename, data)
 
 	#pass
 	#except:
@@ -166,13 +185,14 @@ def multigrid_debug_test():
 	#sys = pnsolver.PNSystem(stencil_name, domain, do_neumannBC)
 	
 	numLevels = 9
-	mgtest = pnsolver.Solver(numLevels)
+	mgtest = pnsolver.MultigridSolver(numLevels)
 
 	#'''
 	for l in range(numLevels):
 		filename = "c:/projects/epfl/temp/multigrid/multigrid-master/poisson_problem_lvl{}.mat".format(l)
 		data = scipy.io.loadmat(filename)
-		mgtest.setMultigridLevel(l, data["L"], data["u"], data['restrict_m'], data['interp_m'])
+		#mgtest.setMultigridLevel(l, data["L"], data["u"], data['restrict_m'], data['interp_m'])
+		mgtest.setMultigridLevel(l, data["L"], data['restrict_m'], data['interp_m'])
 	#'''
 
 
@@ -186,16 +206,16 @@ def multigrid_debug_test():
 	x, convergence, timestamps = mgtest.solve(100)
 	data["convergence_mg"] = convergence
 	data["timestamps_mg"] = timestamps
-	x, convergence, timestamps = mgtest.solve_gs()
-	data["convergence_gs"] = convergence
-	data["timestamps_gs"] = timestamps
+	#x, convergence, timestamps = mgtest.solve_gs()
+	#data["convergence_gs"] = convergence
+	#data["timestamps_gs"] = timestamps
 
-	x, convergence, timestamps = mgtest.solve_cg()
-	data["convergence_cg"] = convergence
-	data["timestamps_cg"] = timestamps
+	#x, convergence, timestamps = mgtest.solve_cg()
+	#data["convergence_cg"] = convergence
+	#data["timestamps_cg"] = timestamps
 
 
-	filename = "c:/projects/epfl/temp/multigrid/multigrid-master/poisson_test.mat"
+	filename = "c:/projects/epfl/temp/multigrid/multigrid-master/poisson_test2.mat"
 	scipy.io.savemat(filename, data)
 
 	#pnsolver.solve_multigrid(sys)
@@ -222,13 +242,13 @@ if __name__ == "__main__":
 	#util.write_problem(path+"/checkerboard_problem.mat", problem)
 	#exit(1)
 
-	#problem = problems.pointsource3d()
-	#problem = problems.checkerboard3d()
-	problem = problems.nebulae()
+	#problem = problems.pointsource3d( res=64 )
+	problem = problems.checkerboard3d()
+	#problem = problems.nebulae()
 
 	#problem_id = "pointsource"
-	#problem_id = "checkerboard"
-	problem_id = "nebulae"
+	problem_id = "checkerboard"
+	#problem_id = "nebulae"
 
 	
 	#filename = "{}/{}_groundtruth.mat".format(path, problem["id"] )
@@ -293,8 +313,7 @@ if __name__ == "__main__":
 
 	#stencil_name = "stencil_cda"
 	#do_neumannBC = False
-	##filename = "{}/{}_{}.mat".format(path, problem["id"], stencil_name)
-	#filename = "C:/projects/epfl/epfl17/python/pnsolver/results/pointsource/{}_cda2.pns".format(problem_id)
+	#filename = "C:/projects/epfl/epfl17/python/pnsolver/results/{}/{}_cda3.pns".format(problem_id, problem_id)
 	#solve(stencil_name, problem, filename, do_neumannBC=do_neumannBC)
 
 

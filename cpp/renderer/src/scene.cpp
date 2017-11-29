@@ -2,15 +2,24 @@
 #include <volume.h>
 #include <integrator.h>
 
-bool Scene::intersect( const Ray3d& ray, Intersection& its )const
+bool Scene::intersect( const Ray3d& ray, Intersection& its, bool debug )const
 {
 	its.reset();
 
+	if(debug)
+	{
+		std::cout << "Scene::intersect ray=" << ray.toString() << std::endl;
+	}
+
 	double mint, maxt;
 	// TODO: take into account whether vertex is surface or volume (Epsilon)...
-	bool result = volume->intersectBound(ray, mint, maxt);
+	bool result = volume->intersectBound(ray, mint, maxt, debug);
 	if( result )
 	{
+		if(debug)
+		{
+			std::cout << "Scene::intersect: got intersection at t=" << maxt << std::endl;
+		}
 		//TODO: here we assume that mint is behind are exactly at the ray origin
 		// if the ray is outside the box, then mint would be the correct choice
 		its.t = maxt;

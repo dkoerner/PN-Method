@@ -135,7 +135,7 @@ struct PerspectiveCamera : public Camera
 		Eigen::Matrix4d cameraToClip;
 		cameraToClip <<
 			cot, 0,   0,   0,
-			0, cot,   0,   0,
+			0, -cot,   0,   0,
 			0,   0,   m_z_direction*-(m_nearClip+m_farClip)/(m_nearClip-m_farClip), m_z_direction*-2.0*m_nearClip*m_farClip/(m_nearClip-m_farClip),
 			0,   0,   m_z_direction*1,   0;
 
@@ -147,12 +147,19 @@ struct PerspectiveCamera : public Camera
 					);
 
 		m_rasterToCamera = cameraToRaster.inverse();
+
+
+		V3d test_d(0.0, 1.0, 0.0);
+		P3d test_rasterP = cameraToRaster*test_d;
+		std::cout << "test_rasterP=" << test_rasterP.toString() << std::endl;
 	}
 
 
 
 	virtual void sampleRay( const Point2d& rasterP, Ray3d& ray, bool debug = false )const override
 	{
+		if(debug)
+			std::cout << "Camera::sampleRay: rasterP=" << rasterP.toString() << std::endl;
 		P2d tmp(0.0, 0.0);
 		double m_focusDistance = m_farClip;
 
@@ -160,17 +167,24 @@ struct PerspectiveCamera : public Camera
 		/* Compute the corresponding position on the
 		   near plane (in local camera space) */
 		P3d nearP = m_rasterToCamera * P3d( rasterP.x(), rasterP.y(), 0.0f);
+		if(debug)
+			std::cout << "Camera::sampleRay: nearP=" << nearP.toString() << std::endl;
 
 
 		P3d apertureP(tmp.x(), tmp.y(), 0.0f);
 
-		/* Sampled position on the focal plane */
-		P3d focusP = nearP * (m_z_direction*m_focusDistance / nearP.z());
+		// Sampled position on the focal plane
+		// we basically scale the point
+		P3d focusP = nearP * (m_focusDistance / std::abs(nearP.z()));
+		if(debug)
+			std::cout << "Camera::sampleRay: focusP=" << focusP.toString() << std::endl;
 
 		/* Aperture position */
 		/* Turn these into a normalized ray direction, and
 		   adjust the ray interval accordingly */
 		V3d d = (focusP - apertureP).normalized();
+		if(debug)
+			std::cout << "Camera::sampleRay: d=" << d.toString() << std::endl;
 		float invZ = 1.0f / d.z();
 
 		ray.o = m_cameraToWorld * apertureP;

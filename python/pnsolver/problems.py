@@ -243,14 +243,14 @@ def checkerboard3d():
 
 	return t
 
-def pointsource3d():
+def pointsource3d( res = 80 ):
 
 	# here we set some general parameters 
 	size = 2.0
 	#res = 20
 	#res = 100
 	#res = 100
-	res = 80
+	#res = 80
 	#res = 71
 	#res = 2
 	#res = 200
@@ -284,7 +284,7 @@ def pointsource3d():
 def nebulae():
 	size = 1.0
 	res = 64
-	domain = pnsolver.Domain( np.array([size, size, size]), np.array([res, res, res]), np.array([0.0, 0.0, 0.0]))
+	domain = pnsolver.Domain( np.array([size, size, size]), np.array([res, res, res]), np.array([-0.5, -0.5, -0.5]))
 	t = pnsolver.PNVolume( domain )
 
 	#sigma_t = 8.0
@@ -293,6 +293,11 @@ def nebulae():
 	#extinction_field = pnsolver.load_bgeo("c:/projects/epfl/epfl17/python/pnsolver/results/nebulae/nebulae64.bgeo")
 	extinction_field = pnsolver.load_voxelgridfield3d("c:/projects/epfl/epfl17/python/pnsolver/results/nebulae/nebulae64_extinction.grid")
 	
+	# temp
+	#sigma_t = 8.0
+	#extinction_field = pnsolver.ConstantField3d(np.array([sigma_t, sigma_t, sigma_t]))
+
+
 	albedo = 0.9
 	albedo_field = pnsolver.ConstantField3d(np.array([albedo, albedo, albedo]))
 	t.setExtinctionAlbedo( extinction_field, albedo_field )

@@ -22,10 +22,12 @@
 #include <PNVolume.h>
 
 #include <solver.h>
+#include <MultigridSolver.h>
 
 
 namespace py = pybind11;
 
+void save_solution( const std::string& filename, PNSystem& sys, const Eigen::VectorXd& x );
 
 
 void setup_solver( Solver& mg, PNSystem& sys, int numLevels = 1 )
@@ -176,7 +178,7 @@ std::tuple<Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd> solve_multigrid2(P
 	return std::make_tuple(std::get<0>(result), std::get<1>(result), std::get<2>(result));
 }
 
-
+/*
 std::tuple<Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd> solve_gs(PNSystem& sys)
 {
 	Solver solver;
@@ -184,6 +186,7 @@ std::tuple<Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd> solve_gs(PNSystem&
 	auto result = solver.solve_gs();
 	return std::make_tuple(std::get<0>(result), std::get<1>(result), std::get<2>(result));
 }
+*/
 
 std::tuple<Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd> solve_blockgs(PNSystem& sys)
 {
@@ -193,9 +196,13 @@ std::tuple<Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd> solve_blockgs(PNSy
 	return std::make_tuple(std::get<0>(result), std::get<1>(result), std::get<2>(result));
 }
 
-std::tuple<Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd> solve_cg(PNSystem& sys, double tol )
+// this will solve the normal form of Ax=b by explicitly computing A^TA and A^Tb and using CG to solve it
+std::tuple<Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd> solve_ls_cg(PNSystem& sys, double tol )
 {
 	sys.build();
+
+	std::vector<double> list_rmse;
+	std::vector<double> list_time;
 
 	Timer timer;
 
@@ -207,6 +214,61 @@ std::tuple<Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd> solve_cg(PNSystem&
 	std::cout << "computing A^T*A...\n";std::flush(std::cout);
 	PNSystem::RealMatrix A = AT*sys.get_A();
 	Eigen::VectorXd b = AT*sys.get_b();
+
+	Eigen::VectorXd x = Eigen::VectorXd(b.rows()); // initial guess
+	x.fill(0.0);
+	Eigen::VectorXd r( x.rows() );
+
+
+	std::cout << "solving...\n";std::flush(std::cout);
+
+	//double tol = 1.0e-10; // convergence error tolerance
+	int iteration = 0;
+	int numIterations = b.rows();
+
+	timer.start();
+	// cg solver
+	{
+		r = b-A*x;
+		Eigen::VectorXd p = r;
+		Eigen::VectorXd Ap;
+		double rsold = r.squaredNorm();
+		for( iteration=0;iteration<numIterations;++iteration )
+		{
+			Ap = A*p;
+			double alpha = rsold/p.dot(Ap);
+			x = x + alpha*p;
+			r = r - alpha*Ap;
+			double rsnew = r.squaredNorm();
+			//std::cout << "rmse=" << std::sqrt(rsnew) << std::endl;
+			list_rmse.push_back(std::sqrt(rsnew));
+			list_time.push_back(timer.elapsedSeconds());
+
+			if( std::sqrt(rsnew) < tol )
+				break;
+			p = r + (rsnew/rsold)*p;
+			rsold = rsnew;
+		}
+	} // end of cg solver
+	timer.stop();
+	std::cout << "solve_ls_cg: " << timer.elapsedSeconds() << "s #iterations=" << iteration << " rmse=" << (b - A*x).norm() <<  "\n";
+
+	return std::make_tuple( x,
+							to_vector(list_rmse),
+							to_vector(list_time));
+}
+
+
+// this will solve Ax=b using CG. Note that for PN-problems this will not work as A is not symmetric
+// However, it will work for problems which produce a symmetric, positive, definite matrix, such as classical diffusion
+std::tuple<Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd> solve_cg(PNSystem& sys, double tol )
+{
+	sys.build();
+
+	Timer timer;
+
+	PNSystem::RealMatrix& A = sys.get_A();
+	Eigen::VectorXd b = sys.get_b();
 
 	Eigen::VectorXd x = Eigen::VectorXd(b.rows()); // initial guess
 	x.fill(0.0);
@@ -248,7 +310,174 @@ std::tuple<Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd> solve_cg(PNSystem&
 							Eigen::VectorXd());
 }
 
-std::tuple<Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd> solve_lscg_own(PNSystem& sys, double tol)
+std::tuple<Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd> solve_cg_eigen( PNSystem& sys, double tol )
+{
+	sys.build();
+
+	std::cout << "solving cg eigen\n";std::flush(std::cout);
+
+	std::vector<double> solve_convergence;
+	std::vector<double> solve_convergence_timestamps;
+
+	//double rmse = (sys.get_b() - sys.get_A()*x).norm();
+	//solve_convergence.push_back(rmse);
+	//solve_convergence_timestamps.push_back(0.0);
+
+
+	Timer timer;
+	timer.start();
+
+	//Eigen::SparseLU<PNSystem::RealMatrix> solver;
+	//typedef Eigen::ConjugateGradient<PNSystem::RealMatrix,Eigen::Lower, Eigen::IncompleteCholesky<double>> ICCG;
+	//ICCG solver;
+
+	Eigen::ConjugateGradient<PNSystem::RealMatrix> solver;
+	solver.setTolerance(tol);
+	solver.compute(sys.get_A());
+	if(solver.info()!=Eigen::Success)
+	{
+		throw std::runtime_error("solve_cg_eigen decomposition failed");
+	}
+	Eigen::VectorXd x = solver.solve(sys.get_b());
+	if(solver.info()!=Eigen::Success)
+	{
+		throw std::runtime_error("solve_cg_eigen solve failed");
+	}
+
+	timer.stop();
+
+	double rmse = (sys.get_b() - sys.get_A()*x).norm();
+	solve_convergence.push_back(rmse);
+	solve_convergence_timestamps.push_back(timer.elapsedSeconds());
+
+
+	std::cout << "solve_cg_eigen: " << timer.elapsedSeconds() << "s #iterations=" <<  solver.iterations() << "\n";
+	return std::make_tuple( x,
+							to_vector(solve_convergence),
+							to_vector(solve_convergence_timestamps));
+}
+
+// solves the normal form A^TAx = A^Tb using eigens CG solver
+std::tuple<Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd> solve_ls_cg_eigen( PNSystem& sys, double tol )
+{
+	sys.build();
+
+	std::cout << "computing A^T...\n";std::flush(std::cout);
+	PNSystem::RealMatrix AT = sys.get_A().transpose();
+
+
+	// we solve using ATA
+	std::cout << "computing A^T*A...\n";std::flush(std::cout);
+	PNSystem::RealMatrix A = AT*sys.get_A();
+	Eigen::VectorXd b = AT*sys.get_b();
+
+
+	std::cout << "solving ls cg eigen\n";std::flush(std::cout);
+
+	std::vector<double> solve_convergence;
+	std::vector<double> solve_convergence_timestamps;
+
+	//double rmse = (sys.get_b() - sys.get_A()*x).norm();
+	//solve_convergence.push_back(rmse);
+	//solve_convergence_timestamps.push_back(0.0);
+
+
+	Timer timer;
+	timer.start();
+
+	//Eigen::SparseLU<PNSystem::RealMatrix> solver;
+	//typedef Eigen::ConjugateGradient<PNSystem::RealMatrix,Eigen::Lower, Eigen::IncompleteCholesky<double>> ICCG;
+	//ICCG solver;
+
+	Eigen::ConjugateGradient<PNSystem::RealMatrix> solver;
+	solver.setTolerance(tol);
+	solver.compute(A);
+	if(solver.info()!=Eigen::Success)
+	{
+		throw std::runtime_error("solve_cg_eigen decomposition failed");
+	}
+	Eigen::VectorXd x = solver.solve(b);
+	if(solver.info()!=Eigen::Success)
+	{
+		throw std::runtime_error("solve_cg_eigen solve failed");
+	}
+
+	timer.stop();
+
+	double rmse = (sys.get_b() - sys.get_A()*x).norm();
+	solve_convergence.push_back(rmse);
+	solve_convergence_timestamps.push_back(timer.elapsedSeconds());
+
+
+	std::cout << "solve_ls_cg_eigen: " << timer.elapsedSeconds() << "s #iterations=" <<  solver.iterations() << "\n";
+	return std::make_tuple( x,
+							to_vector(solve_convergence),
+							to_vector(solve_convergence_timestamps));
+}
+
+std::tuple<Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd> solve_gs(PNSystem& sys, double tol, int maxIterations )
+{
+	sys.build();
+
+	Timer timer;
+
+	// here we convert the sparse matrix A to a row major A matrix. This allows us to iterate
+	// sparse elements in a single row efficiently via eigen
+	Eigen::SparseMatrix<double, Eigen::RowMajor> A = sys.get_A();
+	Eigen::VectorXd b = sys.get_b();
+
+	Eigen::VectorXd x = Eigen::VectorXd(b.rows()); // initial guess
+	x.fill(0.0);
+	Eigen::VectorXd r( x.rows() );
+
+
+	std::cout << "solving...\n";std::flush(std::cout);
+
+	int iteration = 0;
+
+	timer.start();
+
+	for( iteration=0;iteration<maxIterations;++iteration )
+	{
+		double rmse = (b - A*x).norm();
+		//solve_convergence.push_back(rmse);
+		//solve_convergence_timestamps.push_back(timer.elapsedSeconds());
+		if( rmse < tol )
+			break;
+
+		//std::cout << "rmse=" << rmse << std::endl;
+
+		// iterate all rows
+		for( int i=0;i<A.rows();++i )
+		{
+			double aii = 0.0;
+			double sum = b(i);
+			// iterate all non-zero column elements (this is why we need RowMajor storage order for A)
+			for( Eigen::SparseMatrix<double, Eigen::RowMajor>::InnerIterator it(A, i);it;++it )
+			{
+				int j = it.col();
+				if( i != j )
+					sum -= it.value()*x.coeffRef(j);
+				else
+					aii = it.value();
+			}
+			x.coeffRef(i) = sum/aii;
+		}
+	}
+
+	timer.stop();
+	std::cout << "solve_gs: " << timer.elapsedSeconds() << "s #iterations=" << iteration << " rmse=" << (b - A*x).norm() <<  "\n";
+
+	return std::make_tuple( x,
+							Eigen::VectorXd(),
+							Eigen::VectorXd());
+}
+
+
+
+// this solves the normal form for Ax=b by using a modified CG-solver which doesnt require an explicit
+// computation of A^TA and A^Tb
+std::tuple<Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd> solve_ls_lscg(PNSystem& sys, double tol)
 {
 	sys.build();
 
@@ -293,13 +522,143 @@ std::tuple<Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd> solve_lscg_own(PNS
 		}
 	} // end of cg solver
 	timer.stop();
-	std::cout << "solve_cg: " << timer.elapsedSeconds() << "s #iterations=" << iteration << "\n";
+	std::cout << "solve_ls_lscg: " << timer.elapsedSeconds() << "s #iterations=" << iteration << "\n";
 
 	return std::make_tuple( x,
 							Eigen::VectorXd(),
 							Eigen::VectorXd());
 }
 
+
+
+// solves Ax=b using a multigrid solver with gauss-seidel smoothing steps
+std::tuple<Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd> solve_mg(PNSystem& sys, double tol, int maxIterations )
+{
+	MultigridSolver mgs;
+
+	PNSystem::Stencil& stencil = sys.getStencil();
+	PNVolume::Ptr problem = sys.getProblem();
+	int boundaryConditions = sys.getBoundaryConditions();
+
+	// first we setup the levels of the multigrid solver ---
+	//int numLevels = 2;
+	//for( int i=0;i<numLevels;++i )
+	while(problem)
+	{
+		MultigridSolver::Level* level = mgs.addLevel();
+
+		PNSystem sys_level(stencil, problem, boundaryConditions);
+		sys_level.build();
+
+		// debug
+		level->sys_level = new PNSystem(stencil, problem, boundaryConditions);
+		level->sys_level->build();
+
+
+		//std::cout << "computing b...\n";std::flush(std::cout);
+		//mg.m_levels[i].b = AT*sys_level.get_b_real();
+		//std::cout << "warning: not using ATA form\n";
+		//A = sys_level.get_A_real();
+		//Eigen::VectorXd b = sys_level.get_b_real();
+
+		level->A = sys_level.get_A();
+		//level->b = MultigridSolver::RealVector(level->A.cols());
+		//level->b.fill(0.0);
+		level->b = sys_level.get_b();
+		level->x = MultigridSolver::RealVector(level->A.cols());
+		level->x.fill(0.0);
+
+		//if(level->index == 0)
+		//	level->b = sys_level.get_b();
+
+		/*
+		if(i==1)
+		{
+			MultigridSolver::Level* level = mgs.getLevel(i);
+			Eigen::SparseLU<MultigridSolver::RealMatrix> solver;
+			solver.compute(level->A);
+			if(solver.info()!=Eigen::Success)
+			{
+				throw std::runtime_error("decomposition failed");
+			}
+			level->x = solver.solve(level->b);
+			if(solver.info()!=Eigen::Success)
+			{
+				throw std::runtime_error("solve failed");
+			}
+
+			//std::cout << "rmse=" << level->computeRMSE() << std::endl;
+			//save_solution( "test.pns", sys_level, level->x );
+
+			std::cout << level->x.cols() << " " << level->x.rows() << std::endl;
+
+			std::cout << "rmse(before)=" << mgs.getLevel(i-1)->computeRMSE() << std::endl;
+			mgs.getLevel(i-1)->x = mgs.getLevel(i-1)->upsample*level->x;
+			std::cout << mgs.getLevel(i-1)->x.cols() << " " << mgs.getLevel(i-1)->x.rows() << std::endl;
+			std::cout << "rmse(after)=" << mgs.getLevel(i-1)->computeRMSE() << std::endl;
+			//save_solution( "test.pns", *mgs.getLevel(i-1)->sys_level, mgs.getLevel(i-1)->x );
+			save_solution( "test.pns", *mgs.getLevel(i)->sys_level, mgs.getLevel(i-1)->downsample*mgs.getLevel(i-1)->x );
+		}
+		*/
+
+
+
+		//level->b = sys_level.get_b();
+
+		//level->x = MultigridSolver::RealVector(sys_level.getVoxelManager().getNumUnknowns());
+		//level->x.fill(0.0);
+
+
+		// downsample to next coarser level
+		problem = problem->downsample();
+		if(problem)
+		{
+			// we have a coarser level, so create matrices for up- and downsampling the solution vector x
+			buildUpAndDownsamplingMatrices2(sys_level, level->downsample, level->upsample);
+		}
+	}
+
+
+	/*
+	{
+		MultigridSolver::Level* level = mgs.getLevel(0);
+		Eigen::SparseLU<MultigridSolver::RealMatrix> solver;
+		solver.compute(level->A);
+		if(solver.info()!=Eigen::Success)
+		{
+			throw std::runtime_error("decomposition failed");
+		}
+		level->x = solver.solve(level->b);
+		if(solver.info()!=Eigen::Success)
+		{
+			throw std::runtime_error("solve failed");
+		}
+
+		std::cout << "rmse=" << level->computeRMSE() << std::endl;
+
+		return std::make_tuple( level->x,
+								Eigen::VectorXd(),
+								Eigen::VectorXd());
+	}
+	*/
+
+
+	std::cout << "MultigridSolver numLevels=" << mgs.getNumLevels() << std::endl;
+
+
+	auto result = mgs.solve(maxIterations);
+	//save_solution( "test.pns", *mgs.getLevel(0)->sys_level, mgs.getLevel(0)->x );
+	return result;
+
+	return std::make_tuple( Eigen::VectorXd(),
+							Eigen::VectorXd(),
+							Eigen::VectorXd());
+}
+
+
+
+
+/*
 std::tuple<Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd> solve_cg_eigen(PNSystem& sys)
 {
 	Solver solver;
@@ -307,6 +666,7 @@ std::tuple<Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd> solve_cg_eigen(PNS
 	auto result = solver.solve_cg_eigen();
 	return std::make_tuple(std::get<0>(result), std::get<1>(result), std::get<2>(result));
 }
+*/
 
 std::tuple<Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd> solve_sparseLU(PNSystem& sys)
 {
@@ -488,14 +848,21 @@ PYBIND11_MODULE(pnsolver, m)
 	m.def( "solve_multigrid2", &solve_multigrid2);
 	*/
 	m.def( "solve_cg", &solve_cg);
+	m.def( "solve_cg_eigen", &solve_cg_eigen);
+	m.def( "solve_ls_cg", &solve_ls_cg);
+	m.def( "solve_ls_cg_eigen", &solve_ls_cg_eigen);
+	m.def( "solve_gs", &solve_gs);
+	m.def( "solve_mg", &solve_mg);
+	m.def( "solve_ls_lscg", &solve_ls_lscg);
+
+
 	/*
 	m.def( "solve_cg_eigen", &solve_cg_eigen);
 	m.def( "solve_gs", &solve_gs);
 	m.def( "solve_blockgs", &solve_blockgs);
 	m.def( "solve_sparseLU", &solve_sparseLU);
 	*/
-	m.def( "solve_lscg", &solve_lscg);
-	m.def( "solve_lscg_own", &solve_lscg_own);
+	//m.def( "solve_lscg", &solve_lscg);
 
 	/*
 	m.def( "createComplexToRealConversionMatrix", &createComplexToRealConversionMatrix);
@@ -523,6 +890,38 @@ PYBIND11_MODULE(pnsolver, m)
 	.def("solve_cg", &Solver::solve_cg)
 	;
 	*/
+
+	// MultigridSolver ================================
+	py::class_<MultigridSolver> class_multigridsolver(m, "MultigridSolver");
+	class_multigridsolver
+	.def("__init__",
+	[](MultigridSolver &m, int numLevels)
+	{
+		new (&m) MultigridSolver(numLevels);
+	})
+	.def("setMultigridLevel",
+	[]( MultigridSolver &m, int lvl_index,
+							const MultigridSolver::RealMatrix& A,
+							const MultigridSolver::RealMatrix& downsample,
+							const MultigridSolver::RealMatrix& upsample )
+	{
+		m.getLevel(lvl_index)->A = A;
+		m.getLevel(lvl_index)->b = MultigridSolver::RealVector(A.cols());
+		m.getLevel(lvl_index)->b.fill(0.0);
+		m.getLevel(lvl_index)->x = MultigridSolver::RealVector(A.cols());
+		m.getLevel(lvl_index)->x.fill(0.0);
+		m.getLevel(lvl_index)->downsample = downsample;
+		m.getLevel(lvl_index)->upsample = upsample;
+	})
+	.def("setb",
+	[]( MultigridSolver &m, const MultigridSolver::RealVector& b )
+	{
+		m.getLevel(0)->b = b;
+	})
+	.def("solve", &MultigridSolver::solve)
+	;
+
+
 
 	// PNSolution ==============================
 	py::class_<PNSolution, PNSolution::Ptr> class_pnsolution(m, "PNSolution");
@@ -796,8 +1195,16 @@ PYBIND11_MODULE(pnsolver, m)
 			new (&m) PNVolume(domain);
 		})
 		.def("setExtinctionAlbedo", &PNVolume::setExtinctionAlbedo)
-		.def("setEmission", &PNVolume::setEmission)
-		.def("setPhase", &PNVolume::setPhase)
+		.def("setEmission",
+			[]( PNVolume &pnvolume, int l, int m, Field3d::Ptr field )
+			{
+				pnvolume.setEmission(l, m, field);
+			})
+		.def("setPhase",
+			[]( PNVolume &pnvolume, int l, int m, Field3d::Ptr field )
+			{
+				pnvolume.setPhase(l, m, field);
+			})
 	;
 
 }

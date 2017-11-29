@@ -18,6 +18,7 @@ pybind11_add_module(pnsolver src/main.cpp
 	                         src/PNSystem.cpp
 							 src/PNVolume.cpp
 							 src/PNSolution.cpp
+							 src/MultigridSolver.cpp
 							 src/stencil_fopn_p0_cg.cpp
 							 src/stencil_fopn_p0_sg.cpp
 							 src/stencil_fopn_p1_cg.cpp

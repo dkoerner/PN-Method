@@ -103,6 +103,13 @@ double PNSolution::eval( const P3d& pWS, const V3d& direction )const
 double PNSolution::evalCoefficient(const P3d &pWS, int coeff_index)const
 {
 	P3d pVS = worldToVoxel(pWS);
+	/*
+	P3d pLS = worldToLocal(pWS);
+	std::cout << "PNSolution::::evalCoefficient pLS=" << pLS.x() << " " << pLS.y() << " " << pLS.z() << std::endl;
+	std::cout << "PNSolution::::evalCoefficient vsP=" << pVS.x() << " " << pVS.y() << " " << pVS.z() << std::endl;
+	std::cout << "PNSolution::::evalCoefficient m_bound=" << m_bound.min.toString() << " " << m_bound.max.toString() << std::endl;
+	*/
+
 
 	// take sample location within voxel into account
 	pVS -= V3d(0.5, 0.5, 0.5);

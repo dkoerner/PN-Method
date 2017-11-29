@@ -34,6 +34,7 @@ pybind11_add_module(renderer src/main.cpp
 							 src/integrators/simplept.cpp
 							 src/integrators/pnispt.cpp
 							 src/integrators/jispt.cpp
+							 src/integrators/directpn.cpp
 							 src/lights/pointlight.cpp
 							 src/lights/directionallight.cpp
 							 src/fields/VoxelGridField.cpp

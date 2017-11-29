@@ -22,7 +22,9 @@ struct PNVolume
 	//void setAbsorptionScattering( Field3d::Ptr absorption, Field3d::Ptr scattering );
 
 	void setEmission(int l, int m, Field3d::Ptr field);
+	void setEmission(int sh_index, Field3d::Ptr field);
 	void setPhase( int l, int m, Field3d::Ptr field);
+	void setPhase( int sh_index, Field3d::Ptr field);
 
 
 	V3d evalExtinction( const P3d& pWS, bool debug = false )const;
@@ -32,15 +34,9 @@ struct PNVolume
 	V3d evalEmission(int l, int m , const P3d& pWS)const;
 	V3d evalPhase(int l, int m , const P3d& pWS)const;
 
-	/*
-	P3d localToWorld(const P3d& pLS)const;
-	P3d worldToLocal(const P3d& pWS)const;
-
-	void setLocalToWorld( const Transformd& localToWorld );
-	void setBound( Box3d boundWS );
-	const Box3d& getBound()const;
-	*/
 	Domain& getDomain();
+
+	Ptr downsample(); // this creates the next coarser mipmap level of this problem
 private:
 	Domain m_domain;
 	// rgb dependent albedo and extinction values (evaluated in local space)

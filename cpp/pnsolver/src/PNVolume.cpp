@@ -48,18 +48,26 @@ void PNVolume::setExtinctionAlbedo( Field3d::Ptr extinction, Field3d::Ptr albedo
 
 void PNVolume::setEmission( int l, int m, Field3d::Ptr field)
 {
-	int index = sph::index(l, m);
-	if( index>=m_field_q.size() )
-		m_field_q.resize(index+1);
-	m_field_q[index] = field;
+	setEmission(sph::index(l, m), field);
+}
+
+void PNVolume::setEmission(int sh_index, Field3d::Ptr field)
+{
+	if( sh_index>=m_field_q.size() )
+		m_field_q.resize(sh_index+1);
+	m_field_q[sh_index] = field;
 }
 
 void PNVolume::setPhase(int l, int m, Field3d::Ptr field)
 {
-	int index = sph::index(l, m);
-	if( index>=m_field_p.size() )
-		m_field_p.resize(index+1);
-	m_field_p[sph::index(l, m)] = field;
+	setPhase(sph::index(l, m), field);
+}
+
+void PNVolume::setPhase( int sh_index, Field3d::Ptr field)
+{
+	if( sh_index>=m_field_p.size() )
+		m_field_p.resize(sh_index+1);
+	m_field_p[sh_index] = field;
 }
 
 
@@ -107,4 +115,43 @@ V3d PNVolume::evalPhase( int l, int m, const P3d& pWS )const
 	if( index < m_field_p.size() && m_field_p[index] )
 		return m_field_p[index]->eval(m_domain.worldToLocal(pWS));
 	return V3d(0.0);
+}
+
+// this creates the next coarser mipmap level of this problem
+// used for multigrid solver
+PNVolume::Ptr PNVolume::downsample()
+{
+	// downsample domain and check if we can actually do it
+	V3i res_fine = m_domain.getResolution();
+
+	bool is2D = res_fine[2] == 1;
+
+	// for multigrid, we require the resolution to be even,
+	// so that we can do restriction and interpolation straigh forwardly
+	if( (res_fine[0]%2!=0)||(res_fine[1]%2!=0)||(!is2D && (res_fine[2]%2!=0)))
+		return PNVolume::Ptr();
+
+	V3i res_coarse( res_fine[0]/2, res_fine[1]/2, is2D ? 1:res_fine[2]/2 );
+
+	// we stop if any dimension reduces to less than 2.
+	if( (res_coarse[0]<2)||(res_coarse[1]<2)||(!is2D && (res_coarse[2]<2)))
+		return PNVolume::Ptr();
+
+	// create the coarse domain
+	Domain domain_coarse(   m_domain.getBound().getExtents(),
+							res_coarse,
+							m_domain.getBound().min );
+
+	PNVolume::Ptr problem_coarse = std::make_shared<PNVolume>(domain_coarse);
+
+	problem_coarse->setExtinctionAlbedo( m_field_extinction->downsample(),
+										 m_field_albedo->downsample() );
+	for( int i=0;i<m_field_q.size();++i )
+		if(m_field_q[i])
+			problem_coarse->setEmission(i, m_field_q[i]->downsample());
+	for( int i=0;i<m_field_p.size();++i )
+		if(m_field_p[i])
+			problem_coarse->setPhase(i, m_field_p[i]->downsample());
+
+	return problem_coarse;
 }

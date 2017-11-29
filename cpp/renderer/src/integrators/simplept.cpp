@@ -32,7 +32,7 @@ V3d SimplePT::Li( const Scene* scene, RadianceQuery& rq, RNGd& rng )const
 		ti.current_vertex = Vertex();
 		P3d pWS = rq.ray(mint+Epsilon);
 		if(rq.volume)
-			ti.current_vertex.setPosition(pWS, rq.volume->evalExtinction(pWS), rq.volume->evalAlbedo(pWS));
+			ti.current_vertex.setPosition(pWS, rq.volume->evalExtinction(pWS, rq.debug), rq.volume->evalAlbedo(pWS));
 		else
 			ti.current_vertex.setPosition(pWS, V3d(0.0, 0.0, 0.0), V3d(0.0, 0.0, 0.0));
 		ti.current_direction = rq.ray.d;

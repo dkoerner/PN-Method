@@ -51,7 +51,7 @@ struct Scene
 	const Integrator* integrator;
 
 
-	bool intersect( const Ray3d& ray, Intersection& its )const;
+	bool intersect(const Ray3d& ray, Intersection& its , bool debug=false)const;
 	V3d sample_attenuated_directlight( LightSample& ls, RNGd& rng, bool debug = false )const;
 };
 

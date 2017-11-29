@@ -25,6 +25,7 @@ struct VoxelGrid
 
 	T                 evaluate(const P3d &vsP )const;
 	T                 sample( int i, int j, int k )const;
+	T                 sample2( int i, int j, int k )const;
 	T&                lvalue( int i, int j, int k );
 
 	Vector3i          getResolution()const;
@@ -159,6 +160,18 @@ T VoxelGrid<T>::sample( int i, int j, int k )const
 }
 
 template<typename T>
+T VoxelGrid<T>::sample2( int i, int j, int k )const
+{
+	//int index = k*m_resolution.x()*m_resolution.y() + j*m_resolution.x() + i;
+
+	// numpy indexing (k ist fastest)
+	int index =  i*m_resolution[1]*m_resolution[2] + j*m_resolution[2] + k;
+	std::cout << "VoxelGrid<T>::sample2: index=" << index << std::endl;
+	return m_data[index];
+}
+
+
+template<typename T>
 T &VoxelGrid<T>::lvalue( int i, int j, int k )
 {
 	//int index = k*m_resolution.x()*m_resolution.y() + j*m_resolution.x() + i;
@@ -200,6 +213,9 @@ T VoxelGrid<T>::evaluate( const P3d &vsP )const
 	c2[1] = std::max(0, std::min(c2.y(), res.y()-1));
 	c1[2] = std::max(0, std::min(c1.z(), res.z()-1));
 	c2[2] = std::max(0, std::min(c2.z(), res.z()-1));
+
+	//std::cout << "VoxelGrid<T>::evaluate c1=" << c1.toString() << std::endl;
+	//std::cout << "VoxelGrid<T>::evaluate c1 value=" << sample2( c1.x(), c1.y(), c1.z() ) << std::endl;
 
 	//lerp...
 	return lerp( lerp( lerp( sample( c1.x(), c1.y(), c1.z() ),

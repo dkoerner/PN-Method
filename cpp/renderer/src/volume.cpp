@@ -71,6 +71,11 @@ const Box3d& Volume::getBound()const
 }
 V3d Volume::evalExtinction( const P3d& pWS, bool debug )const
 {
+	if(debug)
+	{
+		std::cout << "Volume::evalExtinction pWS=" << pWS.toString() << std::endl;
+		std::cout << "Volume::evalExtinction pLS=" << worldToLocal(pWS).toString() << std::endl;
+	}
 	return m_field_extinction->eval(worldToLocal(pWS));
 }
 V3d Volume::evalAlbedo( const P3d& pWS, bool debug )const

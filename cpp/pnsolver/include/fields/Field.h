@@ -13,6 +13,10 @@ struct Field
 	// this is required for delta tracking where we need to know the maximum
 	//virtual std::pair<T, T> getValueRange()const=0;
 	virtual T getMaxValue()const=0;
+
+	// returns a coarser mimap version of this field
+	// this is used by the multigrid solver
+	virtual Ptr downsample()const=0;
 };
 
 typedef Field<double> Fieldd;
@@ -43,6 +47,12 @@ struct ConstantField : public Field<T>
 		return m_value;
 	}
 
+	// returns a coarser mimap version of this field
+	// this is used by the multigrid solver
+	virtual Field::Ptr downsample()const
+	{
+		return std::make_shared<ConstantField>(m_value);
+	}
 private:
 	T m_value;
 };

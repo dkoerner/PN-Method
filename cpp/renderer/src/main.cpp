@@ -17,6 +17,7 @@
 #include <integrators/simplept.h>
 #include <integrators/pnispt.h>
 #include <integrators/jispt.h>
+#include <integrators/directpn.h>
 
 #include <fields/VoxelGridField.h>
 
@@ -230,6 +231,12 @@ void render_thread( MonteCarloTaskInfo& ti, const GlobalRenderInfo* gi )
 			gi->scene->camera->sampleRay( P2d(x+0.5, y+0.5), rayWS, debug );
 			//ti.g.scene->camera->sampleRay( P2d(x+ti.rng.next1D(), y+ti.rng.next1D()), rayWS );
 
+			if(debug)
+			{
+				std::cout << "rayWS=" << rayWS.toString() << std::endl;
+				std::cout << "cam2world=\n" << gi->scene->camera->m_cameraToWorld.getMatrix() << std::endl;
+			}
+
 			// do raycast ---
 			try
 			{
@@ -289,14 +296,25 @@ Image::Ptr render( Volume::Ptr volume, Light::Ptr light, Camera::Ptr camera, Int
 	gi.scene = &scene;
 	gi.image = result.get();
 	gi.crop_window = Box2i( V2i(0,0), camera->getResolution() );
-	//gi.debug_pixel = V2i(1, 0);
+	//gi.debug_pixel = V2i(384, 155);
 
 	//int numSamples = 1;
 
+	/*
+	{
+		P3d pWS(0.229053, 0.408338, 0.433446);
+		volume->evalExtinction(pWS, true);
+	}
+	*/
+
+
+
+	///*
 	Terminator terminator(numSamples);
 	//Terminator terminator(90.0);
 	std::cout << "rendering image..."<< std::endl;std::flush(std::cout);
 	runGenericTasks<MonteCarloTaskInfo, GlobalRenderInfo>( render_thread, &gi, terminator, ThreadPool::getNumSystemCores() );
+	//*/
 
 
 	return result;
@@ -487,12 +505,18 @@ Camera::Ptr create_sphere_camera( const Eigen::Vector3d& pWS, int xres, int yres
 	return std::make_shared<SphereCamera>( pWS, xres, yres );
 }
 
-
-Integrator::Ptr create_simplept_integrator()
+Integrator::Ptr create_directpn_integrator( PNSolution::Ptr pns, bool doSingleScattering, bool doMultipleScattering )
 {
-	int maxDepth = std::numeric_limits<int>::max();
-	bool doSingleScattering = true;
-	return std::make_shared<SimplePT>(maxDepth, doSingleScattering);
+	return std::make_shared<DirectPN>(pns.get(), doSingleScattering, doMultipleScattering);
+}
+
+
+Integrator::Ptr create_simplept_integrator( bool doSingleScattering, int maxDepth )
+{
+	int md = std::numeric_limits<int>::max();
+	if(maxDepth >= 0)
+		md = maxDepth;
+	return std::make_shared<SimplePT>(md, doSingleScattering);
 }
 
 Integrator::Ptr create_pnispt_integrator( PNSolution::Ptr pns )
@@ -538,9 +562,36 @@ Field3d::Ptr load_bgeo( const std::string& filename )
 				float value = sigma_t->sample(i, j, k);
 				// numpy indexing (k ist fastest)
 				// TODO: figure out, why we have to flip i and k indices...
-				int index_dst = (res.x-i-1)*res.y*res.z + j*res.z + (res.z-k-1);
+				// ANSWER: something has changed within houdini in regards to the transformation of volumes
+				// the old nebulae dataset had its x and z axis flipped. This was fixed manually on the dataset.
+				//int index_dst = (res.x-i-1)*res.y*res.z + j*res.z + (res.z-k-1);
+
+				//
+				int index_dst = i*res.y*res.z + j*res.z + k;
+				/*
+				if(value>0.0)
+				{
+					std::cout << "i=" << i << " j=" << j << " k=" << k << " value=" << value << std::endl;
+					std::cout << "index_src=" << (k*res.x*res.y + j*res.x + i) << std::endl;
+					std::cout << "index_dst=" << index_dst << std::endl;
+				}
+				*/
+
+
 				data[index_dst] = V3d(value, value, value);
 			}
+
+	/*
+	for( int i=0;i<numVoxels;++i )
+	{
+		if( data[i].x() > 0.0 )
+		{
+			std::cout << "data[" << i*3+0 << "]=" << data[i].x() << std::endl;
+			std::cout << "data[" << i*3+1 << "]=" << data[i].y() << std::endl;
+			std::cout << "data[" << i*3+2 << "]=" << data[i].z() << std::endl;
+		}
+	}
+	*/
 
 
 	VoxelGridField3d::Ptr result = std::make_shared<VoxelGridField3d>(  V3i(res.x, res.y, res.z),
@@ -561,7 +612,8 @@ void save_bgeo( const std::string& filename, VoxelGridField3d::Ptr field, Eigen:
 			for( int k=0;k<res.z();++k )
 			{
 				// TODO: figure out, why we have to flip i and k indices...
-				sigma_t->lvalue(i, j, k) = field->getVoxelGrid().lvalue(res.x()-i-1, j, res.z()-k-1)[component];
+				//sigma_t->lvalue(i, j, k) = field->getVoxelGrid().lvalue(res.x()-i-1, j, res.z()-k-1)[component];
+				sigma_t->lvalue(i, j, k) = field->getVoxelGrid().lvalue(i, j, k)[component];
 			}
 
 	houio::HouGeoIO::xport( filename, sigma_t );
@@ -932,6 +984,9 @@ PYBIND11_MODULE(renderer, m)
 							int(info.shape[2]) );
 
 			auto data = static_cast<double*>(info.ptr);
+			//for( int i=0;i<resolution.x()*resolution.y()*resolution.z()*3;++i )
+			//	std::cout << "data[" << i << "]=" << data[i] << std::endl;
+
 			new (&m) VoxelGridField3d(resolution, (V3d*)data);
 		})
 		.def("save", &VoxelGridField3d::save)
@@ -1087,6 +1142,7 @@ PYBIND11_MODULE(renderer, m)
 	m.def( "create_simplept_integrator", &create_simplept_integrator );
 	m.def( "create_pnispt_integrator", &create_pnispt_integrator );
 	m.def( "create_jispt_integrator", &create_jispt_integrator );
+	m.def( "create_directpn_integrator", &create_directpn_integrator );
 	// volumes
 	m.def( "create_volume", &create_volume );
 	// fields

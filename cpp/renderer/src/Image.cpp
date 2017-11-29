@@ -92,7 +92,8 @@ Image::Image(const std::string& filename)
 	}
 
 	//
-	m_data = m.colwise().reverse();
+	//m_data = m.colwise().reverse();
+	m_data = m;
 }
 
 Image::Image(const Image& image)
@@ -181,8 +182,8 @@ void Image::save(const std::string& filename)
 	// exr coordinate system has its origin at the top-left corner of the image,
 	// while we have the origin at the bottom left of the image
 	// therefore we need to flip the image data vertically
-	Base img_flipped_vertically = m_data.colwise().reverse();
-	//Base img_flipped_vertically = m_data;
+	//Base img_flipped_vertically = m_data.colwise().reverse();
+	Base img_flipped_vertically = m_data;
 
 	// we convert to float
 	int size = res[0]*res[1]*3;

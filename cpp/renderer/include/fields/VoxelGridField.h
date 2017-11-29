@@ -55,6 +55,9 @@ struct VoxelGridField : public Field<T>
 
 	virtual T eval( const P3d& pLS )const override
 	{
+		//std::cout << "VoxelGridField::eval pLS=" << pLS.toString() << std::endl;
+		//std::cout << "VoxelGridField::eval pVS=" << localToVoxel(pLS).toString() << std::endl;
+
 		return m_voxelgrid.evaluate(localToVoxel(pLS));
 	}
 

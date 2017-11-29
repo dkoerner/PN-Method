@@ -50,7 +50,7 @@ struct Integrator
 
 
 // returns sigma_t at sampled position (is invalid when we exceeded maxt)
-double delta_tracking( const Scene* scene, const Ray3d& ray, double maxt, int component, RNGd& rng, V3d& sigma_t );
+double delta_tracking(const Scene* scene, const Ray3d& ray, double maxt, int component, RNGd& rng, V3d& sigma_t , bool debug = false);
 
 struct Vertex
 {
@@ -118,7 +118,7 @@ struct TraceInfo
 
 	bool intersect()
 	{
-		return scene->intersect(Ray3d( current_vertex.getPosition(), current_direction ), its);
+		return scene->intersect(Ray3d( current_vertex.getPosition(), current_direction ), its, debug);
 	}
 
 
@@ -127,7 +127,7 @@ struct TraceInfo
 	{
 		Ray3d ray( current_vertex.getPosition(), current_direction );
 		V3d sigma_t;
-		double distance = delta_tracking( scene, ray, its.t, 0, rng, sigma_t);
+		double distance = delta_tracking( scene, ray, its.t, 0, rng, sigma_t, debug);
 
 		if( distance < its.t )
 		{
@@ -143,6 +143,9 @@ struct TraceInfo
 			if( debug )
 			{
 				std::cout << "TraceInfo::propagate: got scattering event!\n";
+				std::cout << "ray=" << ray.toString() << std::endl;
+				std::cout << "t=" << its.t << std::endl;
+				std::cout << "pWS=" << pWS.toString() << std::endl;
 			}
 		}else
 		{

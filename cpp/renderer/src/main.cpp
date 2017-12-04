@@ -50,10 +50,14 @@ struct GlobalRenderInfo
 
 struct GlobalComputeFluenceInfo
 {
-	GlobalComputeFluenceInfo()
+	GlobalComputeFluenceInfo():
+		do_direct_light(true),
+		do_indirect_light(true)
 	{
 	}
 
+	bool do_direct_light;
+	bool do_indirect_light;
 	const Scene* scene;
 
 	std::vector<P3d>* sensor_points;
@@ -101,27 +105,35 @@ void compute_fluence_thread( MonteCarloTaskInfo& ti, const GlobalComputeFluenceI
 		bool debug = false;
 
 		P3d pWS = (*gi->sensor_points)[point_index];
-		V3d direction = sampleSphere(ti.rng);
-		double direction_pdf = sampleSpherePDF();
-
-		Ray3d rayWS( pWS, direction );
 
 		// do raycast ---
 		try
 		{
-			RadianceQuery rq;
-			rq.ray = rayWS;
-			rq.pixel = V2i(-1, -1);
-			rq.debug = debug;
-			if(gi->scene->volume->getBound().contains(pWS))
-				rq.volume = gi->scene->volume;
+			// direct light ---
+			if( gi->do_direct_light )
+			{
+				// lightsample is used to sample direct light
+				LightSample ls;
+				ls.refP = pWS;
+				f += gi->scene->sample_attenuated_directlight( ls, ti.rng, debug );
+			}
 
-			// lightsample is used to sample direct light
-			LightSample ls;
-			ls.refP = pWS;
+			// indirect light ---
+			if( gi->do_indirect_light )
+			{
+				V3d direction = sampleSphere(ti.rng);
+				double direction_pdf = sampleSpherePDF();
 
-			f = gi->scene->sample_attenuated_directlight( ls, ti.rng, debug )+ // direct light
-				gi->scene->integrator->Li(gi->scene, rq, ti.rng)/direction_pdf; // indirect light
+				Ray3d rayWS( pWS, direction );
+
+				RadianceQuery rq;
+				rq.ray = rayWS;
+				rq.pixel = V2i(-1, -1);
+				rq.debug = debug;
+				if(gi->scene->volume->getBound().contains(pWS))
+					rq.volume = gi->scene->volume;
+				f += gi->scene->integrator->Li(gi->scene, rq, ti.rng)/direction_pdf;
+			}
 		}
 		catch (std::exception& e)
 		{
@@ -152,7 +164,14 @@ void compute_fluence_thread( MonteCarloTaskInfo& ti, const GlobalComputeFluenceI
 
 
 
-Eigen::VectorXd compute_fluence( Volume::Ptr volume, Light::Ptr light, Integrator::Ptr integrator, const Eigen::MatrixXd& points, int seed )
+Eigen::VectorXd compute_fluence( Volume::Ptr volume,
+								 Light::Ptr light,
+								 Integrator::Ptr integrator,
+								 const Eigen::MatrixXd& points,
+								 int seed,
+								 bool do_direct_light,
+								 bool do_indirect_light,
+								 int numSamples)
 {
 	std::cout << "computing fluence:\n";
 	std::cout << volume->toString();
@@ -182,10 +201,10 @@ Eigen::VectorXd compute_fluence( Volume::Ptr volume, Light::Ptr light, Integrato
 	gi.scene = &scene;
 	gi.fluence = &fluence;
 	gi.sensor_points = &sensor_points;
+	gi.do_direct_light = do_direct_light;
+	gi.do_indirect_light = do_indirect_light;
 
 	MonteCarloTaskInfo::g_seed = seed;
-
-	int numSamples = 100;
 
 	Terminator terminator(numSamples);
 	std::cout << "computing fluence..."<< std::endl;std::flush(std::cout);
@@ -396,7 +415,7 @@ Eigen::VectorXd compute_fluence_pnsolution( PNSolution::Ptr pns, const Eigen::Ma
 
 
 
-void compute_unscattered_light_thread( MonteCarloTaskInfo& taskinfo, const GlobalComputeUncollidedLightInfo* gi )
+void compute_unscattered_fluence_thread( MonteCarloTaskInfo& taskinfo, const GlobalComputeUncollidedLightInfo* gi )
 {
 	V3i res = gi->grid->getResolution();
 	int numPoints = res[0]*res[1]*res[2];
@@ -412,24 +431,13 @@ void compute_unscattered_light_thread( MonteCarloTaskInfo& taskinfo, const Globa
 		P3d pLS = gi->grid->voxelToLocal( V3d(i+0.5, j+0.5, k+0.5) );
 		P3d pWS = gi->scene->volume->localToWorld(pLS);
 
-		// now compute uncollided light by using next event estimation routine
-		TraceInfo ti;
-		ti.scene = gi->scene;
-		ti.current_vertex.setPosition( pWS,
-									   gi->scene->volume->evalExtinction(pWS),
-									   gi->scene->volume->evalAlbedo(pWS) );
+		// sample light source and transmittance ---
+		LightSample ls;
+		ls.refP = pWS;
+		V3d f = gi->scene->sample_attenuated_directlight( ls, taskinfo.rng );
 
-		// TODO: properly integrate over solid angle
-		// what we do here is basically computing the SH coefficients of the
-		// emitted light. For this we need to integrate over product between
-		// the outgoing radiance and the SH-basis functions at all directions
-		// of solid angle sphere
-		ti.current_direction = V3d(0.0, 0.0, 1.0);
-
-		// TODO: solid angle integral...
-		// nee gives the uncollided light multiplied by phase function
-		V3d f = nee(ti, taskinfo.rng);
-
+		// nee gives the uncollided light multiplied by phase function and sigma_s
+		//V3d f = nee(ti, taskinfo.rng);
 
 		if( std::isnan(luminance(f)) )
 			std::cout << "compute_unscattered_light_thread: got NaN value @ index=" << point_index << " sample=" << taskinfo.samples << std::endl;
@@ -442,7 +450,6 @@ void compute_unscattered_light_thread( MonteCarloTaskInfo& taskinfo, const Globa
 
 
 	++taskinfo.samples;
-
 }
 
 
@@ -453,16 +460,18 @@ void compute_unscattered_light_thread( MonteCarloTaskInfo& taskinfo, const Globa
 // the unscattered light is estimated and multiplied by sigma_s*phase
 // TODO: generalize this to arbitrary phase functions
 //
-VoxelGridField3d::Ptr compute_unscattered_light( Volume::Ptr volume,
-												 Light::Ptr light,
-												 Integrator::Ptr integrator,
-												 int numSamples,
-												 Eigen::Vector3i resolution)
+VoxelGridField3d::Ptr compute_unscattered_fluence(  Volume::Ptr volume,
+													Light::Ptr light,
+													int numSamples,
+													Eigen::Vector3i resolution)
 {
 	std::cout << "compute_unscattered_light:\n";
 	std::cout << volume->toString();
 	std::cout << light->toString();
-	std::cout << integrator->toString();
+	//std::cout << integrator->toString();
+
+	// we need an integrator only for computing the volume attenuation
+	Integrator::Ptr integrator = std::make_shared<SimplePT>(-1, true);
 
 	VoxelGridField3d::Ptr result = std::make_shared<VoxelGridField3d>( V3i(resolution.x(), resolution.y(), resolution.z()), (V3d*)0);
 
@@ -477,7 +486,59 @@ VoxelGridField3d::Ptr compute_unscattered_light( Volume::Ptr volume,
 
 	Terminator terminator(numSamples);
 	std::cout << "computing uncollided light..."<< std::endl;std::flush(std::cout);
-	runGenericTasks<MonteCarloTaskInfo, GlobalComputeUncollidedLightInfo>( compute_unscattered_light_thread, &gi, terminator, ThreadPool::getNumSystemCores() );
+	runGenericTasks<MonteCarloTaskInfo, GlobalComputeUncollidedLightInfo>( compute_unscattered_fluence_thread, &gi, terminator, ThreadPool::getNumSystemCores() );
+
+	return result;
+}
+
+VoxelGridField3d::Ptr resample( VoxelGridField3d::Ptr field, const Eigen::Vector3i& res )
+{
+	V3i in_res = field->getResolution();
+	VoxelGridField3d::Ptr result = std::make_shared<VoxelGridField3d>( V3i(res.x(), res.y(), res.z()), (V3d*)0);
+
+	// iterate all new voxels
+	for( int i=0;i<res[0];++i )
+		for( int j=0;j<res[1];++j )
+			for( int k=0;k<res[2];++k )
+			{
+				// compute bounding box of new voxel in field voxelspace
+				V3d minVS = field->localToVoxel(result->voxelToLocal( V3d(double(i), double(j), double(k)) ) );
+				V3d maxVS = field->localToVoxel(result->voxelToLocal( V3d(double(i+1), double(j+1), double(k+1)) ) );
+
+				// get min and max voxels of the new voxel in field
+				V3i vmin( std::max(int(floor(minVS.x())),0), std::max(int(floor(minVS.y())),0), std::max(int(floor(minVS.z())),0) );
+				V3i vmax( std::min(int(ceil(maxVS.x())),in_res.x()-1), std::min(int(ceil(maxVS.y())),in_res.y()-1), std::min(int(ceil(maxVS.z())),in_res.z()-1) );
+
+
+				// iterate each field voxel we touch
+				V3d value(0.0, 0.0, 0.0);
+				double w_sum = 0.0; // sum of all voxel volumes which intersect
+
+				//printf( "%d\n", vmin.x );
+				//printf( "%d\n", vmax.x );
+				//printf( "%d    %d    %d\n", vmax.x-vmin.x, vmax.y-vmin.y, vmax.z-vmin.z );
+				//printf( "%f   %f   %f\n", minVS.x, minVS.y, minVS.z );
+
+				for( int k_src=vmin.z(); k_src<=vmax.z();++k_src )
+				{
+					for( int j_src=vmin.y(); j_src<=vmax.y();++j_src )
+					{
+						for( int i_src=vmin.x(); i_src<=vmax.x();++i_src )
+						{
+							// compute intersection volume (http://stackoverflow.com/a/5556796)
+							double w =   std::max(std::min(double(i_src+1),maxVS.x())-std::max(double(i_src),minVS.x()),0.0)
+										*std::max(std::min(double(j_src+1),maxVS.y())-std::max(double(j_src),minVS.y()),0.0)
+										*std::max(std::min(double(k_src+1),maxVS.z())-std::max(double(k_src),minVS.z()),0.0);
+							V3d v = field->getVoxelGrid().sample(i_src, j_src, k_src);
+							value += v*w;
+							w_sum += w;
+						}
+					}
+				}
+				if(w_sum > 0.0)
+					result->getVoxelGrid().lvalue(i, j, k) = value/w_sum;
+			}
+
 
 	return result;
 }
@@ -791,6 +852,30 @@ VoxelGridField3d::Ptr load_voxelgridfield3d(const std::string& filename)
 }
 
 
+void test()
+{
+	sph::staticInit();
+	RNGd rng(123);
+	double result = 0.0;
+	int numSamples = 100;
+	for( int i=0;i<numSamples;++i )
+	{
+		V3d d = sampleSphere(rng);
+		double pdf = sampleSpherePDF();
+		double theta, phi;
+		sphericalCoordinates(d, theta, phi);
+
+		double coeff = 1.0;
+		double f = sph::eval(theta, phi, &coeff, 0)/pdf;
+		std::cout << sph::eval(theta, phi, &coeff, 0) << std::endl;
+
+		result += (f-result)/double(i+1);
+	}
+
+	std::cout << "test result=" << result << std::endl;
+}
+
+
 PYBIND11_MODULE(renderer, m)
 {
 
@@ -999,8 +1084,7 @@ PYBIND11_MODULE(renderer, m)
 							{int(sizeof(double))*res[2]*res[1]*3, int(sizeof(double))*res[2]*3, int(sizeof(double))*3, int(sizeof(double))},
 							m.getData());
 				return b;
-			}
-		)
+			})
 	;
 
 
@@ -1131,7 +1215,7 @@ PYBIND11_MODULE(renderer, m)
 	m.def( "render", &render );
 	m.def( "compute_fluence", &compute_fluence );
 	m.def( "create_shtest", &create_shtest );
-	m.def( "compute_unscattered_light", &compute_unscattered_light );
+	m.def( "compute_unscattered_fluence", &compute_unscattered_fluence );
 	// lights
 	m.def( "create_point_light", &create_point_light );
 	m.def( "create_directional_light", &create_directional_light );
@@ -1150,6 +1234,7 @@ PYBIND11_MODULE(renderer, m)
 	m.def( "load_bgeo", &load_bgeo );
 	m.def( "save_bgeo", &save_bgeo );
 	m.def( "load_voxelgridfield3d", &load_voxelgridfield3d );
+	m.def( "resample", &resample );
 	// pnsolution
 	m.def( "load_pnsolution", &load_pnsolution );
 	m.def( "compute_fluence_pnsolution", &compute_fluence_pnsolution );
@@ -1157,8 +1242,9 @@ PYBIND11_MODULE(renderer, m)
 	m.def( "load_image", &load_image );
 	m.def( "save_exr", &save_exr );
 	m.def( "create_image_sampler", &create_image_sampler );
-	m.def( "blur_image", &blur_image )
-	;
+	m.def( "blur_image", &blur_image );
+	// misc
+	m.def( "test", &test );
 
 
 

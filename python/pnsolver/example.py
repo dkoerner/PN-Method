@@ -8,6 +8,10 @@ import pnsolver
 import itertools
 import scipy.io
 
+import matplotlib.pyplot as plt
+from matplotlib.colors import LogNorm
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+
 
 
 
@@ -39,6 +43,14 @@ def solve( stencil_name, problem, filename, do_neumannBC = False ):
 	# NB: the truncation order has been baked into the cpp code as it is linked directly with the stencil
 	sys = pnsolver.PNSystem(stencil_name, problem, do_neumannBC)
 
+	#problem.setExtinctionMinimumThreshold(4.0)
+	#problem.setExtinctionMinimumThreshold(0.0)
+	#sys.build()
+	#A = sys.get_A()
+	#scipy.io.savemat(filename+".t0.mat", {"A":A})
+	#return
+
+
 	# set the RTE parameter fields ---------------------------------------------
 	#setProblem(sys, problem)
 	#sys.setNeumannBoundaryConditions(do_neumannBC)
@@ -63,8 +75,10 @@ def solve( stencil_name, problem, filename, do_neumannBC = False ):
 
 
 	#tol = 1.0e-10
-	#tol = 1.0e-10
-	tol = 1.0
+	#tol = 1.0e-5
+	#tol = 1.7
+	tol = 4.0
+	#tol = 1.0
 
 	#numLevels = 7
 	#x, convergence, timestamps = pnsolver.solve_multigrid( sys, numLevels )
@@ -98,10 +112,21 @@ def solve( stencil_name, problem, filename, do_neumannBC = False ):
 	#data["convergence_cg"] = convergence
 	#data["timestamps_cg"] = timestamps
 
+	#solver = "ls_cg"
+	solver = "solve_ls_lscg"
+
+	if solver == "ls_cg":
+		x, convergence, timestamps = pnsolver.solve_ls_cg( sys, tol)
+	elif solver == "mg":
+		x, convergence, timestamps = pnsolver.solve_mg( sys, tol, 100)
+	elif solver == "solve_ls_lscg":
+		x, convergence, timestamps = pnsolver.solve_ls_lscg( sys, tol)
+
+
 	#x, convergence, timestamps = pnsolver.solve_ls_cg( sys, tol )
 	#x, convergence, timestamps = pnsolver.solve_gs( sys, tol, 10000 )
 	#x, convergence, timestamps = pnsolver.solve_mg( sys, tol, 100 )
-	x, convergence, timestamps = pnsolver.solve_ls_cg( sys, tol)
+	
 
 
 	#sys.build()
@@ -119,12 +144,26 @@ def solve( stencil_name, problem, filename, do_neumannBC = False ):
 
 	pnsolver.save_solution(filename, sys, x)
 
+	'''
+	# visualize 2d solution
+	gg = pnsolver.getCoefficientArray(sys, x)
+	test = gg[:,:,0,0]
 
+	img = np.clip( test, 1.0e-8, np.max(test) )
+
+	fig = plt.figure(figsize=(15,7));
+	ax = fig.add_subplot(111)
+	img_view = ax.imshow(img.T, cmap='jet', norm=LogNorm(vmin=np.min(img), vmax=np.max(img)), origin='lower')
+	plt.show()
+	'''
+
+
+
+	# here we store information about the convergence behaviour
 	data = {}
 	data["convergence"] = convergence
 	data["timestamps"] = timestamps
-	scipy.io.savemat(filename+".ls_cg.mat", data)
-
+	scipy.io.savemat(filename+".{}.mat".format(solver), data)
 	#data["x"] = x.reshape((x.shape[0], 1))
 
 
@@ -242,15 +281,18 @@ if __name__ == "__main__":
 	#util.write_problem(path+"/checkerboard_problem.mat", problem)
 	#exit(1)
 
-	#problem = problems.pointsource3d( res=64 )
-	problem = problems.checkerboard3d()
-	#problem = problems.nebulae()
+	#problem = problems.pointsource3d(res=64)
+	#problem = problems.checkerboard3d(res=64)
+	#problem = problems.checkerboard2d()
+	problem = problems.nebulae()
 
 	#problem_id = "pointsource"
-	problem_id = "checkerboard"
-	#problem_id = "nebulae"
+	#problem_id = "checkerboard"
+	#problem_id = "checkerboard2d"
+	problem_id = "nebulae"
 
 	
+	#exit(1)
 	#filename = "{}/{}_groundtruth.mat".format(path, problem["id"] )
 	#groundtruth( problem, 8000000, filename )
 
@@ -283,7 +325,8 @@ if __name__ == "__main__":
 	rte_forms = ["fopn"]
 	#order = [1,2,3,4,5]
 	#order = [3,4,5]
-	order = [1]
+	#order = [3]
+	order = [5]
 	staggered = [True]
 	boundary_conditions = [False]
 
@@ -306,14 +349,14 @@ if __name__ == "__main__":
 		
 		#filename = "{}/{}_{}{}.mat".format(path, problem["id"], stencil_name, bc_id[do_neumannBC])
 		#filename = "{}/{}_test.mat".format(path, problem["id"], stencil_name)
-		filename = "C:/projects/epfl/epfl17/python/pnsolver/results/{}/{}_p{}_2.pns".format(problem_id, problem_id, order)
+		filename = "C:/projects/epfl/epfl17/python/pnsolver/results/{}/{}_p{}_2_ms.pns".format(problem_id, problem_id, order)
 		#print("clear;filename=\"{}\";compute_condest;".format(filename))
 		solve(stencil_name, problem, filename, do_neumannBC=do_neumannBC)
 	#'''
 
 	#stencil_name = "stencil_cda"
 	#do_neumannBC = False
-	#filename = "C:/projects/epfl/epfl17/python/pnsolver/results/{}/{}_cda3.pns".format(problem_id, problem_id)
+	#filename = "C:/projects/epfl/epfl17/python/pnsolver/results/{}/{}_cda4.pns".format(problem_id, problem_id)
 	#solve(stencil_name, problem, filename, do_neumannBC=do_neumannBC)
 
 

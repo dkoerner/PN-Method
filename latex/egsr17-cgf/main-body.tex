@@ -69,9 +69,14 @@
 
 \begin{itemize}
   \item Lattice Boltzmann Methods \cite{Geist04}
-  \item Discrete Ordinates
-  \item Diffusion \cite{Stam95} \cite{Jakob10} \cite{Koerner14}
+  \item Discrete Ordinates \cite{Languenou95}
   \item $PN$-Method \cite{Kajiya84} 
+    \begin{itemize}
+        \item Kajia briefly explained the theory, but did not give any details on implementation or how to solve it. In fact, as Max~\cite{Max95} points out, it is not clear if he succeeded at all, as all of Kajia's results were produced with a simpler method. 
+        \item We decided to use the $P_N$-method, because it has not been studied and applied in the context of computer graphics before.
+    \end{itemize}
+  \item Diffusion \cite{Stam95} \cite{Jakob10}
+  \item Variable Eddington Factors (VEF) \cite{Koerner14}
   \item Heuristics \cite{Kaplanyan10} \cite{Elek14}
 \end{itemize}
 
@@ -92,9 +97,10 @@
 
 In order to compute a rendered image, the radiance field $L$ is evaluated. Its evolution throught space is given by the radiative transfer equation (RTE):
 
--give RTE
-%\begin{}
-%\end{}
+\begin{itemize}
+  \item give RTE
+  \item also introduce operator notation (used later when talking about least-squares form of the RTE)
+\end{itemize}
 
 
 The radiance field $L$ is typically solved with probabilistic Monte-Carlo methods, such as path-tracing. With these methods, computational demand is directly linked to the average length of paths and the presence of light transport paths which are hard to find with random sampling. The path length increases for dense, highly scattering media and hard-to-sample paths exist with highly anisotropic phase functions or complex visbility in the scene.
@@ -116,13 +122,39 @@ where $N$ is the truncation order, $L^{lm}$ is a set SH coefficients and $Y^{l,m
 
 \section{System Overview}
 \section{Stencil Generation}
-\section{Staggered Grid Solver}
+\begin{itemize}
+  \item Manually generating the stencil code for higher orders is intractable due to the increasing number of coefficient equations. We therefore automatically generate the stencil code directly from a computer algebra representation of the expanded RTE.
+  \item Arbitrary order. Staggered and collocated grids. Neumann and dirichlet boundary conditions. Generalized to arbitrary coupled PDE's. Could be extended to other problem domains, such as shallow water simulation.
+\end{itemize}
+
+
+\section{System Solving}
+
+\begin{itemize}
+  \item Staggered grids are required in order to get rid of oscillating artefacts in the $P_N$-solution.
+  \item CDA produces a non-symmetric diagonal-dominant matrix A, which allows the application of Gauss-Seidel method.
+  \item PN-equations produce a non-symmetric, non-diagonal dominant matrix A, which cannot be solved with standard methods.
+  \item Bringing $A\vec{x}=\vec{b}$ into normal form $A^TA\vec{x}=A^T\vec{b}$, produces a symmetric, positive definit system matrix $A^TA$, which allows application of standard methods, such as Conjugate-Gradient.
+  \item Solving the normal form is equivalent to solving the least-squares form of the RTE equation. (maybe give it in operator notation).
+  \item The system matrix of the normal form has a higher condition number than the standard form.
+\end{itemize}
+
+\subsection*{CDA vs. $P_1$}
+
+\begin{itemize}
+  \item CDA is a degenerated form of $P_1$. It is derived by isolating the flux-vector on one side of the vector-equation formed by the $l=1$ SH-band equations. This isolation requires division by the extinction coefficient, introducing a $\frac{1}{\sigma_t}$ factor which diverges as $\sigma_t$ approaches zero. Thresholding to some minimum is required, in order to be able to solve the system for vacuum regions.
+  \item $P_1$ does not require any thresholding of $\sigma_t$ as it does not contain $\sigma_t$ as a denominator. It therefore can deal with vacuum regions without modifications.
+  \item (needs validation) Further, in the presence of vacuum or near vacuum regions, the condition number for CDA is higher than for $P_1$, because of small extinction values in the denominator of the diffusion coefficient.
+  \item Using the normal form for CDA will further increase the condition number when vacuum regions are present and significantly decreases convergence.
+\end{itemize}
+
 \section{Path-guiding}
 \section{Results}
 \section{Conclusion and future work}
 
 \begin{itemize}
   \item Extension to surface rendering by dealing vacuum regions and extending to anisotropic RTE.
+  \item Apply our automated stencil generation to other problem domains where coupled PDE's are present.
 \end{itemize}
 
 %-------------------------------------------------------------------------

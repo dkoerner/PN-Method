@@ -97,7 +97,8 @@ double PNSolution::eval( const P3d& pWS, const V3d& direction )const
 	sphericalCoordinates(direction, theta, phi);
 
 	double result = sph::eval(theta, phi, coeffs.data(), m_order);
-	return result/std::sqrt(4.0*M_PI);
+	//return result/std::sqrt(4.0*M_PI);
+	return result;
 }
 
 double PNSolution::evalCoefficient(const P3d &pWS, int coeff_index)const
@@ -156,6 +157,7 @@ double PNSolution::evalCoefficient(const P3d &pWS, int coeff_index)const
 	coeff += m_data[voxel_indices[6] + coeff_index]*(1.0-tx)*ty*tz;
 	coeff += m_data[voxel_indices[7] + coeff_index]*tx*ty*tz;
 
+	//return coeff/std::sqrt(4.0*M_PI);
 	return coeff;
 }
 

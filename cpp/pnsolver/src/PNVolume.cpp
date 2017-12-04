@@ -11,7 +11,8 @@
 
 
 PNVolume::PNVolume(const Domain &domain):
-	m_domain(domain)
+	m_domain(domain),
+	m_extinction_minimum_threshold(0.0)
 	//m_worldToLocal(),
 	//m_localToWorld()//,
 	//m_bboxLS( P3d(0.0f,0.0f,0.0f), P3d(1.0f,1.0f,1.0f) ),
@@ -21,6 +22,11 @@ PNVolume::PNVolume(const Domain &domain):
 	setExtinctionAlbedo( std::make_shared<ConstantField3d>(V3d(1.0, 1.0, 1.0)),
 						 std::make_shared<ConstantField3d>(V3d(0.9, 0.9, 0.9)) );
 }
+void PNVolume::setExtinctionMinimumThreshold(double min_threshold)
+{
+	m_extinction_minimum_threshold = min_threshold;
+}
+
 void PNVolume::setExtinctionAlbedo( Field3d::Ptr extinction, Field3d::Ptr albedo )
 {
 	//std::pair<V3d, V3d> valueRange = extinction->getValueRange();
@@ -78,7 +84,18 @@ Domain& PNVolume::getDomain()
 
 V3d PNVolume::evalExtinction( const P3d& pWS, bool debug )const
 {
-	return m_field_extinction->eval(m_domain.worldToLocal(pWS));
+	//return m_field_extinction->eval(m_domain.worldToLocal(pWS));
+
+	///*
+	// for testing we apply here a minimum threshold
+	V3d ext = m_field_extinction->eval(m_domain.worldToLocal(pWS));
+
+	double threshold = m_extinction_minimum_threshold;
+	ext[0] = std::max(ext[0], threshold);
+	ext[1] = std::max(ext[1], threshold);
+	ext[2] = std::max(ext[2], threshold);
+	return ext;
+	//*/
 }
 V3d PNVolume::evalAbsorption( const P3d& pWS, bool debug )const
 {

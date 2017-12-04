@@ -9,6 +9,20 @@ from matplotlib.colors import LogNorm
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 
+
+pns = pnsolver.load_solution("C:/projects/epfl/epfl17/python/pnsolver/results/checkerboard2d/checkerboard2d_p1.pns")
+test = pns.getCoefficientField(0)
+print(test.shape)
+
+
+img = np.clip( test, 1.0e-8, np.max(test) )
+
+fig = plt.figure(figsize=(15,7));
+ax = fig.add_subplot(111)
+img_view = ax.imshow(img[:, :, 0].T, cmap='jet', norm=LogNorm(vmin=np.min(img), vmax=np.max(img)), origin='lower')
+plt.show()
+
+
 '''
 import stencil
 
@@ -35,12 +49,13 @@ for i in range(pni.num_coeffs()):
 
 
 
-filename = "C:/projects/epfl/epfl17/python/pnsolver/test.pns"
-pns = pnsolver.load_solution(filename)
-numCoeffs = pns.getNumCoeffs()
+#filename = "C:/projects/epfl/epfl17/python/pnsolver/test.pns"
+#pns = pnsolver.load_solution(filename)
+#numCoeffs = pns.getNumCoeffs()
 
-x = pnsolver.getSolutionVector(pns)
-x = x.reshape((x.shape[0], 1))
+#x = pnsolver.getSolutionVector(pns)
+#x = x.reshape((x.shape[0], 1))
+
 '''
 for coeff in range(numCoeffs):
     image = util.extract_coefficient_field( x, pns.getResolution(), numCoeffs, coeff )
@@ -60,7 +75,7 @@ for coeff in range(numCoeffs):
 
 '''
 
-
+'''
 def plot_spherical_function( fun, vmin=-0.5, vmax=0.5 ):
     # plot sh functions
     theta = np.arange(0.0, 1.0, 0.01)*np.pi
@@ -89,3 +104,4 @@ cax = divider.append_axes("right", size="5%", pad=0.05)
 plt.colorbar(img_view, cax=cax)
 
 plt.show()
+'''

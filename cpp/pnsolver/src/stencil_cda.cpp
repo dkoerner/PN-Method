@@ -18,14 +18,14 @@ void stencil_cda(PNSystem::Stencil::Context& ctx)
 
 	// for classical diffusion, we need to clamp extinction to avoid division by zero
 	//double extinction_tol = 1.0e-4;
-	double extinction_tol = 6.0;
+	//double extinction_tol = 6.0;
 
-	double D_xph = 1.0/(3.0*std::max(problem.evalExtinction(voxel_center_WS+V3d(vs[0], 0.0, 0.0))[color_channel], extinction_tol) );
-	double D_xmh = 1.0/(3.0*std::max(problem.evalExtinction(voxel_center_WS-V3d(vs[0], 0.0, 0.0))[color_channel], extinction_tol) );
-	double D_yph = 1.0/(3.0*std::max(problem.evalExtinction(voxel_center_WS+V3d(0.0, vs[1], 0.0))[color_channel], extinction_tol) );
-	double D_ymh = 1.0/(3.0*std::max(problem.evalExtinction(voxel_center_WS-V3d(0.0, vs[1], 0.0))[color_channel], extinction_tol) );
-	double D_zph = 1.0/(3.0*std::max(problem.evalExtinction(voxel_center_WS+V3d(0.0, 0.0, vs[2]))[color_channel], extinction_tol) );
-	double D_zmh = 1.0/(3.0*std::max(problem.evalExtinction(voxel_center_WS-V3d(0.0, 0.0, vs[2]))[color_channel], extinction_tol) );
+	double D_xph = 1.0/(3.0*problem.evalExtinction(voxel_center_WS+V3d(vs[0], 0.0, 0.0))[color_channel]);
+	double D_xmh = 1.0/(3.0*problem.evalExtinction(voxel_center_WS-V3d(vs[0], 0.0, 0.0))[color_channel]);
+	double D_yph = 1.0/(3.0*problem.evalExtinction(voxel_center_WS+V3d(0.0, vs[1], 0.0))[color_channel]);
+	double D_ymh = 1.0/(3.0*problem.evalExtinction(voxel_center_WS-V3d(0.0, vs[1], 0.0))[color_channel]);
+	double D_zph = 1.0/(3.0*problem.evalExtinction(voxel_center_WS+V3d(0.0, 0.0, vs[2]))[color_channel]);
+	double D_zmh = 1.0/(3.0*problem.evalExtinction(voxel_center_WS-V3d(0.0, 0.0, vs[2]))[color_channel]);
 
 	// compute diffusion coefficient
 

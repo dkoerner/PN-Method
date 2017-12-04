@@ -132,9 +132,10 @@ V3d DirectPN::trace( TraceInfo& ti, RNGd& rng )const
 
 				///*
 				// constant phase function allows us to evaluate the zero coefficient directly
+				// there is a std::sqrt(4pi) factor which comes from integrating the sh expanded field over solid angle
 				P3d pWS = ti.current_vertex.getPosition();
 				V3d phase_times_sigma_s = INV_FOURPI*ti.current_vertex.m_sigma_s;
-				double e = m_pns->evalCoefficient(pWS, 0);
+				double e = m_pns->evalCoefficient(pWS, 0)*std::sqrt(4.0*M_PI);
 				L += V3d(e).cwiseProduct(phase_times_sigma_s).cwiseProduct(ti.throughput_over_pdf);
 				//*/
 			}else

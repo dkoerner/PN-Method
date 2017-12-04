@@ -91,7 +91,7 @@ struct VoxelGridField : public Field<T>
 
 	P3d voxelToLocal(const P3d& pVS)const
 	{
-		return m_voxelgrid.voxelToLocal(pLS);
+		return m_voxelgrid.voxelToLocal(pVS);
 	}
 
 	void save( const std::string& filename )

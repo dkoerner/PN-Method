@@ -37,6 +37,8 @@ struct PNVolume
 	Domain& getDomain();
 
 	Ptr downsample(); // this creates the next coarser mipmap level of this problem
+
+	void setExtinctionMinimumThreshold(double min_threshold);
 private:
 	Domain m_domain;
 	// rgb dependent albedo and extinction values (evaluated in local space)
@@ -44,6 +46,7 @@ private:
 	Field3d::Ptr       m_field_albedo;
 	std::vector<Field3d::Ptr> m_field_q; // field for each SH-coefficient of q
 	std::vector<Field3d::Ptr> m_field_p; // field for each SH-coefficient of p (phase function)
+	double m_extinction_minimum_threshold;
 
 	/*
 	//PhaseFunction::Ptr m_phaseFunction;

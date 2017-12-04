@@ -67,14 +67,7 @@ def load_camera( filename, id = "cam1" ):
 	return camera
 
 
-def create_scene_pointlight( power, sigma_t, albedo ):
-	volume = renderer.create_volume()
-	volume.setBound( np.array([0.0, 0.0, 0.0]), np.array([2.0, 2.0, 2.0]) )
-	sigma_t_field = renderer.create_constant_field3d( np.array([sigma_t, sigma_t, sigma_t]) )
-	albedo_field = renderer.create_constant_field3d( np.array([albedo, albedo, albedo]) )
-	volume.setExtinctionAlbedo( sigma_t_field, albedo_field )
-	light = renderer.create_point_light( np.array([1.0, 1.0, 1.0]), np.array([power, power, power]) )
-	return volume, light
+
 
 def create_scene_nebulae():
 	albedo = 0.9
@@ -85,23 +78,11 @@ def create_scene_nebulae():
 	volume = renderer.create_volume()
 	volume.setBound( np.array([-0.5, -0.5, -0.5+offset]), np.array([0.5, 0.5, 0.5+offset]) )
 
-	test = np.zeros((64, 64, 64, 3))
-	#for i in range(test.shape[0]):
-	#	for j in range(test.shape[1]):
-	#		for k in range(test.shape[2]):
-	#			t = float(j)/float(test.shape[1])
-	#			test[i, j, k, 0] = i
-	#			test[i, j, k, 1] = j
-	#			test[i, j, k, 2] = k
-	#test[3, 3, 3, :] = 1
-	#test[2, 3, 3, :] = 1
-	test[46, 57, 59, :] = 123.4
 
-	#sigma_t_field = renderer.VoxelGridField3d(test)
 	sigma_t_field = renderer.load_bgeo("c:/projects/epfl/epfl17/python/pnsolver/results/nebulae/nebulae64.bgeo")
 	#sigma_t_field = renderer.load_bgeo("c:/projects/epfl/epfl17/python/pnsolver/results/nebulae/nebulae200.bgeo")
 	#sigma_t_field = renderer.load_bgeo("c:/projects/epfl/epfl17/python/pnsolver/results/nebulae/test.bgeo")
-	sigma_t_field.save("c:/projects/epfl/epfl17/python/pnsolver/results/nebulae/nebulae64_extinction.grid")
+	#sigma_t_field.save("c:/projects/epfl/epfl17/python/pnsolver/results/nebulae/nebulae64_extinction.grid")
 
 	#sigma_t_field = renderer.load_bgeo("test_sphere.bgeo")
 	albedo_field = renderer.create_constant_field3d( np.array([albedo, albedo, albedo]) )
@@ -120,67 +101,6 @@ def create_scene_nebulae():
 	return volume, light
 
 
-def validate_pointsource_fluence():
-	# assemble scene to render
-	#camera = load_camera( "results/pointsource/result_pointsource.scn", "cam1" )
-	integrator = renderer.create_simplept_integrator(True, -1)
-	power = 4.0*np.pi
-	sigma_t = 8.0
-	albedo = 0.9
-	volume, light = create_scene_pointlight(power, sigma_t, albedo)
-
-	# get pnsolution
-	pns_p5 = renderer.load_pnsolution( "results/pointsource/pointsource_p5.pns" )
-	pns_p3 = renderer.load_pnsolution( "results/pointsource/pointsource_p3.pns" )
-	pns_p1 = renderer.load_pnsolution( "results/pointsource/pointsource_p1.pns" )
-
-	# render
-	#renderer.render( volume, light, camera, integrator ).save("test.exr")
-
-	# fluence
-	size = 2.0
-	r_list = np.linspace(1.0e-2, size*0.5, 100)
-	#r_list = np.array([0.1])
-
-	points = np.zeros( (r_list.shape[0], 3) )
-	points[:, 0] = r_list+1.0
-	points[:, 1] = 1.0
-	points[:, 2] = 1.0
-
-	seed = 123
-	fluence = renderer.compute_fluence( volume, light, integrator, points, seed )
-	fluence_pns_p5 = power*renderer.compute_fluence_pnsolution( pns_p5, points )
-	fluence_pns_p3 = power*renderer.compute_fluence_pnsolution( pns_p3, points )
-	fluence_pns_p1 = power*renderer.compute_fluence_pnsolution( pns_p1, points )
-
-	r_list2 = np.linspace(1.0e-2, size*0.5, 100)
-	points2 = np.zeros( (r_list2.shape[0], 3) )
-	points2[:, 0] = r_list2+1.0
-	points2[:, 1] = 1.0
-	points2[:, 2] = 1.0
-	groundtruth_ms = np.array([power*util.grosjean(r, sigma_t, albedo, direct_light=False) for r in r_list2 ])
-	groundtruth_ss = np.array([power*util.grosjean(r, sigma_t, albedo, multiple_scattered_light=False) for r in r_list2 ])
-
-	solution_p5 = np.array([power*pns_p5.evalCoefficient(points2[i], 0) for i in range(points2.shape[0]) ])
-	solution_p3 = np.array([power*pns_p3.evalCoefficient(points2[i], 0) for i in range(points2.shape[0]) ])
-	solution_p1 = np.array([power*pns_p1.evalCoefficient(points2[i], 0) for i in range(points2.shape[0]) ])
-
-
-	fig = plt.figure(figsize=(8,8));
-	ax = fig.add_subplot(111)
-
-	plt.loglog( r_list2, groundtruth_ss+groundtruth_ms, label="Grosjean" )
-	plt.loglog( r_list, fluence, label="MonteCarlo" )
-	plt.loglog( r_list2, solution_p5, label="P5" )
-	plt.loglog( r_list, fluence_pns_p5, label="P5 check", linestyle=" ", marker="." )
-	plt.loglog( r_list2, solution_p3, label="P3" )
-	plt.loglog( r_list, fluence_pns_p3, label="P3 check", linestyle=" ", marker="." )
-	plt.loglog( r_list2, solution_p1, label="P1" )
-	plt.loglog( r_list, fluence_pns_p1, label="P1 check", linestyle=" ", marker="." )
-
-	plt.legend(loc='best')
-
-	plt.show()
 
 
 def render_groundtruth_radial_distribution( pWS, filename ):
@@ -203,6 +123,16 @@ def render_groundtruth_radial_distribution( pWS, filename ):
 
 
 if __name__ == "__main__":
+
+	#renderer.test()
+	#img = renderer.load_image("nebulae_p1_ms.exr").asMatrix()
+	#renderer.save_exr("nebulae_p1_ms_check.exr", img*np.sqrt(4.0*np.pi)*np.sqrt(4.0*np.pi))
+	#renderer.save_exr("nebulae_p1_ms_check.exr", img*4.0*np.pi)
+	#renderer.save_exr("nebulae_p1_ms_check.exr", img*np.sqrt(4.0*np.pi))
+	#*4.0*np.pi*np.sqrt(4.0*np.pi)
+	#exit(1)
+
+	'''
 	bound_min = np.array([-0.5, -0.5, -0.5])
 	bound_max = np.array([0.5, 0.5, 0.5])
 
@@ -217,6 +147,7 @@ if __name__ == "__main__":
 	gg[:,:,:,2] = test
 	renderer.save_bgeo("test.bgeo", renderer.VoxelGridField3d(gg), bound_min, bound_max)
 	exit(1)
+	'''
 
 
 	'''
@@ -261,28 +192,20 @@ if __name__ == "__main__":
 
 
 
-	# compute unscattered light/emission field for nebulae dataset and store to disk -----------
+	# compute unscattered fluence field for nebulae dataset and store to disk -----------
 	'''
-	integrator = renderer.create_simplept_integrator(True, -1)
 	volume, light = create_scene_nebulae()
 
 	numSamples = 100
 
 	# render unscattered light into emission field for PN solver ---
-	unscattered_light_field = renderer.compute_unscattered_light( volume, light, integrator, numSamples, np.array([64, 64, 64]) )
+	unscattered_fluence_field = renderer.compute_unscattered_fluence( volume, light, numSamples, np.array([64, 64, 64]) )
 	bound_min = np.array([-0.5, -0.5, -0.5])
 	bound_max = np.array([0.5, 0.5, 0.5])
-	renderer.save_bgeo("c:/projects/epfl/epfl17/python/pnsolver/results/nebulae/nebulae64_emission.bgeo", unscattered_light_field, bound_min, bound_max)
-	unscattered_light_field.save("c:/projects/epfl/epfl17/python/pnsolver/results/nebulae/nebulae64_emission.grid")
-
-	#test = renderer.load_voxelgridfield3d("c:/projects/epfl/epfl17/python/pnsolver/results/nebulae/nebulae64_emission.grid")
-	#renderer.save_bgeo("c:/projects/epfl/epfl17/python/pnsolver/results/nebulae/nebulae64_emission_2.bgeo", test, bound_min, bound_max)
-
-	# render groundtruth image ---
-	#camera = load_camera("c:/projects/epfl/epfl17/python/pnsolver/results/nebulae/nebulae.scn")
-	#camera = renderer.create_perspective_camera(512, 512, 45.0)
-	#img = renderer.render( volume, light, camera, integrator, numSamples )
-	#img.save("test.exr")
+	#renderer.save_bgeo("c:/projects/epfl/epfl17/python/pnsolver/results/nebulae/nebulae64_emission.bgeo", unscattered_light_field, bound_min, bound_max)
+	unscattered_fluence_field.save("c:/projects/epfl/epfl17/python/pnsolver/results/nebulae/nebulae64_unscattered_fluence.grid")
+	#renderer.save_bgeo("c:/projects/epfl/epfl17/python/pnsolver/results/nebulae/nebulae200_emission.bgeo", unscattered_light_field, bound_min, bound_max)
+	#unscattered_light_field.save("c:/projects/epfl/epfl17/python/pnsolver/results/nebulae/nebulae200_emission.grid")
 
 	exit(1)
 	'''
@@ -306,8 +229,10 @@ if __name__ == "__main__":
 	#img_ms.save("nebulae_groundtruth_ms.exr")
 
 
-	#pns = renderer.load_pnsolution( "c:/projects/epfl/epfl17/python/pnsolver/results/nebulae/nebulae_p1.pns" )	
-	pns = renderer.load_pnsolution( "c:/projects/epfl/epfl17/python/pnsolver/results/nebulae/nebulae_cda3.pns" )	
+	#pns = renderer.load_pnsolution( "c:/projects/epfl/epfl17/python/pnsolver/results/nebulae/nebulae_p1_2_ms.pns" )	
+	pns = renderer.load_pnsolution( "c:/projects/epfl/epfl17/python/pnsolver/results/nebulae/nebulae_p3_2_ms.pns" )	
+	#pns = renderer.load_pnsolution( "c:/projects/epfl/epfl17/python/pnsolver/results/nebulae/nebulae_p5.pns" )	
+	#pns = renderer.load_pnsolution( "c:/projects/epfl/epfl17/python/pnsolver/results/nebulae/nebulae_cda3.pns" )	
 
 	#integrator_pn_ss = renderer.create_directpn_integrator(pns, True, False)
 	#img_ss = renderer.render( volume, light, camera, integrator_pn_ss, numSamples )
@@ -315,8 +240,11 @@ if __name__ == "__main__":
 
 	integrator_pn_ms = renderer.create_directpn_integrator(pns, False, True)
 	img_ms = renderer.render( volume, light, camera, integrator_pn_ms, numSamples )
-	#img_ms.save("nebulae_p1_ms.exr")
-	img_ms.save("nebulae_cda_ms.exr")
+	#img_ms.save("nebulae_p1_3_ms.exr")
+	img_ms.save("nebulae_p3_3_ms.exr")
+	#img_ms.save("nebulae_p3_ms.exr")
+	#img_ms.save("nebulae_p5_ms.exr")
+	#img_ms.save("nebulae_cda_ms.exr")
 	exit(1)
 	#'''
 

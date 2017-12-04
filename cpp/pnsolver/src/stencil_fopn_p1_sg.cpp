@@ -38,6 +38,8 @@ void stencil_fopn_p1_sg(PNSystem::Stencil::Context& ctx)
 	//M_2 ---
 	// is constant
 
+	//double lambda_l = std::sqrt( 4.0*M_PI );
+
 	//M_3 ---
 	Eigen::Matrix<double, 4, 4> M_3_real_staggered[8];
 	for( int i=0;i<8;++i )

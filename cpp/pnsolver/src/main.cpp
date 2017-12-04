@@ -515,6 +515,8 @@ std::tuple<Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd> solve_ls_lscg(PNSy
 			x = x + alpha*p;
 			r = r - alpha*Ap;
 			double rsnew = r.squaredNorm();
+			if( iteration % 10 == 0 )
+				std::cout << "rmse=" << std::sqrt(rsnew) << std::endl;
 			if( std::sqrt(rsnew) < tol )
 				break;
 			p = r + (rsnew/rsold)*p;
@@ -799,6 +801,12 @@ Eigen::MatrixXcd createRealToComplexConversionMatrix( int order )
 // -convert coefficients from real to complex, to get the true SH coefficients of the radiance field (see p5 in starmap paper)
 void save_solution( const std::string& filename, PNSystem& sys, const Eigen::VectorXd& x )
 {
+	if(sys.getResolution()[2] == 1)
+	{
+		std::cout << "save_solution: unable to create and save a PNSolution file for 2d problem due to different number of coefficients.\n";
+		return;
+	}
+
 	// the solution is given in real valued coefficients. However, the complex->real conversion matrix used during stencil
 	// generation is that from the starmap paper, which is different than our conversion matrix. Therefore we need to first
 	// convert from real to complex using the inverse starmap transform, and then we can use our conversion matrix to convert
@@ -806,14 +814,12 @@ void save_solution( const std::string& filename, PNSystem& sys, const Eigen::Vec
 	// and then convert from complex to real using sph::complex2RealConversionMatrix.
 
 	// TODO: use our own conversion matrix during stencil generation straight away...
-
 	Eigen::VectorXcd x_complex =buildBlockDiagonalMatrix( createRealToComplexConversionMatrix(sys.getStencil().order), sys.getNumVoxels() )*
 								sys.removeStaggering(x);
 
 	Eigen::VectorXd x_real = (buildBlockDiagonalMatrix( sph::buildComplexToRealConversionMatrix(sys.getStencil().order), sys.getNumVoxels() )*
 							 x_complex).real();
 	PNSolution solution( sys.getOrder(), sys.getResolution(), Box3d(sys.getDomain().getBoundMin(), sys.getDomain().getBoundMax()), x_real.data() );
-
 	solution.save(filename);
 }
 
@@ -840,6 +846,32 @@ Eigen::VectorXd getSolutionVector( PNSolution::Ptr pns )
 
 }
 */
+
+
+py::array getCoefficientArray( PNSystem& sys, const Eigen::VectorXd& x )
+{
+	Eigen::VectorXd x_unstaggered = sys.removeStaggering(x);
+	int numCoeffs = sys.getNumCoefficients();
+	V3i res = sys.getResolution();
+	std::vector<double> data(res[0]*res[1]*res[2]*numCoeffs);
+
+	for( int i=0;i<res[0];++i )
+		for( int j=0;j<res[1];++j )
+			for( int k=0;k<res[2];++k )
+				for( int l=0;l<numCoeffs;++l )
+				{
+					int index_dst = (i*res[2]*res[1] + j*res[2] + k)*numCoeffs + l;
+					int index_src = (i*res[2]*res[1] + j*res[2] + k)*numCoeffs + l;
+					data[index_dst] = x_unstaggered.data()[index_src];
+				}
+
+	py::array b( //py::dtype(std::string("float64")),
+				py::dtype::of<double>(),
+			   {res[0], res[1], res[2], numCoeffs},
+			   {int(sizeof(double))*res[2]*res[1]*numCoeffs, int(sizeof(double))*res[2]*numCoeffs, int(sizeof(double))*numCoeffs, int(sizeof(double))},
+			   data.data());
+	return b;
+}
 
 PYBIND11_MODULE(pnsolver, m)
 {
@@ -869,8 +901,10 @@ PYBIND11_MODULE(pnsolver, m)
 	m.def( "createRealToComplexConversionMatrix", &createRealToComplexConversionMatrix);
 	*/
 	m.def( "save_solution", &save_solution);
+	m.def( "getCoefficientArray", &getCoefficientArray);
+
+	m.def( "load_solution", &load_solution);
 	m.def( "load_voxelgridfield3d", &load_voxelgridfield3d );
-	//m.def( "load_solution", &load_solution);
 	//m.def( "getSolutionVector", &getSolutionVector);
 
 
@@ -1014,6 +1048,7 @@ PYBIND11_MODULE(pnsolver, m)
 	.def("setDebugVoxel", &PNSystem::setDebugVoxel )
 	//.def("computeGroundtruth", &PNSystem::computeGroundtruth )
 	.def("getVoxelInfo", &PNSystem::getVoxelInfo )
+	.def("removeStaggering", &PNSystem::removeStaggering )
 	;
 
 	// Domain ============================================================
@@ -1180,6 +1215,16 @@ PYBIND11_MODULE(pnsolver, m)
 		new (&m) VoxelGridField3d(resolution, (V3d*)data);
 	})
 	.def("save", &VoxelGridField3d::save)
+	.def("asArray",
+		[]( VoxelGridField3d &m )
+		{
+			V3i res = m.getResolution();
+			py::array b( py::dtype::of<double>(),
+						{res[0], res[1], res[2], 3},
+						{int(sizeof(double))*res[2]*res[1]*3, int(sizeof(double))*res[2]*3, int(sizeof(double))*3, int(sizeof(double))},
+						m.getData());
+			return b;
+		})
 	;
 
 
@@ -1195,6 +1240,7 @@ PYBIND11_MODULE(pnsolver, m)
 			new (&m) PNVolume(domain);
 		})
 		.def("setExtinctionAlbedo", &PNVolume::setExtinctionAlbedo)
+		.def("setExtinctionMinimumThreshold", &PNVolume::setExtinctionMinimumThreshold)
 		.def("setEmission",
 			[]( PNVolume &pnvolume, int l, int m, Field3d::Ptr field )
 			{

@@ -1,6 +1,7 @@
 import os,sys,inspect
 import numpy as np
-import pnsolver
+#import pnsolver
+import renderer
 import util
 import stencil
 
@@ -10,6 +11,23 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 
 
+pns = renderer.load_pnsolution( "c:/projects/epfl/epfl17/python/pnsolver/results/nebulae/nebulae_p5_2_ms.pns" )
+
+pWS = np.array([-0.27704304, 0.36083166, -0.22953043])
+#sample = np.array([0.3960667149031164, 0.18571028805648737])
+#sample = np.array([0.8444218515250481, 0.7579544029403025])
+sample = np.array([0.37858849022321517, 0.49207364263387265])
+
+dir, pdf = pns.sample(pWS, sample)
+print("")
+pdf2 = pns.pdf( pWS, dir )
+
+print(  "pdf={:.02} pdf2={:.02}".format(pdf, pdf2))
+
+
+
+
+'''
 pns = pnsolver.load_solution("C:/projects/epfl/epfl17/python/pnsolver/results/checkerboard2d/checkerboard2d_p1.pns")
 test = pns.getCoefficientField(0)
 print(test.shape)
@@ -21,6 +39,7 @@ fig = plt.figure(figsize=(15,7));
 ax = fig.add_subplot(111)
 img_view = ax.imshow(img[:, :, 0].T, cmap='jet', norm=LogNorm(vmin=np.min(img), vmax=np.max(img)), origin='lower')
 plt.show()
+'''
 
 
 '''

@@ -55,9 +55,9 @@ struct PNSolution
 		double *phiIntegrals(double a, double b);
 
 		// integrates SH function over given block by using precomputed integration tables
-		double integrate(int depth, int zBlock, int phiBlock, const double *coeffs) const;
+		double integrate(int depth, int zBlock, int phiBlock, const double *coeffs, double constant_scale=0.0) const;
 		// integrates SH function over given block by summing the integrals of all its child blocks
-		double integrateChilds(int depth, int i, int j, const double *coeffs) const;
+		double integrateChilds(int depth, int i, int j, const double *coeffs, double constant_scale=0.0) const;
 
 		int indexofSmallestElement(double array[], int size);
 

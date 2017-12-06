@@ -41,12 +41,14 @@ struct Image// : public Eigen::Array<Eigen::Vector3d, Eigen::Dynamic, Eigen::Dyn
 	P2d rasterToUV(const P2d& pRaster)const;
 
 	// manipulation
+	Ptr toLDR();
 
 private:
 	Base m_data;
 };
 
 Image::Ptr blur_image( Image::Ptr image, double stddev );
+Image::Ptr ldr_image( Image::Ptr image, double exposure );
 
 struct ImageSampler
 {

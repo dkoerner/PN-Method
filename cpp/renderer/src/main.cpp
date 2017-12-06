@@ -46,6 +46,7 @@ struct GlobalRenderInfo
 
 	// used for debugging
 	P2i debug_pixel;
+	std::vector<RNGd> *debug_rngs;
 };
 
 struct GlobalComputeFluenceInfo
@@ -220,6 +221,7 @@ Eigen::VectorXd compute_fluence( Volume::Ptr volume,
 
 void render_thread( MonteCarloTaskInfo& ti, const GlobalRenderInfo* gi )
 {
+	//RNGd& rng = ti.rng;
 	int width = gi->scene->camera->getResolutionX();
 	int height = gi->scene->camera->getResolutionY();
 
@@ -232,6 +234,7 @@ void render_thread( MonteCarloTaskInfo& ti, const GlobalRenderInfo* gi )
 		for (int x = gi->crop_window.min.x(); x < gi->crop_window.max.x(); ++x)
 		{
 			int index = y*width + x;
+			RNGd& rng = (*gi->debug_rngs)[ index ];
 			V3d f(0.0, 0.0, 0.0);
 			//Color3f T(1.0f);
 
@@ -248,7 +251,7 @@ void render_thread( MonteCarloTaskInfo& ti, const GlobalRenderInfo* gi )
 
 			Ray3d rayWS;
 			gi->scene->camera->sampleRay( P2d(x+0.5, y+0.5), rayWS, debug );
-			//ti.g.scene->camera->sampleRay( P2d(x+ti.rng.next1D(), y+ti.rng.next1D()), rayWS );
+			//ti.g.scene->camera->sampleRay( P2d(x+rng.next1D(), y+rng.next1D()), rayWS );
 
 			if(debug)
 			{
@@ -263,8 +266,11 @@ void render_thread( MonteCarloTaskInfo& ti, const GlobalRenderInfo* gi )
 				rq.ray = rayWS;
 				rq.pixel = V2i(x, y);
 				rq.debug = debug;
-				f = gi->scene->integrator->Li(gi->scene, rq, ti.rng);
+				f = gi->scene->integrator->Li(gi->scene, rq, rng);
 				//T = rq.transmittance;
+
+				if( debug )
+					std::cout << "f=" << f << std::endl;
 			}
 			catch (std::exception& e)
 			{
@@ -284,7 +290,7 @@ void render_thread( MonteCarloTaskInfo& ti, const GlobalRenderInfo* gi )
 
 			if(debug)
 			{
-				c = V3d(1.0, 0.0, 0.0);
+				//c = V3d(1.0, 0.0, 0.0);
 			}
 		} // pixel x
 	} // pixel y
@@ -315,7 +321,18 @@ Image::Ptr render( Volume::Ptr volume, Light::Ptr light, Camera::Ptr camera, Int
 	gi.scene = &scene;
 	gi.image = result.get();
 	gi.crop_window = Box2i( V2i(0,0), camera->getResolution() );
-	//gi.debug_pixel = V2i(384, 155);
+	//gi.debug_pixel = V2i(378, 110);
+	//gi.debug_pixel = V2i(256, 256);
+
+
+	// for debugging, intitialize rngs
+	std::vector<RNGd> debug_rngs;
+	int index = 0;
+	for( int i=0;i<camera->getResolution()[0];++i )
+		for( int j=0;j<camera->getResolution()[1];++j, ++index )
+			debug_rngs.push_back( RNGd(123+index) );
+	gi.debug_rngs = &debug_rngs;
+
 
 	//int numSamples = 1;
 
@@ -580,11 +597,12 @@ Integrator::Ptr create_simplept_integrator( bool doSingleScattering, int maxDept
 	return std::make_shared<SimplePT>(md, doSingleScattering);
 }
 
-Integrator::Ptr create_pnispt_integrator( PNSolution::Ptr pns )
+Integrator::Ptr create_pnispt_integrator( PNSolution::Ptr pns, bool doSingleScattering, int maxDepth )
 {
-	int maxDepth = std::numeric_limits<int>::max();
-	bool doSingleScattering = true;
-	return std::make_shared<PNISPT>(pns, maxDepth, doSingleScattering);
+	int md = std::numeric_limits<int>::max();
+	if(maxDepth >= 0)
+		md = maxDepth;
+	return std::make_shared<PNISPT>(pns, doSingleScattering, md);
 }
 
 Integrator::Ptr create_jispt_integrator()
@@ -854,6 +872,7 @@ VoxelGridField3d::Ptr load_voxelgridfield3d(const std::string& filename)
 
 void test()
 {
+	/*
 	sph::staticInit();
 	RNGd rng(123);
 	double result = 0.0;
@@ -873,6 +892,34 @@ void test()
 	}
 
 	std::cout << "test result=" << result << std::endl;
+	*/
+
+
+	// add constant factor
+
+	int res = 16;
+	double zStep = -2 / (double) res;
+	double phiStep = 2 * (double) M_PI / (double) res;
+
+	/*
+	double phi_integral = phiStep;
+	*/
+
+	double scale = 0.001;
+	double sum = 0.0;
+	for( int phiBlock=0;phiBlock<res;++phiBlock )
+	{
+		double phi_integral = phiStep;
+		for( int zBlock=0;zBlock<res;++zBlock )
+		{
+			double theta_max = 1.0+zBlock*zStep;
+			double theta_min = 1.0+(zBlock+1)*zStep;
+			double theta_integral = -theta_min + theta_max;
+			sum += theta_integral*phi_integral*scale;
+		}
+	}
+	std::cout << "sum=" << sum << std::endl;
+
 }
 
 
@@ -898,6 +945,14 @@ PYBIND11_MODULE(renderer, m)
 	py::class_<Integrator, Integrator::Ptr> class_integrator(m, "Integrator");
 	class_integrator
 	;
+
+	// ...
+	py::class_<PNISPT, PNISPT::Ptr> class_pnispt(m, "PNISPT", class_integrator);
+	class_pnispt
+	.def("dbgGet", &PNISPT::dbgGet)
+	;
+
+
 
 	// Volume ============================================================
 	py::class_<Volume, Volume::Ptr> class_volume(m, "Volume");
@@ -1124,7 +1179,9 @@ PYBIND11_MODULE(renderer, m)
 		const Eigen::Matrix<double, 2, 1>& sample)
 	 {
 		double pdf=0.0;
-		return m.sample(pWS, pdf, sample);
+		V3d dir = m.sample(pWS, pdf, sample);
+		std::pair<Eigen::Vector3d, double> result = std::make_pair(dir, pdf);
+		return result;
 	 })
 	.def("pdf",
 	 [](PNSolution &m,
@@ -1243,6 +1300,7 @@ PYBIND11_MODULE(renderer, m)
 	m.def( "save_exr", &save_exr );
 	m.def( "create_image_sampler", &create_image_sampler );
 	m.def( "blur_image", &blur_image );
+	m.def( "ldr_image", &ldr_image );
 	// misc
 	m.def( "test", &test );
 

@@ -282,6 +282,37 @@ Image::Ptr blur_image( Image::Ptr image, double stddev )
 	return image_blurred;
 }
 
+Image::Ptr ldr_image( Image::Ptr image, double exposure )
+{
+	Image::Ptr result = std::make_shared<Image>( image->getResolution() );
+
+	double scale = std::pow(2.0, exposure);
+
+	for( int i=0;i<image->getArray().rows();++i )
+	{
+		for( int j=0;j<image->getArray().cols();++j )
+		{
+			Eigen::Vector3d& input_pix = image->getArray().coeffRef(i, j);
+			Eigen::Vector3d output_pix;
+
+			for (int c=0; c<3; ++c)
+			{
+				float value = input_pix[c]*scale;
+
+				if (value <= 0.0031308f)
+					output_pix[c] = 12.92f * value;
+				else
+					output_pix[c] = (1.0f + 0.055f) * std::pow(value, 1.0f/2.4f) -  0.055f;
+			}
+
+			result->getArray().coeffRef(i, j) = output_pix;
+		}
+	}
+
+	return result;
+}
+
+
 
 // ImageSampler -------------------------------
 
@@ -351,3 +382,5 @@ void ImageSampler::buildPDF( Image::Ptr image )
 	}
 	m_colDpdf.normalize();
 }
+
+

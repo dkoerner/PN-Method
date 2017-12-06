@@ -470,7 +470,7 @@ PNSolution::SHSampler::SHSampler(int bands, int depth) : m_bands(bands), m_depth
 }
 
 
-double PNSolution::SHSampler::integrate(int depth, int zBlock, int phiBlock, const double* coeffs) const
+double PNSolution::SHSampler::integrate(int depth, int zBlock, int phiBlock, const double* coeffs, double constant_scale) const
 {
 	double result = 0;
 	for (int l=0; l<m_bands; ++l)
@@ -481,6 +481,24 @@ double PNSolution::SHSampler::integrate(int depth, int zBlock, int phiBlock, con
 			result += basisIntegral * sph::get(l, m, coeffs);
 		}
 	}
+
+	// clamp negative integrals to zero
+	result = std::max(result, 0.0);
+
+	// add constant factor
+	int res = (1 << depth);
+	double zStep = -2 / (double) res;
+	double phiStep = 2 * (double) M_PI / (double) res;
+
+	double phi_integral = phiStep;
+
+	double theta_max = 1.0+zBlock*zStep;
+	double theta_min = 1.0+(zBlock+1)*zStep;
+	double theta_integral = -theta_min + theta_max;
+
+	//double scale = 0.001;
+	result += theta_integral*phi_integral*constant_scale;
+
 	return result;
 }
 
@@ -499,17 +517,17 @@ int PNSolution::SHSampler::indexofSmallestElement(double array[], int size)
 	return index;
 }
 
-double PNSolution::SHSampler::integrateChilds(int depth, int i, int j, const double *coeffs) const
+double PNSolution::SHSampler::integrateChilds(int depth, int i, int j, const double *coeffs, double constant_scale) const
 {
 	if(depth<m_depth)
 	{
-		double q00_1 = std::max(integrate(depth+1, i*2, j*2, coeffs), 0.0);
-		double q10_1 = std::max(integrate(depth+1, i*2, j*2+1, coeffs), 0.0);
-		double q01_1 = std::max(integrate(depth+1, i*2+1, j*2, coeffs), 0.0);
-		double q11_1 = std::max(integrate(depth+1, i*2+1, j*2+1, coeffs), 0.0);
+		double q00_1 = integrate(depth+1, i*2, j*2, coeffs, constant_scale);
+		double q10_1 = integrate(depth+1, i*2, j*2+1, coeffs, constant_scale);
+		double q01_1 = integrate(depth+1, i*2+1, j*2, coeffs, constant_scale);
+		double q11_1 = integrate(depth+1, i*2+1, j*2+1, coeffs, constant_scale);
 		return q00_1+q10_1+q01_1+q11_1;
 	}else
-		return std::max(integrate(depth, i, j, coeffs), 0.0);
+		return integrate(depth, i, j, coeffs, constant_scale);
 
 }
 
@@ -518,7 +536,23 @@ double PNSolution::SHSampler::warp(const double *coeffs, P2d &sample) const
 	int i = 0, j = 0;
 	double integral = 0;
 	double integralRoot = 0.0;
-	integralRoot = integrate(0, 0, 0, coeffs);
+	//integralRoot = integrate(0, 0, 0, coeffs);
+	integralRoot = integrateChilds(0, 0, 0, coeffs);
+
+	double constant_scale;
+
+	if( integralRoot > 0.0 )
+		constant_scale= integralRoot*1.0e-2;
+	else
+		constant_scale = 1.0;
+	integralRoot += constant_scale*4.0*M_PI;
+
+	if(integralRoot <= 0.0)
+	{
+		std::cout << "PNSolution::SHSampler::warp integralRoot <= 0.0 !!!!!!!!!!!!!!!!!!!\n";
+		//sample.x() = std::acos(sample.x());
+		return 0.0;
+	}
 
 	for (int depth = 1; depth <= m_depth; ++depth)
 	{
@@ -530,10 +564,10 @@ double PNSolution::SHSampler::warp(const double *coeffs, P2d &sample) const
 		double q01_1 = std::max(integrate(depth, i+1, j, f), (double) 0);
 		double q11_1 = std::max(integrate(depth, i+1, j+1, f), (double) 0);
 		*/
-		double q[4] = {integrateChilds(depth, i, j, coeffs),
-					   integrateChilds(depth, i, j+1, coeffs),
-					   integrateChilds(depth, i+1, j, coeffs),
-					   integrateChilds(depth, i+1, j+1, coeffs)};
+		double q[4] = {integrateChilds(depth, i, j, coeffs, constant_scale),
+					   integrateChilds(depth, i, j+1, coeffs, constant_scale),
+					   integrateChilds(depth, i+1, j, coeffs, constant_scale),
+					   integrateChilds(depth, i+1, j+1, coeffs, constant_scale)};
 
 		double q00 = q[0];
 		double q10 = q[1];
@@ -572,16 +606,43 @@ double PNSolution::SHSampler::warp(const double *coeffs, P2d &sample) const
 		}
 	}
 
+	int res = 1 << m_depth;
+
 	double zStep = -2 / (double) (1 << m_depth);
 	double phiStep = 2 * (double) M_PI / (double) (1 << m_depth);
 	i >>= 1; j >>= 1;
+	//std::cout << "PNSolution::SHSampler::warp  i=" << i << " j=" << j << std::endl;
 
 	double z = 1 + zStep * i + zStep * sample.x();
+
+
+	//double a = std::acos(1 + zStep * i + zStep * sample.x());
+	//double b = (std::cos(a)-1)/zStep;
+	//int c = int(std::floor(b));
+	//std::cout << a << std::endl;
+	//std::cout << b << std::endl;
+	//std::cout << c << std::endl;
+
+	//std::cout << "PNSolution::SHSampler::warp  z=" << z << std::endl;
+	//std::cout << "PNSolution::SHSampler::warp  test=" << (z-1.0)/double(res-1) << std::endl;
 	sample.x() = std::acos(z);
 	sample.y() = phiStep * j + phiStep * sample.y();
 
+	//int c = int(std::floor(sample.y()/phiStep));
+	//std::cout << c << std::endl;
+
 	// PDF of sampling the mip-map bin
 	double pdfBin = integral/integralRoot;
+
+	if(pdfBin<=0.0)
+	{
+		std::cout << "PNSolution::SHSampler::warp pdfBin<=0.0 !!!!!!!!\n";
+		std::cout << pdfBin << std::endl;
+		std::cout << integral << std::endl;
+		std::cout << integralRoot << std::endl;
+	}
+
+	//std::cout << "PNSolution::SHSampler::warp integral=" << integral << " integralRoot=" << integralRoot << std::endl;
 
 	// Density within the bin
 	double density = -1/(zStep*phiStep);
@@ -593,24 +654,61 @@ double PNSolution::SHSampler::warp(const double *coeffs, P2d &sample) const
 double PNSolution::SHSampler::pdf( const double *coeffs, const P2d& sample )const
 {
 	int res = 1 << m_depth;
-	double integralRoot = integrate(0, 0, 0, coeffs);
+	//double integralRoot = integrate(0, 0, 0, coeffs);
+	double integralRoot = integrateChilds(0, 0, 0, coeffs);
+
+
+	double constant_scale;
+	if( integralRoot > 0.0 )
+		constant_scale= integralRoot*1.0e-2;
+	else
+		constant_scale = 1.0;
+	integralRoot += constant_scale*4.0*M_PI;
+
+	if(integralRoot <= 0.0)
+	{
+		std::cout << "PNSolution::SHSampler::pdf integralRoot <= 0.0 !!!!!!!!!!!!!!!!!!!---!\n";
+		return 0.0;
+	}
+
+
 	double zStep = -2 / (double) (res);
 	double phiStep = 2 * (double) M_PI / (double) (res);
 
 	// find bin which has been selected by sample
-	double u = (std::cos(sample.x())-1.0)/(-2.0);
-	double v = sample.y()/(2.0*M_PI);
-	int i = int(std::floor(u*(res-1)));
-	int j = int(std::floor(v*(res-1)));
-	double integral = integrate(m_depth, i, j, coeffs);
+
+	//double u = (std::cos(sample.x())-1.0)/(-2.0);
+	//double v = sample.y()/(2.0*M_PI);
+	//std::cout << "PNSolution::SHSampler::pdf  u*(res-1)=" << u*(res-1) << std::endl;
+	//int i = int(std::floor(u*(res-1)));
+	int i = int(std::floor((std::cos(sample.x())-1)/zStep));
+	int j = int(std::floor(sample.y()/phiStep));
+	//int j = int(std::floor(v*(res-1)));
+
+	//std::cout << "PNSolution::SHSampler::pdf  i=" << i << " j=" << j << std::endl;
+
+	double integral = integrate(m_depth, i, j, coeffs, constant_scale);
 
 	// PDF of sampling the mip-map bin
 	double pdfBin = integral/integralRoot;
 
+	if(pdfBin<=0.0)
+	{
+		std::cout << "PNSolution::SHSampler::pdf pdfBin<=0.0 !!!!!!!!\n";
+		std::cout << pdfBin << std::endl;
+		std::cout << integral << std::endl;
+		std::cout << integralRoot << std::endl;
+	}
+
+
+	//std::cout << "PNSolution::SHSampler::pdf integral=" << integral << " integralRoot=" << integralRoot << std::endl;
+
 	// Density within the bin
 	double density = -1/(zStep*phiStep);
 
-	return density*pdfBin;
+	double result = density*pdfBin;
+
+	return result;
 }
 
 

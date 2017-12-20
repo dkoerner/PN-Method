@@ -95,7 +95,7 @@ struct TraceInfoPNIS
 
 
 			// we use one-sample-estimator to decide between phase function and PNS-sampling
-			double prob = 1.0;
+			double prob = 0.5;
 			if( rng.next1D() < prob )
 			{
 				// sample according to PN-Solution

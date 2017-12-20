@@ -1950,10 +1950,10 @@ if __name__ == "__main__":
 	#order = [0,1,2,3,4]
 
 	rte_forms = ["fopn"]
-	#order = [1]
-	order = [3,5]
+	order = [1]
+	#order = [3,5]
 	#order = [1,2,3,4,5]
-	staggered = [True]
+	staggered = [False]
 
 	test = itertools.product(rte_forms, order, staggered)
 	for c in test:
@@ -1967,8 +1967,8 @@ if __name__ == "__main__":
 		stencil_name = "stencil_{}_p{}_{}".format(rte_form_name, order, staggered_id[is_staggered] )
 		filename = "{}/{}.cpp".format(path, stencil_name)
 
-		#pni = PNInfo2D(order, is_staggered)
-		pni = PNInfo3D(order, is_staggered)
+		pni = PNInfo2D(order, is_staggered)
+		#pni = PNInfo3D(order, is_staggered)
 
 
 		generate_stencil_code( stencil_name, filename, rte_form_terms, pni )

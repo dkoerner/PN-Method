@@ -1,16 +1,20 @@
 import os,sys,inspect
 import numpy as np
-#import pnsolver
-import renderer
+import pnsolver
+#import renderer
 import util
 import stencil
 
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 
 
+
+
+'''
 pns = renderer.load_pnsolution( "c:/projects/epfl/epfl17/python/pnsolver/results/nebulae/nebulae_p5_2_ms.pns" )
 
 pWS = np.array([-0.27704304, 0.36083166, -0.22953043])
@@ -23,8 +27,23 @@ print("")
 pdf2 = pns.pdf( pWS, dir )
 
 print(  "pdf={:.02} pdf2={:.02}".format(pdf, pdf2))
+'''
 
 
+'''
+a, b, c = pnsolver.test()
+
+
+fig = plt.figure(figsize=(15,7));
+ax = fig.add_subplot(111)
+#img_view = ax.imshow(img[:, :, 0].T, cmap='jet', norm=LogNorm(vmin=np.min(img), vmax=np.max(img)), origin='lower')
+plt.plot( a, b, label="groundtruth" )
+plt.plot( a, c, linestyle=' ', marker='.', label="reconstruction" )
+plt.legend(loc='best')
+plt.show()
+'''
+
+pnsolver.test()
 
 
 '''

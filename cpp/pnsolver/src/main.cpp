@@ -873,6 +873,423 @@ py::array getCoefficientArray( PNSystem& sys, const Eigen::VectorXd& x )
 	return b;
 }
 
+// these functions are the coefficients for the recursive relation of the sh basis function
+// (see for example p. 4 in this paper: https://arxiv.org/abs/1211.2205)
+double a_lm( int l, int m )
+{
+	double base = double((l-m+1)*(l+m+1))/double((2*l+3)*(2*l+1));
+	return std::sqrt(base);
+}
+double b_lm( int l, int m )
+{
+	double base = double((l-m)*(l+m))/double((2*l+1)*(2*l-1));
+	return std::sqrt(base);
+}
+double c_lm( int l, int m )
+{
+	double base = double((l+m+1)*(l+m+2))/double((2*l+3)*(2*l+1));
+	return std::sqrt(base);
+}
+double d_lm( int l, int m )
+{
+	double base = double((l-m)*(l-m-1))/double((2*l+1)*(2*l-1));
+	return std::sqrt(base);
+}
+double e_lm( int l, int m )
+{
+	double base = double((l-m+1)*(l-m+2))/double((2*l+3)*(2*l+1));
+	return std::sqrt(base);
+}
+double f_lm( int l, int m )
+{
+	double base = double((l+m)*(l+m-1))/double((2*l+1)*(2*l-1));
+	return std::sqrt(base);
+}
+
+
+
+template<typename T>
+using SphericalFunction = std::function<T (double, double)>;
+
+
+// resolution.x -> resolution along theta angle
+// resolution.y -> resolution along phi angle
+template<typename T>
+T integrate_sphere( SphericalFunction<T> f, V2i resolution )
+{
+	T result = 0.0;
+
+	double min_theta = 0;
+	double max_theta = M_PI;
+	double min_phi = 0;
+	double max_phi = 2.0*M_PI;
+
+	int resolution_theta=resolution.x(); // resolution along theta angle
+	int resolution_phi=resolution.y(); // resolution along phi angle
+	double dtheta = (max_theta-min_theta)/double(resolution_theta);
+	double dphi = (max_phi-min_phi)/double(resolution_phi);
+
+	double pixel_area = dtheta*dphi;
+
+	for( int t=0;t<resolution_theta;++t )
+		for( int p=0;p<resolution_phi;++p )
+		{
+			double phi = dphi*p;
+			double theta = dtheta*t;
+			result+=f(theta, phi)*pixel_area*std::sin(theta);
+		}
+
+	return result;
+}
+
+struct HGPhase
+{
+	typedef std::shared_ptr<HGPhase> Ptr;
+
+	HGPhase( double g ):m_g(g)
+	{
+
+	}
+
+	double eval( const V3d& wi, const V3d& wo )const
+	{
+		double temp = 1.0 + m_g*m_g - 2.0 * m_g * dot(wi, wo);
+		return INV_FOURPI * (1 - m_g*m_g) / (temp * std::sqrt(temp));
+	}
+
+	double shCoeff( int l, int m )
+	{
+		if(m==0)
+		{
+			return INV_FOURPI*
+				   (2*l+1)*std::sqrt(4.0*M_PI/(2.0*l+1))*
+				   std::pow(m_g, double(l));
+		}
+		return 0.0;
+	}
+
+
+private:
+	double m_g;
+};
+
+
+//std::tuple<Eigen::VectorXd,Eigen::VectorXd,Eigen::VectorXd> test()
+void test()
+{
+	V2i integration_res(128, 256);
+
+	sph::staticInit();
+
+
+	V3d w_o = V3d(1.0, 1.0, 1.0).normalized();
+	double theta_o, phi_o;
+	sphericalCoordinates(w_o, theta_o, phi_o);
+	Framed frame(w_o);
+
+	// rotation matrix, which rotates the phase function coordinate frame
+	// such that it aligns with the evaluation direction
+	Eigen::Matrix3d R = Eigen::Quaterniond().setFromTwoVectors(V3d(0.0, 0.0, 1.0), w_o).toRotationMatrix();
+	Eigen::Matrix3d Rinv = R.inverse();
+
+
+	// get coefficients for L ------------
+	PNSolution L("c:/projects/epfl/epfl17/python/pnsolver/results/nebulae/nebulae_p5_2_ms.pns");
+	P3d pWS(-0.27704304, 0.36083166, -0.22953043);
+
+
+	//int order = 50;
+	//int numCoeffs = sph::numCoeffs(order);
+	int order = L.getOrder();
+	int numCoeffs = L.getNumCoeffs();
+	//int l = 1;
+	//int m = -1;
+
+	// get coefficients for radiance function ------------
+	std::vector<double> L_coeffs( numCoeffs, 0.0 );
+	for( int l=0;l<=order;++l )
+		for( int m=-l;m<=l;++m )
+		{
+			int index = sph::index(l, m);
+			L_coeffs[index] = L.evalCoefficient(pWS, index);
+		}
+
+
+	// get coefficients for phase function ------------
+	double phase_g = 0.3;
+	HGPhase phase(phase_g);
+	std::vector<double> f_coeffs( numCoeffs, 0.0 );
+	for( int l=0;l<=order;++l )
+		for( int m=-l;m<=l;++m )
+		{
+			f_coeffs[sph::index(l, m)] = phase.shCoeff(l, m);
+		}
+
+	/*
+	// validate that the reconstruction of the phase function from its SH coefficients
+	// matches the groundtruth closely for high N
+	// CHECK!
+	{
+		int numSamples = 100;
+		Eigen::VectorXd costheta_list(numSamples);
+		Eigen::VectorXd phase_list(numSamples);
+		Eigen::VectorXd rec_list(numSamples);
+		for( int i=0;i<numSamples;++i )
+		{
+			double costheta = 1 - i*2.0/double(numSamples);
+			//V3d wi(0.0, 0.0, 1.0);
+			V3d w_i = frame.toWorld(V3d(0.0, 0.0, costheta));
+			costheta_list.coeffRef(i) = costheta;
+			phase_list.coeffRef(i) = phase.eval(w_i, w_o);
+			double reconstrution = sph::eval(std::acos(costheta), 0.0, f_coeffs.data(), order);
+			rec_list.coeffRef(i) = reconstrution;
+		}
+
+		return std::make_tuple(costheta_list, phase_list, rec_list);
+	}
+	*/
+
+	/*
+	{
+		// validate, expressing real valued SH basis functions as linear combination of complex-valued SH basis functions
+		std::vector<std::complex<double>> complex_bases(numCoeffs, 0.0);
+		for( int l=0;l<=order;++l )
+			for( int m=-l;m<=l;++m )
+				complex_bases[sph::index(l,m)] = sph::complex_basis(l, m, theta_o, phi_o);
+		Eigen::MatrixXcd complex2real = sph::buildComplexToRealConversionMatrix(order);
+
+
+		// validate, expressing real valued SH basis functions as linear combination of complex-valued SH basis functions
+		// CHECK!
+		for( int l=0;l<=order;++l )
+			for( int m=-l;m<=l;++m )
+			{
+				int i = sph::index(l,m);
+				std::complex<double> real_basis = 0.0;
+				for( int j=0;j<numCoeffs;++j )
+					real_basis += complex2real.coeffRef(i, j)*complex_bases[j];
+				std::complex<double> real_basis_check = sph::basis(l, m, theta_o, phi_o);
+				std::cout << "l=" << l << " m=" << m << " " << real_basis << "=" << real_basis_check << std::endl;
+			}
+
+		// validate, that the real-valued SH of L can be expressed using complex-valued SH-basis functions...
+		// CHECK!
+		double left = 0.0;
+		for( int l=0;l<=order;++l )
+			for( int m=-l;m<=l;++m )
+				left += L_coeffs[sph::index(l,m)]*sph::basis(l,m,theta_o, phi_o);
+
+		std::complex<double> right = 0.0;
+		for( int l=0;l<=order;++l )
+			for( int m=-l;m<=-1;++m )
+			{
+				right += L_coeffs[sph::index(l,m)]*std::complex<double>(0.0, 1.0)/std::sqrt(2.0)*sph::complex_basis(l, m, theta_o, phi_o);
+				right += -L_coeffs[sph::index(l,m)]*std::complex<double>(0.0, 1.0)/std::sqrt(2.0)*sph::csp(m)*sph::complex_basis(l, -m, theta_o, phi_o);
+			}
+
+		for( int l=0;l<=order;++l )
+			right += L_coeffs[sph::index(l,0)]*sph::complex_basis(l, 0, theta_o, phi_o);
+
+		for( int l=0;l<=order;++l )
+			for( int m=1;m<=l;++m )
+			{
+				right += L_coeffs[sph::index(l,m)]*1.0/std::sqrt(2.0)*sph::complex_basis(l, -m, theta_o, phi_o);
+				right += L_coeffs[sph::index(l,m)]*1.0/std::sqrt(2.0)*sph::csp(m)*sph::complex_basis(l, m, theta_o, phi_o);
+			}
+
+		std::cout << "left=" << left << "(" << L.eval(pWS, w_o) << ") right=" << right << std::endl;
+	}
+	*/
+
+	for( int l=0;l<=order;++l )
+		for( int m=-l;m<=l;++m )
+		{
+			/*
+			// =====================================================
+			// rotation matrix, which rotates the phase function coordinate frame
+			// such that it aligns with the evaluation direction
+			Eigen::Matrix3d R = Eigen::Quaterniond().setFromTwoVectors(V3d(0.0, 0.0, 1.0), w_o).toRotationMatrix();
+			Eigen::Matrix3d Rinv = R.inverse();
+
+			// compute inner product between rotated Yl0 and Ylm
+			std::function<double (double, double)> left = [&](double theta_o, double phi_o)
+			{
+				double lambda_l = std::sqrt(4.0*M_PI/(2*l+1));
+				return lambda_l*sph::basis(l, m, theta_o, phi_o);
+			};
+			std::function<double (double, double)> right = [&](double theta_i, double phi_i)
+			{
+				double theta_i_2, phi_i_2;
+				V3d inv = Rinv*sphericalDirection(theta_i, phi_i);
+				sphericalCoordinates( inv, theta_i_2, phi_i_2 );
+				return  sph::basis(l, m, theta_i, phi_i)*
+						sph::basis(l, 0, theta_i_2, phi_i_2);
+			};
+			double left_value = left(theta_o, phi_o);
+			double right_value = integrate_sphere( right, integration_res );
+
+			std::cout << "left_value=" << left_value << " right_value=" << right_value << std::endl;
+			// should match lambda_l*Ylm
+			// CHECK: it does!
+			*/
+		}
+
+
+
+	// =====================================================
+
+	///*
+	// compute scattering for a single outgoing direction ---
+	std::function<double(double, double)> inscattering = [&]( double theta_i, double phi_i)
+	{
+		V3d w_i = sphericalDirection(theta_i, phi_i);
+		return L.eval(pWS, w_i)*phase.eval(w_i, w_o);
+	};
+
+	double left = integrate_sphere(inscattering, integration_res);
+
+	// compute the inner product with the rotated phase function
+	std::function<double (double, double)> inscattering_conv = [&](double theta_i, double phi_i)
+	{
+		V3d inv = Rinv*sphericalDirection(theta_i, phi_i);
+		double theta_i_2, phi_i_2;
+		sphericalCoordinates( inv, theta_i_2, phi_i_2 );
+		return  L.eval(pWS, sphericalDirection(theta_i, phi_i))*phase.eval(sphericalDirection(theta_i_2, phi_i_2), V3d(0.0, 0.0, 1.0));
+	};
+
+	double right = integrate_sphere(inscattering_conv, integration_res);
+
+	// this should match
+	// CHECK!
+	std::cout << "l=" << left << " r=" << right << std::endl;
+	//*/
+
+	// =====================================================
+	// compute inner product using derived terms which contain
+	// SH expanded variants of L and phase function
+	// this is to validate the scattering term before projecting it into SH
+
+	///*
+	std::function<std::complex<double> (double, double)> inscattering_conv2 = [&](double theta_i, double phi_i)
+	{
+		V3d inv = Rinv*sphericalDirection(theta_i, phi_i);
+		double theta_i_2, phi_i_2;
+		sphericalCoordinates( inv, theta_i_2, phi_i_2 );
+
+		// L
+		//std::complex<double> L_value = L.eval(pWS, sphericalDirection(theta_i, phi_i));
+		std::complex<double> L_value = 0.0;
+		for( int l=0;l<=order;++l )
+			for( int m=-l;m<=-1;++m )
+			{
+				L_value += L_coeffs[sph::index(l,m)]*std::complex<double>(0.0, 1.0)/std::sqrt(2.0)*sph::complex_basis(l, m, theta_i, phi_i);
+				L_value += -L_coeffs[sph::index(l,m)]*std::complex<double>(0.0, 1.0)/std::sqrt(2.0)*sph::csp(m)*sph::complex_basis(l, -m, theta_i, phi_i);
+			}
+
+		for( int l=0;l<=order;++l )
+			L_value += L_coeffs[sph::index(l,0)]*sph::complex_basis(l, 0, theta_i, phi_i);
+
+		for( int l=0;l<=order;++l )
+			for( int m=1;m<=l;++m )
+			{
+				L_value += L_coeffs[sph::index(l,m)]*1.0/std::sqrt(2.0)*sph::complex_basis(l, -m, theta_i, phi_i);
+				L_value += L_coeffs[sph::index(l,m)]*1.0/std::sqrt(2.0)*sph::csp(m)*sph::complex_basis(l, m, theta_i, phi_i);
+			}
+
+		// phase
+		std::complex<double> phase_value = 0.0;
+		for( int l=0;l<=order;++l )
+			phase_value += f_coeffs[sph::index(l,0)]*sph::complex_basis(l, 0, theta_i_2, phi_i_2);
+
+		return  L_value*
+				phase_value;
+	};
+
+	// CHECK!
+	std::complex<double> right2 = integrate_sphere(inscattering_conv2, integration_res);
+	std::cout << "r2=" << right2 << std::endl;
+
+	std::complex<double> right3(0.0, 0.0);
+
+
+
+	for( int l=0;l<=order;++l )
+		for( int m=-l;m<=-1;++m )
+		{
+			right3 += std::complex<double>(0.0, 1.0)/std::sqrt(2.0)*
+					  L_coeffs[sph::index(l,m)]*
+					  f_coeffs[sph::index(l,0)]*
+					  sph::lambda(l)*
+					  sph::complex_basis(l, m, theta_o, phi_o);
+		}
+
+	for( int l=0;l<=order;++l )
+		for( int m=-l;m<=-1;++m )
+		{
+			right3 -= std::complex<double>(0.0, 1.0)/std::sqrt(2.0)*
+					  sph::csp(m)*
+					  L_coeffs[sph::index(l,m)]*
+					  f_coeffs[sph::index(l,0)]*
+					  sph::lambda(l)*
+					  sph::complex_basis(l, -m, theta_o, phi_o);
+		}
+
+	for( int l=0;l<=order;++l )
+		right3 += L_coeffs[sph::index(l,0)]*
+				  f_coeffs[sph::index(l,0)]*
+				  sph::lambda(l)*
+				  sph::complex_basis(l, 0, theta_o, phi_o);
+
+	for( int l=0;l<=order;++l )
+		for( int m=1;m<=l;++m )
+		{
+			right3 += 1.0/std::sqrt(2.0)*
+					  L_coeffs[sph::index(l,m)]*
+					  f_coeffs[sph::index(l,0)]*
+					  sph::lambda(l)*
+					  sph::complex_basis(l, -m, theta_o, phi_o);
+		}
+
+	for( int l=0;l<=order;++l )
+		for( int m=1;m<=l;++m )
+		{
+			right3 += 1.0/std::sqrt(2.0)*
+					  sph::csp(m)*
+					  L_coeffs[sph::index(l,m)]*
+					  f_coeffs[sph::index(l,0)]*
+					  sph::lambda(l)*
+					  sph::complex_basis(l, m, theta_o, phi_o);
+		}
+	std::cout << "r3=" << right3 << std::endl;
+	// CHECK!
+
+
+
+	/*
+	RNGd rng;
+	int numSamples = 10;
+	for( int i=0;i<numSamples;++i )
+	{
+		V3d d = sampleSphere(rng);
+		double theta, phi;
+		sphericalCoordinates(d, theta, phi);
+
+		for( int l=0;l<=order;++l )
+			for( int m=-l;m<=l;++m )
+			{
+				V3d value = sph::basis(l, m, theta, phi)*d;
+
+				double d_x = -c_lm(l-1, m-1)*sph::basis(l-1, m-1, theta, phi)+
+							 d_lm(l-1, m+1)*sph::basis(l-1, m+1, theta, phi)+
+							 e_lm(l+1, m-1)*sph::basis(l+1, m-1, theta, phi)+
+							 -f_lm(l+1, m+1)*sph::basis(l+1, m+1, theta, phi);
+
+				std::cout << "value=" << value.x() << " " << 0.5*d_x << std::endl;
+			}
+	}
+	*/
+}
+
 PYBIND11_MODULE(pnsolver, m)
 {
 	/*
@@ -886,6 +1303,8 @@ PYBIND11_MODULE(pnsolver, m)
 	m.def( "solve_gs", &solve_gs);
 	m.def( "solve_mg", &solve_mg);
 	m.def( "solve_ls_lscg", &solve_ls_lscg);
+
+	m.def( "test", &test);
 
 
 	/*

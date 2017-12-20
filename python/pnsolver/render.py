@@ -260,13 +260,13 @@ if __name__ == "__main__":
 	pns = renderer.load_pnsolution( "c:/projects/epfl/epfl17/python/pnsolver/results/nebulae/nebulae_p5_2_ms.pns" )
 	integrator_pnis = renderer.create_pnispt_integrator(pns, False, -1)
 
-	numSamples = 1
+	numSamples = 10
 
 
 	#img_ms = renderer.render( volume, light, camera, integrator_groundtruth_ms, numSamples )
 	#img_ms.save("nebulae_ms_mc.exr")
-	img_ms = renderer.render( volume, light, camera, integrator_pnis, numSamples )
-	img_ms.save("nebulae_ms_pnis.exr")
+	#img_ms = renderer.render( volume, light, camera, integrator_pnis, numSamples )
+	#img_ms.save("nebulae_ms_pnis_mis.exr")
 
 	#'''
 	depth = integrator_pnis.dbgGet("depth")

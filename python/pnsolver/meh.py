@@ -41,8 +41,14 @@ class Expression(object):
 		self.children[index] = new_child
 
 	def depends_on(self, variable, debug = False):
+		
+		#if debug == True:
+		#	print("Expression::depends_on {}".format(self.toLatex()))
 		for i in range(self.numChildren()):
-			if self.getChildren(i).depends_on(variable, debug):
+			r = self.getChildren(i).depends_on(variable, debug)
+			#if debug == True:
+			#	print("Expression:: {} depends_on({})={}".format(self.getChildren(i).toLatex(), variable.toLatex(), r))
+			if r:
 				return True
 		return False
 
@@ -404,6 +410,14 @@ class Kronecker(Function):
 	def getSecondIndex(self):
 		return self.getArgument(1)
 
+	def canEvaluate(self, debug = False):
+		return self.getFirstIndex().canEvaluate() and self.getSecondIndex().canEvaluate()
+
+	def evaluate(self):
+		if self.getFirstIndex().evaluate() == self.getSecondIndex().evaluate():
+			return 1
+		return 0
+
 	def deep_copy(self):
 		return Kronecker(self.getFirstIndex().deep_copy(), self.getSecondIndex().deep_copy())
 
@@ -499,10 +513,17 @@ class Sqrt(Operator):
 	def __init__(self, operand):
 		super().__init__([operand])
 
+	def getExpr(self):
+		return self.getOperand(0)
+
 	def deep_copy(self):
 		return Sqrt(self.getOperand(0).deep_copy())
 	def toLatex(self):
 		return "\\sqrt{{{}}}".format(self.getOperand(0).toLatex())
+	def canEvaluate(self, debug = False):
+		return self.getExpr().canEvaluate()
+	def evaluate(self):
+		return np.sqrt(self.getExpr().evaluate())
 
 class Power(Operator):
 	def __init__(self, base, exp):
@@ -514,7 +535,15 @@ class Power(Operator):
 	def deep_copy(self):
 		return Power(self.getBase().deep_copy(), self.getExponent().deep_copy())
 	def toLatex(self):
-		return "{{{}}}^{{{}}}".format(self.getBase().toLatex(), self.getExponent().toLatex())
+		do_parenthesis = False
+
+		if self.getBase().__class__ == Negate:
+			do_parenthesis = True
+
+		if do_parenthesis == True:
+			return "\left({{{}}}\\right)^{{{}}}".format(self.getBase().toLatex(), self.getExponent().toLatex())
+		else:
+			return "{{{}}}^{{{}}}".format(self.getBase().toLatex(), self.getExponent().toLatex())
 
 class Addition( Operator ):
 	def __init__(self, operands):
@@ -533,7 +562,7 @@ class Addition( Operator ):
 		super().__init__(flattened)
 	def deep_copy(self):
 		return Addition( [op.deep_copy() for op in self.getOperands()] )
-	def toLatex(self):
+	def toLatex(self, debug = False):
 		result = ""
 		for i in range(self.numOperands()):
 			expr = self.getOperand(i)
@@ -721,6 +750,9 @@ class Summation( Operator ):
 		if parent != None and parent.__class__ == Multiplication:
 			parentheses = True
 
+		if self.getExpr().__class__ == Addition:
+			parentheses = True
+
 		if parentheses == True:
 			result = "\\sum_{{{}={}}}^{{{}}}{{\\left({}\\right)}}".format(self.index.toLatex(), self.getStart().toLatex(), self.getEnd().toLatex(), self.getExpr().toLatex())
 		else:
@@ -802,9 +834,19 @@ class Divergence(Operator):
 		else:
 			return "\\nabla\\cdot{{{}}}".format(expr.toLatex())
 
-def num( value ):
-	if value.__class__ == complex:
-		return Number(value)
+def num( value, debug = False ):
+	if debug == True:
+		print("num({})".format(value))
+		print(value.__class__.__name__)
+	if value.__class__ == complex or value.__class__ == np.complex128:
+		if debug == True:
+			print("\tis complex".format(value))
+
+		# we convert complex numbers with a zero imaginary component to real
+		if np.imag(value) == 0:
+			value = np.real(value)
+		else:
+			return Number(value)
 
 	if value < 0:
 		return neg(num(-value))
@@ -905,6 +947,22 @@ def dot(left, right):
 def sh_expansion( fun, positional_variable, directional_variable ):
 	return sum( sum( mul( SHCoefficient( fun.getSymbol(), var("l"), var("m"), positional_variable ), SHBasis(var("l"), var("m"), directional_variable, conjugate_complex=False) ), var('m'), neg(var('l')), var('l') ), var('l'), num(0), infty() )
  
+def sh_expansion_real( fun, positional_variable, directional_variable, truncation_order = infty() ):
+	f1 = mul(frac(imag(1), sqrt(num(2))), SHBasis(var("l"), var("m"), directional_variable, conjugate_complex=False))
+	f2 = mul(frac(imag(1), sqrt(num(2))), pow(num(-1), var("m")), SHBasis(var("l"), neg(var("m")), directional_variable, conjugate_complex=False))
+	sh_real_basis_a = sub(f1, f2)
+	sh_real_basis_b = SHBasis(var("l"), num(0), directional_variable, conjugate_complex=False)
+	f1 = mul(frac(num(1), sqrt(num(2))), SHBasis(var("l"), neg(var("m")), directional_variable, conjugate_complex=False))
+	f2 = mul(frac(num(1), sqrt(num(2))), pow(num(-1), var("m")), SHBasis(var("l"), var("m"), directional_variable, conjugate_complex=False))
+	sh_real_basis_c = add(f1, f2)
+
+	
+	sum_a = sum( mul( SHCoefficient( fun.getSymbol(), var("l"), var("m"), positional_variable ), sh_real_basis_a ), var('m'), neg(var('l')), num(-1) )
+	sum_b = mul( SHCoefficient( fun.getSymbol(), var("l"), num(0), positional_variable ), sh_real_basis_b )
+	sum_c = sum( mul( SHCoefficient( fun.getSymbol(), var("l"), var("m"), positional_variable ), sh_real_basis_c ), var('m'), num(1), var('l') )
+	return sum( add(sum_a, sum_b, sum_c), var('l'), num(0), truncation_order )
+
+
 def latex( expr ):
 	return expr.toLatex()
 
@@ -933,6 +991,17 @@ def tree_str(expr, level=0):
 		for child in expr.children:
 			result += "{}".format(tree_str(child, level+1))
 	return result
+
+def split(expr):
+
+	if expr.__class__ == Addition or expr.__class__ == Multiplication:
+		result = []
+		ops = expr.getOperands()
+		for op in ops:
+			result.append(op)
+		return result
+	else:
+		return [expr]
 
 
 
@@ -1003,6 +1072,10 @@ class FoldConstants(object):
 		other_childs = []
 		numNegates = 0
 
+		if self.debug == True:
+			print_expr(expr)
+			print_tree(expr)
+
 		numOperands = expr.numOperands()
 		for i in range(numOperands):
 			child = expr.getOperand(i)
@@ -1010,7 +1083,10 @@ class FoldConstants(object):
 				number_childs.append(child)
 			elif isinstance(child, Negate):
 				numNegates += 1
-				other_childs.append(child.getOperand(0))
+				if isinstance(child.getOperand(0), Number):
+					number_childs.append(child.getOperand(0))
+				else:
+					other_childs.append(child.getOperand(0))
 			else:
 				other_childs.append(child)
 
@@ -1089,6 +1165,64 @@ class FoldConstants(object):
 			return num(expr.evaluate())
 		else:
 			return expr
+
+	def visit_Power(self, expr):
+		if expr.getBase().canEvaluate() and expr.getExponent().canEvaluate():
+			return num( np.power(expr.getBase().evaluate(), expr.getExponent().evaluate()) )
+		else:
+			return expr
+
+	def visit_Derivation(self, expr):
+		if expr.getExpr().canEvaluate():
+			# the derivative of a constant value is zero
+			return num(0)
+		else:
+			return expr
+
+class FoldConstants2(object):
+	def __init__(self, debug = False):
+		self.debug = debug
+	def visit_Expression(self, expr):
+		if expr.canEvaluate():
+			if self.debug:
+				print("expr={} evaluate={}".format(expr.toLatex(), expr.evaluate()))
+			return num(expr.evaluate(), self.debug)
+		else:
+			return expr
+	def visit_Addition(self, expr):
+		folded = self.visit_Expression(expr)
+
+		if folded.__class__ == Addition:
+			# else we expect an addition of which some terms might
+			# have been evaluated to zero. Here we remove those terms
+			terms = []
+			ops = folded.getOperands()
+			for op in ops:
+				if op.canEvaluate():
+					value = op.evaluate()
+					if np.real(value)==0 and np.imag(value)==0:
+						# we remove terms which evaluated to zero
+						pass
+					#elif np.imag(value)==0:
+					#	# we convert imaginary numbers with a zero imaginary component
+					#	# to real numbers
+					#	terms.append(num(np.real(value)))
+					else:
+						terms.append(op)
+				else:
+					terms.append(op)
+			if len(terms) == 0:
+				folded = num(0)
+			elif len(terms) == 1:
+				folded = terms[0]
+			else:
+				folded = Addition(terms)
+		
+		return folded
+
+
+
+
 
 class ImaginaryUnitProperty(object):
 	def visit_Multiplication(self, expr):
@@ -1479,6 +1613,54 @@ class SplitSums(object):
 			return Addition(terms)
 		return expr
 
+class ExpandSums(object):
+	def __init__(self, debug=False):
+		self.debug = debug
+	def visit_Summation(self, expr):
+		nested_expr = expr.getOperand(0)
+		variable = expr.getVariable()
+		start = expr.getStart()
+		end = expr.getEnd()
+
+		if start.canEvaluate() and end.canEvaluate():
+			start_value = start.evaluate()
+			end_value = end.evaluate()
+
+			terms = []
+			for i in range(start_value, end_value+1):
+				term = apply_recursive(nested_expr.deep_copy(), Substitute(variable, num(i)))
+				term = apply_recursive(term, FoldConstants(self.debug))
+				if self.debug == True:
+					print("test:")
+					print_expr(term)
+				terms.append(term)
+			if len(terms) == 0:
+				return num(0)
+			elif len(terms) == 1:
+				return terms[0]
+			else:
+				return Addition(terms)
+		return expr
+
+	def visit_Addition(self, expr):
+		ops = expr.getOperands()
+		terms = []
+		for o in ops:
+			if o.canEvaluate() and o.evaluate()==0:
+				continue
+			terms.append(o)
+
+		if len(terms) == 0:
+			return num(0)
+		elif len(terms) == 1:
+			return terms[0]
+		elif len(terms) == len(ops):
+			return expr
+		else:
+			return Addition(terms)
+
+
+
 
 
 
@@ -1665,20 +1847,44 @@ class MergeQuotients(object):
 
 
 class SummationOverKronecker(object):
+	def __init__(self, debug = False):
+		self.debug = debug
+
 	def visit_Summation(self, expr):
+
+		if self.debug == True:
+			print_tree(expr)
+
 		var = expr.getVariable()
 		#print(expr.getVariable().__class__.__name__)
+
+		# check if the nested expression is a multiplication
 		if expr.getExpr().__class__ == Multiplication:
 			m = expr.getExpr()
+
+			# seperate all factors of the multiplication into 
+			# kroneckers and others
 			factors = []
 			kroneckers = []
 			for i in range(m.numOperands()):
 				f = m.getOperand(i)
+				if self.debug == True:
+					print(f.__class__.__name__)
 				if f.__class__ == Kronecker:
 					if f.getFirstIndex() == var or f.getSecondIndex() == var:
 						kroneckers.append(f)
 						continue
+					# there are some special cases where we have something like
+					# delta_{m+1}_{-m}. These instances wont be covered as -m is not var itsself.
+					# We handle these cases manually.
+					elif f.getSecondIndex().__class__ == Negate and f.getSecondIndex().getExpr() == var:
+						kroneckers.append(f)
+						continue
+
 				factors.append(f)
+
+			if self.debug == True:
+				print("numKroneckers={} numFactors={}".format(len(kroneckers), len(factors)))
 			# TODO: account for multiple kroneckers, selecting different terms
 			# TODO: deep_copy()
 			terms = []
@@ -1694,6 +1900,13 @@ class SummationOverKronecker(object):
 					terms.append( apply_recursive(term, Substitute(var, f.getSecondIndex())) )
 				elif k.getSecondIndex() == var:
 					terms.append( apply_recursive(term, Substitute(var, f.getFirstIndex())) )
+				# there are some special cases where we have something like
+				# delta_{m+1}_{-m}. These instances wont be covered as -m is not var itsself.
+				# We handle these cases manually.
+				elif k.getSecondIndex().__class__ == Negate and k.getSecondIndex().getExpr() == var:
+					ff = neg(f.getFirstIndex())
+					ff = apply_recursive(ff, CleanupSigns())
+					terms.append( apply_recursive(term, Substitute(var, ff)) )
 			if len(terms) == 1:
 				return terms[0]
 			elif len(terms) > 1:

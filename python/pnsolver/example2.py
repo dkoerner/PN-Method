@@ -162,7 +162,7 @@ def solve( stencil_name, problem, filename, do_neumannBC = False ):
 
 
 
-	# here we store information about the convergence behaviour
+	## here we store information about the convergence behaviour
 	#data = {}
 	#data["convergence"] = convergence
 	#data["timestamps"] = timestamps
@@ -329,8 +329,8 @@ if __name__ == "__main__":
 	#order = [1,2,3,4,5]
 	#order = [3,4,5]
 	#order = [3]
-	#order = [5]
 	order = [1]
+	#staggered = [True]
 	staggered = [False]
 	boundary_conditions = [False]
 

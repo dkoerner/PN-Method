@@ -80,12 +80,10 @@ double PNSolution::eval( const P3d& pWS, const V3d& direction )const
 			coeff += m_data[voxel_indices[7] + coeff_index]*tx*ty*tz;
 
 			// now do the SH accumulation
-			result += coeff*sph::basis_real(l, m, theta, phi);
+			result += coeff*sph::basis(l, m, theta, phi);
 		}
 
-	// NB: here we apply a normalization. This is required to have the intergal over
-	// the sphere match the zero coefficient
-	return result/std::sqrt(4.0*M_PI);
+	return result;
 }
 
 double PNSolution::evalCoefficient(const P3d &pWS, int coeff_index)const

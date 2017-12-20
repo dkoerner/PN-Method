@@ -45,6 +45,31 @@ struct IsotropicPhase : public PhaseFunction
 	}
 };
 
+struct HGPhase : public PhaseFunction
+{
+	typedef std::shared_ptr<HGPhase> Ptr;
+
+	virtual double sample( const V3d& wi, V3d& wo, double& pdf, RNGd& rng ) const override
+	{
+		/*
+		wo = sampleSphere<double>(rng);
+		pdf = INV_FOURPI;
+		return 1.0; // eval/pdf = 1.0
+		*/
+		return 0.0;
+	}
+
+	virtual double eval( const V3d& wi, const V3d& wo )const override
+	{
+		double temp = 1.0 + m_g*m_g + 2.0 * m_g * dot(wi, wo);
+		return INV_FOURPI * (1 - m_g*m_g) / (temp * std::sqrt(temp));
+	}
+
+
+private:
+	double m_g;
+};
+
 /*
 struct PhaseFunctionField
 {

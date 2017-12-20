@@ -207,6 +207,46 @@ struct PNSystem
 				return *sys.getProblem().get();
 			}
 
+			V3d evalScattering( int voxelOffset_i, int voxelOffset_j, int voxelOffset_k )
+			{
+				V3d pVS(voxel.coord[0] + voxelOffset_i,
+						voxel.coord[1] + voxelOffset_j,
+						voxel.coord[2] + voxelOffset_k);
+				return sys.getProblem()->evalScattering( sys.getDomain().voxelToWorld(pVS) );
+			}
+
+			V3d evalAbsorption( int voxelOffset_i, int voxelOffset_j, int voxelOffset_k )
+			{
+				V3d pVS(voxel.coord[0] + voxelOffset_i,
+						voxel.coord[1] + voxelOffset_j,
+						voxel.coord[2] + voxelOffset_k);
+				return sys.getProblem()->evalAbsorption( sys.getDomain().voxelToWorld(pVS) );
+			}
+
+			V3d evalExtinction( int voxelOffset_i, int voxelOffset_j, int voxelOffset_k )
+			{
+				V3d pVS(voxel.coord[0] + voxelOffset_i,
+						voxel.coord[1] + voxelOffset_j,
+						voxel.coord[2] + voxelOffset_k);
+				return sys.getProblem()->evalExtinction( sys.getDomain().voxelToWorld(pVS) );
+			}
+
+			V3d evalEmission( int l, int m, int voxelOffset_i, int voxelOffset_j, int voxelOffset_k )
+			{
+				V3d pVS(voxel.coord[0] + voxelOffset_i,
+						voxel.coord[1] + voxelOffset_j,
+						voxel.coord[2] + voxelOffset_k);
+				return sys.getProblem()->evalEmission( l, m, sys.getDomain().voxelToWorld(pVS) );
+			}
+
+			V3d evalPhase( int l, int m, int voxelOffset_i, int voxelOffset_j, int voxelOffset_k )
+			{
+				V3d pVS(voxel.coord[0] + voxelOffset_i,
+						voxel.coord[1] + voxelOffset_j,
+						voxel.coord[2] + voxelOffset_k);
+				return sys.getProblem()->evalPhase( l, m, sys.getDomain().voxelToWorld(pVS) );
+			}
+
 			// return the offset in voxelspace for the given staggered grid index
 			static V3d& getVoxelSpaceOffsetFromGrid2(int grid_index)
 			{

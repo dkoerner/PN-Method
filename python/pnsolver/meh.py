@@ -857,6 +857,8 @@ def num( value, debug = False ):
 def imag( value ):
 	if value == 1:
 		return ImaginaryUnit()
+	elif value == -1:
+		return neg(ImaginaryUnit())
 	return mul(num(value), ImaginaryUnit())
 
 

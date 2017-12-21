@@ -13,19 +13,19 @@ void stencil_fopn_p1_cg(PNSystem::Stencil::Context& ctx)
 
 	Eigen::Matrix<std::complex<double>, 3, 3> S;
 	S.coeffRef(0, 0) = std::complex<double>(1.0, 0.0);
-	S.coeffRef(1, 1) = std::complex<double>(0.7071067811865475, 0.0);
-	S.coeffRef(1, 2) = std::complex<double>(-0.7071067811865475, 0.0);
-	S.coeffRef(2, 1) = std::complex<double>(-0.0, -0.7071067811865475);
-	S.coeffRef(2, 2) = std::complex<double>(-0.0, -0.7071067811865475);
+	S.coeffRef(1, 1) = std::complex<double>(0.0, 0.7071067811865475);
+	S.coeffRef(1, 2) = std::complex<double>(0.0, 0.7071067811865475);
+	S.coeffRef(2, 1) = std::complex<double>(0.7071067811865475, 0.0);
+	S.coeffRef(2, 2) = std::complex<double>(-0.7071067811865475, 0.0);
 	Eigen::Matrix<std::complex<double>, 3, 3> SInv;
 	SInv.coeffRef(0, 0) = std::complex<double>(1.0, 0.0);
-	SInv.coeffRef(1, 1) = std::complex<double>(0.7071067811865476, 0.0);
-	SInv.coeffRef(1, 2) = std::complex<double>(0.0, 0.7071067811865476);
-	SInv.coeffRef(2, 1) = std::complex<double>(-0.7071067811865476, 0.0);
-	SInv.coeffRef(2, 2) = std::complex<double>(-0.0, 0.7071067811865476);
+	SInv.coeffRef(1, 1) = std::complex<double>(0.0, -0.7071067811865476);
+	SInv.coeffRef(1, 2) = std::complex<double>(0.7071067811865476, 0.0);
+	SInv.coeffRef(2, 1) = std::complex<double>(0.0, -0.7071067811865476);
+	SInv.coeffRef(2, 2) = std::complex<double>(-0.7071067811865476, -0.0);
 
 	//Producing complex-valued matrices =============
-	//M_0dxL + M_1dyL + M_2dzL + M_3L = b
+	//M_0dxL + M_1dyL + M_2dzL
 
 	//M_0 ---
 	// is constant
@@ -36,54 +36,15 @@ void stencil_fopn_p1_cg(PNSystem::Stencil::Context& ctx)
 	//M_2 ---
 	// all components vanish
 
-	//M_3 ---
-	Eigen::Matrix<double, 3, 3> M_3_real_staggered[4];
-	for( int i=0;i<4;++i )
-	{
-		Eigen::Matrix<std::complex<double>, 3, 3> M_3;
-		M_3(0, 0) = (problem.evalExtinction(domain.voxelToWorld(vd+ctx.getVoxelSpaceOffsetFromGrid2(i)))[color_channel]+
-			-(problem.evalScattering(domain.voxelToWorld(vd+ctx.getVoxelSpaceOffsetFromGrid2(i)))[color_channel]*problem.evalPhase(0, 0, domain.voxelToWorld(vd+ctx.getVoxelSpaceOffsetFromGrid2(i)))[color_channel]));
-		M_3(1, 1) = (problem.evalExtinction(domain.voxelToWorld(vd+ctx.getVoxelSpaceOffsetFromGrid2(i)))[color_channel]+
-			-(problem.evalScattering(domain.voxelToWorld(vd+ctx.getVoxelSpaceOffsetFromGrid2(i)))[color_channel]*problem.evalPhase(1, 0, domain.voxelToWorld(vd+ctx.getVoxelSpaceOffsetFromGrid2(i)))[color_channel]));
-		M_3(2, 2) = (problem.evalExtinction(domain.voxelToWorld(vd+ctx.getVoxelSpaceOffsetFromGrid2(i)))[color_channel]+
-			-(problem.evalScattering(domain.voxelToWorld(vd+ctx.getVoxelSpaceOffsetFromGrid2(i)))[color_channel]*problem.evalPhase(1, 0, domain.voxelToWorld(vd+ctx.getVoxelSpaceOffsetFromGrid2(i)))[color_channel]));
-		M_3_real_staggered[i] = (S*M_3*SInv).real();
-	}
-	Eigen::Matrix<double, 3, 3> M_3_real;
-	M_3_real.row(0) = M_3_real_staggered[2].row(0);
-	M_3_real.row(1) = M_3_real_staggered[2].row(1);
-	M_3_real.row(2) = M_3_real_staggered[2].row(2);
-
-	//b ---
-	Eigen::Matrix<double, 3, 1> b_real_staggered[4];
-	for( int i=0;i<4;++i )
-	{
-		Eigen::Matrix<std::complex<double>, 3, 1> b;
-		b(0, 0) = problem.evalEmission(0, 0, domain.voxelToWorld(vd+ctx.getVoxelSpaceOffsetFromGrid2(i)))[color_channel];
-		b(1, 0) = problem.evalEmission(1, -1, domain.voxelToWorld(vd+ctx.getVoxelSpaceOffsetFromGrid2(i)))[color_channel];
-		b(2, 0) = problem.evalEmission(1, 1, domain.voxelToWorld(vd+ctx.getVoxelSpaceOffsetFromGrid2(i)))[color_channel];
-		b_real_staggered[i] = (S*b).real();
-	}
-	Eigen::Matrix<double, 3, 1> b_real;
-	b_real.row(0) = b_real_staggered[2].row(0);
-	b_real.row(1) = b_real_staggered[2].row(1);
-	b_real.row(2) = b_real_staggered[2].row(2);
-
 	// Assembling global system =============
-	ctx.coeff_A( 1, vi + V3i(-1,0,0), 0 ) += -(h_inv[0]*0.57735026919);
-	ctx.coeff_A( 1, vi + V3i(1,0,0), 0 ) += (h_inv[0]*0.57735026919);
-	ctx.coeff_A( 0, vi + V3i(-1,0,0), 1 ) += -(h_inv[0]*0.57735026919);
-	ctx.coeff_A( 0, vi + V3i(1,0,0), 1 ) += (h_inv[0]*0.57735026919);
-	ctx.coeff_A( 2, vi + V3i(0,-1,0), 0 ) += -(h_inv[1]*0.57735026919);
-	ctx.coeff_A( 2, vi + V3i(0,1,0), 0 ) += (h_inv[1]*0.57735026919);
-	ctx.coeff_A( 0, vi + V3i(0,-1,0), 2 ) += -(h_inv[1]*0.57735026919);
-	ctx.coeff_A( 0, vi + V3i(0,1,0), 2 ) += (h_inv[1]*0.57735026919);
-	ctx.coeff_A( 0, vi + V3i(0,0,0), 0 ) += M_3_real.coeffRef(0, 0);
-	ctx.coeff_A( 1, vi + V3i(0,0,0), 1 ) += M_3_real.coeffRef(1, 1);
-	ctx.coeff_A( 2, vi + V3i(0,0,0), 2 ) += M_3_real.coeffRef(2, 2);
-	ctx.coeff_b( 0 ) += b_real.coeffRef(0, 0);
-	ctx.coeff_b( 1 ) += b_real.coeffRef(1, 0);
-	ctx.coeff_b( 2 ) += b_real.coeffRef(2, 0);
+	ctx.coeff_A( 2, vi + V3i(-1,0,0), 0 ) += -(h_inv[0]*0.57735026919);
+	ctx.coeff_A( 2, vi + V3i(1,0,0), 0 ) += (h_inv[0]*0.57735026919);
+	ctx.coeff_A( 0, vi + V3i(-1,0,0), 2 ) += -(h_inv[0]*0.57735026919);
+	ctx.coeff_A( 0, vi + V3i(1,0,0), 2 ) += (h_inv[0]*0.57735026919);
+	ctx.coeff_A( 1, vi + V3i(0,-1,0), 0 ) += -(h_inv[1]*-0.57735026919);
+	ctx.coeff_A( 1, vi + V3i(0,1,0), 0 ) += (h_inv[1]*-0.57735026919);
+	ctx.coeff_A( 0, vi + V3i(0,-1,0), 1 ) += -(h_inv[1]*-0.57735026919);
+	ctx.coeff_A( 0, vi + V3i(0,1,0), 1 ) += (h_inv[1]*-0.57735026919);
 }
 V3i stencil_fopn_p1_cg_get_offset(int coeff)
 {

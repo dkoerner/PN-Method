@@ -45,10 +45,13 @@ def solve( stencil_name, problem, filename, do_neumannBC = False ):
 
 	#problem.setExtinctionMinimumThreshold(4.0)
 	#problem.setExtinctionMinimumThreshold(0.0)
+
 	#sys.build()
 	#A = sys.get_A()
-	#print(A.shape)
-	#scipy.io.savemat(filename+".t0.mat", {"A":A})
+	##print(A.shape)
+	#mat_filename = filename+".t0_2.mat"
+	#print(mat_filename)
+	#scipy.io.savemat(mat_filename, {"A2":A})
 	#return
 
 
@@ -286,7 +289,7 @@ if __name__ == "__main__":
 
 	#problem = problems.pointsource3d(res=64)
 	#problem = problems.checkerboard3d(res=64)
-	problem = problems.checkerboard2d()
+	problem = problems.checkerboard2d_modified_phase()
 	#problem = problems.nebulae()
 
 	#problem_id = "pointsource"
@@ -330,8 +333,8 @@ if __name__ == "__main__":
 	#order = [3,4,5]
 	#order = [3]
 	order = [1]
-	#staggered = [True]
-	staggered = [False]
+	staggered = [True]
+	#staggered = [False]
 	boundary_conditions = [False]
 
 	#rte_forms = []
@@ -347,7 +350,7 @@ if __name__ == "__main__":
 		is_staggered = c[2]
 		do_neumannBC = c[3]
 
-		stencil_name = "stencil_{}_p{}_{}".format(rte_form_name, order, staggered_id[is_staggered] )
+		stencil_name = "stencil2_{}_p{}_{}".format(rte_form_name, order, staggered_id[is_staggered] )
 		#stencil_name = "noop"
 		#print(stencil_name)
 		

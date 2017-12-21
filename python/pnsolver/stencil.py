@@ -10,6 +10,7 @@ import rte_terms
 import meh
 import itertools
 import os
+import pnsolver
 
 
 class StaggeredGridLocation(object):
@@ -601,8 +602,12 @@ class PNInfo2D(object):
 		if staggered == True:
 			if self.order >= 1:
 				#pass
-				self.place_unknown( 1, (0, 1, 1) )
-				self.place_unknown( 2, (1, 0, 1) )
+				#self.place_unknown( 1, (0, 1, 1) )
+				#self.place_unknown( 2, (1, 0, 1) )
+
+				# alternative S matrix
+				self.place_unknown( 1, (1, 0, 1) )
+				self.place_unknown( 2, (0, 1, 1) )
 			#'''
 			if self.order >= 2:
 				self.place_unknown( 3, (1, 1, 1) )
@@ -652,7 +657,7 @@ class PNInfo2D(object):
 	def build_S(self):
 		'''builds the S matrix, which converts from complex-valued to real valued coefficients'''
 		# build S matrix ( we iterate over l, m to make sure that the order is correct)
-
+		'''
 		self.S = np.zeros((self.numCoeffs, self.numCoeffs),dtype=complex)
 		count = 0
 		for l in range(0, self.order+1):
@@ -681,6 +686,33 @@ class PNInfo2D(object):
 						self.S[count, self.lm_to_index[(l,-m)]] = -np.power(-1.0, 2*m)/np.sqrt(2)*1j
 					count+=1
 		self.S_inv = np.linalg.inv(self.S)
+		'''
+		S = pnsolver.createComplexToRealConversionMatrix(self.order)
+		S_inv = pnsolver.createRealToComplexConversionMatrix(self.order)
+
+		# get rid of rows and columns for coefficients which are not part of the 2d problem
+		#self.S = np.zeros((self.numCoeffs, self.numCoeffs),dtype=complex)
+		to_delete = []
+		for l in range(0, self.order+1):
+			for m in range(-l, l+1):
+				index3d = l*(l+1)+m 
+				# in 2d, we only need to solve for moments where l+m is even
+				if (l+m) % 2 == 0:
+					pass
+				else:
+					# this index is not part of the 2d problem, so we remove respective
+					# column and row from the complex2real conversion matrix S
+					to_delete.append(index3d)
+		print(to_delete)
+		S = np.delete(S, to_delete, 0)
+		S = np.delete(S, to_delete, 1)
+		self.S = S
+
+		S_inv = np.delete(S_inv, to_delete, 0)
+		S_inv = np.delete(S_inv, to_delete, 1)
+		self.S_inv = S_inv
+
+
 
 	def to_complex( self, x_real):
 	    # use this to convert the solution from complex valued to real valued
@@ -1926,9 +1958,9 @@ if __name__ == "__main__":
 
 	terms_fopn = []
 	terms_fopn.append(rte_terms.fopn.transport_term())
-	terms_fopn.append(rte_terms.fopn.collision_term())
-	terms_fopn.append(rte_terms.fopn.scattering_term())
-	terms_fopn.append(rte_terms.fopn.source_term())
+	#terms_fopn.append(rte_terms.fopn.collision_term())
+	#terms_fopn.append(rte_terms.fopn.scattering_term())
+	#terms_fopn.append(rte_terms.fopn.source_term())
 	
 	
 	terms_fopn = rte_terms.splitAddition( terms_fopn )

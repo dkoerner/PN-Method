@@ -755,6 +755,7 @@ PNSystem::MatrixBuildercd::Matrix buildBlockDiagonalMatrix( const Eigen::MatrixX
 // alltogether.
 Eigen::MatrixXcd createComplexToRealConversionMatrix( int order )
 {
+	/*
 	int numCoeffs = (order+1)*(order+1);
 
 	Eigen::MatrixXcd S = Eigen::MatrixXcd::Zero(numCoeffs, numCoeffs);
@@ -787,6 +788,8 @@ Eigen::MatrixXcd createComplexToRealConversionMatrix( int order )
 		}
 
 	return S;
+	*/
+	return sph::buildComplexToRealConversionMatrix(order);
 }
 
 Eigen::MatrixXcd createRealToComplexConversionMatrix( int order )
@@ -1025,6 +1028,92 @@ void test()
 			f_coeffs[sph::index(l, m)] = phase.shCoeff(l, m);
 		}
 
+
+	// collision term =======================
+
+	std::function<double(double, double)> L_fun = [&]( double theta, double phi )
+	{
+		return sph::eval(theta, phi, L_coeffs.data(), order);
+	};
+
+
+	/*
+	// validate, that the coefficients of the projection of a real-valued SH function
+	// matches the coefficients of that original SH function
+	{
+		std::vector<double> pL_coeffs( numCoeffs, 0.0 );
+		sph::project(fun, order, 1024, pL_coeffs.data());
+		for( int i=0;i<numCoeffs;++i )
+		{
+			std::cout << "i=" << i << " "  << L_coeffs[i] << " " << pL_coeffs[i] << std::endl;
+		}
+		// CHECK!
+	}
+	*/
+
+	// do our own integral with the projection
+	int l = 1;
+	int m = -1;
+	{
+		std::vector<double> pL_coeffs( numCoeffs, 0.0 );
+
+		std::function<double(int, int, double, double)> real_basis = [&]( int l, int m, double theta, double phi )
+		{
+			if(m<0)
+			{
+				std::complex<double> result(0.0, 0.0);
+				//result += std::complex<double>(0.0, 1.0)/std::sqrt(2.0)*std::conj(sph::complex_basis(l, m, theta, phi));
+				//result += -std::complex<double>(0.0, 1.0)/std::sqrt(2.0)*sph::csp(m)*std::conj(sph::complex_basis(l, -m, theta, phi));
+				result += std::complex<double>(0.0, 1.0)/std::sqrt(2.0)*sph::complex_basis(l, m, theta, phi);
+				result += -std::complex<double>(0.0, 1.0)/std::sqrt(2.0)*sph::csp(m)*sph::complex_basis(l, -m, theta, phi);
+				return result.real();
+			}
+			throw std::runtime_error("!!!");
+		};
+
+		std::function<double(int, int, double, double)> conj_real_basis = [&]( int l, int m, double theta, double phi )
+		{
+			if(m<0)
+			{
+				std::complex<double> result(0.0, 0.0);
+				result += std::complex<double>(0.0, -1.0)/std::sqrt(2.0)*std::conj(sph::complex_basis(l, m, theta, phi));
+				result += -std::complex<double>(0.0, -1.0)/std::sqrt(2.0)*sph::csp(m)*std::conj(sph::complex_basis(l, -m, theta, phi));
+				return result.real();
+			}
+			throw std::runtime_error("!!!");
+		};
+
+		std::function<double(double, double)> L_proj = [&]( double theta, double phi )
+		{
+			//return L_fun(theta, phi)*sph::basis(l, m, theta, phi);
+			return L_fun(theta, phi)*real_basis(l, m, theta, phi);
+		};
+
+		//double test = integrate_sphere(L_proj, integration_res);
+		//std::cout << L_coeffs[sph::index(l,m)] << " " << test << std::endl;
+
+		double a = sph::basis(l, m, theta_o, phi_o);
+		double b = real_basis(l, m, theta_o, phi_o);
+		std::cout << a << " " << b << std::endl;
+
+		std::complex<double> a2 = std::conj(sph::basis(l, m, theta_o, phi_o));
+		std::complex<double> b2 = std::conj(real_basis(l, m, theta_o, phi_o));
+		std::cout << a2 << " " << b2 << std::endl;
+
+		std::complex<double> a3 = std::conj(real_basis(l, m, theta_o, phi_o));
+		std::complex<double> b3 = conj_real_basis(l, m, theta_o, phi_o);
+		std::cout << a3 << " " << b3 << std::endl;
+
+	}
+	// CHECK
+
+
+
+
+
+
+	// scattering term =======================
+
 	/*
 	// validate that the reconstruction of the phase function from its SH coefficients
 	// matches the groundtruth closely for high N
@@ -1138,7 +1227,7 @@ void test()
 
 	// =====================================================
 
-	///*
+	/*
 	// compute scattering for a single outgoing direction ---
 	std::function<double(double, double)> inscattering = [&]( double theta_i, double phi_i)
 	{
@@ -1162,14 +1251,14 @@ void test()
 	// this should match
 	// CHECK!
 	std::cout << "l=" << left << " r=" << right << std::endl;
-	//*/
+	*/
 
 	// =====================================================
 	// compute inner product using derived terms which contain
 	// SH expanded variants of L and phase function
 	// this is to validate the scattering term before projecting it into SH
 
-	///*
+	/*
 	std::function<std::complex<double> (double, double)> inscattering_conv2 = [&](double theta_i, double phi_i)
 	{
 		V3d inv = Rinv*sphericalDirection(theta_i, phi_i);
@@ -1208,10 +1297,10 @@ void test()
 	// CHECK!
 	std::complex<double> right2 = integrate_sphere(inscattering_conv2, integration_res);
 	std::cout << "r2=" << right2 << std::endl;
+	*/
 
+	/*
 	std::complex<double> right3(0.0, 0.0);
-
-
 
 	for( int l=0;l<=order;++l )
 		for( int m=-l;m<=-1;++m )
@@ -1262,6 +1351,7 @@ void test()
 		}
 	std::cout << "r3=" << right3 << std::endl;
 	// CHECK!
+	*/
 
 
 
@@ -1315,10 +1405,8 @@ PYBIND11_MODULE(pnsolver, m)
 	*/
 	//m.def( "solve_lscg", &solve_lscg);
 
-	/*
 	m.def( "createComplexToRealConversionMatrix", &createComplexToRealConversionMatrix);
 	m.def( "createRealToComplexConversionMatrix", &createRealToComplexConversionMatrix);
-	*/
 	m.def( "save_solution", &save_solution);
 	m.def( "getCoefficientArray", &getCoefficientArray);
 

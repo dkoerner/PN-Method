@@ -45,11 +45,13 @@ def solve( stencil_name, problem, filename, do_neumannBC = False ):
 
 	#problem.setExtinctionMinimumThreshold(4.0)
 	#problem.setExtinctionMinimumThreshold(0.0)
-	#sys.build()
-	#A = sys.get_A()
+	sys.build()
+	A = sys.get_A()
 	#print(A.shape)
-	#scipy.io.savemat(filename+".t0.mat", {"A":A})
-	#return
+	mat_filename = filename+".t0.mat"
+	print(mat_filename)
+	scipy.io.savemat(mat_filename, {"A":A})
+	return
 
 
 	# set the RTE parameter fields ---------------------------------------------

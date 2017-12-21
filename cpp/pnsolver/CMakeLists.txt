@@ -22,6 +22,8 @@ pybind11_add_module(pnsolver src/main.cpp
 							 src/stencil_fopn_p0_cg.cpp
 							 src/stencil_fopn_p0_sg.cpp
 							 src/stencil_fopn_p1_cg.cpp
+							 src/stencil2_fopn_p1_cg.cpp
+							 src/stencil2_fopn_p1_sg.cpp
 							 src/stencil_fopn_p1_sg.cpp
 							 src/stencil_fopn_p2_cg.cpp
 							 src/stencil_fopn_p2_sg.cpp

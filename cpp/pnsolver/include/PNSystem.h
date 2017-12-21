@@ -209,41 +209,41 @@ struct PNSystem
 
 			V3d evalScattering( int voxelOffset_i, int voxelOffset_j, int voxelOffset_k )
 			{
-				V3d pVS(voxel.coord[0] + voxelOffset_i,
-						voxel.coord[1] + voxelOffset_j,
-						voxel.coord[2] + voxelOffset_k);
+				V3d pVS(voxel.coord[0] + voxelOffset_i + 0.5,
+						voxel.coord[1] + voxelOffset_j + 0.5,
+						voxel.coord[2] + voxelOffset_k + 0.5);
 				return sys.getProblem()->evalScattering( sys.getDomain().voxelToWorld(pVS) );
 			}
 
 			V3d evalAbsorption( int voxelOffset_i, int voxelOffset_j, int voxelOffset_k )
 			{
-				V3d pVS(voxel.coord[0] + voxelOffset_i,
-						voxel.coord[1] + voxelOffset_j,
-						voxel.coord[2] + voxelOffset_k);
+				V3d pVS(voxel.coord[0] + voxelOffset_i + 0.5,
+						voxel.coord[1] + voxelOffset_j + 0.5,
+						voxel.coord[2] + voxelOffset_k + 0.5);
 				return sys.getProblem()->evalAbsorption( sys.getDomain().voxelToWorld(pVS) );
 			}
 
 			V3d evalExtinction( int voxelOffset_i, int voxelOffset_j, int voxelOffset_k )
 			{
-				V3d pVS(voxel.coord[0] + voxelOffset_i,
-						voxel.coord[1] + voxelOffset_j,
-						voxel.coord[2] + voxelOffset_k);
+				V3d pVS(voxel.coord[0] + voxelOffset_i + 0.5,
+						voxel.coord[1] + voxelOffset_j + 0.5,
+						voxel.coord[2] + voxelOffset_k + 0.5);
 				return sys.getProblem()->evalExtinction( sys.getDomain().voxelToWorld(pVS) );
 			}
 
 			V3d evalEmission( int l, int m, int voxelOffset_i, int voxelOffset_j, int voxelOffset_k )
 			{
-				V3d pVS(voxel.coord[0] + voxelOffset_i,
-						voxel.coord[1] + voxelOffset_j,
-						voxel.coord[2] + voxelOffset_k);
+				V3d pVS(voxel.coord[0] + voxelOffset_i + 0.5,
+						voxel.coord[1] + voxelOffset_j + 0.5,
+						voxel.coord[2] + voxelOffset_k + 0.5);
 				return sys.getProblem()->evalEmission( l, m, sys.getDomain().voxelToWorld(pVS) );
 			}
 
 			V3d evalPhase( int l, int m, int voxelOffset_i, int voxelOffset_j, int voxelOffset_k )
 			{
-				V3d pVS(voxel.coord[0] + voxelOffset_i,
-						voxel.coord[1] + voxelOffset_j,
-						voxel.coord[2] + voxelOffset_k);
+				V3d pVS(voxel.coord[0] + voxelOffset_i + 0.5,
+						voxel.coord[1] + voxelOffset_j + 0.5,
+						voxel.coord[2] + voxelOffset_k + 0.5);
 				return sys.getProblem()->evalPhase( l, m, sys.getDomain().voxelToWorld(pVS) );
 			}
 

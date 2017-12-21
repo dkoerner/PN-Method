@@ -995,7 +995,7 @@ class fopn_real(object):
 		return expr
 
 	def transport_term( order, debug = False ):
-		sh_real_basis_a, sh_real_basis_b, sh_real_basis_c = fopn_real.real_shbasis()
+		sh_real_basis_a, sh_real_basis_b, sh_real_basis_c = fopn_real.conj_real_shbasis()
 
 		equ_a = fopn_real.transport_term_expand(sh_real_basis_a, order, debug)
 		equ_b = fopn_real.transport_term_expand(sh_real_basis_b, order, debug)
@@ -1011,8 +1011,8 @@ class fopn_real(object):
 				#if not (l==0 and m==0):
 				#	continue
 
-				if debug == True:
-					print("l={} m={}".format(l,m))
+				#if debug == True:
+				#	print("l={} m={}".format(l,m))
 
 				# instantiate real PN equation for concrete l,m combination
 				if m < 0:
@@ -1093,79 +1093,79 @@ class fopn_real(object):
 		expr = meh.integrate(meh.mul( sh_real_basis, expr), omega) 
 
 		#if debug == True:
-		#	print("------------------------------")
+		#	print("\n------------------------------")
 		#	meh.print_expr(expr)
 
 		expr = meh.apply_recursive(expr, meh.DistributiveLaw())
 
 		#if debug == True:
-		#	print("------------------------------")
+		#	print("\n------------------------------")
 		#	meh.print_expr(expr)
 
 		expr = meh.apply_recursive(expr, meh.CleanupSigns())
 
 		#if debug == True:
-		#	print("------------------------------")
+		#	print("\n------------------------------")
 		#	meh.print_expr(expr)
 
 		expr = meh.apply_recursive(expr, meh.SplitIntegrals())
 		expr = meh.apply_recursive(expr, meh.CleanupSigns())
 
 		#if debug == True:
-		#	print("------------------------------")
+		#	print("\n------------------------------")
 		#	meh.print_expr(expr)
 
 		expr = meh.apply_recursive(expr, meh.Factorize())
 		#if debug == True:
-		#	print("------------------------------")
+		#	print("\n------------------------------")
 		#	meh.print_expr(expr)
 
 		expr = meh.apply_recursive(expr, meh.Substitute(L, L_expanded))
 		#if debug == True:
-		#	print("------------------------------")
+		#	print("\n------------------------------")
 		#	meh.print_expr(expr)
 
 		expr = meh.apply_recursive(expr, meh.DistributiveLaw())
 		#if debug == True:
-		#	print("------------------------------")
+		#	print("\n------------------------------")
 		#	meh.print_expr(expr)
 
 		expr = meh.apply_recursive(expr, meh.SplitIntegrals())
 		#if debug == True:
-		#	print("------------------------------")
+		#	print("\n------------------------------")
 		#	meh.print_expr(expr)
 
 		expr = meh.apply_recursive(expr, meh.CleanupSigns())
 		#if debug == True:
-		#	print("------------------------------")
+		#	print("\n------------------------------")
 		#	meh.print_expr(expr)
 
 		expr = meh.apply_recursive(expr, meh.SwitchDomains())
 		expr = meh.apply_recursive(expr, meh.SwitchDomains())
 		expr = meh.apply_recursive(expr, meh.Factorize())
 		#if debug == True:
-		#	print("------------------------------")
+		#	print("\n------------------------------")
 		#	meh.print_expr(expr)
 
 		expr = meh.apply_recursive(expr, meh.SHOrthogonalityProperty())
 		# replace N by the SH truncation order
 		expr = meh.apply_recursive(expr, meh.Substitute(meh.var('N'), meh.num(order)))
 		#if debug == True:
-		#	print("------------------------------")
+		#	print("\n------------------------------")
 		#	meh.print_expr(expr)
 
 		# now expand the summations into individual terms
 		expr = meh.apply_recursive(expr, meh.ExpandSums())
 		expr = meh.apply_recursive(expr, meh.ExpandSums())
 		#if debug == True:
-		#	print("------------------------------")
+		#	print("\n------------------------------")
 		#	meh.print_expr(expr)
 
 		# final cleanup
 		expr = meh.apply_recursive(expr, meh.DistributiveLaw())
 		expr = meh.apply_recursive(expr, meh.CleanupSigns())
 		#if debug == True:
-		#	print("------------------------------")
+		#	print("\n------------------------------")
 		#	meh.print_expr(expr)
 
 
@@ -1173,11 +1173,11 @@ class fopn_real(object):
 
 
 	def collision_term(order, debug=False):
-		sh_real_basis_a, sh_real_basis_b, sh_real_basis_c = fopn_real.real_shbasis()
+		sh_real_basis_a, sh_real_basis_b, sh_real_basis_c = fopn_real.conj_real_shbasis()
 
 		equ_a = fopn_real.collision_term_expand(sh_real_basis_a, order, debug)
-		equ_b = fopn_real.collision_term_expand(sh_real_basis_b, order, debug)
-		equ_c = fopn_real.collision_term_expand(sh_real_basis_c, order, debug)
+		equ_b = fopn_real.collision_term_expand(sh_real_basis_b, order)
+		equ_c = fopn_real.collision_term_expand(sh_real_basis_c, order)
 
 		pn_equations = []
 		for l in range(0, order+1):
@@ -1185,9 +1185,6 @@ class fopn_real(object):
 
 				#if not (l==0 and m==0):
 				#	continue
-				if debug == True:
-					print("\n------------------------------")
-					print("l={} m={}".format(l,m))
 
 				# instantiate real PN equation for concrete l,m combination
 				if m < 0:
@@ -1200,14 +1197,32 @@ class fopn_real(object):
 					#continue
 					raise ValueError("unexpected")
 
+				#if debug == True and l == 1 and m == -1:
+				#	print("\n------------------------------")
+				#	print("l={} m={}".format(l,m))
+				#	meh.print_expr(equ)
+
 
 				equ = meh.apply_recursive(equ, meh.Substitute(meh.var("l'"), meh.num(l)))
 				equ = meh.apply_recursive(equ, meh.Substitute(meh.var("m'"), meh.num(m)))
+
+				#if debug == True and l == 1 and m == -1:
+				#	#equ = meh.add( equ.getOperand(0), equ.getOperand(1), equ.getOperand(6), equ.getOperand(7) )
+				#	print("\n------------------------------")
+				#	print("l={} m={}".format(l,m))
+				#	meh.print_expr(equ)
+
 				equ = meh.apply_recursive(equ, meh.FoldConstants())
 				equ = meh.apply_recursive(equ, meh.CleanupSigns())
 
-				if debug == True:
-					meh.print_expr(equ)
+				#if debug == True and l == 1 and m == -1:
+				#	print("\n------------------------------")
+				#	print("l={} m={}".format(l,m))
+				#	meh.print_expr(equ)
+
+
+				#if debug == True:
+				#	meh.print_expr(equ)
 
 				pn_equations.append(equ)
 		return pn_equations
@@ -1282,16 +1297,16 @@ class fopn_real(object):
 		expr = meh.neg(meh.add(t0, t1, t2, t3, t4))
 		expr = meh.apply_recursive(expr, meh.CleanupSigns())
 
-		if debug == True:
-			print("\n------------------------------")
-			meh.print_expr(expr)
+		#if debug == True:
+		#	print("\n------------------------------")
+		#	meh.print_expr(expr)
 
 		# now multiply with basis and integrate over solid angle
 		expr = meh.integrate(meh.mul( sh_real_basis, expr), omega) 
 
-		if debug == True:
-			print("\n------------------------------")
-			meh.print_expr(expr)
+		#if debug == True:
+		#	print("\n------------------------------")
+		#	meh.print_expr(expr)
 
 		expr = meh.apply_recursive(expr, meh.DistributiveLaw())
 		expr = meh.apply_recursive(expr, meh.DistributiveLaw())
@@ -1344,14 +1359,14 @@ class fopn_real(object):
 		return expr
 
 
-	def real_shbasis():
+	def conj_real_shbasis():
 		omega = meh.tensor("\\omega", rank=1, dimension=3)
 		omega_x = omega.getComponent(0)
 		omega_y = omega.getComponent(1)
 		omega_z = omega.getComponent(2)
 
-		f1 = meh.mul(meh.frac(meh.imag(1), meh.sqrt(meh.num(2))), meh.SHBasis(meh.var("l'"), meh.var("m'"), omega, conjugate_complex=True))
-		f2 = meh.mul(meh.frac(meh.imag(1), meh.sqrt(meh.num(2))), meh.pow(meh.num(-1), meh.var("m'")), meh.SHBasis(meh.var("l'"), meh.neg(meh.var("m'")), omega, conjugate_complex=True))
+		f1 = meh.mul(meh.frac(meh.imag(-1), meh.sqrt(meh.num(2))), meh.SHBasis(meh.var("l'"), meh.var("m'"), omega, conjugate_complex=True))
+		f2 = meh.mul(meh.frac(meh.imag(-1), meh.sqrt(meh.num(2))), meh.pow(meh.num(-1), meh.var("m'")), meh.SHBasis(meh.var("l'"), meh.neg(meh.var("m'")), omega, conjugate_complex=True))
 		sh_real_basis_a = meh.sub(f1, f2)
 		sh_real_basis_b = meh.SHBasis(meh.var("l'"), meh.var("m'"), omega, conjugate_complex=True)
 		f1 = meh.mul(meh.frac(meh.num(1), meh.sqrt(meh.num(2))), meh.SHBasis(meh.var("l'"), meh.neg(meh.var("m'")), omega, conjugate_complex=True))
@@ -1362,7 +1377,7 @@ class fopn_real(object):
 
 	def scattering_term(order, debug=False):
 
-		sh_real_basis_a, sh_real_basis_b, sh_real_basis_c = fopn_real.real_shbasis()
+		sh_real_basis_a, sh_real_basis_b, sh_real_basis_c = fopn_real.conj_real_shbasis()
 
 		#if debug == True:
 		#	print("\n------------------------------")
@@ -1381,9 +1396,9 @@ class fopn_real(object):
 
 				#if not (l==0 and m==0):
 				#	continue
-				if debug == True:
-					print("\n------------------------------")
-					print("l={} m={}".format(l,m))
+				#if debug == True:
+				#	print("\n------------------------------")
+				#	print("l={} m={}".format(l,m))
 
 				# instantiate real PN equation for concrete l,m combination
 				if m < 0:
@@ -1402,8 +1417,8 @@ class fopn_real(object):
 				equ = meh.apply_recursive(equ, meh.FoldConstants())
 				equ = meh.apply_recursive(equ, meh.CleanupSigns())
 
-				if debug == True:
-					meh.print_expr(equ)
+				#if debug == True:
+				#	meh.print_expr(equ)
 
 				pn_equations.append(equ)
 		return pn_equations
@@ -1547,7 +1562,7 @@ class fopn_real(object):
 
 	def source_term(order, debug=False):
 
-		sh_real_basis_a, sh_real_basis_b, sh_real_basis_c = fopn_real.real_shbasis()
+		sh_real_basis_a, sh_real_basis_b, sh_real_basis_c = fopn_real.conj_real_shbasis()
 
 		#if debug == True:
 		#	print("\n------------------------------")
@@ -1600,7 +1615,6 @@ if __name__ == "__main__":
 	#test = lspn.term0_projected_expr(True)
 	order = 1
 	#test = fopn_real.transport_term( order, True)
-	#test = fopn_real.collision_term( order, True)
-	test = fopn_real.scattering_term( order, True)
-	print(test)
+	test = fopn_real.collision_term( order, True)
+	#test = fopn_real.scattering_term( order, True)
 	#test = fopn_real.source_term( order, True)

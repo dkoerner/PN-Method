@@ -4,13 +4,12 @@ import pnsolver
 #import renderer
 import util
 import stencil
+import scipy.io
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-
-
 
 
 
@@ -43,7 +42,15 @@ plt.legend(loc='best')
 plt.show()
 '''
 
-pnsolver.test()
+filename_complex = "C:/projects/epfl/epfl17/python/pnsolver/results/checkerboard2d/checkerboard2d_p1_2.pns.t0.mat"
+A_complex = scipy.io.loadmat(filename_complex)["A"]
+
+filename_real = "C:/projects/epfl/epfl17/python/pnsolver/results/checkerboard2d/checkerboard2d_p1_2.pns.t0_2.mat"
+A_real = scipy.io.loadmat(filename_real)["A2"]
+
+util.compare_matrices(A_complex, A_real, "complex", "real")
+
+#pnsolver.test()
 
 
 '''

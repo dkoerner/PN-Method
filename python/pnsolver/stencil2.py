@@ -776,12 +776,17 @@ def generate_stencil_code( pne, pni, stencil_name ):
 		#	continue
 
 		l,m = pni.getLMIndex(coeff_index)
-		#print("\n---------------------")
-		#print("l={} m={}".format(l,m))
+
 
 
 		# get the pn-equation associated with the current index ---
 		e = pne[coeff_index]
+
+		#if coeff_index == 1:
+		#	print("\n---------------------")
+		#	print("l={} m={}".format(l,m))
+		#	meh.print_expr(e)
+
 
 		# factorize pn-equation ---
 		if e.__class__ == meh.Addition:
@@ -791,6 +796,8 @@ def generate_stencil_code( pne, pni, stencil_name ):
 		# collapse constants
 		e = meh.apply_recursive(e, meh.FoldConstants2())
 		e = meh.apply_recursive(e, meh.CleanupSigns())
+
+
 
 		#'''
 		# discretize spatial variable into staggered grid ---
@@ -848,15 +855,21 @@ def generate_stencil_code( pne, pni, stencil_name ):
 	for coeff_index in range(numCoeffs):
 		e = pne_discretized[coeff_index]
 		l,m = pni.getLMIndex(coeff_index)
-		#print("\n---------------------")
-		#print("l={} m={}".format(l,m))
-		#meh.print_expr(e)
+
+		#if coeff_index == 1:
+		#	print("\n---------------------")
+		#	print("l={} m={}".format(l,m))
+		#	meh.print_expr(e)
 		cpp += "\t// row={} --------------------------\n".format(coeff_index)
 
 		unknown_coeffs = {}
 		rhs_coeffs = None
 
-		ops = e.getOperands()
+		ops = None
+		if e.__class__ == meh.Addition:
+			ops = e.getOperands()
+		else:
+			ops = [e]
 		for op in ops:
 			term_structure = TermStructure(op, pni.getUnknownSymbol())
 			root = term_structure.getRoot()
@@ -912,6 +925,7 @@ def generate_stencil_code( pne, pni, stencil_name ):
 					# merge new term structure into existing one
 					unknown_coeffs[unknown_id].merge(coeff)
 			else:
+				print(root.__class__.__name__)
 				raise ValueError("unexpected")
 
 		for unknown_id, coeffs in unknown_coeffs.items():
@@ -948,21 +962,19 @@ def generate_stencil_code( pne, pni, stencil_name ):
 			#	# LHS
 
 		# RHS
-		cpp += "\t{\n"
-		cpp += "\t\tstd::complex<double> c(0.0, 0.0);\n"
-
-		if rhs_coeffs.getExpr().__class__ == meh.Addition:
-			ops = rhs_coeffs.getExpr().getOperands()
-			for op in ops:
-				code = generate_cpp_recursive(op);
+		if not rhs_coeffs is None:
+			cpp += "\t{\n"
+			cpp += "\t\tstd::complex<double> c(0.0, 0.0);\n"
+			if rhs_coeffs.getExpr().__class__ == meh.Addition:
+				ops = rhs_coeffs.getExpr().getOperands()
+				for op in ops:
+					code = generate_cpp_recursive(op);
+					cpp += "\t\tc+={};\n".format(code)
+			else:
+				code = generate_cpp_recursive(rhs_coeffs.getExpr());
 				cpp += "\t\tc+={};\n".format(code)
-		else:
-			code = generate_cpp_recursive(rhs_coeffs.getExpr());
-			cpp += "\t\tc+={};\n".format(code)
-
-
-		cpp += "\t\tctx.coeff_b( {} ) += c.real();\n".format(coeff_index)
-		cpp += "\t}\n"
+			cpp += "\t\tctx.coeff_b( {} ) += c.real();\n".format(coeff_index)
+			cpp += "\t}\n"
 
 
 
@@ -994,7 +1006,7 @@ def generate_stencil_code( pne, pni, stencil_name ):
 if __name__ == "__main__":
 
 
-	staggered = False
+	staggered = True
 	order = 1
 	#pni = PNInfo3D(order, staggered)
 	pni = PNInfo2D(order, staggered)
@@ -1020,7 +1032,7 @@ if __name__ == "__main__":
 			pn_equations.append( meh.Addition(gg) )
 
 	staggered_id = {True:"sg", False:"cg"}
-	stencil_name = "stencil_{}_p{}_{}".format("fopn", order, staggered_id[staggered] )
+	stencil_name = "stencil2_{}_p{}_{}".format("fopn", order, staggered_id[staggered] )
 	cpp = generate_stencil_code( pn_equations, pni, stencil_name )
 	print(cpp)
 

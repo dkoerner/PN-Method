@@ -667,7 +667,7 @@ class Starmap3D(object):
 
 	def build_S(self):
 		'''builds the S matrix, which converts from complex-valued to real valued coefficients'''
-		print("Starmap3D::build_S")
+		#print("Starmap3D::build_S")
 		# build S matrix ( we iterate over l, m to make sure that the order is correct)
 		self.S = np.zeros((self.numCoeffs, self.numCoeffs),dtype=complex)
 		count = 0
@@ -703,7 +703,7 @@ class Starmap3D(object):
 		Each component of the solution vector is assigned to one of a the four existing staggered grids.
 		This assignment is driven by the dependencies between components and by some initial assignment of the first component.
 		'''
-		print("Starmap3D::build_M")
+		#print("Starmap3D::build_M")
 		self.Mx_complex = np.zeros((self.numCoeffs, self.numCoeffs),dtype=complex)
 		self.My_complex = np.zeros((self.numCoeffs, self.numCoeffs),dtype=complex)
 		self.Mz_complex = np.zeros((self.numCoeffs, self.numCoeffs),dtype=complex)
@@ -759,7 +759,7 @@ class Starmap3D(object):
 
 	def build_staggered_grid(self):
 		'''assigns components to staggered grid locations and builds some helper structures'''
-		print("Starmap3D::build_staggered_grid")
+		#print("Starmap3D::build_staggered_grid")
 
 		self.sga = StaggeredGridAssignment3D()
 
@@ -1159,6 +1159,8 @@ if __name__ == "__main__":
 	#self.offsets[1][0] = (0.0,0.5)
 	#self.offsets[1][1] = (0.0,0.0)
 
+	'''
+	# 2d...
 	last_coeff_count = 0
 	for order in range(1, 6):
 		sm = Starmap2D(order)
@@ -1174,6 +1176,26 @@ if __name__ == "__main__":
 					if c>=last_coeff_count:
 						print("\tself.place_unknown( {}, ({}, {}) )".format(c, o[0], o[1]))
 		last_coeff_count = sm.numCoeffs
+	'''
+
+	last_coeff_count = 0
+	for order in range(1, 6):
+		sm = Starmap3D(order)
+		print( "if self.order >= {}:".format(order) )
+		for i in range(2):
+			for j in range(2):
+				for k in range(2):
+					offset = sm.sga.get_offset(i,j,k)
+					#print("i={} j={} offset={} {}".format(i, j, offset[0], offset[1]))
+					o = (int(offset[0]+0.5), int(offset[1]+0.5), int(offset[2]+0.5))
+					#print("offset converted= {} {}".format(o[0], o[1]))
+					grid_components = sm.sga.get_grid_components(i, j, k)
+					for c in grid_components:
+						if c>=last_coeff_count:
+							print("\tself.place_unknown( {}, ({}, {}, {}) )".format(c, o[0], o[1], o[2]))
+		last_coeff_count = sm.numCoeffs
+
+
 	#print("else:")
 	#print("\traise ValueError(\"unable to place cofficients for order={{}}\".format(self.order))")
 

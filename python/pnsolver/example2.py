@@ -332,10 +332,10 @@ if __name__ == "__main__":
 	#order = [1,2,3,4,5]
 	#order = [3,4,5]
 	#order = [3]
-	order = [1]
+	order = [3]
 	staggered = [True]
 	#staggered = [False]
-	boundary_conditions = [False]
+	boundary_conditions = [True]
 
 	#rte_forms = []
 	#order = []

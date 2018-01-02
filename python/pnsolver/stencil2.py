@@ -35,13 +35,49 @@ class PNInfo3D(object):
 		# TODO: come up with an automated approach and some motivation
 		# for its solution.
 		if staggered == True:
-			if self.order >= 1:
+			if self.order >= 0:
 				self.place_unknown( 0, (1, 1, 1) )
-				self.place_unknown( 3, (0, 1, 1) )
+			if self.order >= 1:
 				self.place_unknown( 1, (1, 0, 1) )
 				self.place_unknown( 2, (1, 1, 0) )
-			#'''
-			if self.order > 2:
+				self.place_unknown( 3, (0, 1, 1) )
+			if self.order >= 2:
+				self.place_unknown( 4, (0, 0, 1) )
+				self.place_unknown( 5, (1, 0, 0) )
+				self.place_unknown( 6, (1, 1, 1) )
+				self.place_unknown( 7, (0, 1, 0) )
+				self.place_unknown( 8, (1, 1, 1) )
+			if self.order >= 3:
+				self.place_unknown( 9, (1, 0, 1) )
+				self.place_unknown( 10, (0, 0, 0) )
+				self.place_unknown( 11, (1, 0, 1) )
+				self.place_unknown( 12, (1, 1, 0) )
+				self.place_unknown( 13, (0, 1, 1) )
+				self.place_unknown( 14, (1, 1, 0) )
+				self.place_unknown( 15, (0, 1, 1) )
+			if self.order >= 4:
+				self.place_unknown( 16, (0, 0, 1) )
+				self.place_unknown( 17, (1, 0, 0) )
+				self.place_unknown( 18, (0, 0, 1) )
+				self.place_unknown( 19, (1, 0, 0) )
+				self.place_unknown( 20, (1, 1, 1) )
+				self.place_unknown( 21, (0, 1, 0) )
+				self.place_unknown( 22, (1, 1, 1) )
+				self.place_unknown( 23, (0, 1, 0) )
+				self.place_unknown( 24, (1, 1, 1) )
+			if self.order >= 5:
+				self.place_unknown( 25, (1, 0, 1) )
+				self.place_unknown( 26, (0, 0, 0) )
+				self.place_unknown( 27, (1, 0, 1) )
+				self.place_unknown( 28, (0, 0, 0) )
+				self.place_unknown( 29, (1, 0, 1) )
+				self.place_unknown( 30, (1, 1, 0) )
+				self.place_unknown( 31, (0, 1, 1) )
+				self.place_unknown( 32, (1, 1, 0) )
+				self.place_unknown( 33, (0, 1, 1) )
+				self.place_unknown( 34, (1, 1, 0) )
+				self.place_unknown( 35, (0, 1, 1) )
+			if self.order > 5:
 				raise ValueError("CHECK!")
 			self.stencil_half_steps = 1
 
@@ -150,6 +186,8 @@ class Derivation(object):
 		self.child = child
 	def getVariable(self):
 		return self.variable
+	def getChild(self):
+		return self.child
 	#def getId(self):
 	#	return "d{}({})".format(self.getVariable().getSymbol(), self.child.getId())
 class Product(object):
@@ -218,7 +256,7 @@ class TermStructure(object):
 	def getExpr(self, node=None, level=0):
 		if node == None:
 			return self.getExpr(self.root)
-		istr = meh.indent_string(level)
+
 		if node.__class__ == Coefficient:
 			return node.expr
 		elif node.__class__ == Product:
@@ -385,6 +423,8 @@ def getTermStructureId( node ):
 	if node.__class__ == Coefficient:
 		return "C"
 	elif node.__class__ == Unknown:
+		#raise ValueError("where is pni defined !?!?!?")
+		#print(pni)
 		index = getUnknownIndex(pni, node.getExpr().getArguments())
 		return node.getSymbol() + "[{}]".format(index)
 	elif node.__class__ == Derivation:
@@ -540,7 +580,7 @@ def apply_spatial_discretization_recursive( expr, info, level = 0 ):
 			# now we interpolate from the neighbous along the defined local axes
 			offset_combinations = itertools.product(*[[-1, 1] for d in range(numAxes)])
 			num_offset_combinations = 2**numAxes
-			weight_expr =  meh.frac(meh.num(1), meh.num(num_offset_combinations))
+			weight_expr = meh.frac(meh.num(1), meh.num(num_offset_combinations))
 			terms = []
 			for o in offset_combinations:
 				offset = np.array([0, 0, 0])
@@ -788,7 +828,7 @@ def generate_stencil_code( pne, pni, stencil_name ):
 		#	meh.print_expr(e)
 
 
-		# factorize pn-equation ---
+		# factorize pn-equation if multiple terms are involved ---
 		if e.__class__ == meh.Addition:
 			e = factorize(e, pni)
 			e = meh.apply_recursive(e, meh.CleanupSigns())
@@ -1007,17 +1047,21 @@ if __name__ == "__main__":
 
 
 	staggered = True
-	order = 1
+	order = 3
 	#pni = PNInfo3D(order, staggered)
 	pni = PNInfo2D(order, staggered)
 
 	terms = []
+	# each function returns a list of expression representing the PN-equations up to given order
 	terms.append(rte_terms.fopn_real.transport_term(order))
 	terms.append(rte_terms.fopn_real.collision_term(order))
 	terms.append(rte_terms.fopn_real.scattering_term(order))
 	terms.append(rte_terms.fopn_real.source_term(order))
 
 	pn_equations = []
+	# we currently have a set pf pn-equations per RTE term
+	# here we collapse the different equations for each term
+	# into a single one for each SH coefficient index
 	for i in range(pni.getNumCoeffs()):
 		# in case of 2d, the coefficient indices are different
 		l,m = pni.getLMIndex(i)

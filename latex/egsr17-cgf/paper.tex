@@ -38,18 +38,51 @@
 
 \PrintedOrElectronic
 
+
 % prepare for electronic version of your document
 \usepackage{t1enc,dfadobe}
 
 \usepackage{egweblnk}
 \usepackage{cite}
 
+
+\usepackage{amsmath}
+\usepackage{amsfonts}
+% \usepackage{subcaption}
+%\usepackage{units}
+% \usepackage{array}
+% \usepackage{multirow}
+% \usepackage{caption}
+% \usepackage{dsfont}
+% \usepackage{booktabs}
+% \usepackage{rotating}
+% \usepackage[ruled,linesnumbered,vlined,algo2e]{algorithm2e}
+% \usepackage{bm}
+\usepackage{overpic}
+\usepackage{contour}
+\usepackage{xspace}
+\usepackage[normalem]{ulem} % for strikeout \sout
+
+\usepackage[ruled,linesnumbered,vlined,algo2e]{algorithm2e}
 % For backwards compatibility to old LaTeX type font selection.
 % Uncomment if your document adheres to LaTeX2e recommendations.
 % \let\rm=\rmfamily    \let\sf=\sffamily    \let\tt=\ttfamily
 % \let\it=\itshape     \let\sl=\slshape     \let\sc=\scshape
 % \let\bf=\bfseries
 
+
+\newcommand{\ud}{\,\mathrm{d}} % for integrals
+\newcommand{\SHBR}{Y_{\mathbb{R}}} % for integrals
+\newcommand{\SHBC}{Y_{\mathbb{C}}} % for integrals
+\newcommand{\iu}{{i\mkern1mu}}
+
+
+
 % end of prologue
+
+
+
+
+\usepackage{todonotes}
 
 \input{main-body.tex}

@@ -3,7 +3,11 @@
 
 \subsection*{Contributions}
 \begin{itemize}
-	\item System for generation of stencils for coupled PDE's directly from mathematical expressions.
-	\item Staggered-grid solver for time-independent PN-equations.
-	\item Novel PN-guided Monte-Carlo estimator for participating media.
+	\item We derive the time-independent real-valued PN-equations.
+	\item We present a novel system for generating finite difference stencils for coupled PDE's, directly from a computer algebra representation of mathematical expressions.
+	\item We introduce a staggered-grid solver for time-independent PN-equations and use it for rendering participating media.
+	\item Finally, we compare higher order PN against Flux-Limited Diffusion.
 \end{itemize}
+
+
+In the next section we will discuss related work and why it motivates our contribution. Section~\ref{sec:pnequations} introduces the real-valued $P_N$-equations, which we solve using our solver described in section~\ref{sec:pnsolver}. We briefly recapitulate variable eddington factor methods and flux-limited diffusion in particular in section~\ref{sec:vef}. Our solvers for $P_N$ and FLD are run on a set of standard problems in section~\ref{sec:results}. We finish with our conclusion in section~\ref{sec:conclusion}.

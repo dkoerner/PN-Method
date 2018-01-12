@@ -116,6 +116,15 @@ def solve( stencil_name, problem, filename, do_neumannBC = False ):
 	#data["convergence_cg"] = convergence
 	#data["timestamps_cg"] = timestamps
 
+	# instead of solving...just store matrices...
+	#sys.build()
+	#data = {}
+	#data["A"] = sys.get_A()
+	#data["b"] = sys.get_b()
+	#scipy.io.savemat("{}.mat".format(filename), data)
+	#return
+
+	# solve ----------------
 	#solver = "ls_cg"
 	solver = "solve_ls_lscg"
 
@@ -135,11 +144,7 @@ def solve( stencil_name, problem, filename, do_neumannBC = False ):
 	
 
 
-	#sys.build()
-	#data = {}
-	#data["A"] = sys.get_A()
-	#data["b"] = sys.get_b()
-	#scipy.io.savemat("{}.mat".format(filename), data)
+
 
 
 
@@ -148,12 +153,13 @@ def solve( stencil_name, problem, filename, do_neumannBC = False ):
 	#data["timestamps_cg"] = timestamps
 
 
-	#pnsolver.save_solution(filename, sys, x)
+	#pnsolver.save_solution2(filename, sys, x)
 
 	#'''
 	# visualize 2d solution
 	gg = pnsolver.getCoefficientArray(sys, x)
-	test = gg[:,:,0,0]
+	test = gg[:,:,0,0] # 2d
+	#test = gg[:,:,20,0] # 3d
 
 	img = np.clip( test, 1.0e-8, np.max(test) )
 
@@ -289,11 +295,13 @@ if __name__ == "__main__":
 
 	#problem = problems.pointsource3d(res=64)
 	#problem = problems.checkerboard3d(res=64)
+	#problem = problems.checkerboard3d_modified_phase(res=64)
 	problem = problems.checkerboard2d_modified_phase()
 	#problem = problems.nebulae()
+	#problem = problems.nebulae_modified_phase()
 
 	#problem_id = "pointsource"
-	#problem_id = "checkerboard"
+	#problem_id = "checkerboard3d"
 	problem_id = "checkerboard2d"
 	#problem_id = "nebulae"
 
@@ -332,10 +340,11 @@ if __name__ == "__main__":
 	#order = [1,2,3,4,5]
 	#order = [3,4,5]
 	#order = [3]
-	order = [3]
+	order = [1]
+	#order = [5]
 	staggered = [True]
 	#staggered = [False]
-	boundary_conditions = [True]
+	boundary_conditions = [False]
 
 	#rte_forms = []
 	#order = []
@@ -356,7 +365,7 @@ if __name__ == "__main__":
 		
 		#filename = "{}/{}_{}{}.mat".format(path, problem["id"], stencil_name, bc_id[do_neumannBC])
 		#filename = "{}/{}_test.mat".format(path, problem["id"], stencil_name)
-		filename = "C:/projects/epfl/epfl17/python/pnsolver/results/{}/{}_p{}_2.pns".format(problem_id, problem_id, order)
+		filename = "C:/projects/epfl/epfl17/python/pnsolver/results/{}/{}_p{}_3_ms.pns".format(problem_id, problem_id, order)
 		#print("clear;filename=\"{}\";compute_condest;".format(filename))
 		solve(stencil_name, problem, filename, do_neumannBC=do_neumannBC)
 	#'''

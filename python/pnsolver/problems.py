@@ -123,8 +123,6 @@ def checkerboard2d_modified_phase( res = 71 ):
 		if np.ceil((x+y)/2.0)*2.0 == (cx+cy) and cx > 1.0 and cx < 7.0 and cy > 1.0 and cy-2.0*np.abs(cx-4.0) < 4:
 			g = 1
 		return (1.0-g)*0 + g*10
-		#return 0.0
-		#return 5.0
 
 	def sigma_s( pWS ):
 		x = pWS[0]
@@ -135,17 +133,8 @@ def checkerboard2d_modified_phase( res = 71 ):
 		if np.ceil((x+y)/2.0)*2.0 == (cx+cy) and cx > 1.0 and cx < 7.0 and cy > 1.0 and cy-2.0*np.abs(cx-4.0) < 4:
 			g = 1
 		return (1.0-g)*1 + g*0
-		#return 0.0
-		#return 10.0 - sigma_a(pWS) # constant sigma_t
-		#return 5.0
 
 
-	def phase_shcoeffs( l, m, pWS ):
-		if l == 0 and m == 0:
-			return 1.0
-			#return np.sqrt((2*l+1)/4.0*np.pi)
-			#return 0.0
-		return 0.0
 
 	def source_shcoeffs( l, m, pWS ):
 		if l==0 and m == 0:
@@ -158,39 +147,7 @@ def checkerboard2d_modified_phase( res = 71 ):
 		return 0.0
 
 	size = 7.0
-	#res = 128
 
-	'''
-	problem = {}
-
-	# here we set some general parameters 
-	#res = 20
-	#res = 512
-	#res = 64
-	#res = 71
-	#res = 2
-	#res = 200
-	#res = 150
-	#res = 200
-	domain = pnsolver.Domain( np.array([size, size, 1]), np.array([res, res, 1]), np.array([0.0, 0.0, 0.0]))
-	#voxel_area = domain.voxelSize()[0]*domain.voxelSize()[1]/0.01
-	#voxel_area = 1.0
-	#print("voxel_area={}".format(voxel_area))
-	#print("1/voxel_area={}".format(1.0/voxel_area))
-
-	problem["id"] = "checkerboard"
-	problem["domain"] = domain
-
-	# RTE parameters ------------
-	offset = np.array([1.0, 1.0, 1.0])
-	problem["sigma_t"] = pnsolver.VoxelGridField( util.rasterize(lambda pWS: sigma_a(pWS) + sigma_s(pWS), domain, dtype=complex), domain, offset*0.5 )
-	problem["sigma_a"] = pnsolver.VoxelGridField( util.rasterize(sigma_a, domain, dtype=complex), domain, offset*0.5 )
-	problem["sigma_s"] = pnsolver.VoxelGridField( util.rasterize(sigma_s, domain, dtype=complex), domain, offset*0.5 )
-	problem["f_p"] = [pnsolver.Constant(1.0)]
-	problem["q"] = [pnsolver.VoxelGridField( util.rasterize(lambda pWS: source_shcoeffs(0, 0, pWS), domain, dtype=complex), domain, offset*0.5 )]
-
-	return problem
-	'''
 	domain = pnsolver.Domain( np.array([size, size, 1]), np.array([res, res, 1]), np.array([0.0, 0.0, 0.0]))
 	t = pnsolver.PNVolume( domain )
 
@@ -305,11 +262,6 @@ def checkerboard3d( res=64 ):
 		return (1.0-g)*1 + g*0
 
 
-	def phase_shcoeffs( l, m, pWS ):
-		if l == 0 and m == 0:
-			return 1.0
-		return 0.0
-
 	def source_shcoeffs( l, m, pWS ):
 		if l==0 and m == 0:
 			x = pWS[0]
@@ -366,6 +318,104 @@ def checkerboard3d( res=64 ):
 
 	return t
 
+# This is the problem from the starmap paper. An emitting square at the center, surrounded by
+# some highly absorbing squares, embedded within a scattering medium.
+def checkerboard3d_modified_phase( res=64 ):
+
+	def sigma_a( pWS ):
+		x = pWS[0]
+		y = pWS[1]
+		z = pWS[2]
+		cx = np.ceil(x)
+		cy = np.ceil(y)
+		cz = np.ceil(z)
+		g = 0
+		if( np.ceil((x+y)/2.0)*2.0 == (cx+cy) and
+			np.ceil((z+y)/2.0)*2.0 == (cz+cy) and
+		    cx > 1.0 and cx < 7.0 and
+		    cz > 1.0 and cz < 7.0 and
+		    cy > 1.0 and
+		    cy-2.0*np.abs(cx-4.0) < 4 and
+		    cy-2.0*np.abs(cz-4.0) < 4 ):
+			g = 1
+		return (1.0-g)*0 + g*10
+
+	def sigma_s( pWS ):
+		x = pWS[0]
+		y = pWS[1]
+		z = pWS[2]
+		cx = np.ceil(x)
+		cy = np.ceil(y)
+		cz = np.ceil(z)
+		g = 0
+		if( np.ceil((x+y)/2.0)*2.0 == (cx+cy) and
+			np.ceil((z+y)/2.0)*2.0 == (cz+cy) and
+		    cx > 1.0 and cx < 7.0 and
+		    cz > 1.0 and cz < 7.0 and
+		    cy > 1.0 and
+		    cy-2.0*np.abs(cx-4.0) < 4 and
+		    cy-2.0*np.abs(cz-4.0) < 4 ):
+			g = 1
+		return (1.0-g)*1 + g*0
+
+
+	def source_shcoeffs( l, m, pWS ):
+		if l==0 and m == 0:
+			x = pWS[0]
+			y = pWS[1]
+			z = pWS[2]
+			if( x > 3.0 and x < 4.0 and
+				y > 3.0 and y < 4.0 and
+				z > 3.0 and z < 4.0 ):
+				return 1.0
+			return 0.0
+		return 0.0
+
+	#problem = {}
+
+	# here we set some general parameters 
+	size = 7.0
+	#res = 20
+	#res = 64
+	#res = 71
+	#res = 2
+	#res = 200
+	#res = 150
+	#res = 200
+	domain = pnsolver.Domain( np.array([size, size, size]), np.array([res, res, res]), np.array([0.0, 0.0, 0.0]))
+	#voxel_area = domain.voxelSize()[0]*domain.voxelSize()[1]/0.01
+	#voxel_area = 1.0
+	#print("voxel_area={}".format(voxel_area))
+	#print("1/voxel_area={}".format(1.0/voxel_area))
+
+	#problem["id"] = "checkerboard"
+	#problem["domain"] = domain
+
+	# RTE parameters ------------
+	#offset = np.array([1.0, 1.0, 1.0])
+	#problem["sigma_t"] = pnsolver.VoxelGridField( util.rasterize(lambda pWS: sigma_a(pWS) + sigma_s(pWS), domain, dtype=complex), domain, offset*0.5 )
+	#problem["sigma_a"] = pnsolver.VoxelGridField( util.rasterize(sigma_a, domain, dtype=complex), domain, offset*0.5 )
+	#problem["sigma_s"] = pnsolver.VoxelGridField( util.rasterize(sigma_s, domain, dtype=complex), domain, offset*0.5 )
+	#problem["f_p"] = [pnsolver.Constant(1.0)]
+	#problem["q"] = [pnsolver.VoxelGridField( util.rasterize(lambda pWS: source_shcoeffs(0, 0, pWS), domain, dtype=complex), domain, offset*0.5 )]
+
+	t = pnsolver.PNVolume( domain )
+
+	absorption_voxels = util.rasterize3d( domain, lambda pWS: sigma_a(pWS) )
+	scattering_voxels = util.rasterize3d( domain, lambda pWS: sigma_s(pWS) )
+	extinction_voxels = absorption_voxels+scattering_voxels
+
+	extinction_field = pnsolver.VoxelGridField3d(extinction_voxels)
+	albedo_field = pnsolver.VoxelGridField3d(scattering_voxels/extinction_voxels)
+
+	t.setExtinctionAlbedo( extinction_field, albedo_field )
+	phase_0_0 = np.sqrt((2*0+1)/(4.0*np.pi))
+	t.setPhase( 0, 0, pnsolver.ConstantField3d(np.array([phase_0_0, phase_0_0, phase_0_0])) )
+	#t.setPhase( 0, 0, pnsolver.ConstantField3d(np.array([1.0, 1.0, 1.0])) )
+	emission_voxels = util.rasterize3d( domain, lambda pWS: source_shcoeffs(0, 0, pWS) )
+	t.setEmission( 0, 0, pnsolver.VoxelGridField3d(emission_voxels) )
+
+	return t
 
 def grosjean_ss(r, sigma_t, albedo):
     sigma_a = (1.0-albedo)*sigma_t
@@ -513,6 +563,57 @@ def nebulae():
 	return t
 
 
+def nebulae_modified_phase():
+	size = 1.0
+	res = 64
+	domain = pnsolver.Domain( np.array([size, size, size]), np.array([res, res, res]), np.array([-0.5, -0.5, -0.5]))
+	t = pnsolver.PNVolume( domain )
+
+	#vs = domain.getVoxelSize()
+	#print(vs)
+	#print(1.0/(vs[0]*vs[1]*vs[2]))
+
+
+	#sigma_t = 8.0
+	#extinction_field = pnsolver.ConstantField3d(np.array([sigma_t, sigma_t, sigma_t]))
+	#extinction_field = pnsolver.load_voxelgridfield3d("c:/projects/epfl/epfl17/python/pnsolver/results/nebulae/nebulae_extinction.vgrid.3d")
+	#extinction_field = pnsolver.load_bgeo("c:/projects/epfl/epfl17/python/pnsolver/results/nebulae/nebulae64.bgeo")
+	extinction_field = pnsolver.load_voxelgridfield3d("c:/projects/epfl/epfl17/python/pnsolver/results/nebulae/nebulae64_extinction.grid")
+	
+	# temp
+	#sigma_t = 8.0
+	#extinction_field = pnsolver.ConstantField3d(np.array([sigma_t, sigma_t, sigma_t]))
+
+
+	albedo = 0.9
+	albedo_field = pnsolver.ConstantField3d(np.array([albedo, albedo, albedo]))
+	t.setExtinctionAlbedo( extinction_field, albedo_field )
+
+	# lambda_l factor is introduced via convolution between phase function and radiance field
+	constant_phase = 1.0/(4.0*np.pi)
+	#lambda_l = np.sqrt(4.0*np.pi)
+	# the phase function itsself is projected into SH-coefficients
+	# currently this is done simply by forcing the phase function to be isotropic
+	# 	phase( x, omega ) = 1.0/(4*pi)
+	# therefore its reconstruction is
+	#  1.0/(4*pi) = p00*Y00(omega)
+	# 			  = p00*np.sqrt(1.0/(4.0*np.pi))
+	# 			  = np.sqrt(1.0/(4.0*np.pi))*np.sqrt(1.0/(4.0*np.pi))
+	#phase_00 = np.sqrt(1.0/(4.0*np.pi))
+	#test = phase_00*lambda_l
+	#t.setPhase( 0, 0, pnsolver.ConstantField3d(np.array([test, test, test])) )
+	#t.setPhase( 0, 0, pnsolver.ConstantField3d(np.array([1.0, 1.0, 1.0])) )
+	phase_0_0 = np.sqrt((2*0+1)/(4.0*np.pi))
+	t.setPhase( 0, 0, pnsolver.ConstantField3d(np.array([phase_0_0, phase_0_0, phase_0_0])) )
+
+
+	# the emissionfield has been generated by computing the single scattered light
+	#emission_field = pnsolver.load_voxelgridfield3d("c:/projects/epfl/epfl17/python/pnsolver/results/nebulae/nebulae64_emission.grid")
+	unscattered_fluence = pnsolver.load_voxelgridfield3d("c:/projects/epfl/epfl17/python/pnsolver/results/nebulae/nebulae64_unscattered_fluence.grid").asArray()
+	emission_field = unscattered_fluence*extinction_field.asArray()*albedo*constant_phase*np.sqrt(4.0*np.pi)
+	t.setEmission( 0, 0, pnsolver.VoxelGridField3d(emission_field) )
+
+	return t
 
 
 

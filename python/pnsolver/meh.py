@@ -51,6 +51,8 @@ class Expression(object):
 			if r:
 				return True
 		return False
+	def isComplex(self):
+		raise ValueError( "isComplex not defined for class {}".format(self.__class__.__name__) )
 
 	def __eq__(self, other):
 		return False
@@ -137,6 +139,8 @@ class ImaginaryUnit(Variable):
 	def deep_copy(self):
 		return ImaginaryUnit()
 
+	def isComplex(self):
+		return True
 class Tensor(Variable):
 	def __init__( self, symbol, rank, dimension ):
 		self.dimension = dimension
@@ -507,7 +511,8 @@ class Negate( Operator ):
 			return "-" + self.getOperand(0).toLatex()
 		else:
 			return "-\\left(" + self.getOperand(0).toLatex() + "\\right)"
-
+	def isComplex(self):
+		return self.getExpr().isComplex()
 
 class Sqrt(Operator):
 	def __init__(self, operand):
@@ -661,6 +666,13 @@ class Multiplication( Operator ):
 			if op.canEvaluate():
 				result *= op.evaluate()
 		return result
+	def isComplex(self):
+		ops = self.getOperands()
+		for op in ops:
+			if op.isComplex():
+				return True
+		return False
+
 
 class Quotient(Operator):
 	def __init__( self, numerator, denominator ):
@@ -677,6 +689,9 @@ class Quotient(Operator):
 		return self.getNumerator().canEvaluate() and self.getDenominator().canEvaluate()
 	def evaluate(self):
 		return self.getNumerator().evaluate()/self.getDenominator().evaluate()
+	def isComplex(self):
+		return self.getNumerator().isComplex() or self.getDenominator().isComplex()
+
 
 
 
@@ -854,7 +869,7 @@ def num( value, debug = False ):
 	return Number(value)
 
 # imaginary number
-def imag( value ):
+def imag( value = 1 ):
 	if value == 1:
 		return ImaginaryUnit()
 	elif value == -1:
@@ -1357,17 +1372,21 @@ class SHRecursiveRelation(object):
 				if omega.__class__ == TensorComponent:
 					if omega.component_symbol == 'x':
 						# recurrence relation for w_xYlm
-						term0 = neg( mul( c, c_basis ) )
-						term1 = mul( d, d_basis )
-						term2 = mul( e, e_basis )
-						term3 = neg( mul( f, f_basis ) )
+						# we changed sign since we found out that the recursion relation does not work
+						# for the coordinate system of our SH basis functions
+						term0 = mul( c, c_basis )
+						term1 = neg( mul( d, d_basis ) )
+						term2 = neg( mul( e, e_basis ) )
+						term3 = mul( f, f_basis )
 						children[pair[0]] = mul( frac(num(1), num(2)), add( term0, term1, term2, term3 ) )
 					elif omega.component_symbol == 'y':
 						# recurrence relation for w_yYlm
-						term0 = mul( c, c_basis )
-						term1 = neg( mul( d, d_basis ) )
-						term2 = mul( e, e_basis )
-						term3 = neg( mul( f, f_basis ) )
+						# we changed sign since we found out that the recursion relation does not work
+						# for the coordinate system of our SH basis functions
+						term0 = neg( mul( c, c_basis ) )
+						term1 = mul( d, d_basis )
+						term2 = neg( mul( e, e_basis ) )
+						term3 = mul( f, f_basis )
 						children[pair[0]] = mul( frac(imag(1), num(2)), add( term0, term1, term2, term3 ) )
 					elif omega.component_symbol == 'z':
 						term0 = mul( a, a_basis )
@@ -1520,7 +1539,7 @@ class CleanupSigns(object):
 			return neg(Multiplication(factors))
 	def visit_Addition(self, expr):
 		terms = []
-			# find negations 
+		# find negations 
 		for i in range(expr.numOperands()):
 			op = expr.getOperand(i)
 			if op.__class__ == Negate:
@@ -2077,7 +2096,62 @@ def apply_recursive( expr, visitor ):
 			expr.setChildren(i, apply_recursive(expr.getChildren(i), visitor))
 	return apply(expr, expr.__class__, visitor)
 
-
+def track_term( expr, index_after, visitor ):
+	start = 0
+	op_range = []
+	temp = expr.deep_copy()
+	for index in range(temp.numOperands()):
+		op = temp.getOperand(index)
+		op = apply_recursive(op, visitor)
+		end = start+op.numOperands()
+		op_range.append( (start, end) )
+		if index_after >= start and index_after < end:
+			print("track_term: op #{} maps to #{} after applying {}".format(index, index_after, visitor.__class__.__name__))
+			return index
+		start = end
+	raise ValueError("unexpected")
 
 if __name__ == "__main__":
-	pass
+	omega = tensor("\\omega", rank=1, dimension=3)
+	omega_x = omega.getComponent(0)
+	omega_y = omega.getComponent(1)
+	omega_z = omega.getComponent(2)
+
+	'''
+	#pass
+
+	shb = SHBasis(var("l"), var("m"), omega, conjugate_complex=True)
+
+	expr = mul( omega_z, shb )
+
+	expr = apply_recursive(expr, SHRecursiveRelation())
+	expr = apply_recursive(expr, DistributiveLaw())
+	expr = apply_recursive(expr, CleanupSigns())
+
+	print_expr(expr)
+	'''
+
+	Y = SHBasis(var("l"), var("m"), omega, conjugate_complex=True)
+	Y2 = SHBasis(var("l"), neg(var("m")), omega, conjugate_complex=True)
+
+	'''
+	t1 = neg(mul(omega_x, frac(imag(), sqrt(num(2))), Y))
+	t1 = apply_recursive(t1, SHRecursiveRelation())
+	t1 = apply_recursive(t1, DistributiveLaw())
+	t1 = apply_recursive(t1, CleanupSigns())
+	'''
+
+	'''
+	t2 = mul(omega_x, frac(imag(), sqrt(num(2))), pow(neg(num(1)), var("m")), Y2)
+	t2 = apply_recursive(t2, SHRecursiveRelation())
+	t2 = apply_recursive(t2, DistributiveLaw())
+	t2 = apply_recursive(t2, CleanupSigns())
+	'''
+
+	t1 = mul(omega_x, Y)
+	t1 = apply_recursive(t1, SHRecursiveRelation())
+	t2 = mul(omega_x, Y2)
+	t2 = apply_recursive(t2, SHRecursiveRelation())
+	print_expr(t1)
+	print_expr(t2)
+

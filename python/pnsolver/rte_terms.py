@@ -735,6 +735,12 @@ def splitAddition( terms ):
 	return final_terms
 
 
+class CountImaginaryUnits(object):
+	def __init__(self):
+		self.count = 0
+	def visit_ImaginaryUnit(self, expr):
+		self.count += 1
+		return expr
 
 class fopn_real(object):
 	@staticmethod
@@ -937,6 +943,9 @@ class fopn_real(object):
 		#	print("\n------------------------------")
 		#	meh.print_expr(expr)
 
+		#meh.print_expr(expr.getOperand(12))
+		#meh.print_expr(expr.getOperand(52))
+
 		expr = meh.apply_recursive(expr, meh.SHOrthogonalityProperty())
 
 		#if debug == True:
@@ -944,6 +953,16 @@ class fopn_real(object):
 		#	split = meh.split(expr)
 		#	for s in split:
 		#		meh.print_expr(s)
+
+		'''
+		numOps = expr.numOperands()
+		for i in range(numOps):
+			op = expr.getOperand(i)	
+			counter = CountImaginaryUnits()
+			op = meh.apply_recursive(op, counter)
+			#if counter.count % 2  == 0 :
+			print("i={} #imag={}".format(i, counter.count))
+		'''
 
 
 		# replace N by the SH truncation order
@@ -954,6 +973,24 @@ class fopn_real(object):
 		#if debug == True:
 		#	print("\n------------------------------")
 		#	meh.print_expr(expr)
+
+		#ops = expr.getOperands()
+
+		#expr.setChildren( 12, meh.num(0) )
+		#expr.setChildren( 52, meh.num(0) )
+
+
+		#for i in range(13,100):
+		#	#if i != 12:
+		#	expr.setChildren( i, meh.num(0) )
+		#expr = meh.add(ops[3], ops[15], ops[21], ops[29])
+		#expr = ops[2]
+
+		#meh.print_expr(expr.getOperands()[3])
+
+
+
+
 
 		# now expand the summations into individual terms
 		expr = meh.apply_recursive(expr, meh.ExpandSums())
@@ -967,31 +1004,65 @@ class fopn_real(object):
 		# final cleanup
 		expr = meh.apply_recursive(expr, meh.CleanupSigns())
 
+		
+		#print(expr.numOperands())
 		# split derivatives into seperate terms
 		expr = meh.apply_recursive(expr, meh.SplitDerivatives())
+		#print(expr.numOperands())
+
+
+		#expr.setChildren(0, meh.num(0))
+
+
+
+		#temp -----
+		'''
+		start = 0
+		op_range = []
+		temp = expr.deep_copy()
+		for index in range(temp.numOperands()):
+			op = temp.getOperand(index)
+			gg = op.deep_copy()
+			#gg = meh.apply_recursive(gg, meh.ExpandSums())
+			#gg = meh.apply_recursive(gg, meh.ExpandSums())
+			gg = meh.apply_recursive(gg, meh.DistributiveLaw())
+			#print(gg.numOperands())
+			end = start+gg.numOperands()
+			op_range.append( (start, end) )
+			if 14 >= start and 14 < end:
+				print("14 @ op {}".format(index))
+			if 38 >= start and 38 < end:
+				print("38 @ op {}".format(index))
+			if 62 >= start and 62 < end:
+				print("62 @ op {}".format(index))
+			if 86 >= start and 86 < end:
+				print("86 @ op {}".format(index))
+			start = end
+		'''
+		#expr.setChildren(3, meh.num(0))
+		#expr.setChildren(15, meh.num(0))
+		#expr.setChildren(24, meh.num(0))
+		#expr.setChildren(34, meh.num(0))
+		#print(expr.numOperands())
+
+		#print(expr.numOperands()) # 100
+		#print( meh.track_term(expr, 3, meh.DistributiveLaw()) )
+		#for i in range(50, 52):
+		#	expr.setChildren(i, meh.num(0))
+		#expr.setChildren(12, meh.num(0))
+		#expr.setChildren(52, meh.num(0))
 		expr = meh.apply_recursive(expr, meh.DistributiveLaw())
-		expr = meh.apply_recursive(expr, meh.CleanupSigns())
-
-		#if debug == True:
-		#	print("\n------------------------------")
-		#	meh.print_expr(expr)
-
-
-		#if debug == True:
-		#	print("\n------------------------------")
-		#	#meh.print_expr(expr)
-		#	split = meh.split(expr)
-		#	for s in split:
-		#		meh.print_expr(s)
-
-
-
-		#expr = meh.apply_recursive(expr, meh.SwitchDomains())
-		#expr = meh.apply_recursive(expr, meh.SwitchDomains())
-		#expr = meh.apply_recursive(expr, meh.Factorize())
-		#expr = meh.apply_recursive(expr, meh.SHOrthogonalityProperty())
-
 		#meh.print_expr(expr)
+		#print(expr.numOperands()) # 110
+		#print( meh.track_term(expr, 14, meh.CleanupSigns()) )
+		#for i in range(56, 57):
+		#	expr.setChildren(i, meh.num(0))
+		#expr.setChildren(13, meh.num(0))
+		#expr.setChildren(56, meh.num(0))
+		expr = meh.apply_recursive(expr, meh.CleanupSigns())
+		#expr.setChildren(14, meh.num(0))
+		#print(expr.numOperands()) # 120
+
 		return expr
 
 	def transport_term( order, debug = False ):
@@ -1008,11 +1079,11 @@ class fopn_real(object):
 		for l in range(0, order+1):
 			for m in range(-l, l+1):
 
-				#if not (l==0 and m==0):
+				#if not (l==1 and m==-1):
 				#	continue
 
-				#if debug == True:
-				#	print("l={} m={}".format(l,m))
+				if debug == True:
+					print("l={} m={} -------------".format(l,m))
 
 				# instantiate real PN equation for concrete l,m combination
 				if m < 0:
@@ -1023,10 +1094,19 @@ class fopn_real(object):
 					equ = equ_c.deep_copy()
 				else:
 					raise ValueError("unexpected")
-
 				equ = meh.apply_recursive(equ, meh.Substitute(meh.var("l'"), meh.num(l)))
 				equ = meh.apply_recursive(equ, meh.Substitute(meh.var("m'"), meh.num(m)))
 				equ = meh.apply_recursive(equ, meh.FoldConstants())
+
+				# temp
+				#gg = []
+				#for op in equ.getOperands():
+				#	gg.append(meh.apply_recursive(op, meh.FoldConstants()))
+				#equ = meh.Addition(gg)
+				#equ = gg[14]
+				#equ = gg[38]
+				#equ = gg[62]
+				#equ = gg[86]
 
 				if debug == True:
 					print("\n------------------------------")
@@ -1536,6 +1616,7 @@ class fopn_real(object):
 		#	meh.print_expr(expr)
 
 		expr = meh.apply_recursive(expr, meh.SHOrthogonalityProperty())
+
 		# replace N by the SH truncation order
 		expr = meh.apply_recursive(expr, meh.Substitute(meh.var('N'), meh.num(order)))
 		#if debug == True:
@@ -1573,6 +1654,8 @@ class fopn_real(object):
 		equ_b = fopn_real.source_term_expand(sh_real_basis_b, order, debug)
 		equ_c = fopn_real.source_term_expand(sh_real_basis_c, order, debug)
 		
+
+		#meh.print_expr(equ_a)
 		#return equ_a
 
 		#'''
@@ -1614,7 +1697,7 @@ if __name__ == "__main__":
 	#pass
 	#test = lspn.term0_projected_expr(True)
 	order = 1
-	#test = fopn_real.transport_term( order, True)
-	test = fopn_real.collision_term( order, True)
+	test = fopn_real.transport_term( order, True)
+	#test = fopn_real.collision_term( order, True)
 	#test = fopn_real.scattering_term( order, True)
 	#test = fopn_real.source_term( order, True)

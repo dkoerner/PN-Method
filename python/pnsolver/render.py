@@ -211,7 +211,7 @@ if __name__ == "__main__":
 	'''
 
 	# render pn-solution directly (instead of using it to boost standard MC) -----------------------------
-	'''
+	#'''
 	volume, light = create_scene_nebulae()
 	camera = load_camera("c:/projects/epfl/epfl17/python/pnsolver/results/nebulae/nebulae.scn")
 	#camera = renderer.create_perspective_camera(512, 512, 45.0)
@@ -229,10 +229,10 @@ if __name__ == "__main__":
 	#img_ms.save("nebulae_groundtruth_ms.exr")
 
 
-	pns = renderer.load_pnsolution( "c:/projects/epfl/epfl17/python/pnsolver/results/nebulae/nebulae_p1_2_ms.pns" )	
+	#pns = renderer.load_pnsolution( "c:/projects/epfl/epfl17/python/pnsolver/results/nebulae/nebulae_p1_3_ms.pns" )	
 	#pns = renderer.load_pnsolution( "c:/projects/epfl/epfl17/python/pnsolver/results/nebulae/nebulae_p3_2_ms.pns" )	
 	#pns = renderer.load_pnsolution( "c:/projects/epfl/epfl17/python/pnsolver/results/nebulae/nebulae_p5_2_ms.pns" )
-	#pns = renderer.load_pnsolution( "c:/projects/epfl/epfl17/python/pnsolver/results/nebulae/nebulae_p5.pns" )	
+	pns = renderer.load_pnsolution( "c:/projects/epfl/epfl17/python/pnsolver/results/nebulae/nebulae_p5_3_ms.pns" )	
 	#pns = renderer.load_pnsolution( "c:/projects/epfl/epfl17/python/pnsolver/results/nebulae/nebulae_cda3.pns" )	
 
 	#integrator_pn_ss = renderer.create_directpn_integrator(pns, True, False)
@@ -241,23 +241,24 @@ if __name__ == "__main__":
 
 	integrator_pn_ms = renderer.create_directpn_integrator(pns, False, True)
 	img_ms = renderer.render( volume, light, camera, integrator_pn_ms, numSamples )
-	img_ms.save("nebulae_p1_3_ms.exr")
+	#img_ms.save("nebulae_p1_3_ms.exr")
 	#img_ms.save("nebulae_p3_3_ms.exr")
-	#img_ms.save("nebulae_p5_3_ms.exr")
+	img_ms.save("nebulae_p5_3_ms_gg.exr")
 	#img_ms.save("nebulae_p3_ms.exr")
 	#img_ms.save("nebulae_p5_ms.exr")
 	#img_ms.save("nebulae_cda_ms.exr")
 	exit(1)
+	#'''
+
+
 	'''
-
-
 	# boost standard MC using PN-Solution -----------------------------
 	volume, light = create_scene_nebulae()
 	camera = load_camera("c:/projects/epfl/epfl17/python/pnsolver/results/nebulae/nebulae.scn")
 
 	integrator_groundtruth_ms = renderer.create_simplept_integrator(False, -1)
 
-	pns = renderer.load_pnsolution( "c:/projects/epfl/epfl17/python/pnsolver/results/nebulae/nebulae_p5_2_ms.pns" )
+	pns = renderer.load_pnsolution( "c:/projects/epfl/epfl17/python/pnsolver/results/nebulae/nebulae_p5_3_ms.pns" )
 	integrator_pnis = renderer.create_pnispt_integrator(pns, False, -1)
 
 	numSamples = 10
@@ -268,7 +269,6 @@ if __name__ == "__main__":
 	#img_ms = renderer.render( volume, light, camera, integrator_pnis, numSamples )
 	#img_ms.save("nebulae_ms_pnis_mis.exr")
 
-	#'''
 	depth = integrator_pnis.dbgGet("depth")
 	throughput_over_pdf = integrator_pnis.dbgGet("throughput_over_pdf")
 	L = integrator_pnis.dbgGet("L")
@@ -304,7 +304,7 @@ if __name__ == "__main__":
 	#print(dir_x)
 	#print(dir_y)
 	#print(dir_z)
-	#'''
+	'''
 
 	# render radial fluence distribution at a given worldspace position =======
 	'''

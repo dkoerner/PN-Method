@@ -626,9 +626,9 @@ class fopn(object):
 		#	meh.print_expr(expr)
 
 		expr = meh.apply_recursive(expr, meh.DistributiveLaw())
-		if debug == True:
-			print("------------------------------")
-			meh.print_expr(expr)
+		#if debug == True:
+		#	print("------------------------------")
+		#	meh.print_expr(expr)
 
 		expr = meh.apply_recursive(expr, meh.SHRecursiveRelation())
 		expr = meh.apply_recursive(expr, meh.SplitIntegrals())
@@ -744,7 +744,58 @@ class CountImaginaryUnits(object):
 
 class fopn_real(object):
 	@staticmethod
-	def transport_term_expand( sh_real_basis, order, debug = False ):
+	def transport_term_expand2( m, order, debug = False, gg = None ):
+
+		x = meh.tensor("\\vec{x}", rank=1, dimension=3)
+		x.setComponent(0, meh.var("x"))
+		x.setComponent(1, meh.var("y"))
+		x.setComponent(2, meh.var("z"))
+		x.collapsed = True
+
+		coeff_c = meh.SHRecursiveRelation.c( meh.sub(meh.var("l'"), meh.num(1)), meh.sub( meh.var("m'"), meh.num(1) ) )
+		coeff_d = meh.SHRecursiveRelation.d( meh.add(meh.var("l'"), meh.num(1)), meh.sub( meh.var("m'"), meh.num(1) ) )
+		coeff_e = meh.SHRecursiveRelation.e( meh.sub(meh.var("l'"), meh.num(1)), meh.add( meh.var("m'"), meh.num(1) ) )
+		coeff_f = meh.SHRecursiveRelation.f( meh.add(meh.var("l'"), meh.num(1)), meh.add( meh.var("m'"), meh.num(1) ) )
+		coeff_a = meh.SHRecursiveRelation.a( meh.sub(meh.var("l'"), meh.num(1)), meh.var("m'"))
+		coeff_b = meh.SHRecursiveRelation.b( meh.add(meh.var("l'"), meh.num(1)), meh.var("m'"))
+
+		L0 = meh.SHCoefficient( 'L', meh.sub(meh.var("l'"), meh.num(1)), meh.add(meh.neg(meh.var("m'")), meh.num(1)), x )
+		L1 = meh.SHCoefficient( 'L', meh.add(meh.var("l'"), meh.num(1)), meh.add(meh.neg(meh.var("m'")), meh.num(1)), x )
+		L2 = meh.SHCoefficient( 'L', meh.sub(meh.var("l'"), meh.num(1)), meh.sub(meh.neg(meh.var("m'")), meh.num(1)), x )
+		L3 = meh.SHCoefficient( 'L', meh.add(meh.var("l'"), meh.num(1)), meh.sub(meh.neg(meh.var("m'")), meh.num(1)), x )
+
+		L4 = meh.SHCoefficient( 'L', meh.sub(meh.var("l'"), meh.num(1)), meh.sub(meh.var("m'"), meh.num(1)), x )
+		L5 = meh.SHCoefficient( 'L', meh.sub(meh.var("l'"), meh.num(1)), meh.add(meh.var("m'"), meh.num(1)), x )
+		L6 = meh.SHCoefficient( 'L', meh.add(meh.var("l'"), meh.num(1)), meh.add(meh.var("m'"), meh.num(1)), x )
+		L7 = meh.SHCoefficient( 'L', meh.add(meh.var("l'"), meh.num(1)), meh.sub(meh.var("m'"), meh.num(1)), x )
+
+		L8 = meh.SHCoefficient( 'L', meh.sub(meh.var("l'"), meh.num(1)), meh.var("m'"), x )
+		L9 = meh.SHCoefficient( 'L', meh.add(meh.var("l'"), meh.num(1)), meh.var("m'"), x )
+
+		terms = []
+		terms.append(meh.neg(meh.mul(meh.frac(meh.num(1), meh.num(2)), coeff_c, meh.deriv(L0, x.getComponent(1)))))
+		terms.append(meh.mul(meh.frac(meh.num(1), meh.num(2)), coeff_d, meh.deriv(L1, x.getComponent(1))))
+		terms.append(meh.neg(meh.mul(meh.frac(meh.num(1), meh.num(2)), coeff_e, meh.deriv(L2, x.getComponent(1)))))
+		terms.append(meh.mul(meh.frac(meh.num(1), meh.num(2)), coeff_f, meh.deriv(L3, x.getComponent(1))))
+
+		terms.append(meh.mul(meh.frac(meh.num(1), meh.num(2)), coeff_c, meh.deriv(L4, x.getComponent(0))))
+		terms.append(meh.neg(meh.mul(meh.frac(meh.num(1), meh.num(2)), coeff_e, meh.deriv(L5, x.getComponent(0)))))
+		terms.append(meh.mul(meh.frac(meh.num(1), meh.num(2)), coeff_f, meh.deriv(L6, x.getComponent(0))))
+		terms.append(meh.neg(meh.mul(meh.frac(meh.num(1), meh.num(2)), coeff_d, meh.deriv(L7, x.getComponent(0)))))
+
+		terms.append(meh.mul(coeff_a, meh.deriv(L8, x.getComponent(2))))
+		terms.append(meh.mul(coeff_b, meh.deriv(L9, x.getComponent(2))))
+
+		return meh.Addition(terms)
+		#return terms[0]
+		#t = terms[0]
+		#meh.print_tree(t)
+		#return terms[0]
+
+
+	@staticmethod
+	def transport_term_expand( m, order, debug = False, gg = None ):
+		sh_real_basis = fopn_real.conj_real_shbasis(m)
 
 		omega = meh.tensor("\\omega", rank=1, dimension=3)
 		omega_x = omega.getComponent(0)
@@ -759,6 +810,10 @@ class fopn_real(object):
 
 		L = meh.fun( "L", x, omega)
 		#L_expanded = meh.sh_expansion(L, x, omega)
+
+		#L_expanded = meh.sh_expansion_real2(L, x, omega, meh.var('N'))
+
+		#'''
 		L_expanded = meh.sh_expansion_real(L, x, omega, meh.var('N'))
 		#if debug == True:
 		#	print("------------------------------")
@@ -793,6 +848,7 @@ class fopn_real(object):
 		#if debug == True:
 		#	print("------------------------------")
 		#	meh.print_expr(L_expanded)
+		#'''
 
 		#L_coeffs = meh.SHCoefficient( "L", meh.var("l"), meh.var("m"), x )
 
@@ -855,13 +911,107 @@ class fopn_real(object):
 
 
 		expr = meh.apply_recursive(expr, meh.Factorize())
+		
+		#gg = []
+		#for i in range(expr.numOperands()):
+		#	if i != 4 and i != 16:
+		#		expr.setOperand(i, meh.num(0))
+		#'''
+		#'''
+
+		if m < 0:
+		#if False:
+			def beta_m_body( m ):
+				if m == -1:
+					return 2.0/np.sqrt(2.0)
+				else:
+					return 1.0
+			beta_m = meh.fun( "\\beta", meh.var("m'") )
+			beta_m.setAllSuperScripts()
+			beta_m.body2 = beta_m_body
+
+			def gamma_m_body( m ):
+				if m == -1:
+					return 0.0
+				else:
+					return 1.0
+			gamma_m = meh.fun( "\\gamma", meh.var("m'") )
+			gamma_m.setAllSuperScripts()
+			gamma_m.body2 = gamma_m_body
+			
+			# replace term
+			coeff_c = meh.SHRecursiveRelation.c( meh.sub(meh.var("l'"), meh.num(1)), meh.sub( meh.var("m'"), meh.num(1) ) )
+			coeff_d = meh.SHRecursiveRelation.d( meh.add(meh.var("l'"), meh.num(1)), meh.sub( meh.var("m'"), meh.num(1) ) )
+			coeff_e = meh.SHRecursiveRelation.e( meh.sub(meh.var("l'"), meh.num(1)), meh.add( meh.var("m'"), meh.num(1) ) )
+			coeff_f = meh.SHRecursiveRelation.f( meh.add(meh.var("l'"), meh.num(1)), meh.add( meh.var("m'"), meh.num(1) ) )
+			coeff_a = meh.SHRecursiveRelation.a( meh.sub(meh.var("l'"), meh.num(1)), meh.var("m'"))
+			coeff_b = meh.SHRecursiveRelation.b( meh.add(meh.var("l'"), meh.num(1)), meh.var("m'"))
+
+			L0 = meh.SHCoefficient( 'L', meh.sub(meh.var("l'"), meh.num(1)), meh.add(meh.neg(meh.var("m'")), meh.num(1)), x )
+			L1 = meh.SHCoefficient( 'L', meh.add(meh.var("l'"), meh.num(1)), meh.add(meh.neg(meh.var("m'")), meh.num(1)), x )
+			L2 = meh.SHCoefficient( 'L', meh.sub(meh.var("l'"), meh.num(1)), meh.sub(meh.neg(meh.var("m'")), meh.num(1)), x )
+			L3 = meh.SHCoefficient( 'L', meh.add(meh.var("l'"), meh.num(1)), meh.sub(meh.neg(meh.var("m'")), meh.num(1)), x )
+
+			L4 = meh.SHCoefficient( 'L', meh.sub(meh.var("l'"), meh.num(1)), meh.sub(meh.var("m'"), meh.num(1)), x )
+			L5 = meh.SHCoefficient( 'L', meh.sub(meh.var("l'"), meh.num(1)), meh.add(meh.var("m'"), meh.num(1)), x )
+			L6 = meh.SHCoefficient( 'L', meh.add(meh.var("l'"), meh.num(1)), meh.add(meh.var("m'"), meh.num(1)), x )
+			L7 = meh.SHCoefficient( 'L', meh.add(meh.var("l'"), meh.num(1)), meh.sub(meh.var("m'"), meh.num(1)), x )
+
+			L8 = meh.SHCoefficient( 'L', meh.sub(meh.var("l'"), meh.num(1)), meh.var("m'"), x )
+			L9 = meh.SHCoefficient( 'L', meh.add(meh.var("l'"), meh.num(1)), meh.var("m'"), x )
+
+			terms = []
+			# y ----------
+			terms.append(meh.neg(meh.mul(meh.frac(meh.num(1), meh.num(2)), coeff_c, meh.deriv(L0, x.getComponent(1), is_partial=True))))
+
+			terms.append(meh.mul(meh.frac(meh.num(1), meh.num(2)), coeff_d, meh.deriv(L1, x.getComponent(1), is_partial=True)))
+
+			term2 = meh.neg(meh.mul(meh.frac(meh.num(1), meh.num(2)), coeff_e, meh.deriv(L2, x.getComponent(1), is_partial=True)))
+			terms.append( meh.mul( beta_m, term2))
+
+			term3 = meh.mul(meh.frac(meh.num(1), meh.num(2)), coeff_f, meh.deriv(L3, x.getComponent(1), is_partial=True))
+			terms.append(meh.mul( beta_m, term3))
+
+			# x ----------
+			terms.append(meh.mul(meh.frac(meh.num(1), meh.num(2)), coeff_c, meh.deriv(L4, x.getComponent(0), is_partial=True)))
+
+			term5 = meh.neg(meh.mul(meh.frac(meh.num(1), meh.num(2)), coeff_e, meh.deriv(L5, x.getComponent(0), is_partial=True)))
+			terms.append(meh.mul(gamma_m, term5))
+
+			term6 = meh.mul(meh.frac(meh.num(1), meh.num(2)), coeff_f, meh.deriv(L6, x.getComponent(0), is_partial=True))
+			terms.append(meh.mul(gamma_m, term6))
+
+			terms.append(meh.neg(meh.mul(meh.frac(meh.num(1), meh.num(2)), coeff_d, meh.deriv(L7, x.getComponent(0), is_partial=True))))
+
+			# z ----------
+			terms.append(meh.mul(coeff_a, meh.deriv(L8, x.getComponent(2), is_partial=True)))
+
+			terms.append(meh.mul(coeff_b, meh.deriv(L9, x.getComponent(2), is_partial=True)))
+
+			return meh.Addition(terms)
+
+		#if not gg is None:
+		#	expr = meh.Addition( cancelation_terms[gg] )
+
+		# this is for checking term 15 and 16 from the paper
+		#expr = meh.Addition( [expr.getOperand(4), expr.getOperand(16)] )
+		#expr = meh.Addition( [expr.getOperand(5), expr.getOperand(17)] )
+		#expr = meh.Addition( [expr.getOperand(6), expr.getOperand(14)] )
+		#expr = meh.Addition( [expr.getOperand(7), expr.getOperand(15)] )
+		#expr = meh.Addition( [expr.getOperand(0), expr.getOperand(12)] )
+		#expr = meh.Addition( [expr.getOperand(2), expr.getOperand(10)] )
+		#expr = meh.Addition( [expr.getOperand(3), expr.getOperand(11)] )
+		#expr = meh.Addition( [expr.getOperand(1), expr.getOperand(13)] )
+		#expr = meh.Addition( [expr.getOperand(8), expr.getOperand(18)] )
+		#expr = meh.Addition( [expr.getOperand(9), expr.getOperand(19)] )
+		#expr = expr.getOperand(0)
+
 		#if debug == True:
 		#	print("\n------------------------------")
 		#	meh.print_expr(expr)
 
 		expr = meh.apply_recursive(expr, meh.Substitute(L, L_expanded))
 
-		#expr = expr.getOperand(0)
 		#if debug == True:
 		#	print("\n------------------------------")
 		#	meh.print_expr(expr)
@@ -942,12 +1092,38 @@ class fopn_real(object):
 		#if debug == True:
 		#	print("\n------------------------------")
 		#	meh.print_expr(expr)
-
+		#if debug == True:
+		#	print("\n------------------------------")
+		#	split = meh.split(expr)
+		#	for s in split:
+		#		meh.print_expr(s)
+		#print(expr.numOperands())
 		#meh.print_expr(expr.getOperand(12))
 		#meh.print_expr(expr.getOperand(52))
+		#meh.print_expr(expr.getOperand(8))
+		#meh.print_expr(expr.getOperand(69))
+		#meh.print_expr(expr.getOperand(48))
+		#meh.print_expr(expr.getOperand(99))
+		#meh.print_expr(expr.getOperand(18))
+		#meh.print_expr(expr.getOperand(59))
+		#meh.print_expr(expr.getOperand(13))
+		#meh.print_expr(expr.getOperand(54))
+
+		#if not gg is None:
+		#	num = expr.numOperands()
+		#	for i in range(num):
+		#		if i != gg:
+		#			expr.setChildren( i, meh.num(0) )
 
 		expr = meh.apply_recursive(expr, meh.SHOrthogonalityProperty())
 
+		#expr = expr.getOperand(0)
+		#print(expr.numOperands())
+		#if debug == True:
+		#	print("\n------------------------------")
+		#	split = meh.split(expr.deep_copy())
+		#	for s in split:
+		#		meh.print_expr(s)
 		#if debug == True:
 		#	print("\n------------------------------")
 		#	split = meh.split(expr)
@@ -1004,6 +1180,26 @@ class fopn_real(object):
 		# final cleanup
 		expr = meh.apply_recursive(expr, meh.CleanupSigns())
 
+
+		'''
+		# temp ------------------------
+		ll = 5
+		mm = -1
+		#print("l={} m={}".format(ll,mm))
+
+		expr = meh.apply_recursive(expr, meh.Substitute(meh.var("l'"), meh.num(ll)))
+		expr = meh.apply_recursive(expr, meh.Substitute(meh.var("m'"), meh.num(mm)))
+		#expr = meh.apply_recursive(expr, meh.FoldConstants())
+		#print(expr.numOperands())
+		if debug == True:
+			print("\n------------------------------")
+			split = meh.split(expr)
+			for s in split:
+				ss = meh.apply_recursive(s, meh.FoldConstants())
+				#ss = s
+				meh.print_expr(ss)
+		# /temp -------------------------
+		'''
 		
 		#print(expr.numOperands())
 		# split derivatives into seperate terms
@@ -1066,11 +1262,11 @@ class fopn_real(object):
 		return expr
 
 	def transport_term( order, debug = False ):
-		sh_real_basis_a, sh_real_basis_b, sh_real_basis_c = fopn_real.conj_real_shbasis()
-
-		equ_a = fopn_real.transport_term_expand(sh_real_basis_a, order, debug)
-		equ_b = fopn_real.transport_term_expand(sh_real_basis_b, order, debug)
-		equ_c = fopn_real.transport_term_expand(sh_real_basis_c, order, debug)
+		equ_a = fopn_real.transport_term_expand(-1, order, debug)
+		#meh.print_expr(equ_a)
+		#equ_a = fopn_real.transport_term_expand2(-1, order, debug)
+		equ_b = fopn_real.transport_term_expand(0, order, debug)
+		equ_c = fopn_real.transport_term_expand(1, order, debug)
 
 		#equ_c = equ_c.getOperand(4)
 
@@ -1080,6 +1276,7 @@ class fopn_real(object):
 			for m in range(-l, l+1):
 
 				#if not (l==1 and m==-1):
+				#	pn_equations.append(meh.num(0))
 				#	continue
 
 				if debug == True:
@@ -1094,6 +1291,11 @@ class fopn_real(object):
 					equ = equ_c.deep_copy()
 				else:
 					raise ValueError("unexpected")
+
+				if debug == True:
+					print("\n before ------------------------------")
+					meh.print_expr(equ)
+
 				equ = meh.apply_recursive(equ, meh.Substitute(meh.var("l'"), meh.num(l)))
 				equ = meh.apply_recursive(equ, meh.Substitute(meh.var("m'"), meh.num(m)))
 				equ = meh.apply_recursive(equ, meh.FoldConstants())
@@ -1109,7 +1311,7 @@ class fopn_real(object):
 				#equ = gg[86]
 
 				if debug == True:
-					print("\n------------------------------")
+					print("\nafter ------------------------------")
 					meh.print_expr(equ)
 
 				pn_equations.append(equ)
@@ -1439,7 +1641,7 @@ class fopn_real(object):
 		return expr
 
 
-	def conj_real_shbasis():
+	def conj_real_shbasis( m = None):
 		omega = meh.tensor("\\omega", rank=1, dimension=3)
 		omega_x = omega.getComponent(0)
 		omega_y = omega.getComponent(1)
@@ -1452,7 +1654,16 @@ class fopn_real(object):
 		f1 = meh.mul(meh.frac(meh.num(1), meh.sqrt(meh.num(2))), meh.SHBasis(meh.var("l'"), meh.neg(meh.var("m'")), omega, conjugate_complex=True))
 		f2 = meh.mul(meh.frac(meh.num(1), meh.sqrt(meh.num(2))), meh.pow(meh.num(-1), meh.var("m'")), meh.SHBasis(meh.var("l'"), meh.var("m'"), omega, conjugate_complex=True))
 		sh_real_basis_c = meh.add(f1, f2)
-		return sh_real_basis_a, sh_real_basis_b, sh_real_basis_c
+
+		if m is None:
+			return sh_real_basis_a, sh_real_basis_b, sh_real_basis_c
+		elif m<0:
+			return sh_real_basis_a
+		elif m==0:
+			return sh_real_basis_b
+		elif m>0:
+			return sh_real_basis_c
+
 
 
 	def scattering_term(order, debug=False):
@@ -1696,8 +1907,60 @@ class fopn_real(object):
 if __name__ == "__main__":
 	#pass
 	#test = lspn.term0_projected_expr(True)
-	order = 1
+	order = 5
 	test = fopn_real.transport_term( order, True)
 	#test = fopn_real.collision_term( order, True)
 	#test = fopn_real.scattering_term( order, True)
 	#test = fopn_real.source_term( order, True)
+
+	l = 1
+	m = -1
+
+	'''
+	# find term origins
+	for i in range(100):
+
+		equ = fopn_real.transport_term_expand(-1, order, True, gg = i)
+
+
+		equ = meh.apply_recursive(equ, meh.Substitute(meh.var("l'"), meh.num(l)))
+		equ = meh.apply_recursive(equ, meh.Substitute(meh.var("m'"), meh.num(m)))
+		equ = meh.apply_recursive(equ, meh.FoldConstants())
+
+		print("\n i={} ------------------------------".format(i))
+		meh.print_expr(equ)
+	exit(1)
+	'''
+
+
+
+	#for i in range(10):
+	#i = 4
+	#print("i={} -----------------------".format(i))
+	#equ = fopn_real.transport_term_expand2(-1, order, True)
+	
+	#equ = fopn_real.transport_term_expand(-1, order, True)
+	#equ = meh.apply_recursive(equ, meh.Substitute(meh.var("l'"), meh.num(l)))
+	#equ = meh.apply_recursive(equ, meh.Substitute(meh.var("m'"), meh.num(m)))
+	#equ = meh.apply_recursive(equ, meh.FoldConstants())
+	#meh.print_expr(equ)
+
+
+	'''
+	equ = meh.apply_recursive(equ, meh.Substitute(meh.var("l'"), meh.num(l)))
+	equ = meh.apply_recursive(equ, meh.Substitute(meh.var("m'"), meh.num(m)))
+	equ = meh.apply_recursive(equ, meh.FoldConstants())
+
+
+	# temp
+	#gg = []
+	#for op in equ.getOperands():
+	#	gg.append(meh.apply_recursive(op, meh.FoldConstants()))
+	#equ = meh.Addition(gg)
+	#equ = gg[14]
+	#equ = gg[38]
+	#equ = gg[62]
+	#equ = gg[86]
+	#print("\n------------------------------")
+	meh.print_expr(equ)
+	'''

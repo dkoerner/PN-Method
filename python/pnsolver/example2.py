@@ -344,7 +344,8 @@ if __name__ == "__main__":
 	#order = [5]
 	staggered = [True]
 	#staggered = [False]
-	boundary_conditions = [False]
+	#boundary_conditions = [False]
+	boundary_conditions = [True]
 
 	#rte_forms = []
 	#order = []

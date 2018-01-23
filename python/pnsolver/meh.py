@@ -429,9 +429,10 @@ class Kronecker(Function):
 		return "\\delta_{{{},{}}}".format(self.getArgument(0).toLatex(), self.getArgument(1).toLatex())
 
 class SHBasis(Function):
-	def __init__(self, l, m, omega, conjugate_complex=False):
+	def __init__(self, l, m, omega, conjugate_complex=False, is_real = False):
 		super().__init__( "Y", [l, m, omega])
 		self.conjugate_complex = conjugate_complex
+		self.is_real = is_real
 
 	def get_l(self):
 		return self.getChildren(0)
@@ -441,22 +442,28 @@ class SHBasis(Function):
 		return self.getChildren(2)
 	def is_conjugate_complex(self):
 		return self.conjugate_complex
-
+	def isReal(self):
+		return self.is_real
+	def isComplex(self):
+		return not self.is_real
 	def deep_copy(self):
 		l = self.get_l()
 		m = self.get_m()
 		omega = self.get_direction_argument()
-		return SHBasis( self.get_l().deep_copy(), self.get_m().deep_copy(), self.get_direction_argument().deep_copy(), self.is_conjugate_complex() )
+		return SHBasis( self.get_l().deep_copy(), self.get_m().deep_copy(), self.get_direction_argument().deep_copy(), self.is_conjugate_complex(), self.isReal() )
 
 	def toLatex(self):
 		l = self.get_l()
 		m = self.get_m()
 		omega = self.get_direction_argument()
+		basistype = "C"
+		if self.isReal():
+			basistype = "R"
 		#print([l,m,omega])
 		if self.is_conjugate_complex():
-			return "\overline{Y^{" + l.toLatex() + ", " + m.toLatex() + "}}(" + omega.toLatex() + ")"
+			return "\overline{Y_{\mathbb{" + basistype + "}}^{" + l.toLatex() + ", " + m.toLatex() + "}}(" + omega.toLatex() + ")"
 		else:
-			return "Y^{" + l.toLatex() + ", " + m.toLatex() + "}(" + omega.toLatex() + ")"
+			return "Y_{\mathbb{" + basistype + "}}^{" + l.toLatex() + ", " + m.toLatex() + "}(" + omega.toLatex() + ")"
 
 
 class SHCoefficient(Function):
@@ -483,6 +490,8 @@ class Operator( Expression ):
 		return self.numChildren()
 	def getOperand(self, index):
 		return self.children[index]
+	def setOperand(self, index, expr):
+		return self.setChildren(index, expr)
 	def getOperands(self):
 		return self.getAllChildren()
 
@@ -863,6 +872,9 @@ def num( value, debug = False ):
 		else:
 			return Number(value)
 
+	if math.isnan(value):
+		raise ValueError("meh.num nan passed as argument") 
+
 	if value < 0:
 		return neg(num(-value))
 
@@ -978,6 +990,9 @@ def sh_expansion_real( fun, positional_variable, directional_variable, truncatio
 	sum_b = mul( SHCoefficient( fun.getSymbol(), var("l"), num(0), positional_variable ), sh_real_basis_b )
 	sum_c = sum( mul( SHCoefficient( fun.getSymbol(), var("l"), var("m"), positional_variable ), sh_real_basis_c ), var('m'), num(1), var('l') )
 	return sum( add(sum_a, sum_b, sum_c), var('l'), num(0), truncation_order )
+
+def sh_expansion_real2( fun, positional_variable, directional_variable, truncation_order = infty() ):
+	return sum( sum( mul( SHCoefficient( fun.getSymbol(), var("l"), var("m"), positional_variable ), SHBasis(var("l"), var("m"), directional_variable, conjugate_complex=False, is_real=True) ), var('m'), neg(var('l')), var('l') ), var('l'), num(0), truncation_order )
 
 
 def latex( expr ):
@@ -1275,6 +1290,72 @@ class ImaginaryUnitProperty(object):
 
 
 class SHRecursiveRelation(object):
+	@staticmethod
+	def a( l, m ):
+		def a_body( l, m ):
+			base = (l-m+1)*(l+m+1)/((2*l+3)*(2*l+1))
+			if base < 0.0:
+				return np.nan
+			return np.sqrt(base)
+		a = fun( "a", l, m )
+		a.setAllSuperScripts()
+		a.body2 = a_body
+		return a
+	@staticmethod
+	def b( l, m ):
+		def b_body( l, m ):
+			base = (l-m)*(l+m)/((2*l+1)*(2*l-1))
+			if base < 0.0:
+				return np.nan
+			return np.sqrt(base)
+		b = fun( "b", add(l, num(1)), m )
+		b.setAllSuperScripts()
+		b.body2 = b_body
+		return b
+	@staticmethod
+	def c( l, m ):
+		def c_body( l, m ):
+			base = (l+m+1)*(l+m+2)/((2*l+3)*(2*l+1))
+			if base < 0.0:
+				return np.nan
+			return np.sqrt(base)
+		c = fun( "c", l, m )
+		c.setAllSuperScripts()
+		c.body2 = c_body
+		return c
+	@staticmethod
+	def d( l, m ):
+		def d_body( l, m ):
+			base = (l-m)*(l-m-1)/((2*l+1)*(2*l-1))
+			if base < 0.0:
+				return np.nan
+			return np.sqrt(base)
+		d = fun("d", l, m )
+		d.setAllSuperScripts()
+		d.body2 = d_body
+		return d
+	@staticmethod
+	def e( l, m ):
+		def e_body( l, m ):
+			base = (l-m+1)*(l-m+2)/((2*l+3)*(2*l+1))
+			if base < 0.0:
+				return np.nan
+			return np.sqrt(base)
+		e = fun("e", l, m )
+		e.setAllSuperScripts()
+		e.body2 = e_body
+		return e
+	@staticmethod
+	def f( l, m ):
+		def f_body( l, m ):
+			base = (l+m)*(l+m-1)/((2*l+1)*(2*l-1))
+			if base < 0.0:
+				return np.nan
+			return np.sqrt(base)
+		f = fun("f", l, m )
+		f.setAllSuperScripts()
+		f.body2 = f_body
+		return f
 	def visit_Multiplication(self, expr):
 		#print("visit_Multiplication {}".format(expr.__class__.__name__))
 		children = []
@@ -1399,18 +1480,31 @@ class SHRecursiveRelation(object):
 		return Multiplication(children)
 
 class SHOrthogonalityProperty(object):
+	#def __init__(self, m = None):
+	#	# parameter m drives SHOrthogonalityProperty in case of real valued SHBasis functions
+	#	# (in these instances we need to know )
 	def visit_Integration(self, expr):
+		# check if integrand is a multiplication
 		if expr.getChildren(0).__class__ == Multiplication:
+			# check if multplication consists of two factors
 			m = expr.getChildren(0)
 			if m.numOperands() == 2:
+				# check if both are SHBasis functions
 				op0 = m.getOperand(0)
 				op1 = m.getOperand(1)
 				if op0.__class__ == SHBasis and op1.__class__ == SHBasis:
 					# both operands are SH basis functions!
-					# make sure one is conjugate complex, and the other is not
-					if (op0.is_conjugate_complex() and not op1.is_conjugate_complex()) or (op1.is_conjugate_complex() and not op0.is_conjugate_complex()):
-						# identity applies
-						return mul(kronecker(op0.get_l(), op1.get_l()), kronecker(op0.get_m(), op1.get_m()))
+
+					# if both are complex:
+					if op0.isComplex() and op1.isComplex():
+						# make sure one is conjugate complex, and the other is not
+						if (op0.is_conjugate_complex() and not op1.is_conjugate_complex()) or (op1.is_conjugate_complex() and not op0.is_conjugate_complex()):
+							# identity applies
+							return mul(kronecker(op0.get_l(), op1.get_l()), kronecker(op0.get_m(), op1.get_m()))
+					#elif not self.m is None and op0.isComplex() and op0.is_conjugate_complex() and op1.isReal():
+
+
+
 		return expr
 	def visit_Multiplication(self, expr):
 		# flatten nested multiplications

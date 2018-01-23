@@ -88,6 +88,8 @@ class PNInfo3D(object):
 		return self.numCoeffs
 
 	def getIndex( self, l, m ):
+		if l > self.order:
+			return None
 		return l*(l+1)+m 
 
 	def getLMIndex( self, index ):
@@ -136,8 +138,11 @@ class PNInfo2D(object):
 		return self.numCoeffs
 
 	def getIndex( self, l, m ):
+		#print( "getIndex l={} m{}".format(l,m) )
 		index3d = self.pni3d.getIndex(l,m)
-		return self.index3d_to_index2d[index3d]
+		if not index3d is None:
+			return self.index3d_to_index2d[index3d]
+		return None
 
 	def getLMIndex( self, index2d ):
 		index3d = self.index2d_to_index3d[index2d]
@@ -542,6 +547,9 @@ def apply_spatial_discretization_recursive( expr, info, level = 0 ):
 		# function_offset is the staggered grid location at which the function is defined
 		if expr.getSymbol() == info.pni.getUnknownSymbol():
 			coeff_index = getUnknownIndex(info.pni, expr.getArguments())
+			if coeff_index == None:
+				# the coefficient vanishes (this happens in 2d case)
+				return meh.num(0)				
 			function_offset = info.pni.getOffset(coeff_index)
 		else:
 			# all other functions are always defined at cell centers
@@ -577,6 +585,10 @@ def apply_spatial_discretization_recursive( expr, info, level = 0 ):
 			# so we just return the expression as is
 			return u
 		else:
+			#print(eval_offset)
+			#print(coeff_index)
+			#print(function_offset)
+			#raise ValueError("interpolation not expected")
 			# now we interpolate from the neighbous along the defined local axes
 			offset_combinations = itertools.product(*[[-1, 1] for d in range(numAxes)])
 			num_offset_combinations = 2**numAxes
@@ -898,11 +910,20 @@ def generate_stencil_code( pne, pni, stencil_name ):
 		e = pne_discretized[coeff_index]
 		l,m = pni.getLMIndex(coeff_index)
 
+		debug = False
+		#if l==1 and m == -1:
+		#	debug = True
+
+		if debug == True:
+			print("TEST --------------")
+			meh.print_expr(e)
+
+
 		#if coeff_index == 1:
 		#	print("\n---------------------")
 		#	print("l={} m={}".format(l,m))
 		#	meh.print_expr(e)
-		cpp += "\t// row={} --------------------------\n".format(coeff_index)
+		cpp += "\t// row={} l={} m={} --------------------------\n".format(coeff_index, l, m)
 
 		unknown_coeffs = {}
 		rhs_coeffs = None

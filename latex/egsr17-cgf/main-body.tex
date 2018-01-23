@@ -4,7 +4,10 @@
 
 
 \title[Draft]%
-{Evaluation of Higher Order Diffusion against Variable Eddington Factor Methods for Rendering Participating Media}
+{
+%Evaluation of Higher Order Diffusion against Variable Eddington Factor Methods for Rendering Participating Media
+A Deterministic Method for Simulation of Light Transport in Participating Media based on Higher Order Spherical Harmonics
+}
 
 % for anonymous conference submission please enter your SUBMISSION ID
 % instead of the author's name (and leave the affiliation blank) !!
@@ -38,21 +41,45 @@
 \begin{document}
 
 % uncomment for using teaser
-% \teaser{
-%  \includegraphics[width=\linewidth]{eg_new}
-%  \centering
-%   \caption{New EG Logo}
-% \label{fig:teaser}
-%}
+\teaser
+{
+\centering
+\begin{subfigure}{0.2\linewidth}
+\missingfigure{}
+\caption{$CDA/P_1$}
+\end{subfigure}%
+\hspace{0.05\linewidth}
+\begin{subfigure}{0.2\linewidth}
+\missingfigure{}
+\caption{FLD}
+\end{subfigure}%
+\hspace{0.05\linewidth}
+\begin{subfigure}{0.2\linewidth}
+\missingfigure{}
+\caption{$P_5$}
+\end{subfigure}%
+\hspace{0.05\linewidth}
+\begin{subfigure}{0.2\linewidth}
+\missingfigure{}
+\caption{Groundtruth}
+\end{subfigure}%
+%\includegraphics[width=\linewidth]{figures/eg_new}
+\icaption
+{
+Flux-limited diffusion (b) is an ad-hoc extension to the classical diffusion approximation (a). It can be considered the state of the art among deterministic methods for simulating light transport in highly scattering participating media, which is a common challenge for brute-force path tracing (d). We add the $P_N$-method (c) to the arsenal of available deterministic methods in rendering and investigate its benefits and tradeoffs against flux-limited diffusion.
+}
+\label{fig:teaser}
+}
+
+
 
 \maketitle
 
 %-------------------------------------------------------------------------
 
 \begin{abstract}
-
-Classical diffusion approximation (CDA) is very competitive for rendering highly scattering participating media, because in these scenarios, Monte Carlo based methods suffer from high computational cost. Variable Eddington Factor methods, such as flux-limited diffusion (FLD), have shown to further improve the results from CDA. In this paper, we look at CDA as a degenerate case of the $P_1$-method and investigate the open question, if going higher order gives a viable alternative to FLD. We derive the time-independent real-valued $P_N$-equations and introduce a framework for generating finite difference stencils directly from the computer algebra representation of the $P_N$-equations for arbitrary order. We further present a staggered-grid $P_N$-solver and compare it against FLD for various standard problems.
-
+%Classical diffusion approximation (CDA) is very competitive for rendering highly scattering participating media, because in these scenarios, Monte Carlo based methods suffer from high computational cost. Variable Eddington Factor methods, such as flux-limited diffusion (FLD), have shown to further improve the results from CDA. In this paper, we look at CDA as a degenerate case of the $P_1$-method and investigate the open question, if going higher order gives a viable alternative to FLD. We derive the time-independent real-valued $P_N$-equations and introduce a framework for generating finite difference stencils directly from the computer algebra representation of the $P_N$-equations for arbitrary order. We further present a staggered-grid $P_N$-solver and compare it against FLD for various standard problems.
+Rendering highly scattering participating media is a common challenge for brute-force path-tracing. Classical diffusion approximation (CDA) is a competitive alternative, as it reduces the problem to solving a simple diffusion equation. Variable eddington factor methods, such as flux-limited diffusion (FLD), improve CDA by making the diffusion coefficient non-linear. Both methods are based on the spherical harmonics expansion of the radiance field, truncated after the first order. In this paper, we investigate the open question, if going higher order provides a viable alternative to the ad-hoc fixes to diffusion by FLD. Increasing the order introduces a growing set of increasingly complex coupled partial differential equations, called $P_N$-equations, which become very difficult to work with for higher order. We introduce a computer algebra framework for representing and manipulating mathematical equations and use it to derive the time-independent real-valued $P_N$-equations at arbitrary order. We further present a staggered-grid $P_N$-solver and generate its stencil code directly from the expression tree of the $P_N$-equations. Both, the computer algebra framework, as well as the solver are made avaiable open source. Finally, we discuss how our method compares against FLD for various standard problems.
 
 %\begin{classification} % according to http://www.acm.org/class/1998/
 %\CCScat{Computer Graphics}{I.3.7}{Three-Dimensional Graphics and Realism}{Raytracing}
@@ -61,13 +88,14 @@ Classical diffusion approximation (CDA) is very competitive for rendering highly
 \end{abstract}
 
 
+
 %-------------------------------------------------------------------------
 \input{introduction.tex}
 
 %-------------------------------------------------------------------------
 \section{Previous work}
 
-Light transport in participating media is governed by the radiative transfer equation(RTE), which was first introduced in astrophysics by Chandrashekar~\cite{Chandrasekhar60} and later used for rendering in graphics by Kajiya~\cite{Kajiya86}. Today, this equation is typically solved using Monte Carlo based methods. However, in strongly scattering media or in the presence of highly anisotropic phase functions, these methods can become unfeasible, due to high computational cost which comes from tracing long particle paths with many scattering events.
+Light transport in participating media is governed by the radiative transfer equation~(RTE), which was first introduced in astrophysics by Chandrashekar~\cite{Chandrasekhar60} and later used for rendering in graphics by Kajiya~\cite{Kajiya86}. Today, this equation is typically solved using Monte Carlo based methods. However, in strongly scattering media or in the presence of highly anisotropic phase functions, these methods can become unfeasible, due to the high computational cost which comes from tracing long particle paths with many scattering events.
 
 In contrast to path-tracing, the $P_N$-method is a deterministic method, which gives a solution by solving a system of linear equations. It is derived by discretizing the angular variable of the radiative transfer equation into spherical harmonics (SH). This gives rise to a set of coupled, complex-valued partial differential equations, called $P_N$-equations. The subscript $N$ refers to the truncation order of the SH. 
 
@@ -75,9 +103,9 @@ The $P_N$-method has a long history in other fields and was never applied in gra
 
 Similar to $P_N$, the classical diffusion approximation (CDA) is a deterministic method, which arrives at a solution by solving a system of linear equations. It is derived as a degenerate case of the $P_1$-equations (truncation after the first SH order), which collapses to a simple diffusion equation giving the method its name. CDA has a long history in other domains, such as astrophysics~\cite{Ishimaru78} and was introduced to graphics by Stam \cite{Stam95}. It was further extended to anisotropic radiative transfer by \cite{Jakob10}.
 
-CDA suffers from severe energy loss close to regions with strong density gradients. This problem is addressed by the variable eddington factor(VEF)-formalism, among which flux-limited diffusion (FLD) is the most prominent. FLD was first introduced in astrophysics by~\cite{Pomraining78} and was introduced to graphics by Koerner et al.~\cite{Koerner14}. Unfortunately, both CDA and FLD do not support anisotropic phase functions.
+CDA suffers from severe energy loss close to regions with strong density gradients. This problem is addressed by the variable eddington factor(VEF)-formalism, among which flux-limited diffusion (FLD) is the most prominent. FLD was first introduced in astrophysics by~\cite{Levermore81} and was introduced to graphics by Koerner et al.~\cite{Koerner14}.
 
-The idea behind VEF is to replace the diffusion coefficient in the diffusion equation of CDA by a non-linear diffusion coefficient. This diffusion coefficient is being derived by seeing it as a mean to interpolate between the diffusive and pure transport regime. The diffusive regime is where thick highly scattering media is present and causes photons to change directions in short succession, while the transport regime in thin and highly absorbing media causes photons to travel long straight lines. In the absence of scattering (e.g. pure vacuum), the non-linear diffusion coefficient turns the diffusion equation into an advection equation.
+The idea behind VEF is to replace the diffusion coefficient in the diffusion equation of CDA by a non-linear diffusion coefficient. This new diffusion coefficient is being derived by seeing it as a mean to spatially blend between the diffusive and pure transport regime. The diffusive regime is where thick highly scattering media is present and causes photons to change directions in short succession, while the transport regime in thin and highly absorbing media causes photons to travel long straight lines. In the absence of scattering (e.g. pure vacuum), the non-linear diffusion coefficient turns the diffusion equation into an advection equation.
 
 It is an open and unresolved question, whether the $P_N$-method with truncation at higher order, gives any benefit over using first order non-linear diffusion. This question is also been raised in other domains~\cite{Olson00} and resolving it is the main motivation for this paper.
  
@@ -100,22 +128,24 @@ It is an open and unresolved question, whether the $P_N$-method with truncation 
 \section{Real-valued $P_N$-Equations}
 \label{sec:pnequations}
 
-The $P_N$-equations are derived from the radiative transfer equation~(RTE), which expresses the change of the radiance field $L$, with respect to an infinitesimal change of position into direction $\omega$ at point $\vec{x}$:
+In this section we present how to optain the real-valued $P_N$-equations. For brevity and readability, we only give a brief outline here and refer to the supplemental material for the detailed derivation.
+
+The $P_N$-equations are derived from the radiative transfer equation, which expresses the change of the radiance field $L$, with respect to an infinitesimal change of position into direction $\omega$ at point $\vec{x}$:
 \begin{align}
 %\label{eq:rte}
 \left(\nabla\cdot\omega\right)L\left(\vec{x}, \omega \right)
 =&
--\sigma_t\left(\vec{x}\right) L\left(\vec{x}, \omega \right)\\
+-\sigma_t\left(\vec{x}\right) L\left(\vec{x}, \omega \right)\nonumber\\
 &
 +\sigma_s\left(\vec{x}\right) \int_{\Omega}
 {
 p\left(\omega'\cdot\omega\right)L\left(\vec{x}, \omega \right)\ud\omega'
-}\\
+}\nonumber\\
 &
-+Q\left(\vec{x}, \omega\right)
++Q\left(\vec{x}, \omega\right)\nonumber
 \end{align}
 
-The LHS is the transport term and we refer to the terms on the RHS as collision, scattering and source term respectively.
+The LHS is the transport term and we refer to the terms on the RHS as collision, scattering and source term respectively. The symbols $\sigma_t$, $\sigma_s$, $p$ and $Q$ refer to the extinction coefficient, scattering coefficient, phase function and emission term respectively.
 
 The $P_N$-method uses SH to discretize the angular domain into a set of coupled equations. We further discretize the spatial variable using a finite difference (FD) grid. Each term represents a change of the radiance field $L$. Therefore, after discretizing the continuous variables, we can represent the RTE as a sequence of linear transformations, which can be collapsed into a single coefficient matrix $A$ and a RHS vector $\vec{Q}$:
 \begin{align}
@@ -123,6 +153,13 @@ The $P_N$-method uses SH to discretize the angular domain into a set of coupled 
 \end{align}
 
 $T$, $C$, $S$ are matrices, which result from the discretized transport, collision and scattering terms in the $P_N$-equations respectively. All SH coefficients for every voxel of our FD-grid are flattened into the solution vector $\vec{u}$, which is the unknown we want to solve for. The RHS vector likewise contains the flattened SH coefficients of the emission field $Q$ of every voxel.
+
+
+\begin{figure}[h]
+\centering
+\missingfigure{test}
+\icaption{Structure of coefficient matrix $A$ and solution vector $\vec{u}$ after discretization of the $P_N$-equations on a finite difference grid.}
+\end{figure}
 
 In order to derive the real-valued $P_N$-equations from which we can construct $A$ and $\vec{Q}$, we use the real-valued SH basis functions $\SHBR^{l,m}$, which are defined in terms of the complex-valued SH basis functions $\SHBC^{l,m}$:
 \begin{align}
@@ -136,14 +173,14 @@ In order to derive the real-valued $P_N$-equations from which we can construct $
 \right.
 \end{align}
 
-First, angular dependent quantities in the RTE, such as the radiance field $L$ (or the emission field $Q$) are projected into SH coefficients:
+First, the angular dependent quantities in the RTE, such as the radiance field $L$ (or the emission field $Q$) are projected into SH coefficients:
 \begin{align}
 L^{l,m}\left(\vec{x}\right)
 =
 \int_\Omega{L\left(\vec{x}, \omega\right)\SHBR^{l,m}\ud\omega}
 \end{align}
 
-The reconstruction $\hat{L}$ will have an error due to truncation at order $N$:
+The reconstruction $\hat{L}$ has an error due to truncation at order $N$:
 \begin{align}
 L\left(\vec{x}, \omega\right)
 \approx
@@ -162,24 +199,14 @@ L^{l,m}\left(\vec{x}\right)\SHBR^{l,m}\left(\omega\right)
 }
 \end{align}
 
-The angular dependent quantities are replaced with their SH reconstruction in the RTE. The $P_N$-equations are found by multiplying each term with the conjugate complex of the real-valued SH basis function $\overline{\SHBR^{l,m}}$, followed by integration over solid angle. In order to arrive at a form, which does not depend on angle anymore, a set of transformations and identities are applied. Of particular importance are the orthogonality property
+The angular dependent quantities are replaced with their SH reconstruction in the RTE. The $P_N$-equations are found by multiplying each term with the conjugate complex of the real-valued SH basis function, followed by integration over solid angle. In order to arrive at a form, which does not depend on angle anymore, a set of transformations and identities are applied. Of particular importance are the orthogonality property
 \begin{align}
 \int_{\Omega}{ \SHBC^{l,m}\overline{\SHBC^{l',m'}}\ud\omega} = \delta_{l,l'}\delta_{m,m'}
 \end{align}
 
-and the following recursion relation
+and recursion relations such as the following:
 \begin{align}
-\omega_x\overline{\SHBC^{l, m}}=
-&
--\frac{1}{2}c^{{l-1,m-1}}\overline{Y^{l-1, m-1}}+\frac{1}{2}d^{{l+1,m-1}}\overline{Y^{l+1, m-1}}\\
-&
-+\frac{1}{2}e^{{l-1,m+1}}\overline{Y^{l-1, m+1}}-\frac{1}{2}f^{{l+1,m+1}}\overline{Y^{l+1, m+1}}\\
-\omega_y\SHBC^{l, m}=
-&
-\frac{i}{2}c^{{l-1,m-1}}\overline{Y^{l-1, m-1}}-\frac{i}{2}d^{{l+1,m-1}}\overline{Y^{l+1, m-1}}\\
-&
-+\frac{i}{2}e^{{l-1,m+1}}\overline{Y^{l-1, m+1}}-\frac{i}{2}f^{{l+1,m+1}}\overline{Y^{l+1, m+1}}\\
-\omega_y\SHBC^{l, m}=
+\omega_z\SHBC^{l, m}=
 &
 a^{{l-1,m}}\overline{Y^{l-1, m}}+b^{{l+1,m}}\overline{Y^{l+1, m}}
 \end{align}
@@ -187,33 +214,56 @@ a^{{l-1,m}}\overline{Y^{l-1, m}}+b^{{l+1,m}}\overline{Y^{l+1, m}}
 with 
 \begin{align}
 &a^{l,m}= \sqrt{\frac{\left(l-m+1\right)\left(l+m+1\right)}{\left(2l+1\right)\left(2l-1\right)}},
-b^{l,m}= \sqrt{\frac{\left(l-m\right)\left(l+m\right)}{\left(2l+1\right)\left(2l-1\right)}}\\
-&c^{l,m}= \sqrt{\frac{\left(l+m+1\right)\left(l+m+2\right)}{\left(2l+3\right)\left(2l+1\right)}},
-d^{l,m}= \sqrt{\frac{\left(l-m\right)\left(l-m-1\right)}{\left(2l+1\right)\left(2l-1\right)}}\\
-&e^{l,m}= \sqrt{\frac{\left(l-m+1\right)\left(l-m+2\right)}{\left(2l+3\right)\left(2l+1\right)}},
-f^{l,m}= \sqrt{\frac{\left(l+m\right)\left(l+m-1\right)}{\left(2l+1\right)\left(2l-1\right)}}
+b^{l,m}= \sqrt{\frac{\left(l-m\right)\left(l+m\right)}{\left(2l+1\right)\left(2l-1\right)}}
 \end{align}
 
 
 
 %Finally, the spatially dependent variables are discretized (using finite difference stencils for derivatives). The resulting equations are factorized according to the unknowns ($l,m$-coefficient within voxel $i,j,k$). The coefficients to these unknowns 
 
-Note that the real-valued SH basis functions are different, depending on $m$, which means that we get three different versions of the $P_N$-equations (for $m<0$, $m=0$ and $m>0$). Further note, that we need to expand the real-valued SH basis functions in order to be able to apply the given identities above. This causes the equations to become very large and difficult to deal with when applying transformations and identities.
+Note that the real-valued SH basis functions are different, depending on $m$, which means that we get three different versions of the $P_N$-equations (for $m<0$, $m=0$ and $m>0$). Further note, that we need to expand the real-valued SH basis functions into their complex-valued definition, in order to be able to apply the given identities above. This causes the equations to become large and difficult to deal with when applying transformations and identities.
 
-It becomes even more of a problem later, when we want to expand the spatially discretized equations for a particular choice of truncation order $N$. Manually creating a FD stencil from hundreds of terms, including complex numbers and derivatives, is very challenging for first order and becomes impossible for higher order.
+It becomes even more of a problem later, when we want to expand the spatially discretized equations for a particular choice of truncation order $N$. Manually creating a FD stencil from so many terms is challenging for first order and becomes increasingly difficult and error prone for higher order.
 
 \subsection*{Computer Algebra Representation}
 
-In order to tackle this problem, we created a system for representing algebraic expressions as an expression tree in Python. Our framework can represent terms, integrals, derivatives, sums, variables, functions and special symbols, such as the Kronecker delta or imaginary number. It supports manipulations, such as the application of distributive law, substitution, rearranging nested integrals and application of the identities given above.
+\begin{figure}[h]
+\centering
+\begin{subfigure}{0.45\columnwidth}
+\missingfigure{test}
+\end{subfigure}%
+\hspace{0.05\columnwidth}
+\begin{subfigure}{0.45\columnwidth}
+\missingfigure{test2}
+\end{subfigure}%
+
+\begin{subfigure}{0.45\columnwidth}
+\missingfigure{test}
+\end{subfigure}%
+\hspace{0.05\columnwidth}
+\begin{subfigure}{0.45\columnwidth}
+\missingfigure{test2}
+\end{subfigure}%
+
+\icaption{The computer algebra representation is constructed using API commands provided by our framework (top left) and represented internally as an expression tree (top right). Additional API commands (bottem left) allow valid transformations, which modify the expression tree accordingly (bottom right).}
+\end{figure}
+
+In order to tackle this problem, we created a system for representing algebraic expressions as an expression tree. Our framework can represent terms, integrals, derivatives, sums, variables, functions and special symbols, such as the Kronecker delta or imaginary number. It supports manipulations, such as the application of distributive law, substitution, rearranging nested integrals and application of the identities given above.
 
 After entering each term of the RTE into our framework, we arrive at the $P_N$-equations by applying a set of manipulations and identities using API commands provided by our framework. For debugging purposes, the expression tree can be rendered directly into latex code. This allows us to deal with pages of dense equations very easily.
-
-<show some codesnippet for generating expressions and applying manipulations?>
 
 The computer algebra representation of the $P_N$-equations is input to our $P_N$-solver, which we will discuss in the next section.
 
 \section{$P_N$-Solver}
 \label{sec:pnsolver}
+
+
+\begin{figure*}[t]
+\centering
+\missingfigure{$P_N$-solver overview: generate stencil code $\rightarrow$ build system $\rightarrow$ solve $\rightarrow$ render}
+\icaption{Overview of our $P_N$-solver. After generating the stencil source code from the expression trees representing the $P_N$-equations, the linear system $A\vec{u}=\vec{Q}$ is built using RTE parameter fields and additional user input, such as grid resolution and type of boundary conditions. The resulting system is solved for $\vec{u}$, which is then used in our rendering application.}
+\label{fig:pnsolver}
+\end{figure*}
 
 In this section we discuss the implementation of our $P_N$-solver. The inputs are the $P_N$-equations in form of our computer algebra representation from section~\ref{sec:pnequations} and the scalar fields for $\sigma_t$ and $\sigma_s$. The angular dependent emission field $Q\left(\vec{x}, \omega\right)$ is projected into SH, which gives a scalar field for each SH coefficient as another input. We assume the phase function is not spatially varying and we therefore only require a single set of coefficients $p^{l,m}$ as input.
 
@@ -230,9 +280,22 @@ Finally, the equations are discretized in spatial domain. Since all manipulation
 
 Whenever we encounter a derivative operator, we parse its contained sub-expression multiple times with shifted voxel offsets according to the finite difference direction. The resulting expressions are multiplied with an expression representing the finite difference weight (which will contain the voxelsize as a variable). The parser keeps track of the current voxel offset in a stack. Nested derivatives are handled naturally and produce second order finite difference stencils as expected. All occurances of the continuous positional variable $\vec{x}$ are replaced by the current voxel offset in the stack. 
 
-As we will see later in section~\ref{sec:results}, our solver needs to support staggered grids in order to avoid severe oscillation artefacts which arise, when all coefficients are located at the voxel center. With staggered grids, coefficients can live on the intersections of a subgrid with double resolution. So instead of voxel centers alone, coefficients can live on the center of voxel faces, voxel edges or the intersection between voxels.
+As we see in figure~\ref{fig:artefacts}, our solver needs to support staggered grids in order to avoid severe oscillation artefacts which arise, when all coefficients are located at the voxel center. With staggered grids, coefficients can live on the intersections of a subgrid with double resolution. So instead of voxel centers alone, coefficients can live on the center of voxel faces, voxel edges or the intersection between voxels.
 
 Our solver supports placement of coefficients on arbitrary staggered grid locations (including collocation). Whenever an unknown is encountered during expression tree parsing, the discretization code looks at the staggerd grid location at which the unknown is to be evaluated and the location at which the unknown lives on the grid. Depending on how the two are located to each other, the parser returns an expression, which interpolates the unknown at the requested offset from its surrounding locations. It returns the unknown itself, if both happen to coincide at the same location.
+
+\begin{figure}[h]
+\centering
+\begin{subfigure}{0.45\columnwidth}
+\missingfigure{test}
+\end{subfigure}%
+\hspace{0.05\columnwidth}
+\begin{subfigure}{0.45\columnwidth}
+\missingfigure{test2}
+\end{subfigure}%
+\icaption{The solution of our solver for the 2D-checkerboard problem with collocated grids (left), where all coefficients are located at the cell centers. It suffers from severe oscillating artefacts, which are removed by offseting the coefficient locations using staggered grids (right).}
+\label{fig:artefacts}
+\end{figure}
 
 After discretization, the final expression tree is used to generate C++ code for the stencil. The unknowns in the terms give information about the coefficient index and voxel offset and therefore identify a column offset in the matrix $A$. The other factors in each term are rendered into C++ expressions, which are executed during runtime to set the coefficients in matrix $A$ and $\vec{Q}$. The stencil is executed per voxel and contains the code for computing the cofficients for all rows in $A$ and $\vec{Q}$ which belong to a single voxel.
 
@@ -244,22 +307,26 @@ Since the stencil has been generated by discretizing the $P_N$-equation relative
 
 The stencil has been generated without any notion of domain boundaries. Our solver supports Neumann boundary conditions (BC) and Dirichlet BC. They are handled transparently by the C++ framework through reindexing. Whenever the stencil writes into $A$ for a SH coefficient outside the domain, the framework will return the row and column in $A$ for the SH coefficient with the same index, which is the closest inside the domain (Neumann BC) or it will simply ignore the write operation (Dirichlet BC).
 
-Additional active coefficients (which contribute additional rows and columns in $A$ and $\vec{Q}$) are required to respect the boundary correctly (see Figure~\ref{fig:staggeredgrid}). This requires careful managegment of additional coefficients in boundary voxels, which is done transparently by the C++ framework.
+Additional active coefficients (which contribute additional rows and columns in $A$ and $\vec{Q}$) are required to respect the boundary correctly (see Figure~\ref{fig:staggeredgrid}). This requires careful managegment of additional coefficients at boundary voxels, which is done transparently by the C++ framework.
 
-\todo[inline]{The original todo note withouth changed colours.\newline Here's another line.}
+%\todo[inline]{The original todo note withouth changed colours.\newline Here's another line.}
 
 \begin{figure}[h]
 \centering
-\missingfigure{\Huge Nice this triangle?}
-\caption{Some caption}
-\label{nicefigure}
+\begin{subfigure}{0.45\columnwidth}
+\missingfigure{test}
+\end{subfigure}%
+\hspace{0.05\columnwidth}
+\begin{subfigure}{0.45\columnwidth}
+\missingfigure{test2}
+\end{subfigure}%
+\icaption{Staggered grids cause a shifted boundary on the right and upper side of the domain (left). The boundary is correct after introducing additional unknowns (red) at boundary voxels (right).}
+\label{fig:staggeredgrid}
 \end{figure}
 
-<picture showing staggered boundary coefficients>
-%\label{fig:staggeredgrid}
 
 %Matrix $A$ and vector $\vec{Q}$ are constructed after applying the stencil for every voxel.
-The generated linear system becomes very large for high order and dense FD grids. The number of rows is determined by the number of voxels times the number of SH coefficients per voxel. The matrix $A$ is squared and fortunately very sparse. It further is non-symmetric and also not diagonal dominant, which rules out many standard methods for solving linear systems. We adress this by solving the normal form $A^TA\vec{u}=A^T\vec{Q}$ instead. This gives a symmetric and positive definit system matrix $A^TA$ (although with a higher condition number).
+The generated linear system becomes very large for high order and resolution. The number of rows is determined by the number of voxels times the number of SH coefficients per voxel. The matrix $A$ is squared and fortunately very sparse. It further is non-symmetric and also not diagonal dominant, which rules out many standard methods for solving linear systems. We adress this by solving the normal form $A^TA\vec{u}=A^T\vec{Q}$ instead. This gives a symmetric and positive definit system matrix $A^TA$ (although with a higher condition number).
 
 
 %\subsection*{CDA vs. $P_1$}
@@ -278,6 +345,14 @@ Our FLD solver follows the implementation in~\cite{Koerner14} very closely (thou
 \section{Results}
 \label{sec:results}
 
+\subsection{Rendering}
+
+\begin{itemize}
+	\item explain that we use single scattered light as emission field
+	\item explain our single scattering path tracer using the $P_N$-solution as indirect light
+\end{itemize}
+
+\subsection{2D checkerboard}
 \subsection{Pointsource problem}
 \subsection{Nebulae/Cloud}
 

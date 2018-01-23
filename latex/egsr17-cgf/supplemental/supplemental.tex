@@ -1,0 +1,1295 @@
+%\documentclass[10pt, draft]{article}
+\documentclass[10pt]{scrartcl}
+\usepackage{fullpage}
+\usepackage{lmodern}
+\usepackage[OT1]{fontenc}
+
+\usepackage[nottoc]{tocbibind} % Add entry for references to \tableofcontents
+
+\usepackage[squaren]{SIunits}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsfonts}
+\usepackage{scalerel} % very small subscripts
+
+\usepackage{xcolor}
+\definecolor{visusblue}{RGB}{19 124 190} % Color taken from VISUS slides
+
+\usepackage{hyperref}
+\hypersetup{
+ colorlinks=true,
+ urlcolor=visusblue,
+ urlbordercolor=white,
+ citecolor=visusblue,
+ linkcolor=visusblue
+}
+
+\usepackage{listings}% see \lstset below for package settings
+\usepackage{subfigure}
+\usepackage{SIunits}
+
+\usepackage{graphicx}
+\usepackage{caption}
+\captionsetup{width=0.9\textwidth}
+
+
+%\usepackage{geometry}
+\usepackage{lipsum}
+%\usepackage{fancyhdr}
+%\pagestyle{fancy}
+
+\usepackage{textcomp}
+
+\usepackage[parfill]{parskip}
+
+% http://tex.stackexchange.com/questions/107186/how-to-write-norm-which-adjusts-its-size 
+\usepackage{mathtools}
+\DeclarePairedDelimiterX{\norm}[1]{\lVert}{\rVert}{#1}
+
+\renewcommand{\familydefault}{\sfdefault}
+
+
+% macros -----------------
+
+\input{../macros.tex}
+
+\title{A Deterministic Method for Simulation of Light Transport in Participating Media based on Higher Order Spherical Harmonics}
+\subtitle{Supplemental Material}
+%\author{David Koerner}
+\date{}
+
+\newcommand{\wc}{.}
+
+
+\begin{document}
+
+% Title page
+%\input{title.tex}
+\maketitle
+\begin{abstract}
+This document contains the detailed derivations refered to by the article for better readability.
+\end{abstract}
+\tableofcontents
+
+
+
+\section{Isotropic Radiative Transfer Equation}
+
+% RTE ------------
+\begin{align}
+%\label{eq:rte}
+\left(\nabla\cdot\omega\right)L\left(\vec{x}, \omega \right)
+=&
+-\sigma_t\left(\vec{x}\right) L\left(\vec{x}, \omega \right)\nonumber\\
+&
++\sigma_s\left(\vec{x}\right) \int_{\Omega}
+{
+p\left(\omega'\cdot\omega\right)L\left(\vec{x}, \omega \right)\ud\omega'
+}\nonumber\\
+&
++Q\left(\vec{x}, \omega\right)\nonumber
+\end{align}
+
+% RTE Matrix form ------------
+\begin{align}
+(T+C-S)\vec{u} = A\vec{u} = \vec{Q}
+\end{align}
+
+\section{Spherical Harmonics}
+
+Spherical Harmonics are a set of very popular and well known functions on the sphere. The complex-valued SH basis functions are given by
+% complex valued SH ------------------
+\begin{align}
+\SHBC^{l,m}(\omega) = \SHBC^{l,m}(\theta, \phi)=
+\begin{cases}
+(-1)^m\sqrt{\frac{2l+1}{4\pi}\frac{(l-m)!}{(l+m)!}}e^{im\phi}P^{l,m}\left(\operatorname{cos}\left(\theta\right)\right), & \text{for $m\ge0$}\\
+\left(-1\right)^m\overline{\SHBC^{l\left|m\right|}}(\theta, \phi), & \text{for $m<0$}
+\end{cases}
+\end{align}
+
+where $P^{l,m}$ are the associated Legendre-Polynomials. The $\left(-1\right)^m$ factor is called the Condon-Shortley phase and is not part of the associated Legendre Polynomial like in other definitions.
+
+
+\section{Derivation of the complex-valued $P_N$-equations}
+
+Deriving the $P_N$-equations consists of two main steps. First, all angular dependent quantities in the RTE are expressed in terms of SH basis functions. After this, the RTE still depends on the angular variable. Therefore, the second step projects each term of the RTE by multiplying with the conjugate complex of the SH basis functions, followed by integration over solid angle to integrate out the angular variable. This gives an equation for each combination of $l$ and $m$.
+
+\subsection{Projecting Radiative Transfer Quantities}
+
+% -----------------------------
+\subsubsection{Radiance Field $L$ and Emission Field $Q$}
+\label{sec:complex_proj_L}
+
+Radiative transfer quantities, which depend on position $\vec{x}$ and angle $\omega$ are projected into spatially dependent SH coefficients for each SH basis function:
+\begin{align}
+L^{l,m}\left(\vec{x}\right)
+&=
+\int_\Omega{L\left(\vec{x}, \omega\right)\SHBC^{l,m}\ud\omega}\nonumber\\
+Q^{l,m}\left(\vec{x}\right)
+&=
+\int_\Omega{Q\left(\vec{x}, \omega\right)\SHBC^{l,m}\ud\omega}\nonumber
+\end{align} 
+
+The function is completely reconstructed by using all SH basis functions up to infinite order. The $P_N$-equations introduce a truncation error by only using SH basis functions up to order $N$ for the reconstruction $\hat{L}$ and $\hat{Q}$:
+\begin{align}
+\label{eq:sh_exp_L}
+L\left(\vec{x}, \omega\right)
+\approx
+\hat{L}\left(\vec{x}, \omega\right) =
+\sum_{l=0}^{N}
+{
+\sum_{m=-l}^{l}
+{
+L^{l,m}\left(\vec{x}\right)\SHBC^{l,m}\left(\omega\right)
+}
+}
+=
+\sum_{l,m}
+{
+L^{l,m}\left(\vec{x}\right)\SHBC^{l,m}\left(\omega\right)
+}\nonumber\\
+Q\left(\vec{x}, \omega\right)
+\approx
+\hat{Q}\left(\vec{x}, \omega\right) =
+\sum_{l=0}^{N}
+{
+\sum_{m=-l}^{l}
+{
+Q^{l,m}\left(\vec{x}\right)\SHBC^{l,m}\left(\omega\right)
+}
+}
+=
+\sum_{l,m}
+{
+Q^{l,m}\left(\vec{x}\right)\SHBC^{l,m}\left(\omega\right)
+}
+\end{align}
+
+% -------------------------------------
+\subsubsection{Phase Function}
+\label{sec:complex_proj_phase}
+
+Throughout our article, we assume an isotropic phase function, which only depends on the angle between incident and outgoing vector $\omega_i$ and $\omega_o$ (note that in the graphics literature, these would often be called anisotropic). We will see later in section~\ref{sec:complex_scattering_term}, that this allows us to fix the outgoing vector $\omega_o$ at the pole axis $\vec{e}_3$ and compute the phase function SH coefficients by just varying the incident vector $\omega_i$.
+
+%\operatorname{cos}\theta
+\begin{align*}
+p^{l,m}(\omega_i)
+=
+\int_\Omega
+{
+p\left(\omega_i\cdot\vec{e}_3\right)
+\SHBC^{l,m}\left(\omega_i\right)
+\ud\omega
+}
+\nonumber
+\end{align*}
+
+The expansion of the phase function can be further simplified, because the phase function is rotationally symmetric around the pole axis $\vec{e}_3$. Consider the definition of the spherical harmonics basis function $\SHBC^{l,m}$:
+
+\begin{align*}
+\SHBC^{l,m}(\theta, \phi) = C^{l,m}e^{im\phi}P^{l,m}(\operatorname{cos}(\theta))
+\end{align*}
+
+Now we apply a rotation $R(\alpha)$ of $\alpha$ degrees around the pole axis. In spherical harmonics, this is expressed as:
+
+\begin{align*}
+\rho_{R(\alpha)}(\SHBC^{l,m}) = e^{-i m\alpha}\SHBC^{l,m}
+\end{align*}
+
+If the phase function is rotationally symmetric around the pole axis, we have:
+
+\begin{align*}
+\rho_{R(\alpha)}(p) = p
+\end{align*}
+
+and in spherical harmonics this would be:
+
+\begin{align*}
+\sum_{l,m}
+{
+e^{-i m\alpha}
+p^{l,m}
+\SHBC^{l,m} }
+=
+\sum_{l,m}
+{
+p^{l,m}
+\SHBC^{l,m}
+}
+\end{align*}
+
+By equating coefficients we get:
+
+\begin{align*}
+p^{l,m} = p^{l,m}e^{-i m\alpha}
+\end{align*}
+
+Since $e^{-i m\alpha}=1$ for all $\alpha$ only when $m=0$, we can conclude that $p^{l,m} = 0$ for all $m\ne0$. This means that for a function which is rotationally symmetric around the pole axis, only the $m=0$ coefficients will be valid. Therefore, our phase function reconstruction only requires SH coefficients with $m=0$:
+
+\begin{align}
+\label{eq:sh_exp_phase}
+p(\omega) =
+\sum_l
+{
+p^{l0}
+\SHBC^{l0}
+}
+\end{align}
+%
+ 
+
+
+\subsection{Projecting Terms of the RTE}
+
+% ------------------------------------------------------------
+\subsubsection{Transport Term}
+\label{sec:complex_transport_term}
+
+The transport term of the RTE is given as
+\begin{align*}
+(\omega\cdot\nabla)L(\vec{x}, \omega)
+\end{align*}
+
+Replacing $L$ with its expansion gives:
+\begin{align*}
+\left(\omega\cdot\nabla\right)
+\left(
+\sum_{l,m}
+{
+L^{l,m}\left(\vec{x}\right )
+\SHBC^{l,m}\left(\omega\right)
+}
+\right)
+\end{align*}
+
+Next we multiply with $\overline{\SHBC^{l'm'}}$ and integrate over solid angle:
+\begin{align*}
+\int_\Omega
+{
+\overline{Y^{l'm'}}(\omega\cdot\nabla)
+\sum_{l,m}
+{
+L^{l,m}\left(\vec{x}\right)
+\SHBC^{l,m}\left(\omega\right)
+}
+}
+\ud\omega
+\end{align*}
+
+
+
+We can pull the spatial derivative out of the integral to get:
+\begin{align}
+\nabla\cdot\int_\Omega
+{
+\omega\overline{\SHBC^{l'm'}}
+\sum_{l,m}
+{
+L^{l,m}\left(\vec{x}\right)
+\SHBC^{l,m}\left(\omega\right)
+}
+\ud\omega
+}
+\label{eq:complex_transport_a}
+\end{align}
+
+
+
+
+We apply the following recursive relation for the spherical harmonics basis functions:
+\begin{align}
+\omega\overline{\SHBC^{l,m}} = \frac{1}{2}
+\begin{pmatrix}
+\ c^{l-1, m-1}\overline{\SHBC^{l-1,m-1}} - d^{l+1, m-1}\overline{\SHBC^{l+1,m-1}} - e^{l-1, m+1}\overline{\SHBC^{l-1,m+1}} + f^{l+1, m+1}\overline{\SHBC^{l+1,m+1}}\\
+i\left(-c^{l-1, m-1}\overline{\SHBC^{l-1,m-1}} + d^{l+1, m-1}\overline{\SHBC^{l+1,m-1}} - e^{l-1, m+1}\overline{\SHBC^{l-1,m+1}} + f^{l+1, m+1}\overline{\SHBC^{l+1,m+1}}\right) \\
+2\left(a^{l-1, m}\overline{\SHBC^{l-1,m}}+b^{l+1, m}\overline{\SHBC^{l+1,m}}\right)
+\end{pmatrix}
+\label{eq:recursive_relation}
+\end{align}
+
+with 
+\begin{align*}
+a^{l,m}= \sqrt{\frac{\left(l-m+1\right)\left(l+m+1\right)}{\left(2l+1\right)\left(2l-1\right)}} \qquad
+b^{l,m}= \sqrt{\frac{\left(l-m\right)\left(l+m\right)}{\left(2l+1\right)\left(2l-1\right)}} \qquad
+c^{l,m}= \sqrt{\frac{\left(l+m+1\right)\left(l+m+2\right)}{\left(2l+3\right)\left(2l+1\right)}}\\
+d^{l,m}= \sqrt{\frac{\left(l-m\right)\left(l-m-1\right)}{\left(2l+1\right)\left(2l-1\right)}} \qquad
+e^{l,m}= \sqrt{\frac{\left(l-m+1\right)\left(l-m+2\right)}{\left(2l+3\right)\left(2l+1\right)}} \qquad
+f^{l,m}= \sqrt{\frac{\left(l+m\right)\left(l+m-1\right)}{\left(2l+1\right)\left(2l-1\right)}}
+\end{align*}
+
+Note that the signs for the $x$- and $y$- component depend on the handedness of the coordinate system in which the SH basis functions are defined. Using this in equation~\ref{eq:complex_transport_a} gives
+\begin{align*}
+\begin{pmatrix}
+\frac{1}{2}\partial_x\\
+\frac{i}{2}\partial_y\\
+\partial_z
+\end{pmatrix}
+\cdot
+\int_\Omega
+&
+\begin{pmatrix}
+\ c^{l'-1, m'-1}\overline{\SHBC^{l'-1,m'-1}} - d^{l'+1, m'-1}\overline{\SHBC^{l'+1,m'-1}} - e^{l'-1, m'+1}\overline{\SHBC^{l'-1,m'+1}} + f^{l'+1, m'+1}\overline{\SHBC^{l'+1,m'+1}}\\
+-c^{l'-1, m'-1}\overline{\SHBC^{l'-1,m'-1}} + d^{l'+1, m'-1}\overline{\SHBC^{l'+1,m'-1}} - e^{l'-1, m'+1}\overline{\SHBC^{l'-1,m'+1}} + f^{l'+1, m'+1}\overline{\SHBC^{l'+1,m'+1}} \\
+a^{l'-1, m'}\overline{\SHBC^{l'-1,m'}}+b^{l'+1, m'}\overline{\SHBC^{l'+1,m'}}
+\end{pmatrix}
+\\
+&\sum_{l,m}{
+L^{l,m}\left(\vec{x}\right )\SHBC^{l,m}\left(\omega\right)
+}
+\ud\omega
+\end{align*}
+
+
+Integrating the vector term over solid angle can be expressed as seperate solid angle integrals over each component. These integrals over a sum of terms are split into seperate integrals. We arrive at:
+
+\begin{align*}
+\begin{pmatrix}
+\frac{1}{2}\partial_x\\
+\frac{i}{2}\partial_y\\
+\partial_z
+\end{pmatrix}
+\cdot
+\begin{pmatrix}
+\ c^{l'-1, m'-1}\sum_{l,m}{L^{l,m}\left(\vec{x}\right )\int_\Omega{\overline{\SHBC^{l'-1,m'-1}}\left(\omega\right)\SHBC^{l,m}\left(\omega\right)\ud\omega}} \quad - \quad ...\\
+-c^{l'-1, m'-1}\sum_{l,m}{L^{l,m}\left(\vec{x}\right )\int_\Omega{\overline{\SHBC^{l'-1,m'-1}}\left(\omega\right)\SHBC^{l,m}\left(\omega\right)\ud\omega}} \quad + \quad ... \\
+a^{l'-1, m'}\sum_{l,m}{L^{l,m}\left(\vec{x}\right )\int_\Omega{\overline{\SHBC^{l'-1,m'}}\left(\omega\right)\SHBC^{l,m}\left(\omega\right)\ud\omega}} \quad + \quad ...
+\end{pmatrix}
+\end{align*}
+
+Applying the orthogonality property to the solid angle integrals will will select specific $l,m$ in each term:
+\begin{align*}
+\begin{pmatrix}
+\frac{1}{2}\partial_x\\
+\frac{i}{2}\partial_y\\
+\partial_z
+\end{pmatrix}
+\cdot
+\begin{pmatrix}
+\ c^{l-1, m-1}L^{l-1,m-1} - d^{l+1, m-1}L^{l+1,m-1} - e^{l-1, m+1}L^{l-1,m+1} + f^{l+1, m+1}L^{l+1,m+1}\\
+-c^{l-1, m-1}L^{l-1,m-1} + d^{l+1, m-1}L^{l+1,m-1} - e^{l-1, m+1}L^{l-1,m+1} + f^{l+1, m+1}L^{l+1,m+1} \\
+a^{l-1, m}L^{l-1,m}+b^{l+1, m}L^{l+1,m}
+\end{pmatrix}
+\end{align*}
+
+Which gives the final moment equation for the transport term:
+\begin{align*}
+=
+&\frac{1}{2}\partial_x\left(c^{l-1, m-1}L^{l-1,m-1} - d^{l+1, m-1}L^{l+1,m-1} - e^{l-1, m+1}L^{l-1,m+1} + f^{l+1, m+1}L^{l+1,m+1}\right) + \\
+&\frac{i}{2}\partial_y\left( -c^{l-1, m-1}L^{l-1,m-1} + d^{l+1, m-1}L^{l+1,m-1} - e^{l-1, m+1}L^{l-1,m+1} + f^{l+1, m+1}L^{l+1,m+1} \right) + \\
+&\partial_z\left( a^{l-1, m}L^{l-1,m}+b^{l+1, m}L^{l+1,m} \right)
+\\
+=
+&
+\frac{1}{2}c^{l-1, m-1}\partial_x L^{l-1,m-1} - \frac{1}{2}d^{l+1, m-1}\partial_x L^{l+1,m-1} - \frac{1}{2}e^{l-1, m+1}\partial_x L^{l-1,m+1} + \frac{1}{2}f^{l+1, m+1}\partial_x L^{l+1,m+1}+
+\\
+&-\frac{i}{2}c^{l-1, m-1}\partial_y L^{l-1,m-1} + \frac{i}{2}d^{l+1, m-1}\partial_y L^{l+1,m-1} - \frac{i}{2}e^{l-1, m+1}\partial_y L^{l-1,m+1} + \frac{i}{2}f^{l+1, m+1}\partial_y L^{l+1,m+1}+
+\\
+&
+a^{l-1, m}\partial_z L^{l-1,m}+b^{l+1, m}\partial_z L^{l+1,m}
+\end{align*}
+
+
+% ------------------------------------------------------------
+\subsubsection{Collision Term}
+
+The collision term of the RTE is given as:
+\begin{align*}
+-\sigma_t\left(\vec{x}\right)L\left(\vec{x}, \omega\right)
+\end{align*}
+
+We first replace the radiance field $L$ with its spherical harmonics expansion:
+\begin{align*}
+-\sigma_t\left(\vec{x}\right)
+\sum_{l,m}
+{
+L^{l,m}\left(\vec{x}\right )\SHBC^{l,m}\left(\omega\right)
+}
+\end{align*}
+
+Multiplying with $\overline{\SHBC^{l'm'}}$ and integrating over solid angle gives after pulling some factors out of the integral:
+\begin{align*}
+&-\sigma_t\left(\vec{x}\right)\sum_{l,m}{L^{l,m}\left(\vec{x}\right )\int_\Omega\overline{\SHBC^{l'm'}}\left(\omega\right)\SHBC^{l,m}\left(\omega\right)\ud\omega}\\
+&= -\sigma_t\left(\vec{x}\right)\sum_{l,m}{L^{l,m}\left(\vec{x}\right )\delta_{ll'}\delta_{mm'}}\\
+&= -\sigma_t\left(\vec{x}\right)L^{l,m}\left(\vec{x}\right )
+\end{align*}
+
+
+% ------------------------------------------------------------
+\subsubsection{Scattering Term}
+\label{sec:complex_scattering_term}
+
+The scattering term in the RTE is given as:
+\begin{align*}
+\sigma_s(\vec{x})\int_{\Omega}p(\vec{x}, \omega'\cdot\omega)L(\vec{x}, \omega')\ud\omega'
+\end{align*}
+
+The phase function used in isotropic scattering medium only depends on the angle between incident and outgoing direction and therefore is rotationally symmetric around the pole defining axis. This property allows us to define a rotation $R(\omega)$, which rotates the phase function, such that the pole axis aligns with direction vector $\omega$. The rotated phase function is defined as:
+\begin{align*}
+\rho_{R(\omega)}(p)
+\end{align*}
+
+where $\rho$ is the rotation operator, which can be implemented by applying the inverse rotation $R(\omega)^{-1}$ to the arguments of $p$. With this rotated phase function, we now can express the integral of the scattering operator as a convolution denoted with the symbol $\circ$: 
+\begin{align}
+\int_{\Omega}p(\vec{x}, \omega'\cdot\omega)L(\vec{x}, \omega')\ud\omega'
+&=
+L\circ \rho_{R(\omega)}(p) \nonumber\\
+&=
+\int_{\Omega'}{L(\vec{x}, \omega')\rho_{R(\omega)}(p)(\omega')\ud\omega'} \nonumber\\
+&= \langle L,  \rho_{R(\omega)}(p)\rangle
+\label{eq:complex_scatt_conv}
+\end{align}
+
+As we evaluate the inner product integral of the convolution, the phase function rotates along with the argument $\omega$.
+
+We now use the spherical harmonics expansions of $L$ (equation~(\ref{eq:sh_exp_L})) and $p$ (equation~(\ref{eq:sh_exp_phase})) in the definition for the inner product of our convolution (equation~(\ref{eq:complex_scatt_conv})):
+
+\begin{align*}
+\langle L,  \rho_{R(\omega)}(p)\rangle = \left < \sum_{l,m}{L^{l,m}(\vec{x}) \SHBC^{l,m}}, \rho_{R(\omega)}\left ( \sum_{l}{p^{l0}\SHBC^{l0}} \right )\right>
+\end{align*}
+
+Due to linearity of the inner product operator, we can pull out the non-angular dependent parts of the expansions:
+\begin{align*}
+\langle L,  \rho_{R(\omega)}(p)\rangle
+&=
+\sum_{l,m}
+{
+L^{l,m}(\vec{x})
+\left<
+\SHBC^{l,m},
+\rho_{R(\omega)}
+\left(\sum_l{p^{l0} \SHBC^{l0}}\right)
+\right>
+}
+\end{align*}
+
+
+and further:
+\begin{align*}
+\langle L,  \rho_{R(\omega)}(p)\rangle
+&=
+\sum_{l'}
+{
+\sum_{l,m}
+{
+p^{l'0}L^{l,m}(\vec{x})
+\left<\SHBC^{l,m}, \rho_{R(\omega)}\left( \SHBC^{l'0} \right)\right>
+}
+}
+\end{align*}
+
+The rotation $\rho_{R(\omega)}$ of a function with frequency $l$ gives a function of frequency $l$ again. In addition the spherical harmonics basis functions $\SHBC^{l,m}$ are orthogonal. We therefore have:
+\begin{align*}
+\left<
+\SHBC^{l,m}, \rho_{R(\omega)}\left(\SHBC^{l'm'}\right)
+\right> = 0       \qquad    \text{for all}\ \ l\ne l' 
+\end{align*}
+
+which further simplifies our inner product integral to:
+\begin{align*}
+\langle L,  \rho_{R(\omega)}(p)\rangle
+&=
+\sum_{l,m}
+{
+p^{l0}L^{l,m}(\vec{x})
+\left<
+\SHBC^{l,m}, \rho_{R(\omega)}\left(\SHBC^{l0} \right )
+\right>
+}
+\end{align*}
+
+What remains to be resolved is the inner product. We use the fact, that the spherical harmonics basis functions $ \SHBC^{l,m}$ are eigenfunctions of the inner product integral operator in the equation above:
+\begin{align*}
+\left<
+\SHBC^{l,m}, \rho_{R(\omega)}\left ( \SHBC^{l0} \right )\right> = \lambda_l \SHBC^{l,m}
+\end{align*}
+
+with
+\begin{align*}
+\lambda_l=\sqrt{\frac{4\pi}{2l+1}}
+\end{align*}
+
+
+Replacing the inner product gives:
+\begin{align*}
+\langle L,  \rho_{R(\omega)}(p)\rangle
+&=
+\sum_{l,m}
+{
+\lambda_l
+p^{l0}L^{l,m}(\vec{x})
+\SHBC^{l,m}
+}
+\end{align*}
+
+This allows us to express the scattering term using SH expansions of phase function $p$ and radiance field $L$:
+\begin{align*}
+\sigma_s(\vec{x})\int_{\Omega}p(\vec{x}, \omega'\cdot\omega)L(\vec{x}, \omega')\ud\omega'
+&=
+\sigma_s(\vec{x})\langle L,  \rho_{R(\omega)}(p)\rangle
+\\
+&=
+\sigma_s(\vec{x})
+\sum_{l,m}
+{
+\lambda_l
+p^{l0}L^{l,m}(\vec{x})
+\SHBC^{l,m}
+}
+\end{align*}
+
+However, we haven't done a spherical harmonics expansion of the term itsself. It is still a scalar function which depends on direction $\omega$. We project the scattering term into spherical harmonics, by multiplying with $\overline {\SHBC^{l'm'}}$ and integrating over solid angle $\omega$. We further pull out all factors, which do not depend on $\omega$ and apply the SH orthogonality property to arrive at the scattering term of the complex-valued $P_N$-equations:
+\begin{align}
+&
+\int_{\Omega}
+{
+\overline{\SHBC^{l'm'}}(\omega)
+\sigma_s(\vec{x})
+\sum_{l,m}
+{
+\lambda_l
+p^{l0}L^{l,m}(\vec{x})
+\SHBC^{l,m}\left(\omega\right)
+}
+\ud\omega
+}
+\nonumber\\
+=&
+\lambda_l
+\sigma_s(\vec{x})
+p^{l0}L^{l,m}(\vec{x})
+\sum_{l,m}
+{
+\int_{\Omega}
+{
+\overline{\SHBC^{l'm'}}(\omega)
+\SHBC^{l,m}\left(\omega\right)
+\ud\omega
+}
+}
+\nonumber\\
+=&
+\lambda_l
+\sigma_s(\vec{x})
+p^{l0}L^{l,m}(\vec{x})
+\sum_{l,m}
+{
+\delta_{ll'}\delta_{mm'}
+}
+\nonumber\\
+=&
+\lambda_l
+\sigma_s(\vec{x})
+p^{l0}L^{l,m}(\vec{x})
+\end{align}
+
+% --------------------------------------------------------------
+\subsubsection{Emission Term}
+
+The emission term of the RTE is given as:
+\begin{align}
+Q\left(\vec{x}, \omega\right)
+\end{align}
+
+The derivation of the SH projected term is equal to the derivation of the projected collision term. After replacing the emission field with its SH projection and multiplying the term with the conjugate complex of $\SHBC$ results after applying the orthogonality property in:
+\begin{align}
+Q^{l,m}\left(\vec{x}, \omega\right)
+\end{align}
+
+We arrive at the complex-valued $P_N$-equations after putting all the projected terms together:
+\begin{align*}
+\frac{1}{2}c^{l-1, m-1}\partial_x L^{l-1,m-1} - \frac{1}{2}d^{l+1, m-1}\partial_x L^{l+1,m-1} - \frac{1}{2}e^{l-1, m+1}\partial_x L^{l-1,m+1} + \frac{1}{2}f^{l+1, m+1}\partial_x L^{l+1,m+1}+
+\\
+-\frac{i}{2}c^{l-1, m-1}\partial_y L^{l-1,m-1} + \frac{i}{2}d^{l+1, m-1}\partial_y L^{l+1,m-1} - \frac{i}{2}e^{l-1, m+1}\partial_y L^{l-1,m+1} + \frac{i}{2}f^{l+1, m+1}\partial_y L^{l+1,m+1}+
+\\
+a^{l-1, m}\partial_z L^{l-1,m}+b^{l+1, m}\partial_z L^{l+1,m}
+=
+-\sigma_t\left(\vec{x}\right)L^{l,m}\left(\vec{x}\right )
++
+\lambda_l
+\sigma_s(\vec{x})
+p^{l0}L^{l,m}(\vec{x}) + Q^{l,m}\left(\vec{x}, \omega\right)
+\end{align*}
+
+
+\section{Derivation of the real-valued $P_N$-equations}
+
+The real-valued $P_N$-equations are derived similar to their complex-valued counterpart. The key difference is, that the real-valued SH basis functions $\SHBR$ are used, instead of the the complex-valued SH basis functions. The real-valued SH basis functions are defined in terms of complex-valued SH basis functions:
+% real valued SH ------------------
+\begin{align}
+\label{eq:real_sh_basis}
+\SHBR^{l,m}=
+\left\{
+\begin{array}{lr}
+\frac{\iu}{\sqrt{2}}\left(\SHBC^{l,m}-\left(-1\right)^m\SHBC^{l,-m}\right), & \text{for } m < 0\\
+\SHBC^{l,m}, & \text{for } m = 0\\
+\frac{1}{\sqrt{2}}\left(\SHBC^{l,-m}-\left(-1\right)^m\SHBC^{l,m}\right), & \text{for } m > 0
+\end{array}
+\right.
+\end{align}
+
+We use the subscript $\mathbb{R}$ and $\mathbb{C}$ do distinguish between real- and complex-valued SH basis functions respectively.
+
+\subsection{Projecting Radiative Transfer Quantities}
+
+% --------------------------------------------
+\subsubsection{Radiance Field $L$ and Emission Field $Q$}
+
+As with the complex-valued case, the angular dependent quantities are projected into SH coefficients. Here, those coefficients will be real-valued, since we use the real-valued SH basis.
+\begin{align}
+L^{l,m}\left(\vec{x}\right)
+&=
+\int_\Omega{L\left(\vec{x}, \omega\right)\SHBR^{l,m}\ud\omega}\nonumber\\
+Q^{l,m}\left(\vec{x}\right)
+&=
+\int_\Omega{Q\left(\vec{x}, \omega\right)\SHBR^{l,m}\ud\omega}\nonumber
+\end{align} 
+
+The reconstruction $\hat{L}$ and $\hat{Q}$, is found by a truncated linear combination of SH basis functions weighted by their respective coefficients:
+\begin{align}
+\label{eq:real_sh_exp_L}
+\hat{L}\left(\vec{x}, \omega\right) =
+\sum_{l,m}
+{
+L^{l,m}\left(\vec{x}\right)\SHBR^{l,m}\left(\omega\right)
+}\nonumber\\
+\hat{Q}\left(\vec{x}, \omega\right) =
+\sum_{l,m}
+{
+Q^{l,m}\left(\vec{x}\right)\SHBR^{l,m}\left(\omega\right)
+}
+\end{align}
+
+We later will have to apply identities and properties for the complex-valued SH basis functions and therefore need to expand the real-valued basis function in $\hat{L}$. The real-valued basis function is different depending on $m$ and therefore gives different expansions for the sign of $m$:
+\begin{align}
+\hat{L}\left(\vec{x}, \omega\right)
+=&
+\left\{
+\begin{array}{lr}
+\sum_{l,m}L^{l,m}\left(\vec{x}\right)\frac{\iu}{\sqrt{2}}\left(\SHBC^{l,m}-\left(-1\right)^m\SHBC^{l,-m}\right), & \text{for } m < 0\\
+\sum_{l,m}L^{l,m}\left(\vec{x}\right)\SHBC^{l,m}, & \text{for } m = 0\\
+\sum_{l,m}L^{l,m}\left(\vec{x}\right)\frac{1}{\sqrt{2}}\left(\SHBC^{l,-m}-\left(-1\right)^m\SHBC^{l,m}\right), & \text{for } m > 0
+\end{array}
+\right.
+\nonumber\\
+=&
+\left\{
+\begin{array}{lr}
+\sum_{l}\sum_{m=-l}^{-1}L^{l,m}\left(\vec{x}\right)\frac{\iu}{\sqrt{2}}\left(\SHBC^{l,m}-\left(-1\right)^m\SHBC^{l,-m}\right), & \text{for } m < 0\\
+L^{l,0}\left(\vec{x}\right)\SHBC^{l,0}, & \text{for } m = 0\\
+\sum_{l}\sum_{m=1}^{l}L^{l,m}\left(\vec{x}\right)\frac{1}{\sqrt{2}}\left(\SHBC^{l,-m}-\left(-1\right)^m\SHBC^{l,m}\right), & \text{for } m > 0
+\end{array}
+\right.
+\nonumber\\
+=&
+\sum_{l=0}^{N}
+\left(
+\sum_{m=-l}^{-1}
+{
+L^{{l,m}}\left (\vec{x} \right )\left(\frac{i}{\sqrt{2}}\SHBC^{l, m}(\omega )-\frac{i}{\sqrt{2}}\left({-1}\right)^{m}\SHBC^{l, -m}(\omega )\right)
+}
+\right.
+\nonumber\\
+&
++L^{l,0}\left (\vec{x} \right )\SHBC^{l, 0}(\omega )
+\nonumber\\
+&
++
+\left.
+\sum_{m=1}^{l}
+{
+L^{{l,m}}\left (\vec{x} \right )\left(\frac{1}{\sqrt{2}}\SHBC^{l, -m}(\omega )+\frac{1}{\sqrt{2}}\left({-1}\right)^{m}\SHBC^{l, m}(\omega )\right)
+}
+\right)
+\nonumber\\=&
+\frac{i}{\sqrt{2}}\left(\sum_{l=0}^{N}{\sum_{m=-l}^{-1}{L^{{l,m}}\left (\vec{x} \right )\SHBC^{l, m}(\omega )}}\right)
+-\frac{i}{\sqrt{2}}\left(\sum_{l=0}^{N}{\sum_{m=-l}^{-1}{L^{{l,m}}\left (\vec{x} \right )\left({-1}\right)^{m}\SHBC^{l, -m}(\omega )}}\right)
+\nonumber\\&
++\sum_{l=0}^{N}{L^{{l,0}}\left (\vec{x} \right )\SHBC^{l, 0}(\omega )}
+\nonumber\\&
++\frac{1}{\sqrt{2}}\left(\sum_{l=0}^{N}{\sum_{m=1}^{l}{L^{{l,m}}\left (\vec{x} \right )\SHBC^{l, -m}(\omega )}}\right)
++\frac{1}{\sqrt{2}}\left(\sum_{l=0}^{N}{\sum_{m=1}^{l}{L^{{l,m}}\left (\vec{x} \right )\left({-1}\right)^{m}\SHBC^{l, m}(\omega )}}\right)
+\end{align}
+
+
+
+
+
+
+
+
+\subsubsection{Phase Function}
+
+
+
+
+
+
+
+\subsection{Projecting Terms of the RTE}
+
+% -----------------------------------------------------
+\subsubsection{Transport Term}
+
+The transport term of the RTE is given as
+\begin{align*}
+(\omega\cdot\nabla)L(\vec{x}, \omega)
+=
+\omega_{x}\partial_xL\left (\vec{x} ,\omega \right )+\omega_{y}\partial_yL\left (\vec{x} ,\omega \right )+\omega_{z}\partial_zL\left (\vec{x} ,\omega \right )
+\end{align*}
+
+To improve readability, we first project the term into SH by multiplying with the conjugate complex of the Sh basis, and replace $L$ by its Sh expansion afterwards. This order was reversed, when we derived the complex-valued $P_N$-equation in section~\ref{sec:complex_transport_term}.
+
+We now multiply the term with the real-valued SH basis and integrate over solid angle. However, the SH basis is different for $m<0$, $m=0$ and $m>0$, and therefore will give us different $P_N$-equations depending on $m$. We will go through the derivation in detail for the $m<0$ case and give the results for the other cases at the end.
+
+Multiplying the expanded transport term with the SH basis for $m<0$ and integrating over solid angle gives:
+\begin{align*}
+&\int{\left(\frac{-i}{\sqrt{2}}\overline{Y^{l', m'}}(\omega )-\frac{-i}{\sqrt{2}}\left({-1}\right)^{m'}\overline{Y^{l', -m'}}(\omega )\right)\left(\omega_{x}\partial_xL\left (\vec{x} ,\omega \right )+\omega_{y}\partial_yL\left (\vec{x} ,\omega \right )+\omega_{z}\partial_zL\left (\vec{x} ,\omega \right )\right)\ud\omega}
+\\
+=&
+\int-\frac{i}{\sqrt{2}}\overline{Y^{l', m'}}(\omega )\omega_{x}\partial_xL\left (\vec{x} ,\omega \right )-\frac{i}{\sqrt{2}}\overline{Y^{l', m'}}(\omega )\omega_{y}\partial_yL\left (\vec{x} ,\omega \right )-\frac{i}{\sqrt{2}}\overline{Y^{l', m'}}(\omega )\omega_{z}\partial_zL\left (\vec{x} ,\omega \right )
+\\&
++\frac{i}{\sqrt{2}}\left({-1}\right)^{m'}\overline{Y^{l', -m'}}(\omega )\omega_{x}\partial_xL\left (\vec{x} ,\omega \right )+\frac{i}{\sqrt{2}}\left({-1}\right)^{m'}\overline{Y^{l', -m'}}(\omega )\omega_{y}\partial_yL\left (\vec{x} ,\omega \right )
+\\&
++\frac{i}{\sqrt{2}}\left({-1}\right)^{m'}\overline{Y^{l', -m'}}(\omega )\omega_{z}\partial_zL\left (\vec{x} ,\omega \right )\ud\omega
+\end{align*}
+
+After expanding the integrand and splitting the integral, we apply the recursive relation from equation~\ref{eq:recursive_relation} to get:
+\begin{align*}
+&
+\frac{i}{\sqrt{2}}\frac{1}{2}c^{{l'-1,m'-1}}\int{\partial_xL\left (\vec{x} ,\omega \right )\overline{Y^{l'-1, m'-1}}(\omega )\ud\omega}
+-\frac{i}{\sqrt{2}}\frac{1}{2}d^{{l'+1,m'-1}}\int{\partial_xL\left (\vec{x} ,\omega \right )\overline{Y^{l'+1, m'-1}}(\omega )\ud\omega}
+\\&
+-\frac{i}{\sqrt{2}}\frac{1}{2}e^{{l'-1,m'+1}}\int{\partial_xL\left (\vec{x} ,\omega \right )\overline{Y^{l'-1, m'+1}}(\omega )\ud\omega}
++\frac{i}{\sqrt{2}}\frac{1}{2}f^{{l'+1,m'+1}}\int{\partial_xL\left (\vec{x} ,\omega \right )\overline{Y^{l'+1, m'+1}}(\omega )\ud\omega}
+\\&
+-\frac{i}{\sqrt{2}}\frac{i}{2}c^{{l'-1,m'-1}}\int{\partial_yL\left (\vec{x} ,\omega \right )\overline{Y^{l'-1, m'-1}}(\omega )\ud\omega}
++\frac{i}{\sqrt{2}}\frac{i}{2}d^{{l'+1,m'-1}}\int{\partial_yL\left (\vec{x} ,\omega \right )\overline{Y^{l'+1, m'-1}}(\omega )\ud\omega}
+\\&
+-\frac{i}{\sqrt{2}}\frac{i}{2}e^{{l'-1,m'+1}}\int{\partial_yL\left (\vec{x} ,\omega \right )\overline{Y^{l'-1, m'+1}}(\omega )\ud\omega}
++\frac{i}{\sqrt{2}}\frac{i}{2}f^{{l'+1,m'+1}}\int{\partial_yL\left (\vec{x} ,\omega \right )\overline{Y^{l'+1, m'+1}}(\omega )\ud\omega}
+\\&
+-\frac{i}{\sqrt{2}}a^{{l'-1,m'}}\int{\partial_zL\left (\vec{x} ,\omega \right )\overline{Y^{l'-1, m'}}(\omega )\ud\omega}
+-\frac{i}{\sqrt{2}}b^{{l'+1,m'}}\int{\partial_zL\left (\vec{x} ,\omega \right )\overline{Y^{l'+1, m'}}(\omega )\ud\omega}
+\\&
+-\frac{i}{\sqrt{2}}\left({-1}\right)^{m'}\frac{1}{2}c^{{l'-1,-m'-1}}\int{\partial_xL\left (\vec{x} ,\omega \right )\overline{Y^{l'-1, -m'-1}}(\omega )\ud\omega}
+\\&
++\frac{i}{\sqrt{2}}\left({-1}\right)^{m'}\frac{1}{2}d^{{l'+1,-m'-1}}\int{\partial_xL\left (\vec{x} ,\omega \right )\overline{Y^{l'+1, -m'-1}}(\omega )\ud\omega}
+\\&
++\frac{i}{\sqrt{2}}\left({-1}\right)^{m'}\frac{1}{2}e^{{l'-1,-m'+1}}\int{\partial_xL\left (\vec{x} ,\omega \right )\overline{Y^{l'-1, -m'+1}}(\omega )\ud\omega}
+\\&
+-\frac{i}{\sqrt{2}}\left({-1}\right)^{m'}\frac{1}{2}f^{{l'+1,-m'+1}}\int{\partial_xL\left (\vec{x} ,\omega \right )\overline{Y^{l'+1, -m'+1}}(\omega )\ud\omega}
+\\&
++\frac{i}{\sqrt{2}}\left({-1}\right)^{m'}\frac{i}{2}c^{{l'-1,-m'-1}}\int{\partial_yL\left (\vec{x} ,\omega \right )\overline{Y^{l'-1, -m'-1}}(\omega )\ud\omega}
+\\&
+-\frac{i}{\sqrt{2}}\left({-1}\right)^{m'}\frac{i}{2}d^{{l'+1,-m'-1}}\int{\partial_yL\left (\vec{x} ,\omega \right )\overline{Y^{l'+1, -m'-1}}(\omega )\ud\omega}
+\\&
++\frac{i}{\sqrt{2}}\left({-1}\right)^{m'}\frac{i}{2}e^{{l'-1,-m'+1}}\int{\partial_yL\left (\vec{x} ,\omega \right )\overline{Y^{l'-1, -m'+1}}(\omega )\ud\omega}
+\\&
+-\frac{i}{\sqrt{2}}\left({-1}\right)^{m'}\frac{i}{2}f^{{l'+1,-m'+1}}\int{\partial_yL\left (\vec{x} ,\omega \right )\overline{Y^{l'+1, -m'+1}}(\omega )\ud\omega}
+\\&
++\frac{i}{\sqrt{2}}\left({-1}\right)^{m'}a^{{l'-1,-m'}}\int{\partial_zL\left (\vec{x} ,\omega \right )\overline{Y^{l'-1, -m'}}(\omega )\ud\omega}+\frac{i}{\sqrt{2}}\left({-1}\right)^{m'}b^{{l'+1,-m'}}\int{\partial_zL\left (\vec{x} ,\omega \right )\overline{Y^{l'+1, -m'}}(\omega )\ud\omega}
+\end{align*}
+
+Before we further expand the radiance field $L$ into its SH expansion, we will simplify coefficients by using the following relations:
+\begin{align}
+a^{l,m} = a^{l,-m}, \qquad
+b^{l,m} = b^{l,-m}, \qquad
+c^{l,m} = e^{l,-m}, \qquad
+d^{l,m} = f^{l,-m}
+\end{align}
+
+This allows us to rewrite the equation above as:
+\begin{align*}
+-i\alpha_c\int{\partial_yL\left (\vec{x} ,\omega \right )\overline{Y^{l'-1, m'-1}}(\omega )\ud\omega}
+%\\
++\left({-1}\right)^{m'}i&\alpha_c\int{\partial_yL\left (\vec{x} ,\omega \right )\overline{Y^{l'-1, -m'+1}}(\omega )\ud\omega}
+\\
++i\alpha_d\int{\partial_yL\left (\vec{x} ,\omega \right )\overline{Y^{l'+1, m'-1}}(\omega )\ud\omega}
+%\\
+-\left({-1}\right)^{m'} i &\alpha_d\int{\partial_yL\left (\vec{x} ,\omega \right )\overline{Y^{l'+1, -m'+1}}(\omega )\ud\omega}
+\\
+-i\alpha_e \int{\partial_yL\left (\vec{x} ,\omega \right )\overline{Y^{l'-1, m'+1}}(\omega )\ud\omega}
+%\\
++\left({-1}\right)^{m'}i &\alpha_e \int{\partial_yL\left (\vec{x} ,\omega \right )\overline{Y^{l'-1, -m'-1}}(\omega )\ud\omega}
+\\
++i\alpha_f \int{\partial_yL\left (\vec{x} ,\omega \right )\overline{Y^{l'+1, m'+1}}(\omega )\ud\omega}
+%\\
+-\left({-1}\right)^{m'}i &\alpha_f \int{\partial_yL\left (\vec{x} ,\omega \right )\overline{Y^{l'+1, -m'-1}}(\omega )\ud\omega}
+% ---------------------------------------
+\\
++\alpha_c\int{\partial_xL\left (\vec{x} ,\omega \right )\overline{Y^{l'-1, m'-1}}(\omega )\ud\omega}
+%\\
++\left({-1}\right)^{m'}&\alpha_c\int{\partial_xL\left (\vec{x} ,\omega \right )\overline{Y^{l'-1, -m'+1}}(\omega )\ud\omega}
+% ---------------------------------------
+\\
+-\alpha_e\int{\partial_xL\left (\vec{x} ,\omega \right )\overline{Y^{l'-1, m'+1}}(\omega )\ud\omega}
+%\\
+-\left({-1}\right)^{m'}&\alpha_e\int{\partial_xL\left (\vec{x} ,\omega \right )\overline{Y^{l'-1, -m'-1}}(\omega )\ud\omega}
+% ---------------------------------------
+\\
++\alpha_f\int{\partial_xL\left (\vec{x} ,\omega \right )\overline{Y^{l'+1, m'+1}}(\omega )\ud\omega}
+%\\
++\left({-1}\right)^{m'}&\alpha_f\int{\partial_xL\left (\vec{x} ,\omega \right )\overline{Y^{l'+1, -m'-1}}(\omega )\ud\omega}
+\\
+% ---------------------------------------------
+-\alpha_d\int{\partial_xL\left (\vec{x} ,\omega \right )\overline{Y^{l'+1, m'-1}}(\omega )\ud\omega}
+%\\
+% ---------------------------------------
+-\left({-1}\right)^{m'}&\alpha_d\int{\partial_xL\left (\vec{x} ,\omega \right )\overline{Y^{l'+1, -m'+1}}(\omega )\ud\omega}
+\\
+% ---------------------------------------
+-\alpha_a\int{\partial_zL\left (\vec{x} ,\omega \right )\overline{Y^{l'-1, m'}}(\omega )\ud\omega}
+%\\
++\left({-1}\right)^{m'}&\alpha_a\int{\partial_zL\left (\vec{x} ,\omega \right )\overline{Y^{l'-1, -m'}}(\omega )\ud\omega}
+% ---------------------------------------
+\\
+-\alpha_b\int{\partial_zL\left (\vec{x} ,\omega \right )\overline{Y^{l'+1, m'}}(\omega )\ud\omega}
+%\\
++\left({-1}\right)^{m'}&\alpha_b\int{\partial_zL\left (\vec{x} ,\omega \right )\overline{Y^{l'+1, -m'}}(\omega )\ud\omega}
+\end{align*}
+
+with 
+\begin{align*}
+\alpha_c = \frac{i}{\sqrt{2}}\frac{1}{2}c^{{l'-1,m'-1}}
+,\qquad
+%\\
+\alpha_e = \frac{i}{\sqrt{2}}\frac{1}{2}e^{{l'-1,m'+1}}
+,\qquad
+%\\
+\alpha_d = \frac{i}{\sqrt{2}}\frac{1}{2}d^{{l'+1,m'-1}}
+\\
+\alpha_f = \frac{i}{\sqrt{2}}\frac{1}{2}f^{{l'+1,m'+1}}
+,\qquad
+%\\
+\alpha_a = \frac{i}{\sqrt{2}}a^{{l'-1,m'}}
+,\qquad
+%\\
+\alpha_b = \frac{i}{\sqrt{2}}b^{{l'+1,m'}}
+\end{align*}
+
+In the next step, we substitute the radiance field function $L$ with its spherical harmonics expansion and arrive at the following expression after further expansions and transformations:
+
+
+
+
+
+\begin{align}
+-i\alpha_c\partial_y\sum_{l,m}L^{l,m}\left (\vec{x}\right)\int{Y_{\mathbb{R}}^{l,m}\overline{Y^{l'-1, m'-1}}(\omega )\ud\omega}
+%\label{eq:real_transport_expansion_unsimplified_term1}
+%\\
++\left({-1}\right)^{m'}i&\alpha_c\partial_y\sum_{l,m}L^{l,m}\left (\vec{x}\right)\int{Y_{\mathbb{R}}^{l,m}\overline{Y^{l'-1, -m'+1}}(\omega )\ud\omega}
+%\label{eq:real_transport_expansion_unsimplified_term2}
+\label{eq:real_transport_expansion_unsimplified_term1_term2}
+\\
++i\alpha_d\partial_y\sum_{l,m}L^{l,m}\left (\vec{x}\right)\int{Y_{\mathbb{R}}^{l,m}\overline{Y^{l'+1, m'-1}}(\omega )\ud\omega}
+%\label{eq:real_transport_expansion_unsimplified_term3}
+%\\
+-\left({-1}\right)^{m'} i &\alpha_d\partial_y\sum_{l,m}L^{l,m}\left (\vec{x}\right)\int{Y_{\mathbb{R}}^{l,m}\overline{Y^{l'+1, -m'+1}}(\omega )\ud\omega}
+%\label{eq:real_transport_expansion_unsimplified_term4}
+\label{eq:real_transport_expansion_unsimplified_term3_term4}
+\\
+-i\alpha_e \partial_y\sum_{l,m}L^{l,m}\left (\vec{x}\right)\int{Y_{\mathbb{R}}^{l,m}\overline{Y^{l'-1, m'+1}}(\omega )\ud\omega}
+%\label{eq:real_transport_expansion_unsimplified_term5}
+%\\
++\left({-1}\right)^{m'}i &\alpha_e \partial_y\sum_{l,m}L^{l,m}\left (\vec{x}\right)\int{Y_{\mathbb{R}}^{l,m}\overline{Y^{l'-1, -m'-1}}(\omega )\ud\omega}
+%\label{eq:real_transport_expansion_unsimplified_term6}
+\\
++i\alpha_f \partial_y\sum_{l,m}L^{l,m}\left (\vec{x}\right)\int{Y_{\mathbb{R}}^{l,m}\overline{Y^{l'+1, m'+1}}(\omega )\ud\omega}
+%\label{eq:real_transport_expansion_unsimplified_term7}
+%\\
+-\left({-1}\right)^{m'}i &\alpha_f \partial_y\sum_{l,m}L^{l,m}\left (\vec{x}\right)\int{Y_{\mathbb{R}}^{l,m}\overline{Y^{l'+1, -m'-1}}(\omega )\ud\omega}
+% ---------------------------------------
+%\label{eq:real_transport_expansion_unsimplified_term8}
+\\
++\alpha_c\partial_x\sum_{l,m}L^{l,m}\left (\vec{x}\right)\int{Y_{\mathbb{R}}^{l,m}\overline{Y^{l'-1, m'-1}}(\omega )\ud\omega}
+%\label{eq:real_transport_expansion_unsimplified_term9}
+%\\
++\left({-1}\right)^{m'}&\alpha_c\partial_x\sum_{l,m}L^{l,m}\left (\vec{x}\right)\int{Y_{\mathbb{R}}^{l,m}\overline{Y^{l'-1, -m'+1}}(\omega )\ud\omega}
+% ---------------------------------------
+%\label{eq:real_transport_expansion_unsimplified_term10}
+\\
+-\alpha_e\partial_x\sum_{l,m}L^{l,m}\left (\vec{x}\right)\int{Y_{\mathbb{R}}^{l,m}\overline{Y^{l'-1, m'+1}}(\omega )\ud\omega}
+%\label{eq:real_transport_expansion_unsimplified_term11}
+%\\
+-\left({-1}\right)^{m'}&\alpha_e\partial_x\sum_{l,m}L^{l,m}\left (\vec{x}\right)\int{Y_{\mathbb{R}}^{l,m}\overline{Y^{l'-1, -m'-1}}(\omega )\ud\omega}
+% ---------------------------------------
+%\label{eq:real_transport_expansion_unsimplified_term12}
+\\
++\alpha_f\partial_x\sum_{l,m}L^{l,m}\left (\vec{x}\right)\int{Y_{\mathbb{R}}^{l,m}\overline{Y^{l'+1, m'+1}}(\omega )\ud\omega}
+%\label{eq:real_transport_expansion_unsimplified_term13}
+%\\
++\left({-1}\right)^{m'}&\alpha_f\partial_x\sum_{l,m}L^{l,m}\left (\vec{x}\right)\int{Y_{\mathbb{R}}^{l,m}\overline{Y^{l'+1, -m'-1}}(\omega )\ud\omega}
+%\label{eq:real_transport_expansion_unsimplified_term14}
+\\
+% ---------------------------------------
+-\alpha_d\partial_x\sum_{l,m}L^{l,m}\left (\vec{x}\right)\int{Y_{\mathbb{R}}^{l,m}\overline{Y^{l'+1, m'-1}}(\omega )\ud\omega}
+%\label{eq:real_transport_expansion_unsimplified_term15}
+%\\
+% ---------------------------------------
+-\left({-1}\right)^{m'}&\alpha_d\partial_x\sum_{l,m}L^{l,m}\left (\vec{x}\right)\int{Y_{\mathbb{R}}^{l,m}\overline{Y^{l'+1, -m'+1}}(\omega )\ud\omega}
+%\label{eq:real_transport_expansion_unsimplified_term16}
+\\
+% ---------------------------------------
+-\alpha_a\partial_z\sum_{l,m}L^{l,m}\left (\vec{x}\right)\int{Y_{\mathbb{R}}^{l,m}\overline{Y^{l'-1, m'}}(\omega )\ud\omega}
+%\label{eq:real_transport_expansion_unsimplified_term17}
+% ---------------------------------------
+%\\
++\left({-1}\right)^{m'}&\alpha_a\partial_z\sum_{l,m}L^{l,m}\left (\vec{x}\right)\int{Y_{\mathbb{R}}^{l,m}\overline{Y^{l'-1, -m'}}(\omega )\ud\omega}
+% ---------------------------------------
+%\label{eq:real_transport_expansion_unsimplified_term18}
+\\
+-\alpha_b\partial_z\sum_{l,m}L^{l,m}\left (\vec{x}\right)\int{Y_{\mathbb{R}}^{l,m}\overline{Y^{l'+1, m'}}(\omega )\ud\omega}
+%\label{eq:real_transport_expansion_unsimplified_term19}
+%\\
++\left({-1}\right)^{m'}&\alpha_b\partial_z\sum_{l,m}L^{l,m}\left (\vec{x}\right)\int{Y_{\mathbb{R}}^{l,m}\overline{Y^{l'+1, -m'}}(\omega )\ud\omega}
+%\label{eq:real_transport_expansion_unsimplified_term20}
+\end{align}
+
+The real-valued $P_N$-equation have an intricate structure which causes many terms to cancel out. We take the first two terms (terms~\ref{eq:real_transport_expansion_unsimplified_term1_term2}) of the $P_N$-equations and apply the following orthogonality property of SH:
+
+\begin{align}
+\int_\Omega{\SHBR^{l_1, m_1}\overline{\SHBC^{l_2, m_2}}}\ud\omega
+=
+\frac{1}{\sqrt{2}}
+\left(
+i\delta_{\scaleto{\substack{l_1=l_2\\m_1=m_2}}{9pt}}
+-\left({-1}\right)^{m}i
+\delta_{\scaleto{\substack{l_1=l_2\\m_1=-m_2}}{9pt}}
++\delta_{\scaleto{\substack{l_1=l_2\\m_1=m_2}}{9pt}}
++\delta_{\scaleto{\substack{l_1=l_2\\m_1=-m_2}}{9pt}}
++\left({-1}\right)^{m}
+\delta_{\scaleto{\substack{l_1=l_2\\m_1=m_2}}{9pt}}
+\right)
+\end{align}
+
+this way we get for the first two terms:
+
+\begin{align*}
+%-i &\alpha_c\partial_y\sum_{l,m}L^{l,m}\left (\vec{x}\right)
+%\int{Y_{\mathbb{R}}^{l,m}\overline{Y^{l'-1, m'-1}}(\omega )\ud\omega}	
+&-i\alpha_c\partial_y
+\sum_{l=0}^{N}
+\sum_{m=-l}^{-1}L^{l,m}\left (\vec{x}\right)
+\frac{1}{\sqrt{2}}
+i\delta_{\scaleto{\substack{l=l'-1\\m=m'-1}}{9pt}}
+%\\
++i\alpha_c\partial_y
+\sum_{l=0}^{N}
+\sum_{m=-l}^{-1}L^{l,m}\left (\vec{x}\right)
+\frac{1}{\sqrt{2}}
+i
+\left({-1}\right)^{m}
+\delta_{\scaleto{\substack{l=l'-1\\m=-m'+1}}{9pt}}
+\\&
+-i\alpha_c\partial_y
+\sum_{l=0}^{N}
+L^{l,0}\left (\vec{x}\right)
+\frac{1}{\sqrt{2}}
+\delta_{\scaleto{\substack{l=l'-1\\0=m'-1}}{9pt}}
+%\\
+-i\alpha_c\partial_y
+\sum_{l=0}^{N}
+\sum_{m=1}^{l}L^{l,m}\left (\vec{x}\right)
+\frac{1}{\sqrt{2}}
+\delta_{\scaleto{\substack{l=l'-1\\m=-m'+1}}{9pt}}
+\\&
+-i\alpha_c\partial_y
+\sum_{l=0}^{N}
+\sum_{m=1}^{l}L^{l,m}\left (\vec{x}\right)
+\frac{1}{\sqrt{2}}
+\left({-1}\right)^{m}
+\delta_{\scaleto{\substack{l=l'-1\\m=m'-1}}{9pt}}
+%\\
+%\int{Y_{\mathbb{R}}^{l,m}\overline{Y^{l'-1, -m'+1}}(\omega )\ud\omega}
++\left({-1}\right)^{m'}i\alpha_c\partial_y
+\sum_{l=0}^{N}
+\sum_{m=-l}^{-1}L^{l,m}\left (\vec{x}\right)
+\frac{1}{\sqrt{2}}
+i
+\delta_{\scaleto{\substack{l=l'-1\\m=-m'+1}}{9pt}}
+\\&
+-\left({-1}\right)^{m'}i\alpha_c\partial_y
+\sum_{l=0}^{N}
+\sum_{m=-l}^{-1}L^{l,m}\left (\vec{x}\right)
+\frac{1}{\sqrt{2}}
+i
+\left({-1}\right)^{m}
+\delta_{\scaleto{\substack{l=l'-1\\m=m'-1}}{9pt}}
+%\\
++
+\left({-1}\right)^{m'}i\alpha_c\partial_y
+\sum_{l=0}^{N}
+L^{l,0}\left (\vec{x}\right)
+\frac{1}{\sqrt{2}}
+\delta_{\scaleto{\substack{l=l'-1\\0=-m'+1}}{9pt}}
+\\&
++
+\left({-1}\right)^{m'}i\alpha_c\partial_y
+\sum_{l=0}^{N}
+\sum_{m=1}^{l}L^{l,m}\left (\vec{x}\right)
+\frac{1}{\sqrt{2}}
+\delta_{\scaleto{\substack{l=l'-1\\m=m'-1}}{9pt}}
+%\\
++
+\left({-1}\right)^{m'}i\alpha_c\partial_y
+\sum_{l=0}^{N}
+\sum_{m=1}^{l}L^{l,m}\left (\vec{x}\right)
+\frac{1}{\sqrt{2}}
+\left({-1}\right)^{m}
+\delta_{\scaleto{\substack{l=l'-1\\m=-m'+1}}{9pt}}
+\end{align*}
+
+We apply the delta function for the sums which run over the variable $l$:
+
+\begin{align}
+\sum_{l=0}^{N}\sum_{m=a}^{b}L^{l,m}\delta_{\scaleto{\substack{l=x\\m=y}}{9pt}}=\sum_{m=a}^{b}L^{x,m}\delta_{\scaleto{m=y}{3pt}}
+\end{align}
+
+We get for the first two terms of the transport term of the $P_N$-equation (term~\ref{eq:real_transport_expansion_unsimplified_term1_term2}):
+
+\begin{align*}
+&
+%-i &\alpha_c\partial_y\sum_{l,m}L^{l,m}\left (\vec{x}\right)
+%\int{Y_{\mathbb{R}}^{l,m}\overline{Y^{l'-1, m'-1}}(\omega )\ud\omega}
+\mathcolor{red}{-i}
+%&
+\mathcolor{red}{\alpha_c\partial_y
+\sum_{m=-l'+1}^{-1}L^{l'-1,m}\left (\vec{x}\right)
+\frac{1}{\sqrt{2}}
+i\delta_{\scaleto{m=m'-1}{4pt}}
+}
+%\\
+% -------------------------------------------------
+\mathcolor{blue}{
++i
+}
+%&
+\mathcolor{blue}{
+\alpha_c\partial_y
+\sum_{m=-l'+1}^{-1}L^{l'-1,m}\left (\vec{x}\right)
+\frac{1}{\sqrt{2}}
+i
+\left({-1}\right)^{m}
+\delta_{\scaleto{m=-m'+1}{4pt}}
+}
+\\&
+% -------------------------------------------------
+\mathcolor{blue}
+{
+-i
+}
+%&
+\mathcolor{blue}
+{
+\alpha_c\partial_y
+L^{l'-1,0}\left (\vec{x}\right)
+\frac{1}{\sqrt{2}}
+\delta_{\scaleto{m'=1}{4pt}}
+}
+%\\
+% -------------------------------------------------
+\mathcolor{black}
+{
+-i
+}
+%&
+\mathcolor{black}
+{
+\alpha_c\partial_y
+\sum_{m=1}^{l'-1}L^{l'-1,m}\left (\vec{x}\right)
+\frac{1}{\sqrt{2}}
+\delta_{\scaleto{m=-m'+1}{4pt}}
+}
+%\\
+% -------------------------------------------------
+\mathcolor{blue}
+{
+-i
+}
+%&
+\mathcolor{blue}
+{
+\alpha_c\partial_y
+\sum_{m=1}^{l'-1}L^{l'-1,m}\left (\vec{x}\right)
+\frac{1}{\sqrt{2}}
+\left({-1}\right)^{m}
+\delta_{\scaleto{m=m'-1}{4pt}}
+}
+\\&
+% -------------------------------------------------
+\mathcolor{blue}
+{
++\left({-1}\right)^{m'}i
+}
+%&
+\mathcolor{blue}{
+\alpha_c\partial_y
+\sum_{m=-l'+1}^{-1}L^{l'-1,m}\left (\vec{x}\right)
+\frac{1}{\sqrt{2}}
+i
+\delta_{\scaleto{m=-m'+1}{4pt}}
+}
+%\\
+% -------------------------------------------------
+\mathcolor{red}
+{
+-\left({-1}\right)^{m'}i
+}
+%&
+\mathcolor{red}
+{
+\alpha_c\partial_y
+\sum_{m=-l'+1}^{-1}L^{l'-1,m}\left (\vec{x}\right)
+\frac{1}{\sqrt{2}}
+i
+\left({-1}\right)^{m}
+\delta_{\scaleto{m=m'-1}{4pt}}
+}
+% -------------------------------------------------
+\\&
+\mathcolor{blue}
+{
++
+\left({-1}\right)^{m'}i
+}
+%&
+\mathcolor{blue}
+{
+\alpha_c\partial_y
+L^{l'-1,0}\left (\vec{x}\right)
+\frac{1}{\sqrt{2}}
+\delta_{\scaleto{m'=1}{4pt}}
+}
+%\\
+% -------------------------------------------------
+\mathcolor{blue}
+{
++
+\left({-1}\right)^{m'}i
+}
+%&
+\mathcolor{blue}
+{
+\alpha_c\partial_y
+\sum_{m=1}^{l'-1}L^{l'-1,m}\left (\vec{x}\right)
+\frac{1}{\sqrt{2}}
+\delta_{\scaleto{m=m'-1}{4pt}}
+}
+\\&
+% -------------------------------------------------
+\mathcolor{black}
+{
++
+\left({-1}\right)^{m'}i
+}
+%&
+\mathcolor{black}
+{
+\alpha_c\partial_y
+\sum_{m=1}^{l'-1}L^{l'-1,m}\left (\vec{x}\right)
+\frac{1}{\sqrt{2}}
+\left({-1}\right)^{m}
+\delta_{\scaleto{m=-m'+1}{4pt}}
+}
+\end{align*}
+
+The variables $l'$ and $m'$ specify a particular equation within the given set of $P_N$-equations. We remember that $m'$ originated from multiplying the transport term with the real-valued SH basis function $\SHBR$ for the projection. The real-valued basis function is different for the sign of $m'$ and we derived the transport term of the $P_N$-equations under the assumption of $m'<0$ (different equations have to be derived for $m'=0$ and $m'>0$). We are able to greatly simplify the terms above when considering the parity of $m'$ and that $m'<0$.
+
+The blue terms in the equation above all vanish, since the sums run over all negative (or positive) $m$, up to $-1$ (or l), while the Kronecker deltas in the blue terms only become non-zero for values $m>0$ (or $m<0$). This is because we derived these terms by multiplying with the real-valued SH basis function for $m'<0$.
+
+Consider the seventh and 10th term from the equation above. Due to $\delta_{m=m'-1}$ or $\delta_{m=-m'+1}$, an even $m$ is selected if $m'$ is odd and vice versa. Therefore, we have $(-1)^m(-1)^{m'}=-1$. This causes term one and seven (red) to vanish and term four and ten (black) to collapse into one term.
+
+Therefore, the first two terms in the expansion (terms~\ref{eq:real_transport_expansion_unsimplified_term1_term2}), simplify to:
+\begin{align*}
+&-i\alpha_c\partial_y\sum_{l,m}L^{l,m}\left (\vec{x}\right)\int{Y_{\mathbb{R}}^{l,m}\overline{Y^{l'-1, m'-1}}(\omega )\ud\omega}
++\left({-1}\right)^{m'}i\alpha_c\partial_y\sum_{l,m}L^{l,m}\left (\vec{x}\right)\int{Y_{\mathbb{R}}^{l,m}\overline{Y^{l'-1, -m'+1}}(\omega )\ud\omega}
+\\
+&=-\frac{2}{\sqrt{2}}i
+\alpha_c\partial_y
+L^{l'-1,-m'+1}\left (\vec{x}\right)
+\\
+&=-\frac{2}{\sqrt{2}}i
+\frac{i}{\sqrt{2}}\frac{1}{2}c^{{l'-1,m'-1}}
+\partial_y
+L^{l'-1,-m'+1}\left (\vec{x}\right)
+\\
+&=
+\frac{1}{2}c^{{l'-1,m'-1}}
+\partial_y
+L^{l'-1,-m'+1}\left (\vec{x}\right)
+\end{align*}
+
+The terms in equation~\ref{eq:real_transport_expansion_unsimplified_term3_term4} are derived in the same way with the difference, that the signs are reversed and that we have $l'+1$ instead of $l'-1$. However, this does not affect the simplification:
+\begin{align*}
+&i\alpha_d\partial_y\sum_{l,m}L^{l,m}\left (\vec{x}\right)\int{Y_{\mathbb{R}}^{l,m}\overline{Y^{l'+1, m'-1}}(\omega )\ud\omega}
+-\left({-1}\right)^{m'}i\alpha_c\partial_y\sum_{l,m}L^{l,m}\left (\vec{x}\right)\int{Y_{\mathbb{R}}^{l,m}\overline{Y^{l'+1, -m'+1}}(\omega )\ud\omega}
+\\
+&=-\frac{2}{\sqrt{2}}i
+\alpha_d\partial_y
+L^{l'-1,-m'+1}\left (\vec{x}\right)
+\\
+&=-\frac{2}{\sqrt{2}}i
+\frac{i}{\sqrt{2}}\frac{1}{2}d^{{l'+1,m'-1}}
+\partial_y
+L^{l'+1,-m'+1}\left (\vec{x}\right)
+\\
+&=
+\frac{1}{2}d^{{l'+1,m'-1}}
+\partial_y
+L^{l'+1,-m'+1}\left (\vec{x}\right)
+\end{align*}
+
+Carrying out the same simplifications for the remaining terms, results in the following real-valued $P_N$-equations for $m'<0$:
+\begin{align*}
+&-\frac{1}{2}c^{{l'-1,m'-1}}
+\partial_y
+L^{l'-1,-m'+1}\left (\vec{x}\right)
+%\\
++\frac{1}{2}d^{{l'+1,m'-1}}
+\partial_y
+L^{l'+1,-m'+1}\left (\vec{x}\right)
+%\\
+-\frac{1}{2}\beta^{m'}e^{{l'-1,m'+1}}
+\partial_y
+L^{l'-1,-m'-1}\left (\vec{x}\right)
+\\&
++\frac{1}{2}\beta^{m'}f^{{l'+1,m'+1}}
+\partial_y
+L^{l'+1,-m'-1}\left (\vec{x}\right)
+%\\
++\frac{1}{2}\delta_{\scaleto{m'\neq -1}{4pt}}c^{{l'-1,m'-1}}
+\partial_x
+L^{l'-1,m'-1}\left (\vec{x}\right)
+\\&
+-\frac{1}{2}\delta_{\scaleto{m'\neq -1}{4pt}}e^{{l'-1,m'+1}}
+\partial_x
+L^{l'-1,m'+1}\left (\vec{x}\right)
+%\\
++\frac{1}{2}f^{{l'+1,m'+1}}
+\partial_x
+L^{l'+1,m'+1}\left (\vec{x}\right)
+%\\
+-\frac{1}{2}d^{{l'+1,m'-1}}
+\partial_x
+L^{l'+1,m'-1}\left (\vec{x}\right)
+\\&
++a^{{l'-1,m'}}
+\partial_z
+L^{l'-1,m'}\left (\vec{x}\right)
+%\\
++b^{{l'+1,m'}}
+\partial_z
+L^{l'+1,m'}\left (\vec{x}\right)
+\end{align*}
+
+\subsubsection{Collision Term}
+\subsubsection{Scattering Term}
+\subsubsection{Emission Term}
+
+
+%\vspace{1cm}
+%\newpage
+%\bibliographystyle{eg-alpha}
+%\bibliography{bibliography}
+
+\end{document}

@@ -1,0 +1,25 @@
+\newcommand{\ud}{\,\mathrm{d}} % for integrals
+\newcommand{\SHBR}{Y_{\mathbb{R}}} % for integrals
+\newcommand{\SHBC}{Y_{\mathbb{C}}} % for integrals
+\newcommand{\iu}{{i\mkern1mu}}
+\newcommand{\icaption}[1]{\caption{\emph{#1}}} % italic caption 
+\newcommand{\colvec}[3]{\ensuremath{\begin{pmatrix}#1\\#2\\#3\end{pmatrix}}}
+
+
+\makeatletter
+\def\mathcolor#1#{\@mathcolor{#1}}
+\def\@mathcolor#1#2#3{%
+  \protect\leavevmode
+  \begingroup\color#1{#2}#3\endgroup
+}
+\makeatother
+
+\definecolor{orange}{rgb}{1,0.5,0}
+\definecolor{darkgreen}{rgb}{0,0.5,0}
+
+%\newcommand{\realn}{\mathbb{R}}
+%\newcommand{\vect}[1]{\mathbf{#1}}
+%\newcommand{\ud}{\,\mathrm{d}} % for integrals
+%\newcommand\norm[1]{\left\lVert#1\right\rVert}
+%\newcommand{\COMMENT}[3]{\textcolor{#2}{{\small[\textsc{#1}: #3}]}}  % For work in progress using in-text comments
+%\newcommand{\DK}[1]{\COMMENT{DK}{red}{#1}}

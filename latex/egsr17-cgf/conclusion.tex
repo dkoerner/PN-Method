@@ -1,0 +1,15 @@
+\section{Conclusion}
+\label{sec:conclusion}
+
+In this paper, we introduced the $P_N$-method to the toolbox of deterministic methods for rendering participating media in computer graphics. We derived and presented the real-valued $P_N$-equations, along with a staggered grid solver for solving them. Unique to our system is, that it uses a computer algebra representation of the equation to solve as input. Discretization in angular and spatial domain is done without any user interference, using manipulation passes on the representation. The stencil code, which is used to propagate the system of linear equations, is automatically generated from the expression tree.
+
+This way, we can easily deal with complex coupled PDE's and avoid the time consuming and error prone process of writing stencil code by hand. Our approach helps especially for higher order, when the number of equations increase and become more complex.
+
+We further show, how to use the results in a rendering system and run our solver for various standard problems for validation. 
+
+\begin{itemize}
+	\item Mention performance problems and improving of solver performance as future work.
+	\item mention vaccum convergence problem and the challenge to couple deterministic methods with surface rendering problems.
+	\item Apply our automated stencil generation to other problem domains where coupled PDE's are present.
+\end{itemize}
+

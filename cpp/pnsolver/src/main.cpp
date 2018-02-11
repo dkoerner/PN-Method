@@ -23,6 +23,7 @@
 
 #include <solver.h>
 #include <MultigridSolver.h>
+#include <FLDSolver.h>
 
 
 namespace py = pybind11;
@@ -84,6 +85,14 @@ void setup_solver( Solver& mg, PNSystem& sys, int numLevels = 1 )
 		*/
 	}
 }
+
+std::tuple<Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd> solve_fld(PNVolume& pnv, double tol, int maxIterations)
+{
+	FLDSolver flds;
+
+	return flds.solve( pnv, tol , maxIterations );
+}
+
 
 std::tuple<Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd> solve_multigrid(PNSystem& sys, int numLevels)
 {
@@ -718,9 +727,6 @@ std::tuple<Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd> solve_lscg(PNSyste
 }
 
 
-
-
-
 PNSystem::MatrixBuildercd::Matrix buildBlockDiagonalMatrix( const Eigen::MatrixXcd& M, int numBlocks )
 {
 	if( M.rows() != M.cols() )
@@ -826,6 +832,31 @@ void save_solution( const std::string& filename, PNSystem& sys, const Eigen::Vec
 	solution.save(filename);
 }
 
+
+// the solution vector x is the result from solving the system represented by sys.
+// in order to use it for rendering we have to apply the following steps:
+// -remove the staggering: change coefficients, such that they are all defined at the cell centers
+// -get rid of coefficients which live in boundary voxels outside the domain (these were required with staggered grids)
+// -we do not to do any real->complex->real conversion as in the previous version since we use real-valued pn equations
+void save_solution2( const std::string& filename, PNSystem& sys, const Eigen::VectorXd& x )
+{
+	if(sys.getResolution()[2] == 1)
+	{
+		std::cout << "save_solution2: unable to create and save a PNSolution file for 2d problem due to different number of coefficients.\n";
+		return;
+	}
+
+	Eigen::VectorXd x_unstaggered = sys.removeStaggering(x);
+	PNSolution solution( sys.getOrder(), sys.getDomain().getResolution(), sys.getDomain().getBound(), x_unstaggered.data() );
+	solution.save(filename);
+}
+
+// exclusively used by FLD solver
+void save_fld_solution( const std::string& filename, Domain& domain, const Eigen::VectorXd& x )
+{
+	PNSolution solution( 0, domain.getResolution(), domain.getBound(), x.data() );
+	solution.save(filename);
+}
 
 PNSolution::Ptr load_solution( const std::string& filename )
 {
@@ -1380,6 +1411,408 @@ void test()
 	*/
 }
 
+
+// verify recursion relation
+void test2()
+{
+	sph::staticInit();
+
+	int order = 3;
+	RNGd rng;
+
+	int numSamples = 10;
+	for( int i=0;i<numSamples;++i )
+		//for( int l=0;l<=order;++l )
+		//	for( int m=-l;m<=l;++m )
+			{
+				int l = 5;
+				int m = 3;
+				/*
+				// we currently only look for the m<0 case
+				if(m>=0)
+					continue;
+
+				if(l==0)
+					continue;
+				if(m==-l || m==l)
+					continue;
+				*/
+
+				std::cout << "l=" << l << " m=" << m << " --------" << std::endl;
+				V3d d = sampleSphere(rng);
+				double theta, phi;
+				sphericalCoordinates(d, theta, phi);
+
+
+				/*
+				std::complex<double> ref_a = -std::complex<double>(0.0, 1.0)/std::sqrt(2.0)
+											  *e_lm(l-1, m+1)
+											  *std::conj(sph::basis(l-1, m+1, theta, phi));
+				std::complex<double> ref_b = -std::complex<double>(0.0, 1.0)/std::sqrt(2.0)
+											  *sph::csp(m)
+											  *c_lm(l-1, -m-1)
+											  *std::conj(sph::basis(l-1, -m-1, theta, phi));
+				std::complex<double> ref = ref_a + ref_b;
+				std::complex<double> val_a = -std::complex<double>(0.0, 1.0)/std::sqrt(2.0)
+											  *e_lm(l-1, m+1)
+											  *std::conj(sph::basis(l-1, m+1, theta, phi));
+				std::complex<double> val_b = -std::complex<double>(0.0, 1.0)/std::sqrt(2.0)
+											  *sph::csp(m)
+											  *c_lm(l-1, -m-1)
+											  *std::conj(sph::basis(l-1, -m-1, theta, phi));
+				std::complex<double> val = val_a + val_b;
+				*/
+				/*
+				*/
+
+				/*
+				// validate real basis equals linear combination of complex bases (for m<0)
+				// CHECK
+				std::complex<double> ref = sph::basis(l, m, theta, phi);
+				std::complex<double> val = std::complex<double>(0.0, 1.0)/std::sqrt(2.0)*sph::complex_basis(l, m, theta, phi)
+											-sph::csp(m)*std::complex<double>(0.0, 1.0)/std::sqrt(2.0)*sph::complex_basis(l, -m, theta, phi);
+				*/
+
+				// validate  recursion relation for x component of direction vector
+
+
+				/*
+				// e and c
+				std::complex<double> ref_a = -std::complex<double>(0.0, 1.0)/std::sqrt(2.0)
+											 *e_lm(l-1, m+1)
+											 *std::conj(sph::complex_basis(l-1, m+1, theta, phi));
+				std::complex<double> ref_b = -std::complex<double>(0.0, 1.0)/std::sqrt(2.0)
+											 *sph::csp(m)
+											 *c_lm(l-1, -m-1)
+											 *std::conj(sph::complex_basis(l-1, -m-1, theta, phi));
+				std::complex<double> ref = ref_a + ref_b;
+				std::complex<double> val = e_lm(l-1, m+1)*std::conj(sph::basis(l-1, m+1, theta, phi));
+				*/
+
+				/*
+				// c and e
+				std::complex<double> ref_a = std::complex<double>(0.0, 1.0)/std::sqrt(2.0)
+											 *c_lm(l-1, m-1)
+											 *std::conj(sph::complex_basis(l-1, m-1, theta, phi));
+				std::complex<double> ref_b = std::complex<double>(0.0, 1.0)/std::sqrt(2.0)
+											 *sph::csp(m)
+											 *e_lm(l-1, -m+1)
+											 *std::conj(sph::complex_basis(l-1, -m+1, theta, phi));
+				std::complex<double> ref = ref_a + ref_b;
+				std::complex<double> val = -c_lm(l-1, m-1)*std::conj(sph::basis(l-1, m-1, theta, phi));
+				*/
+				/*
+				// f and d
+				std::complex<double> ref_a = std::complex<double>(0.0, 1.0)/std::sqrt(2.0)
+											 *f_lm(l+1, m+1)
+											 *std::conj(sph::complex_basis(l+1, m+1, theta, phi));
+				std::complex<double> ref_b = std::complex<double>(0.0, 1.0)/std::sqrt(2.0)
+											 *sph::csp(m)
+											 *d_lm(l+1, -m-1)
+											 *std::conj(sph::complex_basis(l+1, -m-1, theta, phi));
+				std::complex<double> ref = ref_a + ref_b;
+				std::complex<double> val = -f_lm(l+1, m+1)*std::conj(sph::basis(l+1, m+1, theta, phi));
+				*/
+
+				/*
+				double ref = d[0]*std::conj(sph::basis(l, m, theta, phi));
+				std::complex<double> val = 0.0;
+				val += -0.5*c_lm(l-1, m-1)*std::conj(sph::basis(l-1, m-1, theta, phi));
+				val += 0.5*d_lm(l+1, m-1)*std::conj(sph::basis(l+1, m-1, theta, phi));
+				val += 0.5*e_lm(l-1, m+1)*std::conj(sph::basis(l-1, m+1, theta, phi));
+				val += -0.5*f_lm(l+1, m+1)*std::conj(sph::basis(l+1, m+1, theta, phi));
+				*/
+
+				//std::complex<double> ref = d[0]*std::conj(sph::basis(l, m, theta, phi));
+				std::complex<double> ref(0.0, 0.0);// = d[1]*std::conj(sph::basis(l, m, theta, phi));
+				std::complex<double> val(0.0, 0.0);
+				/*
+				// CHECK
+				std::complex<double> val_a = -std::complex<double>(0.0, 1.0)/std::sqrt(2.0)
+								*d[0]
+								*std::conj(sph::complex_basis(l, m, theta, phi));
+				std::complex<double> val_b = std::complex<double>(0.0, 1.0)/std::sqrt(2.0)
+								*sph::csp(m)
+								*d[0]
+								*std::conj(sph::complex_basis(l, -m, theta, phi));
+				std::complex<double> val = val_a + val_b;
+				*/
+
+
+				// check complex recursion relation
+				/*
+				ref = d[0]*std::conj(sph::complex_basis(l, m, theta, phi));
+				std::complex<double> val(0.0,0.0);
+				val += c_lm(l-1, m-1)*std::conj(sph::complex_basis(l-1, m-1, theta, phi));
+				val += -d_lm(l+1, m-1)*std::conj(sph::complex_basis(l+1, m-1, theta, phi));
+				val += -e_lm(l-1, m+1)*std::conj(sph::complex_basis(l-1, m+1, theta, phi));
+				val += f_lm(l+1, m+1)*std::conj(sph::complex_basis(l+1, m+1, theta, phi));
+				val *= 0.5;
+				*/
+				/*
+				ref = d[1]*std::conj(sph::complex_basis(l, m, theta, phi));
+				std::complex<double> val(0.0,0.0);
+				val += -c_lm(l-1, m-1)*std::conj(sph::complex_basis(l-1, m-1, theta, phi));
+				val += d_lm(l+1, m-1)*std::conj(sph::complex_basis(l+1, m-1, theta, phi));
+				val += -e_lm(l-1, m+1)*std::conj(sph::complex_basis(l-1, m+1, theta, phi));
+				val += f_lm(l+1, m+1)*std::conj(sph::complex_basis(l+1, m+1, theta, phi));
+				val *= 0.5*std::complex<double>(0.0, 1.0);
+				*/
+				/*
+				ref = d[2]*std::conj(sph::complex_basis(l, m, theta, phi));
+				std::complex<double> val(0.0,0.0);
+				val += a_lm(l-1, m)*std::conj(sph::complex_basis(l-1, m, theta, phi));
+				val += b_lm(l+1, m)*std::conj(sph::complex_basis(l+1, m, theta, phi));
+				*/
+				///*
+				// check real valued recursion relation
+				ref = d[0]*std::conj(sph::basis(l, m, theta, phi));
+				val = std::complex<double>(0.0, 0.0);
+				val += c_lm(l-1, m-1)*std::conj(sph::basis(l-1, m-1, theta, phi));
+				val += -d_lm(l+1, m-1)*std::conj(sph::basis(l+1, m-1, theta, phi));
+				val += -e_lm(l-1, m+1)*std::conj(sph::basis(l-1, m+1, theta, phi));
+				val += f_lm(l+1, m+1)*std::conj(sph::basis(l+1, m+1, theta, phi));
+				val *= 0.5;
+				std::cout << ref << " " << val << std::endl;
+				ref = d[1]*std::conj(sph::basis(l, m, theta, phi));
+				val = std::complex<double>(0.0, 0.0);
+				val += -c_lm(l-1, m-1)*std::conj(sph::basis(l-1, m-1, theta, phi));
+				val += d_lm(l+1, m-1)*std::conj(sph::basis(l+1, m-1, theta, phi));
+				val += -e_lm(l-1, m+1)*std::conj(sph::basis(l-1, m+1, theta, phi));
+				val += f_lm(l+1, m+1)*std::conj(sph::basis(l+1, m+1, theta, phi));
+				val *= 0.5*std::complex<double>(0.0, 1.0);
+				std::cout << ref << " " << val << std::endl;
+				ref = d[2]*std::conj(sph::basis(l, m, theta, phi));
+				val = std::complex<double>(0.0, 0.0);
+				val += a_lm(l-1, m)*std::conj(sph::basis(l-1, m, theta, phi));
+				val += b_lm(l+1, m)*std::conj(sph::basis(l+1, m, theta, phi));
+				std::cout << ref << " " << val << std::endl;
+				//*/
+
+				//ref = d[1]*std::conj(sph::basis(l, m, theta, phi));
+
+				/*
+				val += d[1]*std::conj(sph::complex_basis(l, m, theta, phi));
+				val += -d[1]*sph::csp(m)*std::conj(sph::complex_basis(l, -m, theta, phi));
+				val *= -std::complex<double>(0.0, 1.0)/std::sqrt(2.0);
+				*/
+
+				/*
+				std::complex<double> v0(0.0, 0.0);
+				v0 += -c_lm(l-1, m-1)*std::conj(sph::complex_basis(l-1, m-1, theta, phi));
+				v0 += d_lm(l+1, m-1)*std::conj(sph::complex_basis(l+1, m-1, theta, phi));
+				v0 += -e_lm(l-1, m+1)*std::conj(sph::complex_basis(l-1, m+1, theta, phi));
+				v0 += f_lm(l+1, m+1)*std::conj(sph::complex_basis(l+1, m+1, theta, phi));
+				v0 *= 0.5*std::complex<double>(0.0, 1.0);
+				std::complex<double> v1(0.0, 0.0);
+				v1 += -c_lm(l-1, -m-1)*std::conj(sph::complex_basis(l-1, -m-1, theta, phi));
+				v1 += d_lm(l+1, -m-1)*std::conj(sph::complex_basis(l+1, -m-1, theta, phi));
+				v1 += -e_lm(l-1, -m+1)*std::conj(sph::complex_basis(l-1, -m+1, theta, phi));
+				v1 += f_lm(l+1, -m+1)*std::conj(sph::complex_basis(l+1, -m+1, theta, phi));
+				v1 *= 0.5*std::complex<double>(0.0, 1.0);
+				val += v0;
+				val += -sph::csp(m)*v1;
+				val *= -std::complex<double>(0.0, 1.0)/std::sqrt(2.0);
+				*/
+
+				/*
+				std::complex<double> v0(0.0, 0.0);
+				v0 += -c_lm(l-1, m-1)*std::conj(sph::complex_basis(l-1, m-1, theta, phi));
+				v0 += d_lm(l+1, m-1)*std::conj(sph::complex_basis(l+1, m-1, theta, phi));
+				v0 += -e_lm(l-1, m+1)*std::conj(sph::complex_basis(l-1, m+1, theta, phi));
+				v0 += f_lm(l+1, m+1)*std::conj(sph::complex_basis(l+1, m+1, theta, phi));
+				v0 *= 0.5*std::complex<double>(0.0, 1.0);
+				std::complex<double> v1(0.0, 0.0);
+				v1 += sph::csp(m)*e_lm(l-1, m+1)*std::conj(sph::complex_basis(l-1, -m-1, theta, phi));
+				v1 += -sph::csp(m)*f_lm(l+1, m+1)*std::conj(sph::complex_basis(l+1, -m-1, theta, phi));
+				v1 += sph::csp(m)*c_lm(l-1, m-1)*std::conj(sph::complex_basis(l-1, -m+1, theta, phi));
+				v1 += -sph::csp(m)*d_lm(l+1, m-1)*std::conj(sph::complex_basis(l+1, -m+1, theta, phi));
+				v1 *= 0.5*std::complex<double>(0.0, 1.0);
+				val += v0;
+				val += v1;
+				val *= -std::complex<double>(0.0, 1.0)/std::sqrt(2.0);
+				*/
+
+
+				/*
+				std::complex<double> v0(0.0, 0.0);
+				v0 += -c_lm(l-1, m-1)*std::conj(sph::complex_basis(l-1, m-1, theta, phi));
+				v0 += d_lm(l+1, m-1)*std::conj(sph::complex_basis(l+1, m-1, theta, phi));
+				v0 += -e_lm(l-1, m+1)*std::conj(sph::complex_basis(l-1, m+1, theta, phi));
+				v0 += f_lm(l+1, m+1)*std::conj(sph::complex_basis(l+1, m+1, theta, phi));
+				v0 *= 0.5*std::complex<double>(0.0, 1.0);
+				std::complex<double> v1(0.0, 0.0);
+				v1 += -sph::csp(m+1)*e_lm(l-1, m+1)*std::conj(sph::complex_basis(l-1, -m-1, theta, phi));
+				v1 += sph::csp(m+1)*f_lm(l+1, m+1)*std::conj(sph::complex_basis(l+1, -m-1, theta, phi));
+				v1 += -sph::csp(m+1)*c_lm(l-1, m-1)*std::conj(sph::complex_basis(l-1, -m+1, theta, phi));
+				v1 += sph::csp(m+1)*d_lm(l+1, m-1)*std::conj(sph::complex_basis(l+1, -m+1, theta, phi));
+				v1 *= 0.5*std::complex<double>(0.0, 1.0);
+				val += v0;
+				val += v1;
+				val *= -std::complex<double>(0.0, 1.0)/std::sqrt(2.0);
+				*/
+
+				/*
+				ref = e_lm(l-1, m+1)*( -std::conj(sph::complex_basis(l-1, m+1, theta, phi))
+									   +sph::csp(m)*std::conj(sph::complex_basis(l-1, -m-1, theta, phi)));
+				*/
+				/*
+				val = e_lm(l-1, m+1)*( -std::conj(sph::complex_basis(l-1, m+1, theta, phi))
+									   +sph::csp(m)*std::conj(sph::complex_basis(l-1, -m-1, theta, phi)));
+				*/
+				/*
+				val = e_lm(l-1, m+1)*( -sph::csp(m+1)*sph::complex_basis(l-1, -m-1, theta, phi)
+									   -sph::complex_basis(l-1, m+1, theta, phi));
+				*/
+				/*
+				std::cout << "c_lm(l-1, m-1)=" << c_lm(l-1, m-1) << std::endl;
+				std::cout << "d_lm(l+1, m-1)=" << d_lm(l+1, m-1) << std::endl;
+				std::cout << "e_lm(l-1, m+1)=" << e_lm(l-1, m+1) << std::endl;
+				std::cout << "f_lm(l+1, m+1)=" << f_lm(l+1, m+1) << std::endl;
+				*/
+
+
+
+				/*
+				std::cout << "c_lm(l-1, -m-1)=" << c_lm(l-1, -m-1) << std::endl;
+				std::cout << "d_lm(l+1, -m-1)=" << d_lm(l+1, -m-1) << std::endl;
+				std::cout << "e_lm(l-1, -m+1)=" << e_lm(l-1, -m+1) << std::endl;
+				std::cout << "f_lm(l+1, -m+1)=" << f_lm(l+1, -m+1) << std::endl;
+				*/
+
+				/*
+				ref = d[1]*std::conj(sph::basis(l, m, theta, phi));
+				val = std::complex<double>(0.0, 0.0);
+				val += -c_lm(l-1, m-1)*std::conj(sph::basis(l-1, m-1, theta, phi));
+				val += d_lm(l+1, m-1)*std::conj(sph::basis(l+1, m-1, theta, phi));
+				val += e_lm(l-1, m+1)*std::conj(sph::basis(l-1, m+1, theta, phi));
+				val += -f_lm(l+1, m+1)*std::conj(sph::basis(l+1, m+1, theta, phi));
+				val *= 0.5*std::complex<double>(0.0, 1.0);
+				*/
+
+
+				//std::cout << ref << " " << val << std::endl;
+
+
+				/*
+				// CHECK
+				std::complex<double> val1(0.0,0.0);
+				val1 += -c_lm(l-1, m-1)*std::conj(sph::complex_basis(l-1, m-1, theta, phi));
+				val1 += d_lm(l+1, m-1)*std::conj(sph::complex_basis(l+1, m-1, theta, phi));
+				val1 += e_lm(l-1, m+1)*std::conj(sph::complex_basis(l-1, m+1, theta, phi));
+				val1 += -f_lm(l+1, m+1)*std::conj(sph::complex_basis(l+1, m+1, theta, phi));
+
+				std::complex<double> val2(0.0,0.0);
+				val2 += -c_lm(l-1, -m-1)*std::conj(sph::complex_basis(l-1, -m-1, theta, phi));
+				val2 += d_lm(l+1, -m-1)*std::conj(sph::complex_basis(l+1, -m-1, theta, phi));
+				val2 += e_lm(l-1, -m+1)*std::conj(sph::complex_basis(l-1, -m+1, theta, phi));
+				val2 += -f_lm(l+1, -m+1)*std::conj(sph::complex_basis(l+1, -m+1, theta, phi));
+
+				std::complex<double> val(0.0,0.0);
+				val = -std::complex<double>(0.0, 1.0)/std::sqrt(2.0)*0.5*(val1 - sph::csp(m)*val2);
+				*/
+
+
+				/*
+				std::complex<double> val1(0.0,0.0);
+				val1 += std::complex<double>(0.0, 1.0)/std::sqrt(2.0)*c_lm(l-1, m-1)*std::conj(sph::complex_basis(l-1, m-1, theta, phi));
+				val1 += -std::complex<double>(0.0, 1.0)/std::sqrt(2.0)*d_lm(l+1, m-1)*std::conj(sph::complex_basis(l+1, m-1, theta, phi));
+				val1 += -std::complex<double>(0.0, 1.0)/std::sqrt(2.0)*e_lm(l-1, m+1)*std::conj(sph::complex_basis(l-1, m+1, theta, phi));
+				val1 += std::complex<double>(0.0, 1.0)/std::sqrt(2.0)*f_lm(l+1, m+1)*std::conj(sph::complex_basis(l+1, m+1, theta, phi));
+
+				val1 += -std::complex<double>(0.0, 1.0)/std::sqrt(2.0)*sph::csp(m)*c_lm(l-1, -m-1)*std::conj(sph::complex_basis(l-1, -m-1, theta, phi));
+				val1 += std::complex<double>(0.0, 1.0)/std::sqrt(2.0)*sph::csp(m)*d_lm(l+1, -m-1)*std::conj(sph::complex_basis(l+1, -m-1, theta, phi));
+				val1 += std::complex<double>(0.0, 1.0)/std::sqrt(2.0)*sph::csp(m)*e_lm(l-1, -m+1)*std::conj(sph::complex_basis(l-1, -m+1, theta, phi));
+				val1 += -std::complex<double>(0.0, 1.0)/std::sqrt(2.0)*sph::csp(m)*f_lm(l+1, -m+1)*std::conj(sph::complex_basis(l+1, -m+1, theta, phi));
+
+				//val1 += e_lm(l-1, m+1)*sph::basis( l-1, m+1, theta, phi );
+
+				std::complex<double> val(0.0,0.0);
+				val = 0.5*val1;
+				*/
+
+				/*
+				ref = std::complex<double>(0.0, 0.0);
+				ref += -std::complex<double>(0.0, 1.0)/std::sqrt(2.0)*e_lm(l-1, m+1)*std::conj(sph::complex_basis(l-1, m+1, theta, phi));
+				ref += -std::complex<double>(0.0, 1.0)/std::sqrt(2.0)*sph::csp(m)*c_lm(l-1, -m-1)*std::conj(sph::complex_basis(l-1, -m-1, theta, phi));
+				*/
+
+
+				//std::complex<double> val(0.0,0.0);
+				//val += -std::complex<double>(0.0, 1.0)/std::sqrt(2.0)*e_lm(l-1, m+1)*std::conj(sph::complex_basis(l-1, m+1, theta, phi));
+				//val += -std::complex<double>(0.0, 1.0)/std::sqrt(2.0)*c_lm(l-1, -m-1)*sph::csp(m)*std::conj(sph::complex_basis(l-1, -m-1, theta, phi));
+
+
+				/*
+				std::complex<double> val(0.0,0.0);
+				val += std::conj(sph::complex_basis(l-1, m+1, theta, phi));
+				val += sph::csp(m)*std::conj(sph::complex_basis(l-1, -m-1, theta, phi));
+				val *= -e_lm(l-1, m+1)*std::complex<double>(0.0, 1.0)/std::sqrt(2.0);
+				*/
+				/*
+				std::complex<double> val(0.0,0.0);
+				val += std::conj(sph::complex_basis(l-1, m+1, theta, phi));
+				val += -sph::csp(m+1)*std::conj(sph::complex_basis(l-1, -m-1, theta, phi));
+				val *= -e_lm(l-1, m+1)*std::complex<double>(0.0, 1.0)/std::sqrt(2.0);
+				*/
+
+				/*
+				std::complex<double> val(0.0,0.0);
+				val += sph::complex_basis(l-1, m+1, theta, phi);
+				val += -sph::csp(m+1)*sph::complex_basis(l-1, -m-1, theta, phi);
+				val = -e_lm(l-1, m+1)*std::complex<double>(0.0, 1.0)/std::sqrt(2.0)*std::conj(val);
+				*/
+
+				/*
+				std::complex<double> val(0.0,0.0);
+				val += sph::complex_basis(l-1, m+1, theta, phi);
+				val += -sph::csp(m+1)*sph::complex_basis(l-1, -m-1, theta, phi);
+				val = e_lm(l-1, m+1)*std::conj(std::complex<double>(0.0, 1.0)/std::sqrt(2.0)*val);
+				*/
+				//std::complex<double> val(0.0,0.0);
+				//val = e_lm(l-1, m+1)*std::conj(sph::basis(l-1, m+1, theta, phi));
+
+				/*
+				std::complex<double> val(0.0,0.0);
+				val +=  std::complex<double>(0.0, 1.0)/std::sqrt(2.0)
+						*c_lm(l-1, m-1)
+						*std::conj(sph::complex_basis(l-1, m-1, theta, phi));
+				val +=  -std::complex<double>(0.0, 1.0)/std::sqrt(2.0)
+						*d_lm(l+1, m-1)
+						*std::conj(sph::complex_basis(l+1, m-1, theta, phi));
+				val +=  -std::complex<double>(0.0, 1.0)/std::sqrt(2.0)
+						*e_lm(l-1, m+1)
+						*std::conj(sph::complex_basis(l-1, m+1, theta, phi));
+				val +=  std::complex<double>(0.0, 1.0)/std::sqrt(2.0)
+						*f_lm(l+1, m+1)
+						*std::conj(sph::complex_basis(l+1, m+1, theta, phi));
+
+				val +=  -std::complex<double>(0.0, 1.0)/std::sqrt(2.0)
+						*sph::csp(m)
+						*c_lm(l-1, -m-1)
+						*std::conj(sph::complex_basis(l-1, -m-1, theta, phi));
+				val +=  std::complex<double>(0.0, 1.0)/std::sqrt(2.0)
+						*sph::csp(m)
+						*d_lm(l+1, -m-1)
+						*std::conj(sph::complex_basis(l+1, -m-1, theta, phi));
+				val +=  std::complex<double>(0.0, 1.0)/std::sqrt(2.0)
+						*sph::csp(m)
+						*e_lm(l-1, -m+1)
+						*std::conj(sph::complex_basis(l-1, -m+1, theta, phi));
+				val +=  -std::complex<double>(0.0, 1.0)/std::sqrt(2.0)
+						*sph::csp(m)
+						*f_lm(l+1, -m+1)
+						*std::conj(sph::complex_basis(l+1, -m+1, theta, phi));
+				val *= 0.5;
+				*/
+
+
+				//std::cout << ref << " " << val << std::endl;
+			}
+
+
+}
+
 PYBIND11_MODULE(pnsolver, m)
 {
 	/*
@@ -1394,7 +1827,12 @@ PYBIND11_MODULE(pnsolver, m)
 	m.def( "solve_mg", &solve_mg);
 	m.def( "solve_ls_lscg", &solve_ls_lscg);
 
+	m.def( "solve_fld", &solve_fld);
+	m.def( "save_fld_solution", &save_fld_solution);
+
+
 	m.def( "test", &test);
+	m.def( "test2", &test2);
 
 
 	/*
@@ -1408,6 +1846,7 @@ PYBIND11_MODULE(pnsolver, m)
 	m.def( "createComplexToRealConversionMatrix", &createComplexToRealConversionMatrix);
 	m.def( "createRealToComplexConversionMatrix", &createRealToComplexConversionMatrix);
 	m.def( "save_solution", &save_solution);
+	m.def( "save_solution2", &save_solution2);
 	m.def( "getCoefficientArray", &getCoefficientArray);
 
 	m.def( "load_solution", &load_solution);
@@ -1550,6 +1989,7 @@ PYBIND11_MODULE(pnsolver, m)
 	//.def("setField", &PNSystem::setField )
 	.def("get_A", &PNSystem::get_A )
 	.def("get_b", &PNSystem::get_b )
+	.def("get_stag2coll", &PNSystem::get_stag2coll )
 	.def("get_A_real_test", &PNSystem::get_A_real_test )
 	.def("get_b_real_test", &PNSystem::get_b_real_test )
 	.def("setDebugVoxel", &PNSystem::setDebugVoxel )
@@ -1746,6 +2186,8 @@ PYBIND11_MODULE(pnsolver, m)
 		{
 			new (&m) PNVolume(domain);
 		})
+		.def("is2D", &PNVolume::is2D)
+		.def("getDomain", &PNVolume::getDomain)
 		.def("setExtinctionAlbedo", &PNVolume::setExtinctionAlbedo)
 		.def("setExtinctionMinimumThreshold", &PNVolume::setExtinctionMinimumThreshold)
 		.def("setEmission",

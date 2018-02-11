@@ -82,6 +82,11 @@ Domain& PNVolume::getDomain()
 	return m_domain;
 }
 
+//const Domain& PNVolume::getDomain()const
+//{
+//	return m_domain;
+//}
+
 V3d PNVolume::evalExtinction( const P3d& pWS, bool debug )const
 {
 	//return m_field_extinction->eval(m_domain.worldToLocal(pWS));
@@ -171,4 +176,9 @@ PNVolume::Ptr PNVolume::downsample()
 			problem_coarse->setPhase(i, m_field_p[i]->downsample());
 
 	return problem_coarse;
+}
+
+bool PNVolume::is2D()const
+{
+	return m_domain.getResolution()[2] == 1;
 }

@@ -35,6 +35,8 @@ struct PNVolume
 	V3d evalPhase(int l, int m , const P3d& pWS)const;
 
 	Domain& getDomain();
+	//const Domain& getDomain()const;
+	bool is2D()const;
 
 	Ptr downsample(); // this creates the next coarser mipmap level of this problem
 

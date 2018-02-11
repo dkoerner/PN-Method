@@ -19,12 +19,16 @@ pybind11_add_module(pnsolver src/main.cpp
 							 src/PNVolume.cpp
 							 src/PNSolution.cpp
 							 src/MultigridSolver.cpp
+							 src/FLDSolver.cpp
+							 src/stencil_p5_2d_sg.cpp
+							 src/stencil_p5_3d_sg.cpp
 							 src/stencil_fopn_p0_cg.cpp
 							 src/stencil_fopn_p0_sg.cpp
 							 src/stencil_fopn_p1_cg.cpp
 							 src/stencil2_fopn_p1_cg.cpp
 							 src/stencil2_fopn_p1_sg.cpp
 							 src/stencil2_fopn_p3_sg.cpp
+							 src/stencil2_fopn_p5_sg.cpp
 							 src/stencil_fopn_p1_sg.cpp
 							 src/stencil_fopn_p2_cg.cpp
 							 src/stencil_fopn_p2_sg.cpp

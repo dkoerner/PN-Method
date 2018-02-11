@@ -517,6 +517,7 @@ struct PNSystem
 	// (used for storing to disk etc.)
 	RealMatrix& get_A();
 	RealVector& get_b();
+	MatrixBuilder<double>::Matrix get_stag2coll();
 
 	RealMatrix get_A_real_test();
 	Eigen::VectorXd get_b_real_test();

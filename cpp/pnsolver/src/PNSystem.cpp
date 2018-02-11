@@ -172,6 +172,113 @@ PNSystem::RealVector& PNSystem::get_b()
 	return m_b;
 }
 
+PNSystem::MatrixBuilder<double>::Matrix PNSystem::get_stag2coll()
+{
+	PNSystem::MatrixBuilderd builder;
+	VoxelManager& vm = getVoxelManager();
+
+	//Eigen::VectorXd x2( m_problem->getDomain().numVoxels()*m_stencil.numCoeffs,1);
+	std::vector<Voxel>& voxels = m_voxelManager.getVoxels();
+	V3i res = m_problem->getDomain().getResolution();
+	for( auto&v:voxels )
+	{
+		if( !m_problem->getDomain().contains_voxel(v.coord) )
+			// boundary or mixed boundary voxel
+			continue;
+		for( int coeff_index=0;coeff_index<m_stencil.numCoeffs;++coeff_index )
+		{
+			// this is the new index, which wont include boundary voxels
+			int new_voxel_index = v.coord[0]*res[2]*res[1] + v.coord[1]*res[2] + v.coord[2];
+			// since we store only internal voxels, we know that they all have all coefficients defined
+			int new_global_i = new_voxel_index*m_stencil.numCoeffs + coeff_index;
+
+
+			// in addition, we interpolate such that the coefficient is located at the voxel center
+			// for that we need the coefficient location
+			int grid_index = m_stencil.getGridIndexFromCoefficient(coeff_index);
+			std::vector<int> indices;
+			switch(grid_index)
+			{
+				case 0: // 0, 0, 1
+				{
+					indices.push_back(vm.getGlobalIndex(v.coord+V3i(0,0,0), coeff_index));
+					indices.push_back(vm.getGlobalIndex(v.coord+V3i(0,1,0), coeff_index));
+					indices.push_back(vm.getGlobalIndex(v.coord+V3i(1,0,0), coeff_index));
+					indices.push_back(vm.getGlobalIndex(v.coord+V3i(1,1,0), coeff_index));
+				}break;
+				case 1: // 1, 0, 1
+				{
+					indices.push_back(vm.getGlobalIndex(v.coord+V3i(0,0,0), coeff_index));
+					indices.push_back(vm.getGlobalIndex(v.coord+V3i(0,1,0), coeff_index));
+				}break;
+				case 2: // 1, 1, 1
+				{
+					indices.push_back(vm.getGlobalIndex(v.coord+V3i(0,0,0), coeff_index));
+				}break;
+				case 3: // 0, 1, 1
+				{
+					indices.push_back(vm.getGlobalIndex(v.coord+V3i(0,0,0), coeff_index));
+					indices.push_back(vm.getGlobalIndex(v.coord+V3i(1,0,0), coeff_index));
+				}break;
+				case 4: // 0, 0, 0
+				{
+					indices.push_back(vm.getGlobalIndex(v.coord+V3i(0,0,0), coeff_index));
+					indices.push_back(vm.getGlobalIndex(v.coord+V3i(1,0,0), coeff_index));
+					indices.push_back(vm.getGlobalIndex(v.coord+V3i(0,1,0), coeff_index));
+					indices.push_back(vm.getGlobalIndex(v.coord+V3i(0,0,1), coeff_index));
+					indices.push_back(vm.getGlobalIndex(v.coord+V3i(0,1,1), coeff_index));
+					indices.push_back(vm.getGlobalIndex(v.coord+V3i(1,0,1), coeff_index));
+					indices.push_back(vm.getGlobalIndex(v.coord+V3i(1,1,0), coeff_index));
+					indices.push_back(vm.getGlobalIndex(v.coord+V3i(1,1,1), coeff_index));
+				}break;
+				case 5: // 1, 0, 0
+				{
+					indices.push_back(vm.getGlobalIndex(v.coord+V3i(0,0,0), coeff_index));
+					indices.push_back(vm.getGlobalIndex(v.coord+V3i(0,1,0), coeff_index));
+					indices.push_back(vm.getGlobalIndex(v.coord+V3i(0,0,1), coeff_index));
+					indices.push_back(vm.getGlobalIndex(v.coord+V3i(0,1,1), coeff_index));
+				}break;
+				case 6: // 1, 1, 0
+				{
+					indices.push_back(vm.getGlobalIndex(v.coord+V3i(0,0,0), coeff_index));
+					indices.push_back(vm.getGlobalIndex(v.coord+V3i(0,0,1), coeff_index));
+				}break;
+				case 7: // 0, 1, 0
+				{
+					indices.push_back(vm.getGlobalIndex(v.coord+V3i(0,0,0), coeff_index));
+					indices.push_back(vm.getGlobalIndex(v.coord+V3i(1,0,0), coeff_index));
+					indices.push_back(vm.getGlobalIndex(v.coord+V3i(0,0,1), coeff_index));
+					indices.push_back(vm.getGlobalIndex(v.coord+V3i(1,0,1), coeff_index));
+				}break;
+			};
+
+			///*
+			int numValidIndices = 0;
+			for( auto& index:indices )
+				if( index>=0 )
+					++numValidIndices;
+			double weight = 1.0/double(numValidIndices);
+			for( auto& index:indices )
+			{
+				if( index>=0 )
+					builder.coeff(new_global_i, index) += weight;
+			}
+			//*/
+
+
+			// this is the current index, which includes boundary voxels
+			int index = m_voxelManager.getGlobalIndexBC(v, coeff_index);
+			if(index==-1)
+				throw std::runtime_error("PNSystem::stripBoundary didnt expect invalid coefficient index");
+			//x2.coeffRef(new_global_i, 0) = x.coeffRef(index, 0);
+		} // for each coefficient
+	} // for each voxel
+
+
+	//MatrixBuilderd::Matrix conv = builder.build( m_problem->getDomain().numVoxels()*m_stencil.numCoeffs, getVoxelManager().getNumUnknowns() );
+	return builder.build( m_problem->getDomain().numVoxels()*m_stencil.numCoeffs, getVoxelManager().getNumUnknowns() );
+}
+
 PNSystem::RealMatrix PNSystem::get_A_real_test()
 {
 	return m_A.transpose()*m_A;
@@ -340,109 +447,8 @@ Eigen::VectorXd PNSystem::removeStaggering(const Eigen::VectorXd &x)
 	*/
 
 	///*
-	PNSystem::MatrixBuilderd builder;
-	VoxelManager& vm = getVoxelManager();
 
-	Eigen::VectorXd x2( m_problem->getDomain().numVoxels()*m_stencil.numCoeffs,1);
-	std::vector<Voxel>& voxels = m_voxelManager.getVoxels();
-	V3i res = m_problem->getDomain().getResolution();
-	for( auto&v:voxels )
-	{
-		if( !m_problem->getDomain().contains_voxel(v.coord) )
-			// boundary or mixed boundary voxel
-			continue;
-		for( int coeff_index=0;coeff_index<m_stencil.numCoeffs;++coeff_index )
-		{
-			// this is the new index, which wont include boundary voxels
-			int new_voxel_index = v.coord[0]*res[2]*res[1] + v.coord[1]*res[2] + v.coord[2];
-			// since we store only internal voxels, we know that they all have all coefficients defined
-			int new_global_i = new_voxel_index*m_stencil.numCoeffs + coeff_index;
-
-
-			// in addition, we interpolate such that the coefficient is located at the voxel center
-			// for that we need the coefficient location
-			int grid_index = m_stencil.getGridIndexFromCoefficient(coeff_index);
-			std::vector<int> indices;
-			switch(grid_index)
-			{
-				case 0: // 0, 0, 1
-				{
-					indices.push_back(vm.getGlobalIndex(v.coord+V3i(0,0,0), coeff_index));
-					indices.push_back(vm.getGlobalIndex(v.coord+V3i(0,1,0), coeff_index));
-					indices.push_back(vm.getGlobalIndex(v.coord+V3i(1,0,0), coeff_index));
-					indices.push_back(vm.getGlobalIndex(v.coord+V3i(1,1,0), coeff_index));
-				}break;
-				case 1: // 1, 0, 1
-				{
-					indices.push_back(vm.getGlobalIndex(v.coord+V3i(0,0,0), coeff_index));
-					indices.push_back(vm.getGlobalIndex(v.coord+V3i(0,1,0), coeff_index));
-				}break;
-				case 2: // 1, 1, 1
-				{
-					indices.push_back(vm.getGlobalIndex(v.coord+V3i(0,0,0), coeff_index));
-				}break;
-				case 3: // 0, 1, 1
-				{
-					indices.push_back(vm.getGlobalIndex(v.coord+V3i(0,0,0), coeff_index));
-					indices.push_back(vm.getGlobalIndex(v.coord+V3i(1,0,0), coeff_index));
-				}break;
-				case 4: // 0, 0, 0
-				{
-					indices.push_back(vm.getGlobalIndex(v.coord+V3i(0,0,0), coeff_index));
-					indices.push_back(vm.getGlobalIndex(v.coord+V3i(1,0,0), coeff_index));
-					indices.push_back(vm.getGlobalIndex(v.coord+V3i(0,1,0), coeff_index));
-					indices.push_back(vm.getGlobalIndex(v.coord+V3i(0,0,1), coeff_index));
-					indices.push_back(vm.getGlobalIndex(v.coord+V3i(0,1,1), coeff_index));
-					indices.push_back(vm.getGlobalIndex(v.coord+V3i(1,0,1), coeff_index));
-					indices.push_back(vm.getGlobalIndex(v.coord+V3i(1,1,0), coeff_index));
-					indices.push_back(vm.getGlobalIndex(v.coord+V3i(1,1,1), coeff_index));
-				}break;
-				case 5: // 1, 0, 0
-				{
-					indices.push_back(vm.getGlobalIndex(v.coord+V3i(0,0,0), coeff_index));
-					indices.push_back(vm.getGlobalIndex(v.coord+V3i(0,1,0), coeff_index));
-					indices.push_back(vm.getGlobalIndex(v.coord+V3i(0,0,1), coeff_index));
-					indices.push_back(vm.getGlobalIndex(v.coord+V3i(0,1,1), coeff_index));
-				}break;
-				case 6: // 1, 1, 0
-				{
-					indices.push_back(vm.getGlobalIndex(v.coord+V3i(0,0,0), coeff_index));
-					indices.push_back(vm.getGlobalIndex(v.coord+V3i(0,0,1), coeff_index));
-				}break;
-				case 7: // 0, 1, 0
-				{
-					indices.push_back(vm.getGlobalIndex(v.coord+V3i(0,0,0), coeff_index));
-					indices.push_back(vm.getGlobalIndex(v.coord+V3i(1,0,0), coeff_index));
-					indices.push_back(vm.getGlobalIndex(v.coord+V3i(0,0,1), coeff_index));
-					indices.push_back(vm.getGlobalIndex(v.coord+V3i(1,0,1), coeff_index));
-				}break;
-			};
-
-			///*
-			int numValidIndices = 0;
-			for( auto& index:indices )
-				if( index>=0 )
-					++numValidIndices;
-			double weight = 1.0/double(numValidIndices);
-			for( auto& index:indices )
-			{
-				if( index>=0 )
-					builder.coeff(new_global_i, index) += weight;
-			}
-			//*/
-
-
-			// this is the current index, which includes boundary voxels
-			int index = m_voxelManager.getGlobalIndexBC(v, coeff_index);
-			if(index==-1)
-				throw std::runtime_error("PNSystem::stripBoundary didnt expect invalid coefficient index");
-			x2.coeffRef(new_global_i, 0) = x.coeffRef(index, 0);
-		} // for each coefficient
-	} // for each voxel
-
-
-	MatrixBuilderd::Matrix conv = builder.build( m_problem->getDomain().numVoxels()*m_stencil.numCoeffs, getVoxelManager().getNumUnknowns() );
-	return conv*x;
+	return get_stag2coll()*x;
 	//*/
 }
 
@@ -541,10 +547,9 @@ void PNSystem::VoxelManager::init(const V3i& resolution,
 	m_coefficientGridSpaceOffsets = std::vector<V3i>(coefficientGridSpaceOffsets.begin(), coefficientGridSpaceOffsets.end());
 	m_resolution = resolution;
 	m_boundaryConditions = boundaryConditions;
-	//m_stencil = &stencil;
 
 	if( m_resolution[2] == 1 )
-		// in 2d we have zero boundary layers
+		// in 2d we have zero boundary layers in z direction
 		m_numBoundaryLayers = V3i(boundaryWidth, boundaryWidth, 0);
 	else
 		m_numBoundaryLayers = V3i(boundaryWidth, boundaryWidth, boundaryWidth);
@@ -563,7 +568,6 @@ void PNSystem::VoxelManager::init(const V3i& resolution,
 				// type hasnt been registered, so we register it
 				m_voxelTypes.push_back(VoxelType(m_voxelTypes.size(), numCoeffs, boundaryLayer));
 			}
-
 	int numTypes = m_voxelTypes.size();
 
 	// establish reverse mapping, which we use during voxel creation
@@ -573,6 +577,7 @@ void PNSystem::VoxelManager::init(const V3i& resolution,
 		m_layerToVoxelTypeIndex[vt.getBoundaryLayer()] = i;
 	}
 
+	//
 	for( int i=0;i<numCoeffs;++i )
 	{
 		//V3i offset = stencil.getOffset(i);

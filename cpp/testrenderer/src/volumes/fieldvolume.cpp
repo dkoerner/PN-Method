@@ -41,13 +41,13 @@ namespace volumes
 
 		virtual double evalPhase( const P3d& pWS, const V3d& wi, const V3d& wo )const override
 		{
-			P3d pLS = worldToLocal*pLS;
+			P3d pLS = worldToLocal*pWS;
 			return phase_field->eval(pWS, wi, wo);
 		}
 
 		virtual double samplePhase( const P3d& pWS, const V3d& wi, V3d& wo, double& pdf, RNGd& rng )const override
 		{
-			P3d pLS = worldToLocal*pLS;
+			P3d pLS = worldToLocal*pWS;
 			return phase_field->sample(pLS, wi, wo, pdf, rng);
 		}
 

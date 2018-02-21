@@ -982,7 +982,6 @@ struct HGPhase
 
 	HGPhase( double g ):m_g(g)
 	{
-
 	}
 
 	double eval( const V3d& wi, const V3d& wo )const
@@ -1815,6 +1814,7 @@ void test2()
 
 PYBIND11_MODULE(pnsolver, m)
 {
+	sph::staticInit();
 	/*
 	m.def( "solve_multigrid", &solve_multigrid);
 	m.def( "solve_multigrid2", &solve_multigrid2);
@@ -1833,6 +1833,8 @@ PYBIND11_MODULE(pnsolver, m)
 
 	m.def( "test", &test);
 	m.def( "test2", &test2);
+
+	m.def( "sph_basis", &sph::basis);
 
 
 	/*

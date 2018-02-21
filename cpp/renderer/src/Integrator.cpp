@@ -8,12 +8,10 @@
 
 
 
-
-
 // returns sigma_t at sampled position (is invalid when we exceeded maxt)
-double delta_tracking( const Scene* scene, const Ray3d& ray, double maxt, int component, RNGd& rng, V3d& sigma_t, bool debug )
+double delta_tracking( const Volume* volume, const Ray3d& ray, double maxt, int component, RNGd& rng, V3d& sigma_t, bool debug )
 {
-	double sigma_t_max = scene->volume->getMaxExtinction()[component];
+	double sigma_t_max = volume->getMaxExtinction()[component];
 
 	double t = 0.0;
 	while(true)
@@ -24,7 +22,7 @@ double delta_tracking( const Scene* scene, const Ray3d& ray, double maxt, int co
 		if(t>= maxt)
 			break;
 
-		sigma_t = scene->volume->evalExtinction(ray(t), debug);
+		sigma_t = volume->evalExtinction(ray(t), debug);
 
 		// russian roulette
 		if(rng.next1D()<sigma_t[component]/sigma_t_max)
@@ -32,6 +30,12 @@ double delta_tracking( const Scene* scene, const Ray3d& ray, double maxt, int co
 	}
 
 	return t;
+}
+
+// returns sigma_t at sampled position (is invalid when we exceeded maxt)
+double delta_tracking( const Scene* scene, const Ray3d& ray, double maxt, int component, RNGd& rng, V3d& sigma_t, bool debug )
+{
+	return delta_tracking( scene->volume, ray, maxt, component, rng, sigma_t, debug );
 }
 
 

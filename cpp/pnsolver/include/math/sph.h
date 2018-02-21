@@ -38,7 +38,8 @@ namespace sph
 	void staticInit();
 	void staticShutdown();
 	double legendreP(int l, int m, double x);
-	void convolve( const double* coeffs, const double* coeffs_filter, int order, double* coeffs_result );
+	//void convolve( const double* coeffs, const double* coeffs_filter, int order, double* coeffs_result );
+	void convolve( double* coeffs, const double* coeffs_filter, int order );
 	void project(std::function<double(double, double)> fun, int order, int res, double* coeffs_result );
 	double csp( int m );
 	double lambda( int l );

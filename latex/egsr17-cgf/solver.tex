@@ -9,11 +9,11 @@ Expanding, discretizing and working with the $P_N$-equations gets increasingly c
 
 The discretized $P_N$-equations are then rendered into source code and compiled. We refer to this as the stencil code. It allows fast construction of the linear system $A\vec{u}=\vec{Q}$ for arbitrary resolution and RTE parameters and has no dependency on the computer algebra framework anymore.
 
-Finally, the generated linear system is solved using standard methods. The solution $\vec{u}$ represents the discretized radiance field $\widehat{L}$, which is evaluated using using trilinear interpolation of the SH coefficients. An overview of the solver is given in figure~\ref{fig:pnsolver}. Each step will be described in more detail in the following subsections.
+Finally, the generated linear system is solved using standard methods. The solution $\vec{u}$ represents the discretized radiance field $\widehat{L}$, which is evaluated using trilinear interpolation of the SH coefficients. An overview of the solver is given in figure~\ref{fig:pnsolver}. Each step will be described in more detail in the following subsections.
 
 \subsection{Computer Algebra Representation}
 
-Our computer algebra representation is based on mathematical expression trees, hierarchies composed out of expression instances. Those can be basic primitives, such as numbers, variables or special symbols, such as the Kronecker delta or imaginary number. Other expression types, such as integrals, derivatives, sums, products and functions build the hierarchy by referencing child expressions.
+Our computer algebra representation is based on mathematical expression trees, which are hierarchies of expression instances. Those can be basic primitives, such as numbers, variables or special symbols, such as the Kronecker delta or imaginary number. Other expression types, such as integrals, derivatives, sums, products and functions build the hierarchy by referencing child expressions.
 
 Our framework further provides manipulators, which can be executed on expressions. We implemented all manipulations, which were required for the derivation of the $P_N$-equations. This includes operations, such as application of the distributive law, substitution, constant folding, reordering of nested integrals, application of identities up to more complex operations, such as factorization of unknowns and discretization of spatial variables. The derivation steps of the real-valued $P_N$-equations in the supplemental material were all carried out using our framework.
 
@@ -62,7 +62,7 @@ After applying the discretization step to the expression tree of the $P_N$-equat
 
 The $P_N$-equations express, how each coefficient of a voxel depends on other coefficients of the same or adjacent voxels. The unknowns in the terms give information about the coefficient index and voxel offset, and therefore identify a column offset in the matrix $A$. The factors to these coefficients may contain evaluations of RTE parameters, such as $\sigma_t$. Therefore, these factors can not be determined during stencil generation, but are rendered into code expressions, which are executed as part of the stencil function during runtime. Because the stencil code has been generated in stencil space relative to the voxel at $(0,0,0)$, we can run the same stencil code for every voxel, by simply applying an offset accordingly. 
 
-The $P_N$-equations have been discretized, and the stencil has been generated, without any notion of domain boundaries and boundary conditions (BC). Our solver supports Neumann BC and Dirichlet BC. They are handled transparently by the code which runs the stencil. Whenever the stencil writes into $A$ for a boundary coefficient, the framework will either ignore the write operation (Dirichlet BC) or return the row and column in $A$ for the same coefficient of the closest voxel inside the domain (Neumann BC).
+The $P_N$-equations have been discretized, and the stencil has been generated, without any notion of domain boundaries and boundary conditions (BC). Our solver supports Neumann BC and Dirichlet BC. They are handled transparently by the code which runs the stencil. Whenever the stencil writes into $A$ for a boundary coefficient, the framework will either ignore the write operation (Dirichlet BC) or write into the row and column in $A$ of the same coefficient at the closest voxel inside the domain (Neumann BC).
 
 In order to respect the boundary correctly, additional coefficients (which contribute additional rows and columns in $A$ and $\vec{Q}$) are necessary at boundary voxels (see Figure~\ref{fig:staggeredgrid}). This requires careful managegment and bookkeeping of coefficient indices, which is done transparently by the code running the stencil.
 
@@ -70,15 +70,17 @@ In order to respect the boundary correctly, additional coefficients (which contr
 \begin{figure}[h]
 \centering
 \begin{subfigure}{0.45\columnwidth}
-\missingfigure{test}
+%\missingfigure{test}
+\includegraphics[width=\columnwidth]{images/checkerboard2d_p1_collocated.png}
 \end{subfigure}%
 \hspace{0.05\columnwidth}
 \begin{subfigure}{0.45\columnwidth}
-\missingfigure{test2}
+%\missingfigure{test2}
+\includegraphics[width=\columnwidth]{images/checkerboard2d_p1_staggered.png}
 \end{subfigure}%
-\vspace{-0.2in}
-\icaption{The solution of our solver for the 2D-checkerboard problem with collocated grids (left), where all coefficients are located at the cell centers. It suffers from severe oscillating artefacts, which are removed by offseting the coefficient locations using staggered grids (right).}
-\label{fig:artefacts}
+\vspace{-0.1in}
+\icaption{The solution of our solver for the 2D-checkerboard problem with collocated grids (left), where all coefficients are located at the cell centers. It suffers from severe oscillating artifacts, which are removed by offsetting the coefficient locations using staggered grids (right).}
+\label{fig:artifacts}
 \end{figure}
 
 

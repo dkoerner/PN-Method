@@ -26,6 +26,22 @@ A Deterministic Method for Simulation of Light Transport in Participating Media 
 %}
 %}
 
+\author
+{
+Compiled on \today
+%David Koerner$^{1,2,3}$
+%\qquad Jan Nov\'ak$^{1}$
+%\qquad Peter Kutz$^{2}$
+%\qquad Ralf Habel$^{2}$
+%\qquad Wojciech Jarosz$^{1,4}$
+\\
+% For Computer Graphics Forum: Please use the abbreviation of your first name.
+%$^1$Disney Research
+%\qquad $^2$Walt Disney Animation Studios
+%\qquad $^3$University of Stuttgart
+%\qquad $^4$Dartmouth College
+}
+
 
 % ------------------------------------------------------------------------
 
@@ -43,35 +59,42 @@ A Deterministic Method for Simulation of Light Transport in Participating Media 
 \teaser
 {
 \centering
-\begin{subfigure}{0.2\linewidth}
-\missingfigure{}
+\begin{subfigure}{0.24\linewidth}
+%\missingfigure{}
+\includegraphics[width=\linewidth]{images/nebulae_ms_cda.png}
 \vspace{-0.17in}
 \caption{Classical diffusion}
+\label{fig:teaser_cda}
 \end{subfigure}%
-\hspace{0.05\linewidth}
-\begin{subfigure}{0.2\linewidth}
-\missingfigure{}
+\hspace{0.002\linewidth}
+\begin{subfigure}{0.24\linewidth}
+\includegraphics[width=\linewidth]{images/nebulae_ms_p5.png}
+\vspace{-0.17in}
+\caption{$P_5$ (ours)}
+\label{fig:nebulae_ours}
+\label{fig:teaser_pn}
+\end{subfigure}%
+\hspace{0.002\linewidth}
+\begin{subfigure}{0.24\linewidth}
+%\missingfigure{}
+\includegraphics[width=\linewidth]{images/nebulae_ms_fld.png}
 \vspace{-0.17in}
 \caption{Flux-limited diffusion}
+\label{fig:teaser_fld}
 \end{subfigure}%
-\hspace{0.05\linewidth}
-\begin{subfigure}{0.2\linewidth}
-\missingfigure{}
-\vspace{-0.17in}
-\caption{ours}
-\label{fig:nebulae_ours}
-\end{subfigure}%
-\hspace{0.05\linewidth}
-\begin{subfigure}{0.2\linewidth}
-\missingfigure{}
+\hspace{0.002\linewidth}
+\begin{subfigure}{0.24\linewidth}
+%\missingfigure{}
+\includegraphics[width=\linewidth]{images/nebulae_ms_groundtruth.png}
 \vspace{-0.17in}
 \caption{Ground truth}
+\label{fig:teaser_gt}
 \end{subfigure}%
 %\includegraphics[width=\linewidth]{figures/eg_new}
 \vspace{-0.1in}
 \icaption
 {
-Flux-limited diffusion (b) is an ad-hoc extension to the classical diffusion approximation (a). It can be considered the state of the art among deterministic methods for simulating light transport in highly scattering participating media, which is a common challenge for brute-force path tracing (d). We add the $P_N$-method (c) to the toolbox of deterministic methods in rendering and investigate its benefits and tradeoffs against flux-limited diffusion.
+Flux-limited diffusion (\subref{fig:teaser_fld}) is an ad-hoc extension to the classical diffusion approximation (\subref{fig:teaser_cda}). It can be considered the state of the art among deterministic methods for simulating light transport in highly scattering participating media, which is a common challenge for brute-force path tracing (\subref{fig:teaser_gt}). We add the $P_N$-method (\subref{fig:teaser_pn}) to the toolbox of deterministic methods in rendering and investigate its benefits and tradeoffs against flux-limited diffusion.
 }
 \label{fig:teaser}
 }

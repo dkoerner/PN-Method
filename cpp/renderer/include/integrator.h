@@ -51,6 +51,7 @@ struct Integrator
 
 // returns sigma_t at sampled position (is invalid when we exceeded maxt)
 double delta_tracking(const Scene* scene, const Ray3d& ray, double maxt, int component, RNGd& rng, V3d& sigma_t , bool debug = false);
+double delta_tracking(const Volume* volume, const Ray3d& ray, double maxt, int component, RNGd& rng, V3d& sigma_t , bool debug = false);
 
 struct Vertex
 {
@@ -169,8 +170,11 @@ struct TraceInfo
 	{
 		if( current_vertex.getType() == Vertex::EVolume )
 		{
-			V3d wi = current_direction;
+			// technically, in a standard forward pt, -current_direciton is the
+			// direction of outgoing light (towards the camera), which would be called wo
+			V3d wi = -current_direction;
 			double pdf;
+			// NB: we assume wi and wo can be flipped, which means we assume phase function only depends on angle
 			double phase_over_pdf = scene->volume->samplePhase(current_vertex.getPosition(), wi, current_direction, pdf, rng);
 			throughput_over_pdf = phase_over_pdf*throughput_over_pdf.cwiseProduct(current_vertex.m_sigma_s);
 			return true;

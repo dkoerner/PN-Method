@@ -2,7 +2,7 @@
 
 #include <PNSystem.h>
 
-void stencil_p5_3d_sg(PNSystem::Stencil::Context& ctx)
+void stencil_p4_3d_sg(PNSystem::Stencil::Context& ctx)
 {
 	V3i vi = ctx.getVoxelCoord();
 	V3d vd = vi.cast<double>();
@@ -591,20 +591,10 @@ void stencil_p5_3d_sg(PNSystem::Stencil::Context& ctx)
 		ctx.coeff_b( 15 ) += c;
 	}
 	// row=16 l=4 m=-4 --------------------------
-	ctx.coeff_A( 16, vi+V3i(0, -1, 0), 35 ) += -(0.476731294623*h_inv[1]);
-	ctx.coeff_A( 16, vi+V3i(0, 0, 0), 35 ) += (0.476731294623*h_inv[1]);
 	ctx.coeff_A( 16, vi+V3i(0, -1, 0), 15 ) += (0.471404520791*h_inv[1]);
 	ctx.coeff_A( 16, vi+V3i(0, 0, 0), 15 ) += -(0.471404520791*h_inv[1]);
-	ctx.coeff_A( 16, vi+V3i(0, -1, 0), 33 ) += -(0.0710669054519*h_inv[1]);
-	ctx.coeff_A( 16, vi+V3i(0, 0, 0), 33 ) += (0.0710669054519*h_inv[1]);
 	ctx.coeff_A( 16, vi+V3i(-1, 0, 0), 9 ) += (0.471404520791*h_inv[0]);
 	ctx.coeff_A( 16, vi+V3i(0, 0, 0), 9 ) += -(0.471404520791*h_inv[0]);
-	ctx.coeff_A( 16, vi+V3i(-1, 0, 0), 27 ) += -(0.0710669054519*h_inv[0]);
-	ctx.coeff_A( 16, vi+V3i(0, 0, 0), 27 ) += (0.0710669054519*h_inv[0]);
-	ctx.coeff_A( 16, vi+V3i(-1, 0, 0), 25 ) += (0.476731294623*h_inv[0]);
-	ctx.coeff_A( 16, vi+V3i(0, 0, 0), 25 ) += -(0.476731294623*h_inv[0]);
-	ctx.coeff_A( 16, vi+V3i(0, 0, 0), 26 ) += -(0.301511344578*h_inv[2]);
-	ctx.coeff_A( 16, vi+V3i(0, 0, 1), 26 ) += (0.301511344578*h_inv[2]);
 	{
 		double c = 0.0;
 		c+=(0.25*ctx.evalExtinction(-1, -1, 0)[color_channel]);
@@ -638,22 +628,12 @@ void stencil_p5_3d_sg(PNSystem::Stencil::Context& ctx)
 		ctx.coeff_b( 16 ) += c;
 	}
 	// row=17 l=4 m=-3 --------------------------
-	ctx.coeff_A( 17, vi+V3i(0, -1, 0), 34 ) += -(0.426401432711*h_inv[1]);
-	ctx.coeff_A( 17, vi+V3i(0, 0, 0), 34 ) += (0.426401432711*h_inv[1]);
 	ctx.coeff_A( 17, vi+V3i(0, -1, 0), 14 ) += (0.408248290464*h_inv[1]);
 	ctx.coeff_A( 17, vi+V3i(0, 0, 0), 14 ) += -(0.408248290464*h_inv[1]);
-	ctx.coeff_A( 17, vi+V3i(0, -1, 0), 32 ) += -(0.123091490979*h_inv[1]);
-	ctx.coeff_A( 17, vi+V3i(0, 0, 0), 32 ) += (0.123091490979*h_inv[1]);
 	ctx.coeff_A( 17, vi+V3i(0, 0, 0), 10 ) += (0.408248290464*h_inv[0]);
 	ctx.coeff_A( 17, vi+V3i(1, 0, 0), 10 ) += -(0.408248290464*h_inv[0]);
-	ctx.coeff_A( 17, vi+V3i(0, 0, 0), 28 ) += -(0.123091490979*h_inv[0]);
-	ctx.coeff_A( 17, vi+V3i(1, 0, 0), 28 ) += (0.123091490979*h_inv[0]);
-	ctx.coeff_A( 17, vi+V3i(0, 0, 0), 26 ) += (0.426401432711*h_inv[0]);
-	ctx.coeff_A( 17, vi+V3i(1, 0, 0), 26 ) += -(0.426401432711*h_inv[0]);
 	ctx.coeff_A( 17, vi+V3i(0, 0, -1), 9 ) += -(0.333333333333*h_inv[2]);
 	ctx.coeff_A( 17, vi+V3i(0, 0, 0), 9 ) += (0.333333333333*h_inv[2]);
-	ctx.coeff_A( 17, vi+V3i(0, 0, -1), 27 ) += -(0.402015126104*h_inv[2]);
-	ctx.coeff_A( 17, vi+V3i(0, 0, 0), 27 ) += (0.402015126104*h_inv[2]);
 	{
 		double c = 0.0;
 		c+=(0.25*ctx.evalExtinction(0, -1, -1)[color_channel]);
@@ -689,24 +669,14 @@ void stencil_p5_3d_sg(PNSystem::Stencil::Context& ctx)
 	// row=18 l=4 m=-2 --------------------------
 	ctx.coeff_A( 18, vi+V3i(0, -1, 0), 15 ) += (0.0890870806375*h_inv[1]);
 	ctx.coeff_A( 18, vi+V3i(0, 0, 0), 15 ) += -(0.0890870806375*h_inv[1]);
-	ctx.coeff_A( 18, vi+V3i(0, -1, 0), 33 ) += -(0.376050716545*h_inv[1]);
-	ctx.coeff_A( 18, vi+V3i(0, 0, 0), 33 ) += (0.376050716545*h_inv[1]);
 	ctx.coeff_A( 18, vi+V3i(0, -1, 0), 13 ) += (0.345032779671*h_inv[1]);
 	ctx.coeff_A( 18, vi+V3i(0, 0, 0), 13 ) += -(0.345032779671*h_inv[1]);
-	ctx.coeff_A( 18, vi+V3i(0, -1, 0), 31 ) += -(0.174077655956*h_inv[1]);
-	ctx.coeff_A( 18, vi+V3i(0, 0, 0), 31 ) += (0.174077655956*h_inv[1]);
 	ctx.coeff_A( 18, vi+V3i(-1, 0, 0), 9 ) += -(0.0890870806375*h_inv[0]);
 	ctx.coeff_A( 18, vi+V3i(0, 0, 0), 9 ) += (0.0890870806375*h_inv[0]);
 	ctx.coeff_A( 18, vi+V3i(-1, 0, 0), 11 ) += (0.345032779671*h_inv[0]);
 	ctx.coeff_A( 18, vi+V3i(0, 0, 0), 11 ) += -(0.345032779671*h_inv[0]);
-	ctx.coeff_A( 18, vi+V3i(-1, 0, 0), 29 ) += -(0.174077655956*h_inv[0]);
-	ctx.coeff_A( 18, vi+V3i(0, 0, 0), 29 ) += (0.174077655956*h_inv[0]);
-	ctx.coeff_A( 18, vi+V3i(-1, 0, 0), 27 ) += (0.376050716545*h_inv[0]);
-	ctx.coeff_A( 18, vi+V3i(0, 0, 0), 27 ) += -(0.376050716545*h_inv[0]);
 	ctx.coeff_A( 18, vi+V3i(0, 0, 0), 10 ) += -(0.436435780472*h_inv[2]);
 	ctx.coeff_A( 18, vi+V3i(0, 0, 1), 10 ) += (0.436435780472*h_inv[2]);
-	ctx.coeff_A( 18, vi+V3i(0, 0, 0), 28 ) += -(0.460566186472*h_inv[2]);
-	ctx.coeff_A( 18, vi+V3i(0, 0, 1), 28 ) += (0.460566186472*h_inv[2]);
 	{
 		double c = 0.0;
 		c+=(0.25*ctx.evalExtinction(-1, -1, 0)[color_channel]);
@@ -742,20 +712,12 @@ void stencil_p5_3d_sg(PNSystem::Stencil::Context& ctx)
 	// row=19 l=4 m=-1 --------------------------
 	ctx.coeff_A( 19, vi+V3i(0, -1, 0), 14 ) += (0.154303349962*h_inv[1]);
 	ctx.coeff_A( 19, vi+V3i(0, 0, 0), 14 ) += -(0.154303349962*h_inv[1]);
-	ctx.coeff_A( 19, vi+V3i(0, -1, 0), 32 ) += -(0.325669473639*h_inv[1]);
-	ctx.coeff_A( 19, vi+V3i(0, 0, 0), 32 ) += (0.325669473639*h_inv[1]);
 	ctx.coeff_A( 19, vi+V3i(0, -1, 0), 12 ) += (0.398409536445*h_inv[1]);
 	ctx.coeff_A( 19, vi+V3i(0, 0, 0), 12 ) += -(0.398409536445*h_inv[1]);
-	ctx.coeff_A( 19, vi+V3i(0, -1, 0), 30 ) += -(0.317820863082*h_inv[1]);
-	ctx.coeff_A( 19, vi+V3i(0, 0, 0), 30 ) += (0.317820863082*h_inv[1]);
 	ctx.coeff_A( 19, vi+V3i(0, 0, 0), 10 ) += -(0.154303349962*h_inv[0]);
 	ctx.coeff_A( 19, vi+V3i(1, 0, 0), 10 ) += (0.154303349962*h_inv[0]);
-	ctx.coeff_A( 19, vi+V3i(0, 0, 0), 28 ) += (0.325669473639*h_inv[0]);
-	ctx.coeff_A( 19, vi+V3i(1, 0, 0), 28 ) += -(0.325669473639*h_inv[0]);
 	ctx.coeff_A( 19, vi+V3i(0, 0, -1), 11 ) += -(0.487950036474*h_inv[2]);
 	ctx.coeff_A( 19, vi+V3i(0, 0, 0), 11 ) += (0.487950036474*h_inv[2]);
-	ctx.coeff_A( 19, vi+V3i(0, 0, -1), 29 ) += -(0.492365963917*h_inv[2]);
-	ctx.coeff_A( 19, vi+V3i(0, 0, 0), 29 ) += (0.492365963917*h_inv[2]);
 	{
 		double c = 0.0;
 		c+=(0.25*ctx.evalExtinction(0, -1, -1)[color_channel]);
@@ -791,16 +753,10 @@ void stencil_p5_3d_sg(PNSystem::Stencil::Context& ctx)
 	// row=20 l=4 m=0 --------------------------
 	ctx.coeff_A( 20, vi+V3i(0, 0, 0), 13 ) += -(0.308606699924*h_inv[0]);
 	ctx.coeff_A( 20, vi+V3i(1, 0, 0), 13 ) += (0.308606699924*h_inv[0]);
-	ctx.coeff_A( 20, vi+V3i(0, 0, 0), 31 ) += (0.389249472081*h_inv[0]);
-	ctx.coeff_A( 20, vi+V3i(1, 0, 0), 31 ) += -(0.389249472081*h_inv[0]);
 	ctx.coeff_A( 20, vi+V3i(0, 0, 0), 11 ) += -(0.308606699924*h_inv[1]);
 	ctx.coeff_A( 20, vi+V3i(0, 1, 0), 11 ) += (0.308606699924*h_inv[1]);
-	ctx.coeff_A( 20, vi+V3i(0, 0, 0), 29 ) += (0.389249472081*h_inv[1]);
-	ctx.coeff_A( 20, vi+V3i(0, 1, 0), 29 ) += -(0.389249472081*h_inv[1]);
 	ctx.coeff_A( 20, vi+V3i(0, 0, 0), 12 ) += -(0.503952630679*h_inv[2]);
 	ctx.coeff_A( 20, vi+V3i(0, 0, 1), 12 ) += (0.503952630679*h_inv[2]);
-	ctx.coeff_A( 20, vi+V3i(0, 0, 0), 30 ) += -(0.50251890763*h_inv[2]);
-	ctx.coeff_A( 20, vi+V3i(0, 0, 1), 30 ) += (0.50251890763*h_inv[2]);
 	{
 		double c = 0.0;
 		c+=ctx.evalExtinction(0, 0, 0)[color_channel];
@@ -815,20 +771,12 @@ void stencil_p5_3d_sg(PNSystem::Stencil::Context& ctx)
 	// row=21 l=4 m=1 --------------------------
 	ctx.coeff_A( 21, vi+V3i(-1, 0, 0), 14 ) += -(0.154303349962*h_inv[0]);
 	ctx.coeff_A( 21, vi+V3i(0, 0, 0), 14 ) += (0.154303349962*h_inv[0]);
-	ctx.coeff_A( 21, vi+V3i(-1, 0, 0), 32 ) += (0.325669473639*h_inv[0]);
-	ctx.coeff_A( 21, vi+V3i(0, 0, 0), 32 ) += -(0.325669473639*h_inv[0]);
 	ctx.coeff_A( 21, vi+V3i(-1, 0, 0), 12 ) += (0.398409536445*h_inv[0]);
 	ctx.coeff_A( 21, vi+V3i(0, 0, 0), 12 ) += -(0.398409536445*h_inv[0]);
-	ctx.coeff_A( 21, vi+V3i(-1, 0, 0), 30 ) += -(0.317820863082*h_inv[0]);
-	ctx.coeff_A( 21, vi+V3i(0, 0, 0), 30 ) += (0.317820863082*h_inv[0]);
 	ctx.coeff_A( 21, vi+V3i(0, 0, 0), 10 ) += -(0.154303349962*h_inv[1]);
 	ctx.coeff_A( 21, vi+V3i(0, 1, 0), 10 ) += (0.154303349962*h_inv[1]);
-	ctx.coeff_A( 21, vi+V3i(0, 0, 0), 28 ) += (0.325669473639*h_inv[1]);
-	ctx.coeff_A( 21, vi+V3i(0, 1, 0), 28 ) += -(0.325669473639*h_inv[1]);
 	ctx.coeff_A( 21, vi+V3i(0, 0, -1), 13 ) += -(0.487950036474*h_inv[2]);
 	ctx.coeff_A( 21, vi+V3i(0, 0, 0), 13 ) += (0.487950036474*h_inv[2]);
-	ctx.coeff_A( 21, vi+V3i(0, 0, -1), 31 ) += -(0.492365963917*h_inv[2]);
-	ctx.coeff_A( 21, vi+V3i(0, 0, 0), 31 ) += (0.492365963917*h_inv[2]);
 	{
 		double c = 0.0;
 		c+=(0.25*ctx.evalExtinction(-1, 0, -1)[color_channel]);
@@ -864,24 +812,14 @@ void stencil_p5_3d_sg(PNSystem::Stencil::Context& ctx)
 	// row=22 l=4 m=2 --------------------------
 	ctx.coeff_A( 22, vi+V3i(0, 0, 0), 15 ) += -(0.0890870806375*h_inv[0]);
 	ctx.coeff_A( 22, vi+V3i(1, 0, 0), 15 ) += (0.0890870806375*h_inv[0]);
-	ctx.coeff_A( 22, vi+V3i(0, 0, 0), 33 ) += (0.376050716545*h_inv[0]);
-	ctx.coeff_A( 22, vi+V3i(1, 0, 0), 33 ) += -(0.376050716545*h_inv[0]);
 	ctx.coeff_A( 22, vi+V3i(0, 0, 0), 13 ) += (0.345032779671*h_inv[0]);
 	ctx.coeff_A( 22, vi+V3i(1, 0, 0), 13 ) += -(0.345032779671*h_inv[0]);
-	ctx.coeff_A( 22, vi+V3i(0, 0, 0), 31 ) += -(0.174077655956*h_inv[0]);
-	ctx.coeff_A( 22, vi+V3i(1, 0, 0), 31 ) += (0.174077655956*h_inv[0]);
 	ctx.coeff_A( 22, vi+V3i(0, 0, 0), 9 ) += -(0.0890870806375*h_inv[1]);
 	ctx.coeff_A( 22, vi+V3i(0, 1, 0), 9 ) += (0.0890870806375*h_inv[1]);
-	ctx.coeff_A( 22, vi+V3i(0, 0, 0), 27 ) += (0.376050716545*h_inv[1]);
-	ctx.coeff_A( 22, vi+V3i(0, 1, 0), 27 ) += -(0.376050716545*h_inv[1]);
 	ctx.coeff_A( 22, vi+V3i(0, 0, 0), 11 ) += -(0.345032779671*h_inv[1]);
 	ctx.coeff_A( 22, vi+V3i(0, 1, 0), 11 ) += (0.345032779671*h_inv[1]);
-	ctx.coeff_A( 22, vi+V3i(0, 0, 0), 29 ) += (0.174077655956*h_inv[1]);
-	ctx.coeff_A( 22, vi+V3i(0, 1, 0), 29 ) += -(0.174077655956*h_inv[1]);
 	ctx.coeff_A( 22, vi+V3i(0, 0, 0), 14 ) += -(0.436435780472*h_inv[2]);
 	ctx.coeff_A( 22, vi+V3i(0, 0, 1), 14 ) += (0.436435780472*h_inv[2]);
-	ctx.coeff_A( 22, vi+V3i(0, 0, 0), 32 ) += -(0.460566186472*h_inv[2]);
-	ctx.coeff_A( 22, vi+V3i(0, 0, 1), 32 ) += (0.460566186472*h_inv[2]);
 	{
 		double c = 0.0;
 		c+=ctx.evalExtinction(0, 0, 0)[color_channel];
@@ -894,22 +832,12 @@ void stencil_p5_3d_sg(PNSystem::Stencil::Context& ctx)
 		ctx.coeff_b( 22 ) += c;
 	}
 	// row=23 l=4 m=3 --------------------------
-	ctx.coeff_A( 23, vi+V3i(-1, 0, 0), 34 ) += (0.426401432711*h_inv[0]);
-	ctx.coeff_A( 23, vi+V3i(0, 0, 0), 34 ) += -(0.426401432711*h_inv[0]);
 	ctx.coeff_A( 23, vi+V3i(-1, 0, 0), 14 ) += (0.408248290464*h_inv[0]);
 	ctx.coeff_A( 23, vi+V3i(0, 0, 0), 14 ) += -(0.408248290464*h_inv[0]);
-	ctx.coeff_A( 23, vi+V3i(-1, 0, 0), 32 ) += -(0.123091490979*h_inv[0]);
-	ctx.coeff_A( 23, vi+V3i(0, 0, 0), 32 ) += (0.123091490979*h_inv[0]);
-	ctx.coeff_A( 23, vi+V3i(0, 0, 0), 26 ) += (0.426401432711*h_inv[1]);
-	ctx.coeff_A( 23, vi+V3i(0, 1, 0), 26 ) += -(0.426401432711*h_inv[1]);
 	ctx.coeff_A( 23, vi+V3i(0, 0, 0), 10 ) += -(0.408248290464*h_inv[1]);
 	ctx.coeff_A( 23, vi+V3i(0, 1, 0), 10 ) += (0.408248290464*h_inv[1]);
-	ctx.coeff_A( 23, vi+V3i(0, 0, 0), 28 ) += (0.123091490979*h_inv[1]);
-	ctx.coeff_A( 23, vi+V3i(0, 1, 0), 28 ) += -(0.123091490979*h_inv[1]);
 	ctx.coeff_A( 23, vi+V3i(0, 0, -1), 15 ) += -(0.333333333333*h_inv[2]);
 	ctx.coeff_A( 23, vi+V3i(0, 0, 0), 15 ) += (0.333333333333*h_inv[2]);
-	ctx.coeff_A( 23, vi+V3i(0, 0, -1), 33 ) += -(0.402015126104*h_inv[2]);
-	ctx.coeff_A( 23, vi+V3i(0, 0, 0), 33 ) += (0.402015126104*h_inv[2]);
 	{
 		double c = 0.0;
 		c+=(0.25*ctx.evalExtinction(-1, 0, -1)[color_channel]);
@@ -943,20 +871,10 @@ void stencil_p5_3d_sg(PNSystem::Stencil::Context& ctx)
 		ctx.coeff_b( 23 ) += c;
 	}
 	// row=24 l=4 m=4 --------------------------
-	ctx.coeff_A( 24, vi+V3i(0, 0, 0), 35 ) += (0.476731294623*h_inv[0]);
-	ctx.coeff_A( 24, vi+V3i(1, 0, 0), 35 ) += -(0.476731294623*h_inv[0]);
 	ctx.coeff_A( 24, vi+V3i(0, 0, 0), 15 ) += (0.471404520791*h_inv[0]);
 	ctx.coeff_A( 24, vi+V3i(1, 0, 0), 15 ) += -(0.471404520791*h_inv[0]);
-	ctx.coeff_A( 24, vi+V3i(0, 0, 0), 33 ) += -(0.0710669054519*h_inv[0]);
-	ctx.coeff_A( 24, vi+V3i(1, 0, 0), 33 ) += (0.0710669054519*h_inv[0]);
-	ctx.coeff_A( 24, vi+V3i(0, 0, 0), 25 ) += (0.476731294623*h_inv[1]);
-	ctx.coeff_A( 24, vi+V3i(0, 1, 0), 25 ) += -(0.476731294623*h_inv[1]);
 	ctx.coeff_A( 24, vi+V3i(0, 0, 0), 9 ) += -(0.471404520791*h_inv[1]);
 	ctx.coeff_A( 24, vi+V3i(0, 1, 0), 9 ) += (0.471404520791*h_inv[1]);
-	ctx.coeff_A( 24, vi+V3i(0, 0, 0), 27 ) += (0.0710669054519*h_inv[1]);
-	ctx.coeff_A( 24, vi+V3i(0, 1, 0), 27 ) += -(0.0710669054519*h_inv[1]);
-	ctx.coeff_A( 24, vi+V3i(0, 0, 0), 34 ) += -(0.301511344578*h_inv[2]);
-	ctx.coeff_A( 24, vi+V3i(0, 0, 1), 34 ) += (0.301511344578*h_inv[2]);
 	{
 		double c = 0.0;
 		c+=ctx.evalExtinction(0, 0, 0)[color_channel];
@@ -968,421 +886,8 @@ void stencil_p5_3d_sg(PNSystem::Stencil::Context& ctx)
 		c+=ctx.evalEmission(4, 4, 0, 0, 0)[color_channel];
 		ctx.coeff_b( 24 ) += c;
 	}
-	// row=25 l=5 m=-5 --------------------------
-	ctx.coeff_A( 25, vi+V3i(0, -1, 0), 24 ) += (0.476731294623*h_inv[1]);
-	ctx.coeff_A( 25, vi+V3i(0, 0, 0), 24 ) += -(0.476731294623*h_inv[1]);
-	ctx.coeff_A( 25, vi+V3i(0, 0, 0), 16 ) += (0.476731294623*h_inv[0]);
-	ctx.coeff_A( 25, vi+V3i(1, 0, 0), 16 ) += -(0.476731294623*h_inv[0]);
-	{
-		double c = 0.0;
-		c+=(0.5*ctx.evalExtinction(0, -1, 0)[color_channel]);
-		c+=(0.5*ctx.evalExtinction(0, 0, 0)[color_channel]);
-		c+=-(0.267207471894*ctx.evalPhase(5, 0, 0, -1, 0)[color_channel]*ctx.evalScattering(0, -1, 0)[color_channel]);
-		c+=-(0.267207471894*ctx.evalPhase(5, 0, 0, 0, 0)[color_channel]*ctx.evalScattering(0, -1, 0)[color_channel]);
-		c+=-(0.267207471894*ctx.evalPhase(5, 0, 0, -1, 0)[color_channel]*ctx.evalScattering(0, 0, 0)[color_channel]);
-		c+=-(0.267207471894*ctx.evalPhase(5, 0, 0, 0, 0)[color_channel]*ctx.evalScattering(0, 0, 0)[color_channel]);
-		ctx.coeff_A( 25, vi+V3i(0, 0, 0), 25 ) += c;
-	}
-	{
-		double c = 0.0;
-		c+=(0.5*ctx.evalEmission(5, -5, 0, -1, 0)[color_channel]);
-		c+=(0.5*ctx.evalEmission(5, -5, 0, 0, 0)[color_channel]);
-		ctx.coeff_b( 25 ) += c;
-	}
-	// row=26 l=5 m=-4 --------------------------
-	ctx.coeff_A( 26, vi+V3i(0, -1, 0), 23 ) += (0.426401432711*h_inv[1]);
-	ctx.coeff_A( 26, vi+V3i(0, 0, 0), 23 ) += -(0.426401432711*h_inv[1]);
-	ctx.coeff_A( 26, vi+V3i(-1, 0, 0), 17 ) += (0.426401432711*h_inv[0]);
-	ctx.coeff_A( 26, vi+V3i(0, 0, 0), 17 ) += -(0.426401432711*h_inv[0]);
-	ctx.coeff_A( 26, vi+V3i(0, 0, -1), 16 ) += -(0.301511344578*h_inv[2]);
-	ctx.coeff_A( 26, vi+V3i(0, 0, 0), 16 ) += (0.301511344578*h_inv[2]);
-	{
-		double c = 0.0;
-		c+=(0.125*ctx.evalExtinction(-1, -1, -1)[color_channel]);
-		c+=(0.125*ctx.evalExtinction(-1, -1, 0)[color_channel]);
-		c+=(0.125*ctx.evalExtinction(-1, 0, -1)[color_channel]);
-		c+=(0.125*ctx.evalExtinction(-1, 0, 0)[color_channel]);
-		c+=(0.125*ctx.evalExtinction(0, -1, -1)[color_channel]);
-		c+=(0.125*ctx.evalExtinction(0, -1, 0)[color_channel]);
-		c+=(0.125*ctx.evalExtinction(0, 0, -1)[color_channel]);
-		c+=(0.125*ctx.evalExtinction(0, 0, 0)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, -1, -1, -1)[color_channel]*ctx.evalScattering(-1, -1, -1)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, -1, -1, 0)[color_channel]*ctx.evalScattering(-1, -1, -1)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, -1, 0, -1)[color_channel]*ctx.evalScattering(-1, -1, -1)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, -1, 0, 0)[color_channel]*ctx.evalScattering(-1, -1, -1)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, 0, -1, -1)[color_channel]*ctx.evalScattering(-1, -1, -1)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, 0, -1, 0)[color_channel]*ctx.evalScattering(-1, -1, -1)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, 0, 0, -1)[color_channel]*ctx.evalScattering(-1, -1, -1)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, 0, 0, 0)[color_channel]*ctx.evalScattering(-1, -1, -1)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, -1, -1, -1)[color_channel]*ctx.evalScattering(-1, -1, 0)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, -1, -1, 0)[color_channel]*ctx.evalScattering(-1, -1, 0)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, -1, 0, -1)[color_channel]*ctx.evalScattering(-1, -1, 0)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, -1, 0, 0)[color_channel]*ctx.evalScattering(-1, -1, 0)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, 0, -1, -1)[color_channel]*ctx.evalScattering(-1, -1, 0)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, 0, -1, 0)[color_channel]*ctx.evalScattering(-1, -1, 0)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, 0, 0, -1)[color_channel]*ctx.evalScattering(-1, -1, 0)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, 0, 0, 0)[color_channel]*ctx.evalScattering(-1, -1, 0)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, -1, -1, -1)[color_channel]*ctx.evalScattering(-1, 0, -1)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, -1, -1, 0)[color_channel]*ctx.evalScattering(-1, 0, -1)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, -1, 0, -1)[color_channel]*ctx.evalScattering(-1, 0, -1)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, -1, 0, 0)[color_channel]*ctx.evalScattering(-1, 0, -1)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, 0, -1, -1)[color_channel]*ctx.evalScattering(-1, 0, -1)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, 0, -1, 0)[color_channel]*ctx.evalScattering(-1, 0, -1)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, 0, 0, -1)[color_channel]*ctx.evalScattering(-1, 0, -1)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, 0, 0, 0)[color_channel]*ctx.evalScattering(-1, 0, -1)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, -1, -1, -1)[color_channel]*ctx.evalScattering(-1, 0, 0)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, -1, -1, 0)[color_channel]*ctx.evalScattering(-1, 0, 0)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, -1, 0, -1)[color_channel]*ctx.evalScattering(-1, 0, 0)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, -1, 0, 0)[color_channel]*ctx.evalScattering(-1, 0, 0)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, 0, -1, -1)[color_channel]*ctx.evalScattering(-1, 0, 0)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, 0, -1, 0)[color_channel]*ctx.evalScattering(-1, 0, 0)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, 0, 0, -1)[color_channel]*ctx.evalScattering(-1, 0, 0)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, 0, 0, 0)[color_channel]*ctx.evalScattering(-1, 0, 0)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, -1, -1, -1)[color_channel]*ctx.evalScattering(0, -1, -1)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, -1, -1, 0)[color_channel]*ctx.evalScattering(0, -1, -1)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, -1, 0, -1)[color_channel]*ctx.evalScattering(0, -1, -1)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, -1, 0, 0)[color_channel]*ctx.evalScattering(0, -1, -1)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, 0, -1, -1)[color_channel]*ctx.evalScattering(0, -1, -1)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, 0, -1, 0)[color_channel]*ctx.evalScattering(0, -1, -1)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, 0, 0, -1)[color_channel]*ctx.evalScattering(0, -1, -1)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, 0, 0, 0)[color_channel]*ctx.evalScattering(0, -1, -1)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, -1, -1, -1)[color_channel]*ctx.evalScattering(0, -1, 0)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, -1, -1, 0)[color_channel]*ctx.evalScattering(0, -1, 0)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, -1, 0, -1)[color_channel]*ctx.evalScattering(0, -1, 0)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, -1, 0, 0)[color_channel]*ctx.evalScattering(0, -1, 0)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, 0, -1, -1)[color_channel]*ctx.evalScattering(0, -1, 0)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, 0, -1, 0)[color_channel]*ctx.evalScattering(0, -1, 0)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, 0, 0, -1)[color_channel]*ctx.evalScattering(0, -1, 0)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, 0, 0, 0)[color_channel]*ctx.evalScattering(0, -1, 0)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, -1, -1, -1)[color_channel]*ctx.evalScattering(0, 0, -1)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, -1, -1, 0)[color_channel]*ctx.evalScattering(0, 0, -1)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, -1, 0, -1)[color_channel]*ctx.evalScattering(0, 0, -1)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, -1, 0, 0)[color_channel]*ctx.evalScattering(0, 0, -1)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, 0, -1, -1)[color_channel]*ctx.evalScattering(0, 0, -1)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, 0, -1, 0)[color_channel]*ctx.evalScattering(0, 0, -1)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, 0, 0, -1)[color_channel]*ctx.evalScattering(0, 0, -1)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, 0, 0, 0)[color_channel]*ctx.evalScattering(0, 0, -1)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, -1, -1, -1)[color_channel]*ctx.evalScattering(0, 0, 0)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, -1, -1, 0)[color_channel]*ctx.evalScattering(0, 0, 0)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, -1, 0, -1)[color_channel]*ctx.evalScattering(0, 0, 0)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, -1, 0, 0)[color_channel]*ctx.evalScattering(0, 0, 0)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, 0, -1, -1)[color_channel]*ctx.evalScattering(0, 0, 0)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, 0, -1, 0)[color_channel]*ctx.evalScattering(0, 0, 0)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, 0, 0, -1)[color_channel]*ctx.evalScattering(0, 0, 0)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, 0, 0, 0)[color_channel]*ctx.evalScattering(0, 0, 0)[color_channel]);
-		ctx.coeff_A( 26, vi+V3i(0, 0, 0), 26 ) += c;
-	}
-	{
-		double c = 0.0;
-		c+=(0.125*ctx.evalEmission(5, -4, -1, -1, -1)[color_channel]);
-		c+=(0.125*ctx.evalEmission(5, -4, -1, -1, 0)[color_channel]);
-		c+=(0.125*ctx.evalEmission(5, -4, -1, 0, -1)[color_channel]);
-		c+=(0.125*ctx.evalEmission(5, -4, -1, 0, 0)[color_channel]);
-		c+=(0.125*ctx.evalEmission(5, -4, 0, -1, -1)[color_channel]);
-		c+=(0.125*ctx.evalEmission(5, -4, 0, -1, 0)[color_channel]);
-		c+=(0.125*ctx.evalEmission(5, -4, 0, 0, -1)[color_channel]);
-		c+=(0.125*ctx.evalEmission(5, -4, 0, 0, 0)[color_channel]);
-		ctx.coeff_b( 26 ) += c;
-	}
-	// row=27 l=5 m=-3 --------------------------
-	ctx.coeff_A( 27, vi+V3i(0, -1, 0), 24 ) += (0.0710669054519*h_inv[1]);
-	ctx.coeff_A( 27, vi+V3i(0, 0, 0), 24 ) += -(0.0710669054519*h_inv[1]);
-	ctx.coeff_A( 27, vi+V3i(0, -1, 0), 22 ) += (0.376050716545*h_inv[1]);
-	ctx.coeff_A( 27, vi+V3i(0, 0, 0), 22 ) += -(0.376050716545*h_inv[1]);
-	ctx.coeff_A( 27, vi+V3i(0, 0, 0), 16 ) += -(0.0710669054519*h_inv[0]);
-	ctx.coeff_A( 27, vi+V3i(1, 0, 0), 16 ) += (0.0710669054519*h_inv[0]);
-	ctx.coeff_A( 27, vi+V3i(0, 0, 0), 18 ) += (0.376050716545*h_inv[0]);
-	ctx.coeff_A( 27, vi+V3i(1, 0, 0), 18 ) += -(0.376050716545*h_inv[0]);
-	ctx.coeff_A( 27, vi+V3i(0, 0, 0), 17 ) += -(0.402015126104*h_inv[2]);
-	ctx.coeff_A( 27, vi+V3i(0, 0, 1), 17 ) += (0.402015126104*h_inv[2]);
-	{
-		double c = 0.0;
-		c+=(0.5*ctx.evalExtinction(0, -1, 0)[color_channel]);
-		c+=(0.5*ctx.evalExtinction(0, 0, 0)[color_channel]);
-		c+=-(0.267207471894*ctx.evalPhase(5, 0, 0, -1, 0)[color_channel]*ctx.evalScattering(0, -1, 0)[color_channel]);
-		c+=-(0.267207471894*ctx.evalPhase(5, 0, 0, 0, 0)[color_channel]*ctx.evalScattering(0, -1, 0)[color_channel]);
-		c+=-(0.267207471894*ctx.evalPhase(5, 0, 0, -1, 0)[color_channel]*ctx.evalScattering(0, 0, 0)[color_channel]);
-		c+=-(0.267207471894*ctx.evalPhase(5, 0, 0, 0, 0)[color_channel]*ctx.evalScattering(0, 0, 0)[color_channel]);
-		ctx.coeff_A( 27, vi+V3i(0, 0, 0), 27 ) += c;
-	}
-	{
-		double c = 0.0;
-		c+=(0.5*ctx.evalEmission(5, -3, 0, -1, 0)[color_channel]);
-		c+=(0.5*ctx.evalEmission(5, -3, 0, 0, 0)[color_channel]);
-		ctx.coeff_b( 27 ) += c;
-	}
-	// row=28 l=5 m=-2 --------------------------
-	ctx.coeff_A( 28, vi+V3i(0, -1, 0), 23 ) += (0.123091490979*h_inv[1]);
-	ctx.coeff_A( 28, vi+V3i(0, 0, 0), 23 ) += -(0.123091490979*h_inv[1]);
-	ctx.coeff_A( 28, vi+V3i(0, -1, 0), 21 ) += (0.325669473639*h_inv[1]);
-	ctx.coeff_A( 28, vi+V3i(0, 0, 0), 21 ) += -(0.325669473639*h_inv[1]);
-	ctx.coeff_A( 28, vi+V3i(-1, 0, 0), 17 ) += -(0.123091490979*h_inv[0]);
-	ctx.coeff_A( 28, vi+V3i(0, 0, 0), 17 ) += (0.123091490979*h_inv[0]);
-	ctx.coeff_A( 28, vi+V3i(-1, 0, 0), 19 ) += (0.325669473639*h_inv[0]);
-	ctx.coeff_A( 28, vi+V3i(0, 0, 0), 19 ) += -(0.325669473639*h_inv[0]);
-	ctx.coeff_A( 28, vi+V3i(0, 0, -1), 18 ) += -(0.460566186472*h_inv[2]);
-	ctx.coeff_A( 28, vi+V3i(0, 0, 0), 18 ) += (0.460566186472*h_inv[2]);
-	{
-		double c = 0.0;
-		c+=(0.125*ctx.evalExtinction(-1, -1, -1)[color_channel]);
-		c+=(0.125*ctx.evalExtinction(-1, -1, 0)[color_channel]);
-		c+=(0.125*ctx.evalExtinction(-1, 0, -1)[color_channel]);
-		c+=(0.125*ctx.evalExtinction(-1, 0, 0)[color_channel]);
-		c+=(0.125*ctx.evalExtinction(0, -1, -1)[color_channel]);
-		c+=(0.125*ctx.evalExtinction(0, -1, 0)[color_channel]);
-		c+=(0.125*ctx.evalExtinction(0, 0, -1)[color_channel]);
-		c+=(0.125*ctx.evalExtinction(0, 0, 0)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, -1, -1, -1)[color_channel]*ctx.evalScattering(-1, -1, -1)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, -1, -1, 0)[color_channel]*ctx.evalScattering(-1, -1, -1)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, -1, 0, -1)[color_channel]*ctx.evalScattering(-1, -1, -1)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, -1, 0, 0)[color_channel]*ctx.evalScattering(-1, -1, -1)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, 0, -1, -1)[color_channel]*ctx.evalScattering(-1, -1, -1)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, 0, -1, 0)[color_channel]*ctx.evalScattering(-1, -1, -1)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, 0, 0, -1)[color_channel]*ctx.evalScattering(-1, -1, -1)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, 0, 0, 0)[color_channel]*ctx.evalScattering(-1, -1, -1)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, -1, -1, -1)[color_channel]*ctx.evalScattering(-1, -1, 0)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, -1, -1, 0)[color_channel]*ctx.evalScattering(-1, -1, 0)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, -1, 0, -1)[color_channel]*ctx.evalScattering(-1, -1, 0)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, -1, 0, 0)[color_channel]*ctx.evalScattering(-1, -1, 0)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, 0, -1, -1)[color_channel]*ctx.evalScattering(-1, -1, 0)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, 0, -1, 0)[color_channel]*ctx.evalScattering(-1, -1, 0)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, 0, 0, -1)[color_channel]*ctx.evalScattering(-1, -1, 0)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, 0, 0, 0)[color_channel]*ctx.evalScattering(-1, -1, 0)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, -1, -1, -1)[color_channel]*ctx.evalScattering(-1, 0, -1)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, -1, -1, 0)[color_channel]*ctx.evalScattering(-1, 0, -1)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, -1, 0, -1)[color_channel]*ctx.evalScattering(-1, 0, -1)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, -1, 0, 0)[color_channel]*ctx.evalScattering(-1, 0, -1)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, 0, -1, -1)[color_channel]*ctx.evalScattering(-1, 0, -1)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, 0, -1, 0)[color_channel]*ctx.evalScattering(-1, 0, -1)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, 0, 0, -1)[color_channel]*ctx.evalScattering(-1, 0, -1)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, 0, 0, 0)[color_channel]*ctx.evalScattering(-1, 0, -1)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, -1, -1, -1)[color_channel]*ctx.evalScattering(-1, 0, 0)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, -1, -1, 0)[color_channel]*ctx.evalScattering(-1, 0, 0)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, -1, 0, -1)[color_channel]*ctx.evalScattering(-1, 0, 0)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, -1, 0, 0)[color_channel]*ctx.evalScattering(-1, 0, 0)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, 0, -1, -1)[color_channel]*ctx.evalScattering(-1, 0, 0)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, 0, -1, 0)[color_channel]*ctx.evalScattering(-1, 0, 0)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, 0, 0, -1)[color_channel]*ctx.evalScattering(-1, 0, 0)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, 0, 0, 0)[color_channel]*ctx.evalScattering(-1, 0, 0)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, -1, -1, -1)[color_channel]*ctx.evalScattering(0, -1, -1)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, -1, -1, 0)[color_channel]*ctx.evalScattering(0, -1, -1)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, -1, 0, -1)[color_channel]*ctx.evalScattering(0, -1, -1)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, -1, 0, 0)[color_channel]*ctx.evalScattering(0, -1, -1)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, 0, -1, -1)[color_channel]*ctx.evalScattering(0, -1, -1)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, 0, -1, 0)[color_channel]*ctx.evalScattering(0, -1, -1)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, 0, 0, -1)[color_channel]*ctx.evalScattering(0, -1, -1)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, 0, 0, 0)[color_channel]*ctx.evalScattering(0, -1, -1)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, -1, -1, -1)[color_channel]*ctx.evalScattering(0, -1, 0)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, -1, -1, 0)[color_channel]*ctx.evalScattering(0, -1, 0)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, -1, 0, -1)[color_channel]*ctx.evalScattering(0, -1, 0)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, -1, 0, 0)[color_channel]*ctx.evalScattering(0, -1, 0)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, 0, -1, -1)[color_channel]*ctx.evalScattering(0, -1, 0)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, 0, -1, 0)[color_channel]*ctx.evalScattering(0, -1, 0)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, 0, 0, -1)[color_channel]*ctx.evalScattering(0, -1, 0)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, 0, 0, 0)[color_channel]*ctx.evalScattering(0, -1, 0)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, -1, -1, -1)[color_channel]*ctx.evalScattering(0, 0, -1)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, -1, -1, 0)[color_channel]*ctx.evalScattering(0, 0, -1)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, -1, 0, -1)[color_channel]*ctx.evalScattering(0, 0, -1)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, -1, 0, 0)[color_channel]*ctx.evalScattering(0, 0, -1)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, 0, -1, -1)[color_channel]*ctx.evalScattering(0, 0, -1)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, 0, -1, 0)[color_channel]*ctx.evalScattering(0, 0, -1)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, 0, 0, -1)[color_channel]*ctx.evalScattering(0, 0, -1)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, 0, 0, 0)[color_channel]*ctx.evalScattering(0, 0, -1)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, -1, -1, -1)[color_channel]*ctx.evalScattering(0, 0, 0)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, -1, -1, 0)[color_channel]*ctx.evalScattering(0, 0, 0)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, -1, 0, -1)[color_channel]*ctx.evalScattering(0, 0, 0)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, -1, 0, 0)[color_channel]*ctx.evalScattering(0, 0, 0)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, 0, -1, -1)[color_channel]*ctx.evalScattering(0, 0, 0)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, 0, -1, 0)[color_channel]*ctx.evalScattering(0, 0, 0)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, 0, 0, -1)[color_channel]*ctx.evalScattering(0, 0, 0)[color_channel]);
-		c+=-(0.0167004669934*ctx.evalPhase(5, 0, 0, 0, 0)[color_channel]*ctx.evalScattering(0, 0, 0)[color_channel]);
-		ctx.coeff_A( 28, vi+V3i(0, 0, 0), 28 ) += c;
-	}
-	{
-		double c = 0.0;
-		c+=(0.125*ctx.evalEmission(5, -2, -1, -1, -1)[color_channel]);
-		c+=(0.125*ctx.evalEmission(5, -2, -1, -1, 0)[color_channel]);
-		c+=(0.125*ctx.evalEmission(5, -2, -1, 0, -1)[color_channel]);
-		c+=(0.125*ctx.evalEmission(5, -2, -1, 0, 0)[color_channel]);
-		c+=(0.125*ctx.evalEmission(5, -2, 0, -1, -1)[color_channel]);
-		c+=(0.125*ctx.evalEmission(5, -2, 0, -1, 0)[color_channel]);
-		c+=(0.125*ctx.evalEmission(5, -2, 0, 0, -1)[color_channel]);
-		c+=(0.125*ctx.evalEmission(5, -2, 0, 0, 0)[color_channel]);
-		ctx.coeff_b( 28 ) += c;
-	}
-	// row=29 l=5 m=-1 --------------------------
-	ctx.coeff_A( 29, vi+V3i(0, -1, 0), 22 ) += (0.174077655956*h_inv[1]);
-	ctx.coeff_A( 29, vi+V3i(0, 0, 0), 22 ) += -(0.174077655956*h_inv[1]);
-	ctx.coeff_A( 29, vi+V3i(0, -1, 0), 20 ) += (0.389249472081*h_inv[1]);
-	ctx.coeff_A( 29, vi+V3i(0, 0, 0), 20 ) += -(0.389249472081*h_inv[1]);
-	ctx.coeff_A( 29, vi+V3i(0, 0, 0), 18 ) += -(0.174077655956*h_inv[0]);
-	ctx.coeff_A( 29, vi+V3i(1, 0, 0), 18 ) += (0.174077655956*h_inv[0]);
-	ctx.coeff_A( 29, vi+V3i(0, 0, 0), 19 ) += -(0.492365963917*h_inv[2]);
-	ctx.coeff_A( 29, vi+V3i(0, 0, 1), 19 ) += (0.492365963917*h_inv[2]);
-	{
-		double c = 0.0;
-		c+=(0.5*ctx.evalExtinction(0, -1, 0)[color_channel]);
-		c+=(0.5*ctx.evalExtinction(0, 0, 0)[color_channel]);
-		c+=-(0.267207471894*ctx.evalPhase(5, 0, 0, -1, 0)[color_channel]*ctx.evalScattering(0, -1, 0)[color_channel]);
-		c+=-(0.267207471894*ctx.evalPhase(5, 0, 0, 0, 0)[color_channel]*ctx.evalScattering(0, -1, 0)[color_channel]);
-		c+=-(0.267207471894*ctx.evalPhase(5, 0, 0, -1, 0)[color_channel]*ctx.evalScattering(0, 0, 0)[color_channel]);
-		c+=-(0.267207471894*ctx.evalPhase(5, 0, 0, 0, 0)[color_channel]*ctx.evalScattering(0, 0, 0)[color_channel]);
-		ctx.coeff_A( 29, vi+V3i(0, 0, 0), 29 ) += c;
-	}
-	{
-		double c = 0.0;
-		c+=(0.5*ctx.evalEmission(5, -1, 0, -1, 0)[color_channel]);
-		c+=(0.5*ctx.evalEmission(5, -1, 0, 0, 0)[color_channel]);
-		ctx.coeff_b( 29 ) += c;
-	}
-	// row=30 l=5 m=0 --------------------------
-	ctx.coeff_A( 30, vi+V3i(0, 0, 0), 21 ) += -(0.317820863082*h_inv[0]);
-	ctx.coeff_A( 30, vi+V3i(1, 0, 0), 21 ) += (0.317820863082*h_inv[0]);
-	ctx.coeff_A( 30, vi+V3i(0, 0, 0), 19 ) += -(0.317820863082*h_inv[1]);
-	ctx.coeff_A( 30, vi+V3i(0, 1, 0), 19 ) += (0.317820863082*h_inv[1]);
-	ctx.coeff_A( 30, vi+V3i(0, 0, -1), 20 ) += -(0.50251890763*h_inv[2]);
-	ctx.coeff_A( 30, vi+V3i(0, 0, 0), 20 ) += (0.50251890763*h_inv[2]);
-	{
-		double c = 0.0;
-		c+=(0.5*ctx.evalExtinction(0, 0, -1)[color_channel]);
-		c+=(0.5*ctx.evalExtinction(0, 0, 0)[color_channel]);
-		c+=-(0.267207471894*ctx.evalPhase(5, 0, 0, 0, -1)[color_channel]*ctx.evalScattering(0, 0, -1)[color_channel]);
-		c+=-(0.267207471894*ctx.evalPhase(5, 0, 0, 0, 0)[color_channel]*ctx.evalScattering(0, 0, -1)[color_channel]);
-		c+=-(0.267207471894*ctx.evalPhase(5, 0, 0, 0, -1)[color_channel]*ctx.evalScattering(0, 0, 0)[color_channel]);
-		c+=-(0.267207471894*ctx.evalPhase(5, 0, 0, 0, 0)[color_channel]*ctx.evalScattering(0, 0, 0)[color_channel]);
-		ctx.coeff_A( 30, vi+V3i(0, 0, 0), 30 ) += c;
-	}
-	{
-		double c = 0.0;
-		c+=(0.5*ctx.evalEmission(5, 0, 0, 0, -1)[color_channel]);
-		c+=(0.5*ctx.evalEmission(5, 0, 0, 0, 0)[color_channel]);
-		ctx.coeff_b( 30 ) += c;
-	}
-	// row=31 l=5 m=1 --------------------------
-	ctx.coeff_A( 31, vi+V3i(-1, 0, 0), 22 ) += -(0.174077655956*h_inv[0]);
-	ctx.coeff_A( 31, vi+V3i(0, 0, 0), 22 ) += (0.174077655956*h_inv[0]);
-	ctx.coeff_A( 31, vi+V3i(-1, 0, 0), 20 ) += (0.389249472081*h_inv[0]);
-	ctx.coeff_A( 31, vi+V3i(0, 0, 0), 20 ) += -(0.389249472081*h_inv[0]);
-	ctx.coeff_A( 31, vi+V3i(0, 0, 0), 18 ) += -(0.174077655956*h_inv[1]);
-	ctx.coeff_A( 31, vi+V3i(0, 1, 0), 18 ) += (0.174077655956*h_inv[1]);
-	ctx.coeff_A( 31, vi+V3i(0, 0, 0), 21 ) += -(0.492365963917*h_inv[2]);
-	ctx.coeff_A( 31, vi+V3i(0, 0, 1), 21 ) += (0.492365963917*h_inv[2]);
-	{
-		double c = 0.0;
-		c+=(0.5*ctx.evalExtinction(-1, 0, 0)[color_channel]);
-		c+=(0.5*ctx.evalExtinction(0, 0, 0)[color_channel]);
-		c+=-(0.267207471894*ctx.evalPhase(5, 0, -1, 0, 0)[color_channel]*ctx.evalScattering(-1, 0, 0)[color_channel]);
-		c+=-(0.267207471894*ctx.evalPhase(5, 0, 0, 0, 0)[color_channel]*ctx.evalScattering(-1, 0, 0)[color_channel]);
-		c+=-(0.267207471894*ctx.evalPhase(5, 0, -1, 0, 0)[color_channel]*ctx.evalScattering(0, 0, 0)[color_channel]);
-		c+=-(0.267207471894*ctx.evalPhase(5, 0, 0, 0, 0)[color_channel]*ctx.evalScattering(0, 0, 0)[color_channel]);
-		ctx.coeff_A( 31, vi+V3i(0, 0, 0), 31 ) += c;
-	}
-	{
-		double c = 0.0;
-		c+=(0.5*ctx.evalEmission(5, 1, -1, 0, 0)[color_channel]);
-		c+=(0.5*ctx.evalEmission(5, 1, 0, 0, 0)[color_channel]);
-		ctx.coeff_b( 31 ) += c;
-	}
-	// row=32 l=5 m=2 --------------------------
-	ctx.coeff_A( 32, vi+V3i(0, 0, 0), 23 ) += -(0.123091490979*h_inv[0]);
-	ctx.coeff_A( 32, vi+V3i(1, 0, 0), 23 ) += (0.123091490979*h_inv[0]);
-	ctx.coeff_A( 32, vi+V3i(0, 0, 0), 21 ) += (0.325669473639*h_inv[0]);
-	ctx.coeff_A( 32, vi+V3i(1, 0, 0), 21 ) += -(0.325669473639*h_inv[0]);
-	ctx.coeff_A( 32, vi+V3i(0, 0, 0), 17 ) += -(0.123091490979*h_inv[1]);
-	ctx.coeff_A( 32, vi+V3i(0, 1, 0), 17 ) += (0.123091490979*h_inv[1]);
-	ctx.coeff_A( 32, vi+V3i(0, 0, 0), 19 ) += -(0.325669473639*h_inv[1]);
-	ctx.coeff_A( 32, vi+V3i(0, 1, 0), 19 ) += (0.325669473639*h_inv[1]);
-	ctx.coeff_A( 32, vi+V3i(0, 0, -1), 22 ) += -(0.460566186472*h_inv[2]);
-	ctx.coeff_A( 32, vi+V3i(0, 0, 0), 22 ) += (0.460566186472*h_inv[2]);
-	{
-		double c = 0.0;
-		c+=(0.5*ctx.evalExtinction(0, 0, -1)[color_channel]);
-		c+=(0.5*ctx.evalExtinction(0, 0, 0)[color_channel]);
-		c+=-(0.267207471894*ctx.evalPhase(5, 0, 0, 0, -1)[color_channel]*ctx.evalScattering(0, 0, -1)[color_channel]);
-		c+=-(0.267207471894*ctx.evalPhase(5, 0, 0, 0, 0)[color_channel]*ctx.evalScattering(0, 0, -1)[color_channel]);
-		c+=-(0.267207471894*ctx.evalPhase(5, 0, 0, 0, -1)[color_channel]*ctx.evalScattering(0, 0, 0)[color_channel]);
-		c+=-(0.267207471894*ctx.evalPhase(5, 0, 0, 0, 0)[color_channel]*ctx.evalScattering(0, 0, 0)[color_channel]);
-		ctx.coeff_A( 32, vi+V3i(0, 0, 0), 32 ) += c;
-	}
-	{
-		double c = 0.0;
-		c+=(0.5*ctx.evalEmission(5, 2, 0, 0, -1)[color_channel]);
-		c+=(0.5*ctx.evalEmission(5, 2, 0, 0, 0)[color_channel]);
-		ctx.coeff_b( 32 ) += c;
-	}
-	// row=33 l=5 m=3 --------------------------
-	ctx.coeff_A( 33, vi+V3i(-1, 0, 0), 24 ) += -(0.0710669054519*h_inv[0]);
-	ctx.coeff_A( 33, vi+V3i(0, 0, 0), 24 ) += (0.0710669054519*h_inv[0]);
-	ctx.coeff_A( 33, vi+V3i(-1, 0, 0), 22 ) += (0.376050716545*h_inv[0]);
-	ctx.coeff_A( 33, vi+V3i(0, 0, 0), 22 ) += -(0.376050716545*h_inv[0]);
-	ctx.coeff_A( 33, vi+V3i(0, 0, 0), 16 ) += -(0.0710669054519*h_inv[1]);
-	ctx.coeff_A( 33, vi+V3i(0, 1, 0), 16 ) += (0.0710669054519*h_inv[1]);
-	ctx.coeff_A( 33, vi+V3i(0, 0, 0), 18 ) += -(0.376050716545*h_inv[1]);
-	ctx.coeff_A( 33, vi+V3i(0, 1, 0), 18 ) += (0.376050716545*h_inv[1]);
-	ctx.coeff_A( 33, vi+V3i(0, 0, 0), 23 ) += -(0.402015126104*h_inv[2]);
-	ctx.coeff_A( 33, vi+V3i(0, 0, 1), 23 ) += (0.402015126104*h_inv[2]);
-	{
-		double c = 0.0;
-		c+=(0.5*ctx.evalExtinction(-1, 0, 0)[color_channel]);
-		c+=(0.5*ctx.evalExtinction(0, 0, 0)[color_channel]);
-		c+=-(0.267207471894*ctx.evalPhase(5, 0, -1, 0, 0)[color_channel]*ctx.evalScattering(-1, 0, 0)[color_channel]);
-		c+=-(0.267207471894*ctx.evalPhase(5, 0, 0, 0, 0)[color_channel]*ctx.evalScattering(-1, 0, 0)[color_channel]);
-		c+=-(0.267207471894*ctx.evalPhase(5, 0, -1, 0, 0)[color_channel]*ctx.evalScattering(0, 0, 0)[color_channel]);
-		c+=-(0.267207471894*ctx.evalPhase(5, 0, 0, 0, 0)[color_channel]*ctx.evalScattering(0, 0, 0)[color_channel]);
-		ctx.coeff_A( 33, vi+V3i(0, 0, 0), 33 ) += c;
-	}
-	{
-		double c = 0.0;
-		c+=(0.5*ctx.evalEmission(5, 3, -1, 0, 0)[color_channel]);
-		c+=(0.5*ctx.evalEmission(5, 3, 0, 0, 0)[color_channel]);
-		ctx.coeff_b( 33 ) += c;
-	}
-	// row=34 l=5 m=4 --------------------------
-	ctx.coeff_A( 34, vi+V3i(0, 0, 0), 23 ) += (0.426401432711*h_inv[0]);
-	ctx.coeff_A( 34, vi+V3i(1, 0, 0), 23 ) += -(0.426401432711*h_inv[0]);
-	ctx.coeff_A( 34, vi+V3i(0, 0, 0), 17 ) += -(0.426401432711*h_inv[1]);
-	ctx.coeff_A( 34, vi+V3i(0, 1, 0), 17 ) += (0.426401432711*h_inv[1]);
-	ctx.coeff_A( 34, vi+V3i(0, 0, -1), 24 ) += -(0.301511344578*h_inv[2]);
-	ctx.coeff_A( 34, vi+V3i(0, 0, 0), 24 ) += (0.301511344578*h_inv[2]);
-	{
-		double c = 0.0;
-		c+=(0.5*ctx.evalExtinction(0, 0, -1)[color_channel]);
-		c+=(0.5*ctx.evalExtinction(0, 0, 0)[color_channel]);
-		c+=-(0.267207471894*ctx.evalPhase(5, 0, 0, 0, -1)[color_channel]*ctx.evalScattering(0, 0, -1)[color_channel]);
-		c+=-(0.267207471894*ctx.evalPhase(5, 0, 0, 0, 0)[color_channel]*ctx.evalScattering(0, 0, -1)[color_channel]);
-		c+=-(0.267207471894*ctx.evalPhase(5, 0, 0, 0, -1)[color_channel]*ctx.evalScattering(0, 0, 0)[color_channel]);
-		c+=-(0.267207471894*ctx.evalPhase(5, 0, 0, 0, 0)[color_channel]*ctx.evalScattering(0, 0, 0)[color_channel]);
-		ctx.coeff_A( 34, vi+V3i(0, 0, 0), 34 ) += c;
-	}
-	{
-		double c = 0.0;
-		c+=(0.5*ctx.evalEmission(5, 4, 0, 0, -1)[color_channel]);
-		c+=(0.5*ctx.evalEmission(5, 4, 0, 0, 0)[color_channel]);
-		ctx.coeff_b( 34 ) += c;
-	}
-	// row=35 l=5 m=5 --------------------------
-	ctx.coeff_A( 35, vi+V3i(-1, 0, 0), 24 ) += (0.476731294623*h_inv[0]);
-	ctx.coeff_A( 35, vi+V3i(0, 0, 0), 24 ) += -(0.476731294623*h_inv[0]);
-	ctx.coeff_A( 35, vi+V3i(0, 0, 0), 16 ) += -(0.476731294623*h_inv[1]);
-	ctx.coeff_A( 35, vi+V3i(0, 1, 0), 16 ) += (0.476731294623*h_inv[1]);
-	{
-		double c = 0.0;
-		c+=(0.5*ctx.evalExtinction(-1, 0, 0)[color_channel]);
-		c+=(0.5*ctx.evalExtinction(0, 0, 0)[color_channel]);
-		c+=-(0.267207471894*ctx.evalPhase(5, 0, -1, 0, 0)[color_channel]*ctx.evalScattering(-1, 0, 0)[color_channel]);
-		c+=-(0.267207471894*ctx.evalPhase(5, 0, 0, 0, 0)[color_channel]*ctx.evalScattering(-1, 0, 0)[color_channel]);
-		c+=-(0.267207471894*ctx.evalPhase(5, 0, -1, 0, 0)[color_channel]*ctx.evalScattering(0, 0, 0)[color_channel]);
-		c+=-(0.267207471894*ctx.evalPhase(5, 0, 0, 0, 0)[color_channel]*ctx.evalScattering(0, 0, 0)[color_channel]);
-		ctx.coeff_A( 35, vi+V3i(0, 0, 0), 35 ) += c;
-	}
-	{
-		double c = 0.0;
-		c+=(0.5*ctx.evalEmission(5, 5, -1, 0, 0)[color_channel]);
-		c+=(0.5*ctx.evalEmission(5, 5, 0, 0, 0)[color_channel]);
-		ctx.coeff_b( 35 ) += c;
-	}
 }
-V3i stencil_p5_3d_sg_get_offset(int coeff)
+V3i stencil_p4_3d_sg_get_offset(int coeff)
 {
 	switch(coeff)
 	{
@@ -1411,18 +916,7 @@ V3i stencil_p5_3d_sg_get_offset(int coeff)
 		case 22:return V3i(1, 1, 1);break;
 		case 23:return V3i(0, 1, 0);break;
 		case 24:return V3i(1, 1, 1);break;
-		case 25:return V3i(1, 0, 1);break;
-		case 26:return V3i(0, 0, 0);break;
-		case 27:return V3i(1, 0, 1);break;
-		case 28:return V3i(0, 0, 0);break;
-		case 29:return V3i(1, 0, 1);break;
-		case 30:return V3i(1, 1, 0);break;
-		case 31:return V3i(0, 1, 1);break;
-		case 32:return V3i(1, 1, 0);break;
-		case 33:return V3i(0, 1, 1);break;
-		case 34:return V3i(1, 1, 0);break;
-		case 35:return V3i(0, 1, 1);break;
 		default:throw std::runtime_error("unexpected coefficient index");break;
 	};
 }
-REGISTER_STENCIL(stencil_p5_3d_sg, 5, 36, 1)
+REGISTER_STENCIL(stencil_p4_3d_sg, 4, 25, 1)

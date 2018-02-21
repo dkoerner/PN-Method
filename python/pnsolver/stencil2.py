@@ -1044,12 +1044,14 @@ def generate_stencil_code( pne, pni, stencil_name ):
 			coeff_expr = coeffs.getExpr()
 			if coeff_expr.__class__ == meh.Addition:
 				cpp += "\t{\n"
-				cpp += "\t\tstd::complex<double> c(0.0, 0.0);\n"
+				#cpp += "\t\tstd::complex<double> c(0.0, 0.0);\n"
+				cpp += "\t\tdouble c = 0.0;\n"
 				ops = coeff_expr.getOperands()
 				for op in ops:
 					code = generate_cpp_recursive(op);
 					cpp += "\t\tc+={};\n".format(code)
-				cpp += "\t\tctx.coeff_A( {}, vi+V3i({}, {}, {}), {} ) += c.real();\n".format(coeff_index, i, j, k, coeff_index_j)
+				#cpp += "\t\tctx.coeff_A( {}, vi+V3i({}, {}, {}), {} ) += c.real();\n".format(coeff_index, i, j, k, coeff_index_j)
+				cpp += "\t\tctx.coeff_A( {}, vi+V3i({}, {}, {}), {} ) += c;\n".format(coeff_index, i, j, k, coeff_index_j)
 				cpp += "\t}\n"
 			else:
 				code = generate_cpp_recursive(coeff_expr);
@@ -1060,7 +1062,8 @@ def generate_stencil_code( pne, pni, stencil_name ):
 		# RHS
 		if not rhs_coeffs is None:
 			cpp += "\t{\n"
-			cpp += "\t\tstd::complex<double> c(0.0, 0.0);\n"
+			#cpp += "\t\tstd::complex<double> c(0.0, 0.0);\n"
+			cpp += "\t\tdouble c = 0.0;\n"
 			if rhs_coeffs.getExpr().__class__ == meh.Addition:
 				ops = rhs_coeffs.getExpr().getOperands()
 				for op in ops:
@@ -1069,7 +1072,8 @@ def generate_stencil_code( pne, pni, stencil_name ):
 			else:
 				code = generate_cpp_recursive(rhs_coeffs.getExpr());
 				cpp += "\t\tc+={};\n".format(code)
-			cpp += "\t\tctx.coeff_b( {} ) += c.real();\n".format(coeff_index)
+			#cpp += "\t\tctx.coeff_b( {} ) += c.real();\n".format(coeff_index)
+			cpp += "\t\tctx.coeff_b( {} ) += c;\n".format(coeff_index)
 			cpp += "\t}\n"
 		#'''
 
@@ -1102,9 +1106,9 @@ def generate_stencil_code( pne, pni, stencil_name ):
 
 if __name__ == "__main__":
 
-
+	'''
 	staggered = True
-	order = 1
+	order = 5
 	#pni = PNInfo3D(order, staggered)
 	pni = PNInfo2D(order, staggered)
 
@@ -1132,15 +1136,80 @@ if __name__ == "__main__":
 		else:
 			pn_equations.append( meh.Addition(gg) )
 
-	staggered_id = {True:"sg", False:"cg"}
-	stencil_name = "stencil2_{}_p{}_{}".format("fopn", order, staggered_id[staggered] )
-	cpp = generate_stencil_code( pn_equations, pni, stencil_name )
+	#staggered_id = {True:"sg", False:"cg"}
+	#stencil_name = "stencil2_{}_p{}_{}".format("fopn", order, staggered_id[staggered] )
+	#cpp = generate_stencil_code( pn_equations, pni, stencil_name )
 	
 	#print(cpp)
 
-	path = "c:/projects/epfl/epfl17/cpp/pnsolver/src"
-	filename = "{}/{}.cpp".format(path, stencil_name)
-	file = open(filename, "w")
-	file.write(cpp)
-	file.close()
+	#path = "c:/projects/epfl/epfl17/cpp/pnsolver/src"
+	#filename = "{}/{}.cpp".format(path, stencil_name)
+	#file = open(filename, "w")
+	#file.write(cpp)
+	#file.close()
+	'''
 
+	#dimension = ["2d", "3d"]
+	dimension = ["3d"]
+	#order = [1]
+	#order = [2]
+	#order = [3,5]
+	order = [1,2,3,4,5]
+	#staggered = [False, True]
+	staggered = [True, False]
+
+	staggered_id = {True:"sg", False:"cg"}
+	test = itertools.product(order, dimension, staggered)
+	for c in test:
+		order = c[0]
+		dim = c[1]
+		is_staggered = c[2]
+
+		if dim == "2d":
+			pni = PNInfo2D(order, is_staggered)
+		elif dim == "3d":
+			pni = PNInfo3D(order, is_staggered)
+		else:
+			raise ValueError("invalid dimension value")
+
+		## test
+		#for t in range(9):
+		#	a,b = pni.getLMIndex(t)
+		#	print("index={} l={} m={}".format(t, a, b))
+
+		# generate the mathematical expressions representing the PN equations ---
+		terms = []
+		# each function returns a list of expression representing the PN-equations up to given order
+		terms.append(rte_terms.fopn_real.transport_term(order))
+		terms.append(rte_terms.fopn_real.collision_term(order))
+		terms.append(rte_terms.fopn_real.scattering_term(order))
+		terms.append(rte_terms.fopn_real.source_term(order))
+
+		pn_equations = []
+		# we currently have a set pf pn-equations per RTE term
+		# here we collapse the different equations for each term
+		# into a single one for each SH coefficient index
+		for i in range(pni.getNumCoeffs()):
+			# in case of 2d, the coefficient indices are different
+			l,m = pni.getLMIndex(i)
+			index3d = l*(l+1)+m 
+
+			gg = []
+			for term in terms:
+				gg.append( term[index3d] )
+			if len(gg) == 1:
+				pn_equations.append( gg[0] )
+			else:
+				pn_equations.append( meh.Addition(gg) )
+
+		# generate cpp stencil code ----
+		stencil_name = "stencil_p{}_{}_{}".format(order, dim, staggered_id[is_staggered] )
+		cpp = generate_stencil_code( pn_equations, pni, stencil_name )
+
+		# write cpp code to file ----
+		path = "c:/projects/epfl/epfl17/cpp/pnsolver/src"
+		filename = "{}/{}.cpp".format(path, stencil_name)
+		print("writing stencil code to {}".format(filename))
+		file = open(filename, "w")
+		file.write(cpp)
+		file.close()

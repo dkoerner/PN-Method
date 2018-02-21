@@ -45,17 +45,13 @@ struct IsotropicPhase : public PhaseFunction
 	}
 };
 
+/*
 struct HGPhase : public PhaseFunction
 {
 	typedef std::shared_ptr<HGPhase> Ptr;
 
 	virtual double sample( const V3d& wi, V3d& wo, double& pdf, RNGd& rng ) const override
 	{
-		/*
-		wo = sampleSphere<double>(rng);
-		pdf = INV_FOURPI;
-		return 1.0; // eval/pdf = 1.0
-		*/
 		return 0.0;
 	}
 
@@ -63,6 +59,67 @@ struct HGPhase : public PhaseFunction
 	{
 		double temp = 1.0 + m_g*m_g + 2.0 * m_g * dot(wi, wo);
 		return INV_FOURPI * (1 - m_g*m_g) / (temp * std::sqrt(temp));
+	}
+
+
+private:
+	double m_g;
+};
+*/
+
+struct HGPhase : public PhaseFunction
+{
+	typedef std::shared_ptr<HGPhase> Ptr;
+
+	HGPhase( double g ):m_g(g)
+	{
+
+	}
+
+	virtual double sample( const V3d& wi, V3d& wo, double& pdf, RNGd& rng ) const override
+	{
+		P2d sample(rng.next1D(), rng.next1D());
+
+		double cosTheta;
+		if (std::abs(m_g) < Epsilon)
+		{
+			cosTheta = 1 - 2*sample.x();
+		} else
+		{
+			double sqrTerm = (1 - m_g * m_g) / (1 - m_g + 2 * m_g * sample.x());
+			cosTheta = (1 + m_g * m_g - sqrTerm * sqrTerm) / (2 * m_g);
+		}
+
+		double sinTheta = safe_sqrt(1.0f-cosTheta*cosTheta),sinPhi, cosPhi;
+
+		sincos(2.0*M_PI*sample.y(), &sinPhi, &cosPhi);
+
+		wo = Framed(-wi).toWorld(V3d(
+			sinTheta * cosPhi,
+			sinTheta * sinPhi,
+			cosTheta
+		));
+
+		pdf = eval(wi, wo);
+
+		return 1.0f;
+	}
+
+	double eval( const V3d& wi, const V3d& wo )const
+	{
+		double temp = 1.0 + m_g*m_g + 2.0 * m_g * dot(wi, wo);
+		return INV_FOURPI * (1 - m_g*m_g) / (temp * std::sqrt(temp));
+	}
+
+	double shCoeff( int l, int m )
+	{
+		if(m==0)
+		{
+			return INV_FOURPI*
+				   (2*l+1)*std::sqrt(4.0*M_PI/(2.0*l+1))*
+				   std::pow(m_g, double(l));
+		}
+		return 0.0;
 	}
 
 
@@ -101,6 +158,7 @@ struct Volume
 
 	void setExtinctionAlbedo( Field3d::Ptr extinction, Field3d::Ptr albedo );
 	//void setAbsorptionScattering( Field3d::Ptr absorption, Field3d::Ptr scattering );
+	void setPhaseFunction( PhaseFunction::Ptr phase );
 
 	V3d evalExtinction( const P3d& pWS, bool debug = false )const;
 	V3d evalAlbedo( const P3d& pWS, bool debug = false )const;

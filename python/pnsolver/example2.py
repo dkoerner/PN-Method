@@ -48,10 +48,11 @@ def solve( stencil_name, problem, filename, do_neumannBC = False ):
 
 	#sys.build()
 	#A = sys.get_A()
+	#b = sys.get_b()
 	##print(A.shape)
-	#mat_filename = filename+".t0_2.mat"
+	#mat_filename = filename+".mat"
 	#print(mat_filename)
-	#scipy.io.savemat(mat_filename, {"A2":A})
+	#scipy.io.savemat(mat_filename, {"A":A, "b":b, "xref":x})
 	#return
 
 
@@ -78,11 +79,12 @@ def solve( stencil_name, problem, filename, do_neumannBC = False ):
 	#x = x.reshape((x.shape[0], 1))
 
 
-	tol = 1.0e-10
+	#tol = 1.0e-10
 	#tol = 1.0e-5
 	#tol = 1.7
-	#tol = 4.0
+	#tol = 4.0 # nebulae p5
 	#tol = 1.0
+	tol = 0.16 # cloud p5
 
 	#numLevels = 7
 	#x, convergence, timestamps = pnsolver.solve_multigrid( sys, numLevels )
@@ -116,23 +118,32 @@ def solve( stencil_name, problem, filename, do_neumannBC = False ):
 	#data["convergence_cg"] = convergence
 	#data["timestamps_cg"] = timestamps
 
-	# instead of solving...just store matrices...
+	## instead of solving...just store matrices...
 	#sys.build()
 	#data = {}
 	#data["A"] = sys.get_A()
 	#data["b"] = sys.get_b()
-	#scipy.io.savemat("{}.mat".format(filename), data)
+	#mat_filename = "{}.mat".format(filename)
+	#scipy.io.savemat(mat_filename, data)
+	#print("save {}".format(mat_filename))
 	#return
 
 	# solve ----------------
+	solver = None
+	#solver = "gs"
+	#solver = "cg"
 	#solver = "ls_cg"
-	solver = "solve_ls_lscg"
+	solver = "ls_lscg"
 
-	if solver == "ls_cg":
+	if solver == "gs":
+		x, convergence, timestamps = pnsolver.solve_gs( sys, tol, 1000)
+	elif solver == "cg":
+		x, convergence, timestamps = pnsolver.solve_cg( sys, tol)
+	elif solver == "ls_cg":
 		x, convergence, timestamps = pnsolver.solve_ls_cg( sys, tol)
 	elif solver == "mg":
 		x, convergence, timestamps = pnsolver.solve_mg( sys, tol, 100)
-	elif solver == "solve_ls_lscg":
+	elif solver == "ls_lscg":
 		x, convergence, timestamps = pnsolver.solve_ls_lscg( sys, tol)
 
 
@@ -153,22 +164,53 @@ def solve( stencil_name, problem, filename, do_neumannBC = False ):
 	#data["timestamps_cg"] = timestamps
 
 
-	#pnsolver.save_solution2(filename, sys, x)
+	pnsolver.save_solution2(filename, sys, x)
+
+
 
 	#'''
 	# visualize 2d solution
-	gg = pnsolver.getCoefficientArray(sys, x)
-	test = gg[:,:,0,0] # 2d
+	#gg = pnsolver.getCoefficientArray(sys, x)
+	#test = gg[:,:,0,0] # 2d
 	#test = gg[:,:,20,0] # 3d
 
-	img = np.clip( test, 1.0e-8, np.max(test) )
+	# compare solution with starmap
+	#test = scipy.io.loadmat( "c:/projects/epfl/epfl17/python/pnsolver/results/starmap/checkerboard_p4_nbc.mat" )["U"]
+
+	'''
+	print( np.max(test) )
+	#max_threshold = np.max(test)
+	#max_threshold = 1.52409028747
+	max_threshold = 0.6
+	img = np.clip( test, 1.0e-8, max_threshold )
 
 	fig = plt.figure(figsize=(15,7));
 	ax = fig.add_subplot(111)
 	img_view = ax.imshow(img.T, cmap='jet', norm=LogNorm(vmin=np.min(img), vmax=np.max(img)), origin='lower')
+	plt.axis('off')
+	ax.tick_params(
+    axis='both',          # changes apply to the x-axis
+    which='both',      # both major and minor ticks are affected
+    bottom='off',      # ticks along the bottom edge are off
+    top='off',         # ticks along the top edge are off
+    left='off',
+    right='off',
+    labelbottom='off') # labels along the bottom edge are off
+	fig.tight_layout()
+	plt.savefig('foo.png', bbox_inches='tight')
 	plt.show()
-	#'''
+	'''
 
+
+	# ----------------------------------------
+	# exporting the system for Wenzels experiments
+	#A = sys.get_A()
+	#b = sys.get_b()
+	#stag2coll = sys.get_stag2coll()
+	##mat_filename = filename+".mat"
+	#mat_filename = "c:\\projects\\epfl\\epfl17\\python\\pnsolver\\notebooks\\checkerboard2d_p5.mat"
+	#print(mat_filename)
+	#scipy.io.savemat(mat_filename, {"A":A, "b":b, "stag2coll":stag2coll, "xref":x.T, "res":sys.getResolution(), "numCoeffs":sys.getNumCoefficients()})
 
 
 	## here we store information about the convergence behaviour
@@ -294,16 +336,21 @@ if __name__ == "__main__":
 	#exit(1)
 
 	#problem = problems.pointsource3d(res=64)
+	#problem = problems.pointsource3d(res=80)
+	#problem = problems.pointsource3d_modified_phase()
+	#problem = problems.pointsource3d_modified_phase_ms()
 	#problem = problems.checkerboard3d(res=64)
 	#problem = problems.checkerboard3d_modified_phase(res=64)
-	problem = problems.checkerboard2d_modified_phase()
+	#problem = problems.checkerboard2d_modified_phase()
 	#problem = problems.nebulae()
 	#problem = problems.nebulae_modified_phase()
+	problem = problems.cloud_modified_phase()
 
 	#problem_id = "pointsource"
 	#problem_id = "checkerboard3d"
-	problem_id = "checkerboard2d"
+	#problem_id = "checkerboard2d"
 	#problem_id = "nebulae"
+	problem_id = "cloud"
 
 	
 	#exit(1)
@@ -338,14 +385,18 @@ if __name__ == "__main__":
 
 	rte_forms = ["fopn"]
 	#order = [1,2,3,4,5]
-	#order = [3,4,5]
+	#order = [2,3,4,5]
+	#order = [1,3]
+	#order = [4,5]
 	#order = [3]
-	order = [1]
-	#order = [5]
+	#order = [1]
+	#order = [2]
+	#order = [4]
+	order = [5]
 	staggered = [True]
 	#staggered = [False]
-	#boundary_conditions = [False]
-	boundary_conditions = [True]
+	boundary_conditions = [False]
+	#boundary_conditions = [True]
 
 	#rte_forms = []
 	#order = []
@@ -359,23 +410,46 @@ if __name__ == "__main__":
 		order = c[1]
 		is_staggered = c[2]
 		do_neumannBC = c[3]
+		if problem.is2D():
+			dim = "2d"
+		else:
+			dim = "3d"
 
-		stencil_name = "stencil2_{}_p{}_{}".format(rte_form_name, order, staggered_id[is_staggered] )
+	
+
 		#stencil_name = "noop"
 		#print(stencil_name)
 		
 		#filename = "{}/{}_{}{}.mat".format(path, problem["id"], stencil_name, bc_id[do_neumannBC])
 		#filename = "{}/{}_test.mat".format(path, problem["id"], stencil_name)
-		filename = "C:/projects/epfl/epfl17/python/pnsolver/results/{}/{}_p{}_3_ms.pns".format(problem_id, problem_id, order)
+
+
+		stencil_name = "stencil_p{}_{}_{}".format(order, dim, staggered_id[is_staggered] )
+		filename = "C:/projects/epfl/epfl17/python/pnsolver/results/{}/{}_p{}.pns".format(problem_id, problem_id, order)
+
+		#stencil_name = "stencil_fopn_p{}_{}".format(order, staggered_id[is_staggered] )
+		#filename = "C:/projects/epfl/epfl17/python/pnsolver/results/{}/{}_p{}_old.pns".format(problem_id, problem_id, order)
+
 		#print("clear;filename=\"{}\";compute_condest;".format(filename))
 		solve(stencil_name, problem, filename, do_neumannBC=do_neumannBC)
 	#'''
-
-	#stencil_name = "stencil_cda"
-	#do_neumannBC = False
-	#filename = "C:/projects/epfl/epfl17/python/pnsolver/results/{}/{}_cda4.pns".format(problem_id, problem_id)
+	'''
+	# classical diffusion solve -------------
+	stencil_name = "stencil_cda"
+	do_neumannBC = False
+	#filename = "C:/projects/epfl/epfl17/python/pnsolver/results/{}/{}_cda_old.pns".format(problem_id, problem_id)
+	filename = "C:/projects/epfl/epfl17/python/pnsolver/results/{}/{}_cda_new2.pns".format(problem_id, problem_id)
+	#problem.setExtinctionMinimumThreshold(1.0e-1)
 	#solve(stencil_name, problem, filename, do_neumannBC=do_neumannBC)
 
+
+	# FLD solve -------------
+	do_neumannBC = False
+	filename = "C:/projects/epfl/epfl17/python/pnsolver/results/{}/{}_fld.pns".format(problem_id, problem_id)
+	problem.setExtinctionMinimumThreshold(1.0e-1)
+	x, convergence, timestamps = pnsolver.solve_fld(problem, 1.0e-10, 10000)
+	pnsolver.save_fld_solution(filename, problem.getDomain(), x)
+	'''
 
 
 

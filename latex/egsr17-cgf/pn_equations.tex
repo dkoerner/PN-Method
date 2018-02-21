@@ -230,7 +230,7 @@ f^{\scaleto{l,m}{4pt}}= \sqrt{\frac{\left(l+m\right)\left(l+m-1\right)}{\left(2l
 \label{fig:pnsolver}
 \end{figure*}
 
-The spatial variable $\vec{x}$ is discretized using a finite difference (FD) voxelgrid. The radiance field $L$, after full discretization, is represented as a set of coefficients per voxel. Flattening these over all voxels into a single vector gives the solution vector $\vec{u}$. The RHS vector $\vec{Q}$ is produced similarly. The differential operators are discretized using central differences. This allows the projected operators to be expressed as linear transformations, which can be collapsed into a single coefficient matrix $A$:
+The spatial variable $\vec{x}$ is discretized using a finite difference (FD) voxelgrid. The radiance field $L$, after full discretization, is represented as a set of coefficients per voxel. Flattening these over all voxels into a single vector gives the solution vector $\vec{u}$. The RHS vector $\vec{Q}$ is produced similarly. The differential operators are discretized using central differences. The projected operators can be expressed as linear transformations, which can be collapsed into a single coefficient matrix $A$:
 \begin{align}
 (T+C-S)\vec{u} = A\vec{u} = \vec{Q}
 \end{align}

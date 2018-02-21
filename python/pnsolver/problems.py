@@ -457,10 +457,10 @@ def pointsource3d( res = 80 ):
 	# 			  = p00*np.sqrt(1.0/(4.0*np.pi))
 	# 			  = np.sqrt(1.0/(4.0*np.pi))*np.sqrt(1.0/(4.0*np.pi))
 	phase_00 = np.sqrt(1.0/(4.0*np.pi))
-	test = phase_00*lambda_l
+	test = phase_00*lambda_l #  == 1
 	t.setPhase( 0, 0, pnsolver.ConstantField3d(np.array([test, test, test])) )
 
-	'''
+	#'''
 	## the emission field is a 3d voxelgrid where the center voxel is set to an emission value
 	shape = (domain.getResolution()[0], domain.getResolution()[1], domain.getResolution()[2], 3)
 	q_voxels = np.zeros(shape) # real valued 
@@ -468,15 +468,15 @@ def pointsource3d( res = 80 ):
 	pointsource_center_WS = np.array([size*0.5, size*0.5, size*0.5])
 	pointsource_center_VS = domain.worldToVoxel(pointsource_center_WS)
 	center_voxel = np.array([int(pointsource_center_VS[0]), int(pointsource_center_VS[1]), int(pointsource_center_VS[2])])
-	print("test={}".format(vs[0]*vs[1]*vs[2]))
-	print("test={}".format(1.0/(vs[0]*vs[1]*vs[2])))
+	#print("test={}".format(vs[0]*vs[1]*vs[2]))
+	#print("test={}".format(1.0/(vs[0]*vs[1]*vs[2])))
 	q_voxels[center_voxel[0], center_voxel[1], center_voxel[2], :] = 1.0/(vs[0]*vs[1]*vs[2])
 	t.setEmission( 0, 0, pnsolver.VoxelGridField3d(q_voxels) )
-	'''
+	#'''
 
 	# the emission field is a 3d voxelgrid where each voxel is initialized with the single scattered light
 	# this way, the solution will only be for the multiple scattered light
-	#'''
+	'''
 	shape = (domain.getResolution()[0], domain.getResolution()[1], domain.getResolution()[2], 3)
 	q_voxels = np.zeros(shape) # real valued 
 	vs = domain.getVoxelSize()
@@ -507,11 +507,148 @@ def pointsource3d( res = 80 ):
 				#q_voxels[i, j, k, :] = sigma_s*grosjean_ss(r, sigma_t, albedo)#*np.sqrt(4.0*np.pi)
 				q_voxels[i, j, k, :] = phase*sigma_s*grosjean_ss(r, sigma_t, albedo)*np.sqrt(4.0*np.pi)
 	t.setEmission( 0, 0, pnsolver.VoxelGridField3d(q_voxels) )
-	#'''
+	'''
 
 
 	return t
 
+def pointsource3d_modified_phase( res = 80 ):
+
+	# here we set some general parameters 
+	size = 2.0
+
+	domain = pnsolver.Domain( np.array([size, size, size]), np.array([res, res, res]), np.array([0.0, 0.0, 0.0]))
+
+	t = pnsolver.PNVolume( domain )
+
+	# RTE parameters ------------
+	sigma_t = 8.0
+	#sigma_t = 0.0
+	albedo = 0.9
+	sigma_s = sigma_t*albedo
+	extinction_field = pnsolver.ConstantField3d(np.array([sigma_t, sigma_t, sigma_t]))
+	albedo_field = pnsolver.ConstantField3d(np.array([albedo, albedo, albedo]))
+	t.setExtinctionAlbedo( extinction_field, albedo_field )
+	
+	
+	#t.setPhase( 0, 0, pnsolver.ConstantField3d(np.array([1.0, 1.0, 1.0])) )
+	# lambda_l factor is introduced via convolution between phase function and radiance field
+	lambda_l = np.sqrt(4.0*np.pi)
+	# the phase function itsself is projected into SH-coefficients
+	# currently this is done simply by forcing the phase function to be isotropic
+	# 	phase( x, omega ) = 1.0/(4*pi)
+	# therefore its reconstruction is
+	#  1.0/(4*pi) = p00*Y00(omega)
+	# 			  = p00*np.sqrt(1.0/(4.0*np.pi))
+	# 			  = np.sqrt(1.0/(4.0*np.pi))*np.sqrt(1.0/(4.0*np.pi))
+	phase_0_0 = np.sqrt((2*0+1)/(4.0*np.pi))
+	t.setPhase( 0, 0, pnsolver.ConstantField3d(np.array([phase_0_0, phase_0_0, phase_0_0])) )
+
+	#'''
+	## the emission field is a 3d voxelgrid where the center voxel is set to an emission value
+	shape = (domain.getResolution()[0], domain.getResolution()[1], domain.getResolution()[2], 3)
+	q_voxels = np.zeros(shape) # real valued 
+	vs = domain.getVoxelSize()
+	pointsource_center_WS = np.array([size*0.5, size*0.5, size*0.5])
+	pointsource_center_VS = domain.worldToVoxel(pointsource_center_WS)
+	center_voxel = np.array([int(pointsource_center_VS[0]), int(pointsource_center_VS[1]), int(pointsource_center_VS[2])])
+	q_voxels[center_voxel[0], center_voxel[1], center_voxel[2], :] = 1.0/(vs[0]*vs[1]*vs[2])
+	t.setEmission( 0, 0, pnsolver.VoxelGridField3d(q_voxels) )
+	#'''
+
+	# the emission field is a 3d voxelgrid where each voxel is initialized with the single scattered light
+	# this way, the solution will only be for the multiple scattered light
+	'''
+	shape = (domain.getResolution()[0], domain.getResolution()[1], domain.getResolution()[2], 3)
+	q_voxels = np.zeros(shape) # real valued 
+	vs = domain.getVoxelSize()
+	pointsource_center_WS = np.array([size*0.5, size*0.5, size*0.5])
+	for i in range(res):
+		for j in range(res):
+			for k in range(res):
+				pVS = np.array([i+0.5, j+0.5, k+0.5])
+				pWS = domain.voxelToWorld(pVS)
+				r = np.linalg.norm(pointsource_center_WS - pWS)
+				phase = 1.0/(4.0*np.pi)
+
+				# Remember: here we compute the SH-expansion of the emission field Q(x,w)
+				# which is defined by the scattered distribution of the unscattered light.
+				# For the point light source the unscattered light is a delta distribution and
+				# therefore we have:
+				# Q(x,w) = integral_over_solidangle{ 1/(4pi)*sigma_s*unscatteredlight }
+				# (the 1/(4pi) factor is the isotropic phase function)
+				# and unscattered light is a delta distribution
+				#        = 1/(4pi)*sigma_s*unscatteredlight
+				#		 = 1/(4pi)*sigma_s*unscatteredlight
+				# now the emission field consists of the SH-moments qlm = integrate_over_solidangle{ Q(x, w)Ylm(w) }
+				# with an isotropic phase function and the light being a delta distribution, we have:
+				# qlm = integrate_over_solidangle{ Q(x, w)Ylm(w) }
+				#     = integrate_over_solidangle{ 1/(4pi)*sigma_s*unscatteredlight*Ylm(w) }
+				#	  = 1/(4pi)*sigma_s*unscatteredlight*integrate_over_solidangle{ Ylm(w) }
+				# 	  = 1/(4pi)*sigma_s*unscatteredlight*sqrt(4pi)
+				#q_voxels[i, j, k, :] = sigma_s*grosjean_ss(r, sigma_t, albedo)#*np.sqrt(4.0*np.pi)
+				q_voxels[i, j, k, :] = phase*sigma_s*grosjean_ss(r, sigma_t, albedo)*np.sqrt(4.0*np.pi)
+	t.setEmission( 0, 0, pnsolver.VoxelGridField3d(q_voxels) )
+	'''
+
+
+	return t
+
+
+# here we compute the single scattering contribution from the point light source and use it as an emission
+# term. This way we solve only for the multiple scattering component
+def pointsource3d_modified_phase_ms( res = 80 ):
+
+	# here we set some general parameters 
+	size = 2.0
+
+	domain = pnsolver.Domain( np.array([size, size, size]), np.array([res, res, res]), np.array([0.0, 0.0, 0.0]))
+
+	t = pnsolver.PNVolume( domain )
+
+	# RTE parameters ------------
+	sigma_t = 8.0
+	#sigma_t = 0.0
+	albedo = 0.9
+	sigma_s = sigma_t*albedo
+	extinction_field = pnsolver.ConstantField3d(np.array([sigma_t, sigma_t, sigma_t]))
+	albedo_field = pnsolver.ConstantField3d(np.array([albedo, albedo, albedo]))
+	t.setExtinctionAlbedo( extinction_field, albedo_field )
+	
+	
+	phase_0_0 = np.sqrt((2*0+1)/(4.0*np.pi))
+	t.setPhase( 0, 0, pnsolver.ConstantField3d(np.array([phase_0_0, phase_0_0, phase_0_0])) )
+
+
+	# the emission field is a 3d voxelgrid where each voxel is initialized with the single scattered light
+	# this way, the solution will only be for the multiple scattered light
+	#'''
+	checksum = 0.0
+	shape = (domain.getResolution()[0], domain.getResolution()[1], domain.getResolution()[2], 3)
+	q_voxels = np.zeros(shape) # real valued 
+	vs = domain.getVoxelSize()
+	pointsource_center_WS = np.array([size*0.5, size*0.5, size*0.5])
+	for i in range(res):
+		for j in range(res):
+			for k in range(res):
+				pVS = np.array([i+0.5, j+0.5, k+0.5])
+				pWS = domain.voxelToWorld(pVS)
+				r = np.linalg.norm(pointsource_center_WS - pWS)
+				phase = 1.0/(4.0*np.pi)
+
+				#e = sigma_s*(1.0/(r*r))*np.exp(-sigma_t*r)*(1.0/(4.0*np.pi))*np.sqrt(4.0*np.pi)
+				e = (1.0/(r*r))*np.exp(-sigma_t*r)*(1.0/(4.0*np.pi))/(vs[0]*vs[1]*vs[2])
+				checksum += e
+
+				#q_voxels[i, j, k, :] = phase*sigma_s*grosjean_ss(r, sigma_t, albedo)*np.sqrt(4.0*np.pi)
+				q_voxels[i, j, k, :] = e
+	print("voxel emission = {}   checksum={}".format(1.0/(vs[0]*vs[1]*vs[2]), checksum))
+
+	t.setEmission( 0, 0, pnsolver.VoxelGridField3d(q_voxels) )
+	#'''
+
+
+	return t
 
 def nebulae():
 	size = 1.0
@@ -615,6 +752,74 @@ def nebulae_modified_phase():
 
 	return t
 
+def phase_l0( l ):
+	# TODO: hg moments
+	return np.sqrt((2*l+1)/(4.0*np.pi))
+
+def lambda_l( l ):
+	return np.sqrt((4.0*np.pi)/(2*l+1))
+
+def directional_light_sh_coeffs( l, m, d ):
+	theta, phi = util.sphericalCoordinates(d)
+	return pnsolver.sph_basis( l, m, theta, phi )
+	#return (1.0/np.sqrt(4.0*np.pi))
+	# TODO: higher order
+
+def cloud_modified_phase():
+	size = 16.0
+	res = 64
+	domain = pnsolver.Domain( np.array([size, size, size]), np.array([res, res, res]), np.array([-0.5*size, -0.5*size, -0.5*size]))
+	t = pnsolver.PNVolume( domain )
+
+	#sigma_t = 8.0
+	#extinction_field = pnsolver.ConstantField3d(np.array([sigma_t, sigma_t, sigma_t]))
+	#extinction_field = pnsolver.load_voxelgridfield3d("c:/projects/epfl/epfl17/python/pnsolver/results/nebulae/nebulae_extinction.vgrid.3d")
+	#extinction_field = pnsolver.load_bgeo("c:/projects/epfl/epfl17/python/pnsolver/results/nebulae/nebulae64.bgeo")
+	#extinction_field, bmin, bmax = pnsolver.load_bgeo("c:/projects/epfl/epfl17/python/pnsolver/results/cloud/cloud64_extinction.bgeo")
+	extinction_field = pnsolver.load_voxelgridfield3d("c:/projects/epfl/epfl17/python/pnsolver/results/cloud/cloud64_extinction.grid")
+	
+	# temp
+	#sigma_t = 8.0
+	#extinction_field = pnsolver.ConstantField3d(np.array([sigma_t, sigma_t, sigma_t]))
+
+
+	albedo = 0.9
+	albedo_field = pnsolver.ConstantField3d(np.array([albedo, albedo, albedo]))
+	t.setExtinctionAlbedo( extinction_field, albedo_field )
+
+	# lambda_l factor is introduced via convolution between phase function and radiance field
+	constant_phase = 1.0/(4.0*np.pi)
+	#lambda_l = np.sqrt(4.0*np.pi)
+	# the phase function itsself is projected into SH-coefficients
+	# currently this is done simply by forcing the phase function to be isotropic
+	# 	phase( x, omega ) = 1.0/(4*pi)
+	# therefore its reconstruction is
+	#  1.0/(4*pi) = p00*Y00(omega)
+	# 			  = p00*np.sqrt(1.0/(4.0*np.pi))
+	# 			  = np.sqrt(1.0/(4.0*np.pi))*np.sqrt(1.0/(4.0*np.pi))
+	#phase_00 = np.sqrt(1.0/(4.0*np.pi))
+	#test = phase_00*lambda_l
+	#t.setPhase( 0, 0, pnsolver.ConstantField3d(np.array([test, test, test])) )
+	#t.setPhase( 0, 0, pnsolver.ConstantField3d(np.array([1.0, 1.0, 1.0])) )
+	phase_0_0 = phase_l0(0)
+	t.setPhase( 0, 0, pnsolver.ConstantField3d(np.array([phase_0_0, phase_0_0, phase_0_0])) )
+	# TODO: add higher order for anisotropic phase function
+
+
+	# the emissionfield has been generated by computing the single scattered light
+	#emission_field = pnsolver.load_voxelgridfield3d("c:/projects/epfl/epfl17/python/pnsolver/results/nebulae/nebulae64_emission.grid")
+	unscattered_directional_light = pnsolver.load_voxelgridfield3d("c:/projects/epfl/epfl17/python/pnsolver/results/cloud/cloud64_unscattered_directional_light.grid").asArray()
+
+	#emission_field = unscattered_directional_light*extinction_field.asArray()*albedo*constant_phase*np.sqrt(4.0*np.pi)
+	#t.setEmission( 0, 0, pnsolver.VoxelGridField3d(emission_field) )
+
+	lightDir = np.array([0.0, -1.0, 0.0])
+	emission_field = extinction_field.asArray()*albedo*lambda_l(0)*phase_l0(0)*directional_light_sh_coeffs(0,0,lightDir)*unscattered_directional_light
+	t.setEmission( 0, 0, pnsolver.VoxelGridField3d(emission_field) )
+
+	# TODO: add higher order for anisooptric emission
+
+	return t
 
 
 def vacuum():

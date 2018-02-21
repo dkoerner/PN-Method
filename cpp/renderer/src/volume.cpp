@@ -39,6 +39,11 @@ void Volume::setExtinctionAlbedo( Field3d::Ptr extinction, Field3d::Ptr albedo )
 	m_field_extinction = extinction;
 	m_field_albedo = albedo;
 }
+
+void Volume::setPhaseFunction(PhaseFunction::Ptr phase)
+{
+	m_phaseFunction = phase;
+}
 void Volume::setLocalToWorld( const Transformd& localToWorld )
 {
 	m_localToWorld = localToWorld;

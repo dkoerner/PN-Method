@@ -10,10 +10,10 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
+# for saving png
+import scipy
 
 
-
-# openexr
 
 def translation_matrix(direction):
 	# Return matrix to translate by direction vector.
@@ -72,11 +72,9 @@ def load_camera( filename, id = "cam1" ):
 def create_scene_nebulae():
 	albedo = 0.9
 
-	#offset = -0.5
-	offset = 0.0
 
 	volume = renderer.create_volume()
-	volume.setBound( np.array([-0.5, -0.5, -0.5+offset]), np.array([0.5, 0.5, 0.5+offset]) )
+	volume.setBound( np.array([-0.5, -0.5, -0.5]), np.array([0.5, 0.5, 0.5]) )
 
 
 	sigma_t_field = renderer.load_bgeo("c:/projects/epfl/epfl17/python/pnsolver/results/nebulae/nebulae64.bgeo")
@@ -101,7 +99,41 @@ def create_scene_nebulae():
 	return volume, light
 
 
+def create_scene_cloud():
+	albedo = 0.9
 
+
+	#volume = renderer.create_volume()
+	#volume.setBound( np.array([-0.5, -0.5, -0.5]), np.array([0.5, 0.5, 0.5]) )
+
+	sigma_t_field, bound_min, bound_max = renderer.load_bgeo("c:/projects/epfl/epfl17/python/pnsolver/results/cloud/cloud.bgeo")
+	#sigma_t_field, bound_min, bound_max = renderer.load_bgeo("c:/projects/epfl/epfl17/python/pnsolver/results/cloud/cloud64_extinction.bgeo")
+	print(bound_min)
+	print(bound_max)
+
+	volume = renderer.create_volume()
+	volume.setBound( bound_min, bound_max )
+	#volume.setPhaseFunction( renderer.HGPhase(0.8) )
+
+	#sigma_t_field = renderer.load_bgeo("c:/projects/epfl/epfl17/python/pnsolver/results/nebulae/nebulae200.bgeo")
+	#sigma_t_field = renderer.load_bgeo("c:/projects/epfl/epfl17/python/pnsolver/results/nebulae/test.bgeo")
+	#sigma_t_field.save("c:/projects/epfl/epfl17/python/pnsolver/results/nebulae/nebulae64_extinction.grid")
+
+	#sigma_t_field = renderer.load_bgeo("test_sphere.bgeo")
+	albedo_field = renderer.create_constant_field3d( np.array([albedo, albedo, albedo]) )
+	volume.setExtinctionAlbedo( sigma_t_field, albedo_field )
+
+	# point light
+	#light_pos = np.array([-0.5, -0.5, -0.5])
+	#power = 4.0*np.pi
+	#light = renderer.create_point_light( light_pos, np.array([power, power, power]) )
+
+	# directional light
+	radiance = 1.0
+	light_dir = np.array([0.0, -1.0, 0.0])
+	light = renderer.create_directional_light( light_dir, np.array([radiance, radiance, radiance]) )
+
+	return volume, light
 
 def render_groundtruth_radial_distribution( pWS, filename ):
 
@@ -121,8 +153,85 @@ def render_groundtruth_radial_distribution( pWS, filename ):
 	img_radiance.save(filename)
 	#exit(1)
 
+def save_png( filename, img, exposure=0.0 ):
+	# convert to ldr, stretch to 255 and convert number type
+	img_ldr = np.clip((renderer.ldr_image(img, exposure).asMatrix()*255.0), 0.0, 255.0).astype(np.uint8)
+
+	# save as png
+	scipy.misc.imsave( filename, img_ldr )
+
+
+
+def render_cloud():
+	volume, light = create_scene_cloud()
+	camera = load_camera("c:/projects/epfl/epfl17/python/pnsolver/results/cloud/cloud.scn")
+	#camera = renderer.create_perspective_camera(512, 512, 45.0)
+	#translate = translation_matrix( np.array([0.0, 0.0, 1.9]) )
+	#camera.setCameraToWorldTransform(translate)
+
+	#numSamples = 10000
+	numSamples = 10
+	
+	## rendering roundtruth single scattering --------
+	#integrator_groundtruth_ss = renderer.create_simplept_integrator(True, 1)
+	#img_ss = renderer.render( volume, light, camera, integrator_groundtruth_ss, numSamples )
+	#img_ss.save("cloud_groundtruth_ss.exr")
+
+	# rendering ground truth multiple scattering component using path tracing ---------------
+	# groundtruth integrator for the multiple scattering component (ss is excluded)
+	integrator_groundtruth_ms = renderer.create_simplept_integrator(False, -1)
+	img_ms = renderer.render( volume, light, camera, integrator_groundtruth_ms, numSamples )
+	img_ms.save("cloud2_groundtruth_ms.exr")
+
+	#return
+
+	numSamples = 10
+
+	# render using Pn solution -------------------
+	#pns = renderer.load_pnsolution( "c:/projects/epfl/epfl17/python/pnsolver/results/cloud/cloud_p5.pns" )
+	#pns = renderer.load_pnsolution( "c:/projects/epfl/epfl17/python/pnsolver/results/cloud/cloud_fld.pns" )
+
+	#integrator_pn_ss = renderer.create_directpn_integrator(pns, True, False)
+	#img_ss = renderer.render( volume, light, camera, integrator_pn_ss, numSamples )
+	#img_ss.save("nebulae_p1_ss.exr")
+
+	# exclude single scattering, render only the multiple scattering component
+	pns = renderer.load_pnsolution( "c:/projects/epfl/epfl17/python/pnsolver/results/cloud/cloud_p5.pns" )
+	integrator_pn_ms = renderer.create_directpn_integrator(pns, False, True)
+	img_ms = renderer.render( volume, light, camera, integrator_pn_ms, numSamples )
+	img_ms.save("cloud2_p5_ms.exr")
+	
+	# exclude single scattering, render only the multiple scattering component
+	pns = renderer.load_pnsolution( "c:/projects/epfl/epfl17/python/pnsolver/results/cloud/cloud_fld.pns" )
+	integrator_pn_ms = renderer.create_directpn_integrator(pns, False, True)
+	img_ms = renderer.render( volume, light, camera, integrator_pn_ms, numSamples )
+	img_ms.save("cloud2_fld.exr")
+
+	#img_ms.save("cloud_p5_ms.exr")
+
+	#img_ms.save("cloud_fld_ms.exr")
+
+def cloud_bake_directional_light():
+	volume, light = create_scene_cloud()
+	bound_min = volume.getBoundMin()
+	bound_max = volume.getBoundMax()
+	light_dir = np.array([0.0, -1.0, 0.0])
+	numSamples = 10
+	unscattered_directional_light = renderer.bake_unscattered_directional_light( volume, light_dir, numSamples, np.array([64, 64, 64]) )
+
+	renderer.save_bgeo("c:/projects/epfl/epfl17/python/pnsolver/results/cloud/cloud64_unscattered_directional_light.bgeo", unscattered_directional_light, bound_min, bound_max)
+	unscattered_directional_light.save("c:/projects/epfl/epfl17/python/pnsolver/results/cloud/cloud64_unscattered_directional_light.grid")
+
+
 
 if __name__ == "__main__":
+	render_cloud()
+	#cloud_bake_directional_light()
+
+	#t,b,m = renderer.load_bgeo("c:/projects/epfl/epfl17/python/pnsolver/results/cloud/cloud64_extinction.bgeo")
+	#t.save("c:/projects/epfl/epfl17/python/pnsolver/results/cloud/cloud64_extinction.grid")
+
+	exit(1)
 
 	#renderer.test()
 	#img = renderer.load_image("nebulae_p1_ms.exr").asMatrix()
@@ -193,22 +302,22 @@ if __name__ == "__main__":
 
 
 	# compute unscattered fluence field for nebulae dataset and store to disk -----------
-	'''
+	#'''
 	volume, light = create_scene_nebulae()
+	#volume, light = create_scene_cloud()
 
 	numSamples = 100
 
 	# render unscattered light into emission field for PN solver ---
 	unscattered_fluence_field = renderer.compute_unscattered_fluence( volume, light, numSamples, np.array([64, 64, 64]) )
-	bound_min = np.array([-0.5, -0.5, -0.5])
-	bound_max = np.array([0.5, 0.5, 0.5])
+
 	#renderer.save_bgeo("c:/projects/epfl/epfl17/python/pnsolver/results/nebulae/nebulae64_emission.bgeo", unscattered_light_field, bound_min, bound_max)
 	unscattered_fluence_field.save("c:/projects/epfl/epfl17/python/pnsolver/results/nebulae/nebulae64_unscattered_fluence.grid")
 	#renderer.save_bgeo("c:/projects/epfl/epfl17/python/pnsolver/results/nebulae/nebulae200_emission.bgeo", unscattered_light_field, bound_min, bound_max)
 	#unscattered_light_field.save("c:/projects/epfl/epfl17/python/pnsolver/results/nebulae/nebulae200_emission.grid")
 
 	exit(1)
-	'''
+	#'''
 
 	# render pn-solution directly (instead of using it to boost standard MC) -----------------------------
 	#'''
@@ -218,35 +327,52 @@ if __name__ == "__main__":
 	#translate = translation_matrix( np.array([0.0, 0.0, 1.9]) )
 	#camera.setCameraToWorldTransform(translate)
 
-	numSamples = 100
+	numSamples = 10
 	#numSamples = 1
 	
 	#integrator_groundtruth_ss = renderer.create_simplept_integrator(True, 1)
 	#img_ss = renderer.render( volume, light, camera, integrator_groundtruth_ss, numSamples )
 	#img_ss.save("nebulae_groundtruth_ss.exr")
-	#integrator_groundtruth_ms = renderer.create_simplept_integrator(False, -1)
-	#img_ms = renderer.render( volume, light, camera, integrator_groundtruth_ms, numSamples )
-	#img_ms.save("nebulae_groundtruth_ms.exr")
 
+	## rendering ground truth multiple scattering component using path tracing ---------------
+	## groundtruth integrator for the multiple scattering component (ss is excluded)
+	##integrator_groundtruth_ms = renderer.create_simplept_integrator(False, -1)
+	##img_ms = renderer.render( volume, light, camera, integrator_groundtruth_ms, numSamples )
+	##save_png("nebulae_ms_groundtruth.png", img_ms, 4.0)
+	##exit(1)
+	##img_ms.save("nebulae_groundtruth_ms.exr")
+
+
+	# rendering multiple scattering component using P5 solution ---------------
 
 	#pns = renderer.load_pnsolution( "c:/projects/epfl/epfl17/python/pnsolver/results/nebulae/nebulae_p1_3_ms.pns" )	
 	#pns = renderer.load_pnsolution( "c:/projects/epfl/epfl17/python/pnsolver/results/nebulae/nebulae_p3_2_ms.pns" )	
 	#pns = renderer.load_pnsolution( "c:/projects/epfl/epfl17/python/pnsolver/results/nebulae/nebulae_p5_2_ms.pns" )
-	pns = renderer.load_pnsolution( "c:/projects/epfl/epfl17/python/pnsolver/results/nebulae/nebulae_p5_3_ms.pns" )	
-	#pns = renderer.load_pnsolution( "c:/projects/epfl/epfl17/python/pnsolver/results/nebulae/nebulae_cda3.pns" )	
+	#pns = renderer.load_pnsolution( "c:/projects/epfl/epfl17/python/pnsolver/results/nebulae/nebulae_p5_4_ms.pns" )	
+	#pns = renderer.load_pnsolution( "c:/projects/epfl/epfl17/python/pnsolver/results/nebulae/nebulae_cda5.pns" )
+	pns = renderer.load_pnsolution( "c:/projects/epfl/epfl17/python/pnsolver/results/nebulae/nebulae_fld5.pns" )
 
 	#integrator_pn_ss = renderer.create_directpn_integrator(pns, True, False)
 	#img_ss = renderer.render( volume, light, camera, integrator_pn_ss, numSamples )
 	#img_ss.save("nebulae_p1_ss.exr")
 
+	# exclude single scattering, render only the multiple scattering component
 	integrator_pn_ms = renderer.create_directpn_integrator(pns, False, True)
 	img_ms = renderer.render( volume, light, camera, integrator_pn_ms, numSamples )
-	#img_ms.save("nebulae_p1_3_ms.exr")
-	#img_ms.save("nebulae_p3_3_ms.exr")
-	img_ms.save("nebulae_p5_3_ms_gg.exr")
-	#img_ms.save("nebulae_p3_ms.exr")
-	#img_ms.save("nebulae_p5_ms.exr")
-	#img_ms.save("nebulae_cda_ms.exr")
+
+	# save as exr
+	#img_ms.save("nebulae_p5_4_ms_gg.exr")
+
+	#save_png("nebulae_ms_p5.png", img_ms, 4.0)
+
+
+	#img_ms.save("nebulae_ms_cda.exr")	
+	#save_png("nebulae_ms_cda.png", img_ms, 4.0)
+
+	img_ms.save("nebulae_ms_fld.exr")	
+	save_png("nebulae_ms_fld.png", img_ms, 4.0)
+	
+
 	exit(1)
 	#'''
 

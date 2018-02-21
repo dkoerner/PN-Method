@@ -12,148 +12,23 @@
 namespace sph
 {
 
-	/*
-	// Number of precomputed factorials and double-factorials that can be
-	// returned in constant time.
-	const int kCacheSize = 16;
-
-
-	// Compute the factorial for an integer @x. It is assumed x is at least 0.
-	// This implementation precomputes the results for low values of x, in which
-	// case this is a constant time lookup.
-	//
-	// The vast majority of SH evaluations will hit these precomputed values.
-	double factorial(int x)
+	std::complex<double> Y_gg( int l, int m, double theta, double phi )
 	{
-		const double factorial_cache[kCacheSize] = {1, 1, 2, 6, 24, 120, 720, 5040,
-												  40320, 362880, 3628800, 39916800,
-												  479001600, 6227020800,
-												  87178291200, 1307674368000};
-
-		if (x < kCacheSize)
-		{
-			return factorial_cache[x];
-		}else
-		{
-			double s = 1.0;
-			for (int n = 2; n <= x; n++)
-			{
-				s *= n;
-			}
-			return s;
-		}
+		return  csp(m)*
+				normalization(l, std::abs(m))*
+				legendreP(l, m, std::cos(theta))*std::complex<double>(std::cos(m*phi), std::sin(m*phi));
 	}
 
-	// Compute the double factorial for an integer @x. This assumes x is at least
-	// 0.  This implementation precomputes the results for low values of x, in
-	// which case this is a constant time lookup.
-	//
-	// The vast majority of SH evaluations will hit these precomputed values.
-	// See http://mathworld.wolfram.com/DoubleFactorial.html
-	double doubleFactorial(int x)
+	std::complex<double> Y_cc( int l, int m, double theta, double phi )
 	{
-	  const double dbl_factorial_cache[kCacheSize] = {1, 1, 2, 3, 8, 15, 48, 105,
-													  384, 945, 3840, 10395, 46080,
-													  135135, 645120, 2027025};
-
-		if (x < kCacheSize)
-		{
-			return dbl_factorial_cache[x];
-		}else
-		{
-			double s = 1.0;
-			double n = x;
-			while (n > 1.0)
-			{
-				s *= n;
-				n -= 2.0;
-			}
-			return s;
-		}
-	}
-	// Evaluate the associated Legendre polynomial of degree @l and order @m at
-	// coordinate @x. The inputs must satisfy:
-	// 1. l >= 0
-	// 2. 0 <= m <= l
-	// 3. -1 <= x <= 1
-	// See http://en.wikipedia.org/wiki/Associated_Legendre_polynomials
-	//
-	// This implementation is based off the approach described in [1],
-	// instead of computing Pml(x) directly, Pmm(x) is computed. Pmm can be
-	// lifted to Pmm+1 recursively until Pml is found
-	//
-	// note that the Condon-Shorteley Phase is included...
-	double P(int l, int m, double x)
-	{
-		// Compute Pmm(x) = (-1)^m(2m - 1)!!(1 - x^2)^(m/2), where !! is the double
-		// factorial.
-		double pmm = 1.0;
-		// P00 is defined as 1.0, do don't evaluate Pmm unless we know m > 0
-		if (m > 0)
-		{
-			//double sign = (m % 2 == 0 ? 1 : -1);
-			double sign = 1.0;
-			pmm = sign * doubleFactorial(2 * m - 1) * pow(1 - x * x, m / 2.0);
-		}
-
-		if (l == m)
-		{
-			// Pml is the same as Pmm so there's no lifting to higher bands needed
-			return pmm;
-		}
-
-		// Compute Pmm+1(x) = x(2m + 1)Pmm(x)
-		double pmm1 = x * (2 * m + 1) * pmm;
-		if (l == m + 1)
-		{
-			// Pml is the same as Pmm+1 so we are done as well
-			return pmm1;
-		}
-
-		// Use the last two computed bands to lift up to the next band until l is
-		// reached, using the recurrence relationship:
-		// Pml(x) = (x(2l - 1)Pml-1 - (l + m - 1)Pml-2) / (l - m)
-		for (int n = m + 2; n <= l; n++)
-		{
-			double pmn = (x * (2 * n - 1) * pmm1 - (n + m - 1) * pmm) / (n - m);
-			pmm = pmm1;
-			pmm1 = pmn;
-		}
-		// Pmm1 at the end of the above loop is equal to Pml
-		return pmm1;
-	}
-
-
-	// condon-shortley phase
-	double csp( int m )
-	{
-		return (m % 2 == 0 ? 1.0 : -1.0);
-	}
-
-	double C(int l, int m)
-	{
-		double a = csp(m);
-		double b1 = (2*l+1)*INV_FOURPI;
-		double b2 = factorial(l-m)/factorial(l+m);
-		return a*std::sqrt(b1*b2);
-		return a;
+		return  csp(m)*
+				normalization(l, std::abs(m))*
+				legendreP(l, m, std::cos(theta))*std::complex<double>(std::cos(m*phi), -std::sin(m*phi));
 	}
 
 
 
-	complex Y_gg( int l, int m, double theta, double phi )
-	{
-		return C(l,m)*P(l, m, std::cos(theta))*complex(std::cos(m*phi), std::sin(m*phi));
-	}
-
-	complex Y_cc( int l, int m, double theta, double phi )
-	{
-		return C(l,m)*P(l, m, std::cos(theta))*complex(std::cos(m*phi), -std::sin(m*phi));
-	}
-
-
-
-	complex sph_basis( int l, int m, double theta, double phi )
+	std::complex<double> complex_basis( int l, int m, double theta, double phi )
 	{
 		if(m>=0)
 		{
@@ -164,7 +39,6 @@ namespace sph
 		}
 	}
 
-	*/
 
 
 	int numCoeffs(int order)
@@ -207,6 +81,26 @@ namespace sph
 		return result;
 	}
 
+	/*
+	double basis( double theta, double phi, int l, int m )
+	{
+		double cosTheta = std::cos(theta);
+		if(m<0)
+		{
+			return SQRT_TWO * std::sin(-m * phi) * legendreP(l, -m, cosTheta) * normalization(l, -m);
+		}else
+		if(m==0)
+		{
+			return legendreP(l, 0, cosTheta) * normalization(l, 0);
+		}else
+		if(m>0)
+		{
+			return SQRT_TWO * std::cos(m * phi) * legendreP(l, m, cosTheta) * normalization(l, m);
+		}
+		throw std::runtime_error("unexpected");
+	}
+	*/
+
 	double& get( int l, int m, double* coeffs )
 	{
 		return coeffs[l*(l+1) + m];
@@ -246,6 +140,18 @@ namespace sph
 
 		return p_ll;
 	}
+
+	/*
+	void convolve(const double *coeffs, const double *coeffs_filter, int order, double *coeffs_result)
+	{
+		for (int l=0; l<=order; ++l)
+		{
+			double alpha = std::sqrt(4 * (double) M_PI / (2*l + 1));
+			for (int m=-l; m<=l; ++m)
+				get(l, m, coeffs_result) *= alpha * get(l, 0, coeffs_filter);
+		}
+	}
+	*/
 
 	void convolve(double *coeffs, const double *coeffs_filter, int order)
 	{
@@ -320,9 +226,8 @@ namespace sph
 	double computeNormalization(int l, int m)
 	{
 		//SAssert(m>=0);
-		return std::sqrt(
-				((2*l+1) * factorial(l-m))
-			/    (4 * (double) M_PI * factorial(l+m)));
+		return std::sqrt( ((2*l+1) * factorial(l-m))/
+						  (4 * (double) M_PI * factorial(l+m)));
 	}
 
 
@@ -364,7 +269,11 @@ namespace sph
 		return (m % 2 == 0 ? 1.0 : -1.0);
 	}
 
-
+	// lambda_l for the convolution thing. the eigenvalue associated with the eigenfunction Y_lm
+	double lambda(int l)
+	{
+		return std::sqrt(4.0*M_PI/(2*l+1));
+	}
 
 	Eigen::MatrixXcd buildComplexToRealConversionMatrix( int order )
 	{
@@ -380,8 +289,8 @@ namespace sph
 				int i = index(l, m);
 				if( m < 0 )
 				{
-					S.coeffRef(i, index(l, m)) = std::complex<double>(0.0, 1.0)/std::sqrt(2.0)*csp(m);
-					S.coeffRef(i, index(l, -m)) = -std::complex<double>(0.0, 1.0)/std::sqrt(2.0);
+					S.coeffRef(i, index(l, m)) = std::complex<double>(0.0, 1.0)/std::sqrt(2.0);
+					S.coeffRef(i, index(l, -m)) = -std::complex<double>(0.0, 1.0)/std::sqrt(2.0)*csp(m);
 				}else
 				if( m == 0 )
 				{
@@ -389,8 +298,8 @@ namespace sph
 				}else
 				if( m > 0 )
 				{
-					S.coeffRef(i, index(l, -m)) = 1.0/std::sqrt(2.0)*csp(m);
-					S.coeffRef(i, index(l, m)) = 1.0/std::sqrt(2.0);
+					S.coeffRef(i, index(l, -m)) = 1.0/std::sqrt(2.0);
+					S.coeffRef(i, index(l, m)) = 1.0/std::sqrt(2.0)*csp(m);
 				}
 			}
 		}
@@ -399,7 +308,7 @@ namespace sph
 	}
 
 
-	double basis_real( int l, int m, double theta, double phi )
+	double basis( int l, int m, double theta, double phi )
 	{
 		double cosTheta = std::cos(theta);
 		double L = legendreP(l, std::abs(m), cosTheta) * normalization(l, std::abs(m));
@@ -433,6 +342,7 @@ namespace sph
 
 	double *m_normalization = NULL;
 	int m_normTableSize = 10;
+
 
 
 

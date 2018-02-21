@@ -197,15 +197,21 @@ void sincos(T theta, T *_sin, T *_cos)
 }
 
 template<typename T>
-inline double safe_acos( const T& in )
+inline T safe_acos( const T& in )
 {
 	return std::acos( std::max( T(-1.0), std::min(T(1.0), in)) );
 }
 
 template<typename T>
-inline double safe_asin( const T& in )
+inline T safe_asin( const T& in )
 {
 	return std::asin( std::max( T(-1.0), std::min(T(1.0), in)) );
+}
+
+template<typename T>
+inline T safe_sqrt(T value)
+{
+	return std::sqrt(std::max(T(0.0), value));
 }
 
 template<typename T>

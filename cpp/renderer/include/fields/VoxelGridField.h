@@ -96,6 +96,7 @@ struct VoxelGridField : public Field<T>
 
 	void save( const std::string& filename )
 	{
+		std::cout << "writing voxelgrid to " << filename << std::endl;
 		m_voxelgrid.save(filename);
 	}
 

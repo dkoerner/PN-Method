@@ -1308,7 +1308,7 @@ class SHRecursiveRelation(object):
 			if base < 0.0:
 				return np.nan
 			return np.sqrt(base)
-		b = fun( "b", add(l, num(1)), m )
+		b = fun( "b", l, m )
 		b.setAllSuperScripts()
 		b.body2 = b_body
 		return b
@@ -1318,6 +1318,7 @@ class SHRecursiveRelation(object):
 			base = (l+m+1)*(l+m+2)/((2*l+3)*(2*l+1))
 			if base < 0.0:
 				return np.nan
+			#print("running c_lm {} {}={}".format(l, m, np.sqrt(base)))
 			return np.sqrt(base)
 		c = fun( "c", l, m )
 		c.setAllSuperScripts()

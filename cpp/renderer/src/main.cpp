@@ -234,7 +234,8 @@ void render_thread( MonteCarloTaskInfo& ti, const GlobalRenderInfo* gi )
 		for (int x = gi->crop_window.min.x(); x < gi->crop_window.max.x(); ++x)
 		{
 			int index = y*width + x;
-			RNGd& rng = (*gi->debug_rngs)[ index ];
+			//RNGd& rng = (*gi->debug_rngs)[ index ];
+			RNGd& rng = ti.rng;
 			V3d f(0.0, 0.0, 0.0);
 			//Color3f T(1.0f);
 
@@ -304,6 +305,7 @@ void render_thread( MonteCarloTaskInfo& ti, const GlobalRenderInfo* gi )
 Image::Ptr render( Volume::Ptr volume, Light::Ptr light, Camera::Ptr camera, Integrator::Ptr integrator, int numSamples )
 {
 	std::cout << "rendering:\n";
+
 	std::cout << volume->toString();
 	std::cout << light->toString();
 	std::cout << camera->toString();
@@ -324,7 +326,7 @@ Image::Ptr render( Volume::Ptr volume, Light::Ptr light, Camera::Ptr camera, Int
 	//gi.debug_pixel = V2i(378, 110);
 	//gi.debug_pixel = V2i(256, 256);
 
-
+	/*
 	// for debugging, intitialize rngs
 	std::vector<RNGd> debug_rngs;
 	int index = 0;
@@ -332,7 +334,7 @@ Image::Ptr render( Volume::Ptr volume, Light::Ptr light, Camera::Ptr camera, Int
 		for( int j=0;j<camera->getResolution()[1];++j, ++index )
 			debug_rngs.push_back( RNGd(123+index) );
 	gi.debug_rngs = &debug_rngs;
-
+	*/
 
 	//int numSamples = 1;
 
@@ -507,6 +509,114 @@ VoxelGridField3d::Ptr compute_unscattered_fluence(  Volume::Ptr volume,
 
 	return result;
 }
+struct GlobalBakeUnscatteredDirectionalLightInfo
+{
+	Volume* volume;
+	VoxelGrid3d* grid; // result where all threads write to
+	V3d lightDirection;
+	double lightRadiance;
+	double maxDistance;
+};
+
+
+void bake_unscattered_directional_light_thread( MonteCarloTaskInfo& taskinfo, const GlobalBakeUnscatteredDirectionalLightInfo* gi )
+{
+	RNGd& rng = taskinfo.rng;
+	V3i res = gi->grid->getResolution();
+	int numPoints = res[0]*res[1]*res[2];
+
+	// note that y goes from bottom=0 to top=max (rasterspace)
+	for (int point_index = taskinfo.taskid; point_index < numPoints; point_index += taskinfo.numTasks)
+	{
+		bool debug = false;
+
+		// retrieve worldspace position of current voxel
+		int i,j,k;
+		gi->grid->getCoordFromIndex( point_index, i, j, k );
+		P3d pLS = gi->grid->voxelToLocal( V3d(i+0.5, j+0.5, k+0.5) );
+		P3d pWS = gi->volume->localToWorld(pLS);
+
+		// compute directional light contribution to current voxel  -----
+		V3d f(0.0);
+		if( gi->volume->getBound().contains(pWS) )
+		{
+			// find the maximum distance for attenuation computation ---
+			double maxt = gi->maxDistance;
+			{
+				double mint;
+				bool result = gi->volume->intersectBound(Ray3d( pWS, -gi->lightDirection ), mint, maxt);
+				if( !result )
+					// thats strange
+					throw std::runtime_error("expected intersection");
+			}
+
+			//NB: the geometry term between light source position and current vertex is already been dealt with during light sampling
+
+			// sample transmittance ---
+			int component = 0;
+			V3d sigma_t;
+			double distance = delta_tracking( gi->volume, Ray3d( pWS, -gi->lightDirection ), maxt, component, rng, sigma_t, debug );
+
+			if( distance < maxt )
+				// since we set the contribution to 0, we dont need to produce the pdf in the denominator
+				f = V3d(0.0);
+			else
+				// transmittance sampling pdf cancels out with the transmittance term
+				// TODO: we need to divide by extinction, dont we?
+				// because we do not apply scattering and therefore we dont have
+				// that sigma_s/sigma_t = albedo thing
+				f = gi->lightRadiance;
+		}
+
+		// nee gives the uncollided light multiplied by phase function and sigma_s
+		//V3d f = nee(ti, taskinfo.rng);
+
+		if( std::isnan(luminance(f)) )
+			std::cout << "compute_unscattered_light_thread: got NaN value @ index=" << point_index << " sample=" << taskinfo.samples << std::endl;
+
+		// update pixel color
+		V3d& c = gi->grid->lvalue(i, j, k);
+		c += (f - c)/double(taskinfo.samples+1);
+		//c = V3d(double(i)/double(res[0]));
+	} // point
+
+
+	++taskinfo.samples;
+}
+
+
+VoxelGridField3d::Ptr bake_unscattered_directional_light(  Volume::Ptr volume,
+														   Eigen::Vector3d direction, // light direction
+														   int numSamples,
+														   Eigen::Vector3i resolution)
+{
+	std::cout << "bake_unscattered_directional_light:\n";
+	std::cout << volume->toString();
+
+	// we need an integrator only for computing the volume attenuation
+	//Integrator::Ptr integrator = std::make_shared<SimplePT>(-1, true);
+
+	VoxelGridField3d::Ptr result = std::make_shared<VoxelGridField3d>( V3i(resolution.x(), resolution.y(), resolution.z()), (V3d*)0);
+
+	//Scene scene;
+	//scene.integrator = integrator.get();
+	//scene.light = light.get();
+	//scene.volume = volume.get();
+
+	GlobalBakeUnscatteredDirectionalLightInfo gi;
+	gi.volume = volume.get();
+	gi.grid = &result->getVoxelGrid();
+	gi.lightDirection = direction;
+	gi.lightRadiance = 1.0;
+	gi.maxDistance = volume->getBound().getExtents().norm()*1.1;
+
+	Terminator terminator(numSamples);
+	std::cout << "baking unscattered directional light..."<< std::endl;std::flush(std::cout);
+	runGenericTasks<MonteCarloTaskInfo, GlobalBakeUnscatteredDirectionalLightInfo>( bake_unscattered_directional_light_thread, &gi, terminator, ThreadPool::getNumSystemCores() );
+
+	return result;
+}
+
 
 VoxelGridField3d::Ptr resample( VoxelGridField3d::Ptr field, const Eigen::Vector3i& res )
 {
@@ -623,7 +733,8 @@ Field3d::Ptr create_constant_field3d( const Eigen::Vector3d& value )
 	return std::make_shared<ConstantField3d>(value);
 }
 
-Field3d::Ptr load_bgeo( const std::string& filename )
+
+std::tuple<Field3d::Ptr, Eigen::Vector3d, Eigen::Vector3d> load_bgeo( const std::string& filename )
 {
 	houio::ScalarField::Ptr sigma_t = houio::HouGeoIO::importVolume(filename);
 
@@ -675,7 +786,9 @@ Field3d::Ptr load_bgeo( const std::string& filename )
 
 	VoxelGridField3d::Ptr result = std::make_shared<VoxelGridField3d>(  V3i(res.x, res.y, res.z),
 																		data.data());
-	return result;
+	Eigen::Vector3d bound_min(sigma_t->bound().minPoint.x, sigma_t->bound().minPoint.y, sigma_t->bound().minPoint.z);
+	Eigen::Vector3d bound_max(sigma_t->bound().maxPoint.x, sigma_t->bound().maxPoint.y, sigma_t->bound().maxPoint.z);
+	return std::make_tuple( result, bound_min, bound_max );
 }
 
 void save_bgeo( const std::string& filename, VoxelGridField3d::Ptr field, Eigen::Vector3d bound_min, Eigen::Vector3d bound_max )
@@ -870,6 +983,42 @@ VoxelGridField3d::Ptr load_voxelgridfield3d(const std::string& filename)
 }
 
 
+template<typename T>
+using SphericalFunction = std::function<T (double, double)>;
+// resolution.x -> resolution along theta angle
+// resolution.y -> resolution along phi angle
+template<typename T>
+T sample_spherical_function( SphericalFunction<T> f, V2i resolution, std::vector<houio::math::V3f>& points )
+{
+	T result = 0.0;
+
+	double min_theta = 0;
+	double max_theta = M_PI;
+	double min_phi = 0;
+	double max_phi = 2.0*M_PI;
+
+	int resolution_theta=resolution.x(); // resolution along theta angle
+	int resolution_phi=resolution.y(); // resolution along phi angle
+	double dtheta = (max_theta-min_theta)/double(resolution_theta);
+	double dphi = (max_phi-min_phi)/double(resolution_phi);
+
+	double pixel_area = dtheta*dphi;
+
+	for( int t=0;t<resolution_theta;++t )
+		for( int p=0;p<resolution_phi;++p )
+		{
+			double phi = dphi*p;
+			double theta = dtheta*t;
+			double f_value = f(theta, phi);
+			result+=f_value*pixel_area*std::sin(theta);
+
+			V3d pos = sphericalDirection(theta, phi)*f_value;
+			points.push_back( houio::math::V3f(pos.x(), pos.y(), pos.z()) );
+		}
+
+	return result;
+}
+
 void test()
 {
 	/*
@@ -894,6 +1043,7 @@ void test()
 	std::cout << "test result=" << result << std::endl;
 	*/
 
+	/*
 
 	// add constant factor
 
@@ -901,9 +1051,7 @@ void test()
 	double zStep = -2 / (double) res;
 	double phiStep = 2 * (double) M_PI / (double) res;
 
-	/*
-	double phi_integral = phiStep;
-	*/
+	//double phi_integral = phiStep;
 
 	double scale = 0.001;
 	double sum = 0.0;
@@ -919,12 +1067,107 @@ void test()
 		}
 	}
 	std::cout << "sum=" << sum << std::endl;
+	*/
+
+
+	V3d wi(0.0, 0.0, 1.0);
+	V2i sampling_res(128, 256);
+	double g = 0.6;
+	int order = 3;
+
+	HGPhase hg(g);
+
+
+	// hg groundtruth
+	{
+		std::function<double(double, double)> hg_fun = [&]( double theta, double phi )
+		{
+			V3d wo = sphericalDirection(theta, phi);
+			return hg.eval(wi, wo);
+		};
+		std::vector<houio::math::V3f>  hg_gt_points;
+
+		sample_spherical_function( hg_fun, sampling_res, hg_gt_points );
+		houio::HouGeoIO::xport( "hg_gt.bgeo", hg_gt_points );
+	}
+
+	// hg sampling evaluation
+	{
+		//std::vector<houio::math::V3f>  hg_samples_scaled;
+		std::vector<houio::math::V3f>  hg_samples;
+		std::vector<houio::math::V3f>  hg_samples_values;
+		RNGd rng;
+		int numSamples = 100000;
+		for( int i=0;i<numSamples;++i )
+		{
+			V3d wo;
+			double pdf;
+			double throughput_over_pdf = hg.sample(wi, wo, pdf, rng);
+			double throughput = hg.eval(wi, wo);
+
+			//hg_samples_scaled.push_back( houio::math::V3d(wo.x()*throughput, wo.y()*scale, wo.z()*scale) );
+			hg_samples.push_back( houio::math::V3f(wo.x(), wo.y(), wo.z()) );
+			hg_samples_values.push_back(houio::math::V3f(throughput, pdf, throughput_over_pdf));
+		}
+		std::map<std::string,std::vector<houio::math::V3f>> pattrs;
+		pattrs["P"] = hg_samples;
+		pattrs["eval"] = hg_samples_values;
+		houio::HouGeoIO::xport( "hg_samples.bgeo", pattrs );
+		//houio::HouGeoIO::xport( "hg_samples.bgeo", hg_samples );
+		//houio::HouGeoIO::xport( "hg_samples_scaled.bgeo", hg_samples_scaled );
+	}
+
+	// evaluation of sh reconstruction for HG
+	{
+		int order = 10;
+		std::function<double(double, double)> hg_fun = [&]( double theta, double phi )
+		{
+			//V3d wo = sphericalDirection(theta, phi);
+			//return hg.eval(wi, wo);
+			double sum = 0.0;
+			for( int l=0;l<=order;++l )
+				for( int m=-l;m<=l;++m )
+					sum += hg.shCoeff(l,m)*sph::basis(l,m, theta, phi);
+			return sum;
+		};
+		std::vector<houio::math::V3f>  hg_sh_points;
+
+		sample_spherical_function( hg_fun, sampling_res, hg_sh_points );
+		houio::HouGeoIO::xport( "hg_sh.bgeo", hg_sh_points );
+	}
+
 
 }
 
+/*
+std::complex<double> sh_basis( int l, int m, double theta, double phi )
+{
+	//double theta, phi;
+	//sphericalCoordinates(V3d(direction), theta, phi);
+	return sph::complex_basis(l,m, theta, phi);
+}
+
+std::complex<double> sh_basis_conj( int l, int m, double theta, double phi)
+{
+	//double theta, phi;
+	//sphericalCoordinates(V3d(direction), theta, phi);
+	return std::conj(sph::complex_basis(l,m, theta, phi));
+}
+*/
+
+double sh_basis( int l, int m, double theta, double phi )
+{
+	return sph::basis(l,m, theta, phi);
+}
+
+double sh_basis_conj( int l, int m, double theta, double phi)
+{
+	return std::conj(sph::basis(l,m, theta, phi));
+}
 
 PYBIND11_MODULE(renderer, m)
 {
+	sph::staticInit();
 
 	// Light ============================================================
 	py::class_<Light, Light::Ptr> class_light(m, "Light");
@@ -963,6 +1206,7 @@ PYBIND11_MODULE(renderer, m)
 			m.setBound(Box3d(min, max));
 		})
 		.def( "setExtinctionAlbedo", &Volume::setExtinctionAlbedo )
+		.def( "setPhaseFunction", &Volume::setPhaseFunction )
 		.def("worldToLocal",
 		[]( Volume &m, const Eigen::Vector3d& pWS )
 		{
@@ -973,6 +1217,16 @@ PYBIND11_MODULE(renderer, m)
 		[]( Volume &m, const Eigen::Vector3d& pLS )
 		{
 			Eigen::Vector3d pWS = m.localToWorld(pLS);
+			return pWS;
+		})
+		.def( "getBoundMin", []( Volume &m )
+		{
+			Eigen::Vector3d pWS = m.getBound().min;
+			return pWS;
+		})
+		.def( "getBoundMax", []( Volume &m )
+		{
+			Eigen::Vector3d pWS = m.getBound().max;
 			return pWS;
 		})
 		.def("getSlice", &Volume::getSlice )
@@ -1256,6 +1510,22 @@ PYBIND11_MODULE(renderer, m)
 		})
 	;
 
+
+	// PhaseFunction ============================================================
+	py::class_<PhaseFunction, PhaseFunction::Ptr> class_phasefunction(m, "PhaseFunction");
+	class_phasefunction
+	;
+
+	// HGPhase ============================================================
+	py::class_<HGPhase, HGPhase::Ptr> class_hgphase(m, "HGPhase", class_phasefunction);
+	class_hgphase
+		.def("__init__",
+		[](HGPhase &m, double g)
+		{
+			new (&m) HGPhase(g);
+		})
+	;
+
 	// SHTest ============================================================
 	py::class_<SHTest, SHTest::Ptr> class_shtest(m, "SHTest");
 	class_shtest
@@ -1273,6 +1543,7 @@ PYBIND11_MODULE(renderer, m)
 	m.def( "compute_fluence", &compute_fluence );
 	m.def( "create_shtest", &create_shtest );
 	m.def( "compute_unscattered_fluence", &compute_unscattered_fluence );
+	m.def( "bake_unscattered_directional_light", &bake_unscattered_directional_light );
 	// lights
 	m.def( "create_point_light", &create_point_light );
 	m.def( "create_directional_light", &create_directional_light );
@@ -1303,6 +1574,8 @@ PYBIND11_MODULE(renderer, m)
 	m.def( "ldr_image", &ldr_image );
 	// misc
 	m.def( "test", &test );
+	m.def( "sh_basis", &sh_basis );
+	m.def( "sh_basis_conj", &sh_basis_conj );
 
 
 

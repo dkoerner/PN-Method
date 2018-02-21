@@ -21,15 +21,17 @@ Their solver solves for the time-dependent and complex-valued $P_N$-equations in
 
 \begin{figure}[h]
 \centering
-\begin{subfigure}{0.45\columnwidth}
-\missingfigure{test}
+\begin{subfigure}{0.49\columnwidth}
+%\missingfigure{test}
+\includegraphics[width=\columnwidth]{images/checkerboard2d_p5_neumann_staggered_starmap.png}
 \end{subfigure}%
-\hspace{0.05\columnwidth}
-\begin{subfigure}{0.45\columnwidth}
-\missingfigure{test2}
+\hspace{0.01\columnwidth}
+\begin{subfigure}{0.49\columnwidth}
+%\missingfigure{test2}
+\includegraphics[width=\columnwidth]{images/checkerboard2d_p5_neumann_staggered.png}
 \end{subfigure}%
-\vspace{-0.2in}
-\icaption{Comparison of the result for the checkerboard test using Starmap~\cite{Seibold14} (left) against ours (right). Our result is in excellent agreement with the reference.}
+\vspace{-0.1in}
+\icaption{Comparison of the result for the checkerboard test using Starmap~\cite{Seibold14} (left) against ours (right). Our result is in excellent agreement with the reference. We attribute the difference at the boundary to the lack of convergence of the Starmap solve.}
 \label{fig:vs_starmap}
 \end{figure}
 
@@ -37,27 +39,29 @@ As can be seen in figure~\ref{fig:vs_starmap}, the results from our solver are i
 
 \subsection{Pointsource problem}
 
-We also run our solver for the point source problem, a single point light in a homogeneous medium. This not only helps to validate our implementation for the 3D case against an analytical ground truth, but also allows to get a clear assessment of the methods accuracy.
+We also run our solver for the point source problem, a single point light in a homogeneous medium. This not only helps to validate our implementation for the 3D case, but also allows to get a clear assessment of the methods accuracy. We use the Grosjean approximation, which was introduced by D'Eon et al.\cite{dEon11}, as a very accurate approximation to the ground truth solution.
 
 \begin{figure}[h]
 \centering
 \begin{subfigure}{0.45\columnwidth}
-\missingfigure{test}
+\includegraphics[width=\columnwidth]{figures/pointsource_pn.pdf}
+%\missingfigure{test}
+\caption{$P_N$ vs. ground truth}
+\label{fig:pointsource_pn}
 \end{subfigure}%
 \hspace{0.05\columnwidth}
 \begin{subfigure}{0.45\columnwidth}
-\missingfigure{test2}
+%\missingfigure{test2}
+\includegraphics[width=\columnwidth]{figures/pointsource_p5.pdf}
+\caption{$P_5$ vs. CDA and FLD}
+\label{fig:pointsource_p5}
 \end{subfigure}%
-\vspace{-0.2in}
-\icaption{Lineplot through the 3D solution of our solver for the point source problem for various order $N$ (left). Solution for $P_5$ compared against classical diffusion and flux-limited diffusion (right).}
+\vspace{-0.1in}
+\icaption{Lineplot through the 3D solution of our solver for the point source problem for various order $N$ (left). Solution for $P_5$ compared against classical diffusion, flux-limited diffusion and analytical solution (right).}
 \label{fig:pointsource}
 \end{figure}
 
-For our test case we choose a FD resolution of $80\times80\times80$, an extinction coefficient $\sigma_t=8.0$ and albedo $\alpha=0.9$. We run the solver for different truncation values $N$ and in figure~\ref{fig:pointsource}, we see that the solution becomes increasingly accurate for higher truncation order. The ground truth is underestimated when $N$ is odd, and overestimated when $N$ is even. We further see that the $P_1$ solution exactly matches the results from CDA, which makes sense, as the latter is only a collapsed version of the former.
-
-\begin{itemize}
-	\item performance/computation time
-\end{itemize}
+For our test case, we choose a FD resolution of $80\times80\times80$, an extinction coefficient $\sigma_t=8.0$ and albedo $\alpha=0.9$. We run the solver for different truncation values $N$. In figure~\ref{fig:pointsource}~\subref{fig:pointsource_pn}, we see that the solution becomes increasingly accurate for higher truncation order. The ground truth is underestimated when $N$ is odd, and overestimated when $N$ is even. We further see, that the $P_1$ solution exactly matches the results from CDA, which confirmes, that the latter is only a collapsed version of the former.
 
 \subsection{Procedural Clouds}
 

@@ -1,15 +1,19 @@
 \section{Conclusion}
 \label{sec:conclusion}
 
-In this paper, we introduced the $P_N$-method to the toolbox of deterministic methods for rendering participating media in computer graphics. We derived and presented the real-valued $P_N$-equations, along with a staggered grid solver for solving them. Unique to our system is, that it uses a computer algebra representation of the equation to solve as input. Discretization in angular and spatial domain is done without any user interference, using manipulation passes on the representation. The stencil code, which is used to propagate the system of linear equations, is automatically generated from the expression tree.
+In this paper, we introduced the $P_N$-method to the toolbox of deterministic methods for rendering participating media in computer graphics. We derived and presented the real-valued $P_N$-equations, along with a staggered grid solver for solving them. We showed, how to use the results in a rendering system and ran our solver for various standard problems for validation.
 
-This way, we can easily deal with complex coupled PDE's and avoid the time consuming and error prone process of writing stencil code by hand. Our approach helps especially for higher order, when the number of equations increase and become more complex.
+We originally set out to understand how non-linear diffusion compares against $P_N$ for increasing order. Although the lack of higher moments makes the FLD solution very flat, its energy conserving nature and comparably small resource footprint make it a much better approach when compared to $P_N$, which becomes more and more intractable for higher moment count. This is especially true, when compromises in accuracy of the approximation are acceptable.
 
-We further show, how to use the results in a rendering system and run our solver for various standard problems for validation. 
+The literature in other fields often states, that the $P_N$ method---when solved in normal form like we do---is able to deal with vacuum regions. This is misleading. The $P_N$-method in normal form indeed does not break down completely in the presence of vacuum like diffusion based methods do (due to $\sigma_t^{-1}$ in the diffusion coefficient). However, in the presence of vacuum, the condition number of the system matrix becomes infinite and does not converge either. Therefore $P_N$ based methods also require minimum thresholding of the extinction coefficient and offer no benefit for vacuum regions.
 
-\begin{itemize}
-	\item Mention performance problems and improving of solver performance as future work.
-	\item mention vaccum convergence problem and the challenge to couple deterministic methods with surface rendering problems.
-	\item Apply our automated stencil generation to other problem domains where coupled PDE's are present.
-\end{itemize}
+Much more work needs to be done in order to make our method competitive to alternative solutions. We believe this can be made possible by employing a multigrid scheme for solving the linear system of equations. We implemented a multigrid solver, but did not find the expected performance improvements. This is possibly due to the coupling between coefficients within a voxel, which does not work well together with the smoothing step. We want to study this further in the future.
+
+Unique to our system is, that it uses a computer algebra representation of the equation to solve as input. Discretization in angular and spatial domain is done using manipulation passes on the representation. The stencil code, which is used to propagate the system of linear equations, is automatically generated from the expression tree. This way, we can easily deal with complex coupled PDE's and avoid the time consuming and error prone process of writing stencil code by hand.
+
+When researching the application of $P_N$ in other fields, we came across a rich variety of variations on the $P_N$-method, such as simplified $P_N$ ($SP_N$)~\cite{Ryan10}, filtered $P_N$ ($FP_N$)~\cite{Radice13}, diffusion-correction $P_N$ ($DP_N$)~\cite{Schaefer11} and least-squares $P_N$ ($LSP_N$)~\cite{Hansen14}. These variations have been introduced to address certain problems of the standard $P_N$-method, such as ringing artefacts, dealing with vacuum regions and general convergence. Our solver can be applied to any (potentially coupled) PDE and therefore can generate stencil code for all these variations by simply expressing the respective PDE's in our computer algebra representation and providing this as an input to our solver. This would allow an exhaustive comparison of all these methods and we consider this as future work.
+
+Finally, since the approach of our solver is very generic, we also would like to explore its application to other simulation problems in computer graphics.
+
+
 

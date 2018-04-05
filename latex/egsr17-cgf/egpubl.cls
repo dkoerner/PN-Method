@@ -1,22 +1,23 @@
 %%%%%%%%%%%%%%%%%%%%%% start of egpubl.cls %%%%%%%%%%%%%%%%%%%%%%
-\def\fileversion{3.64}
-\def\filedate{2017/01/26}
-\def\docdate {2017/01/26}
+\def\fileversion{3.70}
+\def\filedate{2018/02/06}
+\def\docdate {2018/02/06}
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesClass{egpubl}[\filedate \space
                        Document Style for EG Publications v\fileversion ]
 %
 % EG Publications document style
 % (based on EG Annual Event document style, which in turn was based on CFG Journal)
-% Copyright (c) 1997-2017 D.Fellner
+% Copyright (c) 1997-2018 D.Fellner
 %
 % based on the original LaTeX ARTICLE DOCUMENT STYLE
 %    for LaTeX version 2.09 by Leslie Lamport
 % ...modifications by Sue Brooks, BUSS Ltd
 % ... and Graham White 8.ix.92
 % ...redesign for LaTeX2e and adaption to Conf. Proc. by D.Fellner
+% 29-11-17 SB  3.70 introduce support for EuroVis Poster, Short Papers
 % 26-01-17 SB  3.64 include ACM CCS 2012 support;
-% 03-12-15 SB  3.63 Introduced \STAR_Eurovis
+% 03-12-15 SB  3.63 Introduced \STAREurovis
 % 17-11-15 SB  3.62 introduced \DC
 % 02-09-15 SB  3.61 add Wiley copyright to STARs
 % 06-07-15 SB  3.60 new format
@@ -702,7 +703,7 @@
  \setcounter{footnote}{0}
  \let\maketitle\relax
  \let\@maketitle\relax
- \gdef\@author{}   
+ \gdef\@author{}
  \gdef\@title{}
  \hypersetup{pdfauthor={\@shortauthor},
      pdftitle={\@shorttitle}}% 
@@ -897,7 +898,6 @@ Categories and Subject Descriptors {\small (according to ACM CCS)}: }
 \newcommand\digitalheritage[1]{\gdef\@digitalheritage{#1}}
 \gdef\@digitalheritage{{\reset@font\large\sffamily DIGITAL HERITAGE \reset@font\itshape Conference \number\year}}
 %
-%
 \newcommand\expressive[1]{\gdef\@expressive{#1}}
 \gdef\@expressive{{\reset@font\large\sffamily EXPRESSIVE \reset@font \number\year}}
 %
@@ -918,6 +918,7 @@ Categories and Subject Descriptors {\small (according to ACM CCS)}: }
 %
 \newcommand\EducationEditors[1]{\gdef\p@EducationEditors{#1}}
 \gdef\p@EducationEditors{N.N. and N.N.}
+%
 \newcommand\PosterEditors[1]{\gdef\p@PosterEditors{#1}}
 \gdef\p@PosterEditors{N.N. and N.N.}
 %
@@ -929,6 +930,19 @@ Categories and Subject Descriptors {\small (according to ACM CCS)}: }
 %
 \newcommand\DCEditors[1]{\gdef\p@DCEditors{#1}}
 \gdef\p@DCEditors{N.N. and N.N.}
+%
+% EuroVis 
+\newcommand\EuroVisShortPresEditors[1]{\gdef\p@EuroVisShortPresEditors{#1}}
+\gdef\p@EuroVisShortPresEditors{N.N. and N.N.}
+%
+\newcommand\EuroVisSTARPresEditors[1]{\gdef\p@EuroVisSTARPresEditors{#1}}
+\gdef\p@EuroVisSTARPresEditors{N.N. and N.N.}
+% 
+\newcommand\EuroVisPosterEditors[1]{\gdef\p@EuroVisPosterEditors{#1}}
+\gdef\p@EuroVisPosterEditors{N.N. and N.N.}
+%
+
+
 \newcommand\EGyear[1]{\gdef\p@EGyear{#1}}
 \gdef\p@EGyear{'0x}
 %
@@ -1026,115 +1040,19 @@ submitted to \textit{#1}%
 \EGpagenumber%
 %
 % ------ define Document Types
-%          ConferenceSubmission, ConferencePaper, 
-%          STAR, Tutorial, ShortPresentation, Education, Poster, Areas, MedicalPrize, DC
-%          JournalSubmission, JournalPaper, SpecialIssueSubmission, SpecialIssuePaper
-%          WsSubmission, WsPaper
-%          DigitalHeritagePaper, PaperL2P, Expressive
+%          JournalSubmission, JournalPaper  % for CGF regular issue%
 %
-\def\ConferenceSubmission{%
-\EGpagenumber%
-\copyrightTextTitPag{\p@confSubmissionText{\p@ConfYear}}
-\copyrightTextRunPag{\p@confSubmissionText{\p@ConfYear}}
-\def\ps@titlepage{\let\@mkboth\@gobbletwo
- \def\@oddhead{\raisebox{\z@}[8pt][1pt]{\parbox{\textwidth}{\small
-   \parbox[t]{.7\textwidth}{\sloppy\raggedright
-     EUROGRAPHICS \p@EGyear{} / \p@ConfEditors{}\\
-     \p@ConfEditorStrg}% (Guest Editors)}
-   \hfill
-   \textit{Volume \j@volume} (\textit{\p@ConfYear\/}),
-   \textit{Number \j@issue}}%
- }%
-}
- \def\@oddfoot{{\tiny\raisebox{\z@}[8pt][1pt]{\parbox[t]{18pc}{\sloppy
-  \p@copyrightTextTitPag}}}\hfill}
- \let\@evenhead=\@oddhead
- \let\@evenfoot=\@oddfoot
- \let\sectionmark=\EmptySectionmark
- \let\subsectionmark=\EmptySubsectionmark
-}}
-
-% -------
-\def\SpecialIssueSubmission{%
-\EGpagenumber%
-\copyrightTextTitPag{\p@SpecialIssueSubmissionText{\p@ConfName{} (\p@ConfYear})}
-\copyrightTextRunPag{\p@SpecialIssueSubmissionText{\p@ConfName{} (\p@ConfYear})}
-\def\ps@titlepage{\let\@mkboth\@gobbletwo
- \def\@oddhead{\raisebox{\z@}[8pt][1pt]{\parbox{\textwidth}{\small
-   \parbox[t]{.7\textwidth}{\sloppy\raggedright
-     \p@ConfName{} \p@EGyear{} \\
-     \p@ConfEditors{}\\
-     \p@ConfEditorStrg}% (Guest Editors)}
-   \hfill
-   \textit{Volume \j@volume} (\textit{\p@ConfYear\/}),
-   \textit{Number \j@issue}}%
- }%
-}
- \def\@oddfoot{{\tiny\raisebox{\z@}[8pt][1pt]{\parbox[t]{18pc}{\sloppy
-  \p@copyrightTextTitPag}}}\hfill}
- \let\@evenhead=\@oddhead
- \let\@evenfoot=\@oddfoot
- \let\sectionmark=\EmptySectionmark
- \let\subsectionmark=\EmptySubsectionmark
-}}
-
-% -------
-\def\ConferencePaper{%
-\noEGpagenumber%
-%\copyrightTextRunPag{\parbox[t]{18pc}{\sloppy
-%  \p@copyrightTextShort{\number\year}}}
-\copyrightTextTitPag{\p@copyrightTextLong{\number\p@EGyear{}}}
-\def\@oddfoot{{\tiny\raisebox{\z@}[8pt][1pt]{\parbox[t]{20pc}{\sloppy
-  \p@copyrightTextShort{\number\p@EGyear{}}}}}}
-\def\@evenfoot{\mbox{}\hfill {\tiny\raisebox{\z@}[8pt][1pt]{\parbox[t]{20pc}{\sloppy
-  \p@copyrightTextShortEven{\number\p@EGyear{}}}}}}
-\def\ps@titlepage{\let\@mkboth\@gobbletwo
- \def\@oddhead{\raisebox{\z@}[8pt][1pt]{\parbox{\textwidth}{\small
-   \parbox[t]{.7\textwidth}{\sloppy\raggedright
-     EUROGRAPHICS \p@EGyear{} / \p@ConfEditors{}\\
-     \p@ConfEditorStrg}% (Guest Editors)}
-   \hfill
-%   \textit{Volume \j@volume} (\textit{\p@ConfYear\/}),
-   \textit{Volume \j@volume} (\textit{\j@year\/}),
-   \textit{Number \j@issue}}%
- }%
-}
- \def\@oddfoot{{\tiny\raisebox{\z@}[8pt][1pt]{\parbox[t]{20pc}{\sloppy
-  \p@copyrightTextTitPag}}}\hfill}
- \let\@evenhead=\@oddhead
- \let\@evenfoot=\@oddfoot
- \let\sectionmark=\EmptySectionmark
- \let\subsectionmark=\EmptySubsectionmark
-}}
-
-% -------
-\def\SpecialIssuePaper{%
-\noEGpagenumber%
-\copyrightTextTitPag{\p@copyrightTextLong{\number\p@EGyear{}}}
-\def\@oddfoot{{\tiny\raisebox{\z@}[8pt][1pt]{\parbox[t]{20pc}{\sloppy
-  \p@copyrightTextShort{\number\p@EGyear{}}}}}}
-\def\@evenfoot{\mbox{}\hfill {\tiny\raisebox{\z@}[8pt][1pt]{\parbox[t]{20pc}{\sloppy
-  \p@copyrightTextShortEven{\number\p@EGyear{}}}}}}
-
-\def\ps@titlepage{\let\@mkboth\@gobbletwo
- \def\@oddhead{\raisebox{\z@}[8pt][1pt]{\parbox{\textwidth}{\small
-   \parbox[t]{.7\textwidth}{\sloppy\raggedright
-     \p@ConfName\  \p@EGyear{} \\
-     \p@ConfEditors{}\\
-     \p@ConfEditorStrg}% (Guest Editors)}
-   \hfill
-%   \textit{Volume \j@volume} (\textit{\p@ConfYear\/}),
-   \textit{Volume \j@volume} (\textit{\j@year\/}),
-   \textit{Number \j@issue}}%
- }%
-}
- \def\@oddfoot{{\tiny\raisebox{\z@}[8pt][1pt]{\parbox[t]{20pc}{\sloppy
-  \p@copyrightTextTitPag}}}\hfill}
- \let\@evenhead=\@oddhead
-% \let\@evenfoot=\@oddfoot
- \let\sectionmark=\EmptySectionmark
- \let\subsectionmark=\EmptySubsectionmark
-}}
+%          ConferenceSubmission, ConferencePaper,   %for CGF Eurographics Conference issue%
+%          STAR, Tutorial, ShortPresentation, Education, Poster, Areas, MedicalPrize, DC  %for Eurographics Conference additional material%
+%
+%          SpecialIssueSubmission, SpecialIssuePaper % for CGF Special Issues: EuroVis, SGP, Rendering, PG%
+%
+%          WsSubmission, WsPaper %for Eurographics Workshop Proceedings%
+%          WsSubmissionJoint, WsPaperJoint % for joint events, for example ICAT-EGVE 
+%          Expressive % for SBIM, CAe, NPAR%
+%          DigitalHeritagePaper 
+%          PaperL2P % for events EG only asks for License to Publish %
+%          STAREurovis, EuroVisPoster, EuroVisShort % for EuroVis additional material%
 
 % -------
 \def\JournalSubmission{%
@@ -1184,17 +1102,19 @@ submitted to \textit{#1}%
  \let\subsectionmark=\EmptySubsectionmark
 }}
 % -------
-\def\DigitalHeritagePaper{%
-\noEGpagenumber%
-\copyrightTextTitPag{\p@copyrightTextAuthors{\p@ConfYear}}
-\copyrightTextRunPag{\p@copyrightTextAuthors{\p@ConfYear}}
+\def\ConferenceSubmission{%
+\EGpagenumber%
+\copyrightTextTitPag{\p@confSubmissionText{\p@ConfYear}}
+\copyrightTextRunPag{\p@confSubmissionText{\p@ConfYear}}
 \def\ps@titlepage{\let\@mkboth\@gobbletwo
- \def\@oddhead{\raisebox{\z@}[8pt][1pt]{\parbox{.5\textwidth}{\small
-   \parbox[t]{.7\textwidth}{\sloppy\raggedright  
-    \p@ConfNameDH{} \\
-%     (\p@ConfYear)\\
-     \p@ConfEditors{} \p@ConfEditorStrg}}%
- }\hfill \@digitalheritage
+ \def\@oddhead{\raisebox{\z@}[8pt][1pt]{\parbox{\textwidth}{\small
+   \parbox[t]{.7\textwidth}{\sloppy\raggedright
+     EUROGRAPHICS \p@EGyear{} / \p@ConfEditors{}\\
+     \p@ConfEditorStrg}% (Guest Editors)}
+   \hfill
+   \textit{Volume \j@volume} (\textit{\p@ConfYear\/}),
+   \textit{Number \j@issue}}%
+ }%
 }
  \def\@oddfoot{{\tiny\raisebox{\z@}[8pt][1pt]{\parbox[t]{18pc}{\sloppy
   \p@copyrightTextTitPag}}}\hfill}
@@ -1204,23 +1124,27 @@ submitted to \textit{#1}%
  \let\subsectionmark=\EmptySubsectionmark
 }}
 % -------
-% -------
-\def\Expressive{%
+\def\ConferencePaper{%
 \noEGpagenumber%
-\copyrightTextTitPag{\p@copyrightTextEG{\p@ConfYear}}
-\copyrightTextRunPag{\p@copyrightTextEG{\p@ConfYear}}
- \def\@oddfoot{{\tiny\raisebox{\z@}[8pt][1pt]{\parbox[t]{18pc}{\sloppy
-  \p@copyrightTextRunPag}}}\hfill}
-\def\@evenfoot{\mbox{}\hfill {\tiny\raisebox{\z@}[8pt][1pt]{\parbox[t]{18pc}{\sloppy
-  \p@copyrightTextEGeven{\p@ConfYear}}}}} 
+%\copyrightTextRunPag{\parbox[t]{18pc}{\sloppy
+%  \p@copyrightTextShort{\number\year}}}
+\copyrightTextTitPag{\p@copyrightTextLong{\number\p@EGyear{}}}
+\def\@oddfoot{{\tiny\raisebox{\z@}[8pt][1pt]{\parbox[t]{20pc}{\sloppy
+  \p@copyrightTextShort{\number\p@EGyear{}}}}}}
+\def\@evenfoot{\mbox{}\hfill {\tiny\raisebox{\z@}[8pt][1pt]{\parbox[t]{20pc}{\sloppy
+  \p@copyrightTextShortEven{\number\p@EGyear{}}}}}}
 \def\ps@titlepage{\let\@mkboth\@gobbletwo
  \def\@oddhead{\raisebox{\z@}[8pt][1pt]{\parbox{\textwidth}{\small
-   \parbox[t]{\textwidth}{\sloppy\raggedright
-     \p@ConfName{} \hfill \@expressive\\
-     \p@ConfEditors{} \p@ConfEditorStrg}}%
- }     
- }
- \def\@oddfoot{{\tiny\raisebox{\z@}[8pt][1pt]{\parbox[t]{18pc}{\sloppy
+   \parbox[t]{.7\textwidth}{\sloppy\raggedright
+     EUROGRAPHICS \p@EGyear{} / \p@ConfEditors{}\\
+     \p@ConfEditorStrg}% (Guest Editors)}
+   \hfill
+%   \textit{Volume \j@volume} (\textit{\p@ConfYear\/}),
+   \textit{Volume \j@volume} (\textit{\j@year\/}),
+   \textit{Number \j@issue}}%
+ }%
+}
+ \def\@oddfoot{{\tiny\raisebox{\z@}[8pt][1pt]{\parbox[t]{20pc}{\sloppy
   \p@copyrightTextTitPag}}}\hfill}
  \let\@evenhead=\@oddhead
  \let\@evenfoot=\@oddfoot
@@ -1247,7 +1171,7 @@ submitted to \textit{#1}%
  \let\subsectionmark=\EmptySubsectionmark
 }}
 % -------
-\def\STAR{%
+\def\STAR{% since 2015 in CGF %
 \noEGpagenumber%
 \copyrightTextTitPag{\p@copyrightTextLong{\number\p@EGyear{}}}
 \def\@oddfoot{{\tiny\raisebox{\z@}[8pt][1pt]{\parbox[t]{20pc}{\sloppy
@@ -1275,39 +1199,6 @@ submitted to \textit{#1}%
  \let\sectionmark=\EmptySectionmark
  \let\subsectionmark=\EmptySubsectionmark
 }}
-%
-%---            
-% -------
-\def\STAR_Eurovis{%
-\noEGpagenumber%
-\copyrightTextTitPag{\p@copyrightTextLong{\number\p@EGyear{}}}
-\def\@oddfoot{{\tiny\raisebox{\z@}[8pt][1pt]{\parbox[t]{20pc}{\sloppy
-  \p@copyrightTextShort{\number\p@EGyear{}}}}}}
-\def\@evenfoot{\mbox{}\hfill {\tiny\raisebox{\z@}[8pt][1pt]{\parbox[t]{20pc}{\sloppy
-  \p@copyrightTextShortEven{\number\p@EGyear{}}}}}}
-\gdef\ps@titlepage{\let\@mkboth\@gobbletwo
- \def\@oddhead{\raisebox{\z@}[8pt][1pt]{\parbox{\textwidth}{\small
-   \parbox[t]{.5\textwidth}{\sloppy\raggedright
-     EuroVis \p@EGyear{} \\
-     \p@STARPresEditors{}\\
-     \p@ConfEditorStrg}% (Guest Editors)}
-   \hfill
-   \parbox[t]{.5\textwidth}{\sloppy\raggedleft
-   \textit{Volume \j@volume} (\textit{\p@ConfYear\/}),
-   \textit{Number \j@issue}\\
-   {\itshape STAR -- State of The Art Report}}}
- }%
-}   
-   
- \def\@oddfoot{{\tiny\raisebox{\z@}[8pt][1pt]{\parbox[t]{20pc}{\sloppy
-  \p@copyrightTextTitPag}}}\hfill}
- \let\@evenhead=\@oddhead
- \let\@evenfoot=\@oddfoot
- \let\sectionmark=\EmptySectionmark
- \let\subsectionmark=\EmptySubsectionmark
-}}
-%
-%---                    
 % -------
 \def\DC{%
 \noEGpagenumber%
@@ -1327,7 +1218,6 @@ submitted to \textit{#1}%
  \let\sectionmark=\EmptySectionmark
  \let\subsectionmark=\EmptySubsectionmark
 }}
-%
 % -------
 \def\Education{%
 \noEGpagenumber%
@@ -1347,8 +1237,6 @@ submitted to \textit{#1}%
  \let\sectionmark=\EmptySectionmark
  \let\subsectionmark=\EmptySubsectionmark
 }}
-%
-%---
 % -------
 \def\Poster{%
 \noEGpagenumber%
@@ -1368,7 +1256,6 @@ submitted to \textit{#1}%
  \let\sectionmark=\EmptySectionmark
  \let\subsectionmark=\EmptySubsectionmark
 }}
-%
 % -------
 \def\Areas{%
 \noEGpagenumber%
@@ -1388,7 +1275,6 @@ submitted to \textit{#1}%
  \let\sectionmark=\EmptySectionmark
  \let\subsectionmark=\EmptySubsectionmark
 }}
-%
 % -------
 \def\MedicalPrize{%
 \noEGpagenumber%
@@ -1408,8 +1294,7 @@ submitted to \textit{#1}%
  \let\sectionmark=\EmptySectionmark
  \let\subsectionmark=\EmptySubsectionmark
 }}
-%
-%---
+% -------
 \def\ShortPresentation{%
 \noEGpagenumber%
 \copyrightTextTitPag{\p@copyrightTextEG{\p@ConfYear}}
@@ -1428,8 +1313,58 @@ submitted to \textit{#1}%
  \let\sectionmark=\EmptySectionmark
  \let\subsectionmark=\EmptySubsectionmark
 }}
-%
-%---
+% -------
+\def\SpecialIssueSubmission{%
+\EGpagenumber%
+\copyrightTextTitPag{\p@SpecialIssueSubmissionText{\p@ConfName{} (\p@ConfYear})}
+\copyrightTextRunPag{\p@SpecialIssueSubmissionText{\p@ConfName{} (\p@ConfYear})}
+\def\ps@titlepage{\let\@mkboth\@gobbletwo
+ \def\@oddhead{\raisebox{\z@}[8pt][1pt]{\parbox{\textwidth}{\small
+   \parbox[t]{.7\textwidth}{\sloppy\raggedright
+     \p@ConfName{} \p@EGyear{} \\
+     \p@ConfEditors{}\\
+     \p@ConfEditorStrg}% (Guest Editors)}
+   \hfill
+   \textit{Volume \j@volume} (\textit{\p@ConfYear\/}),
+   \textit{Number \j@issue}}%
+ }%
+}
+ \def\@oddfoot{{\tiny\raisebox{\z@}[8pt][1pt]{\parbox[t]{18pc}{\sloppy
+  \p@copyrightTextTitPag}}}\hfill}
+ \let\@evenhead=\@oddhead
+ \let\@evenfoot=\@oddfoot
+ \let\sectionmark=\EmptySectionmark
+ \let\subsectionmark=\EmptySubsectionmark
+}}
+% -------
+\def\SpecialIssuePaper{%
+\noEGpagenumber%
+\copyrightTextTitPag{\p@copyrightTextLong{\number\p@EGyear{}}}
+\def\@oddfoot{{\tiny\raisebox{\z@}[8pt][1pt]{\parbox[t]{20pc}{\sloppy
+  \p@copyrightTextShort{\number\p@EGyear{}}}}}}
+\def\@evenfoot{\mbox{}\hfill {\tiny\raisebox{\z@}[8pt][1pt]{\parbox[t]{20pc}{\sloppy
+  \p@copyrightTextShortEven{\number\p@EGyear{}}}}}}
+
+\def\ps@titlepage{\let\@mkboth\@gobbletwo
+ \def\@oddhead{\raisebox{\z@}[8pt][1pt]{\parbox{\textwidth}{\small
+   \parbox[t]{.7\textwidth}{\sloppy\raggedright
+     \p@ConfName\  \p@EGyear{} \\
+     \p@ConfEditors{}\\
+     \p@ConfEditorStrg}% (Guest Editors)}
+   \hfill
+%   \textit{Volume \j@volume} (\textit{\p@ConfYear\/}),
+   \textit{Volume \j@volume} (\textit{\j@year\/}),
+   \textit{Number \j@issue}}%
+ }%
+}
+ \def\@oddfoot{{\tiny\raisebox{\z@}[8pt][1pt]{\parbox[t]{20pc}{\sloppy
+  \p@copyrightTextTitPag}}}\hfill}
+ \let\@evenhead=\@oddhead
+% \let\@evenfoot=\@oddfoot
+ \let\sectionmark=\EmptySectionmark
+ \let\subsectionmark=\EmptySubsectionmark
+}}
+% -------
 \def\WsSubmission{%
 \EGpagenumber%
 \copyrightTextTitPag{\p@wsSubmissionText{\p@ConfName{} (\p@ConfYear})}
@@ -1473,7 +1408,6 @@ submitted to \textit{#1}%
  \let\subsectionmark=\EmptySubsectionmark
 }}
 % -------
-%---
 \def\WsSubmissionJoint{%
 \EGpagenumber%
 \copyrightTextTitPag{\p@wsSubmissionText{\p@ConfName{} (\p@ConfYear})}
@@ -1517,6 +1451,49 @@ submitted to \textit{#1}%
  \let\subsectionmark=\EmptySubsectionmark
 }}
 % -------
+\def\Expressive{%
+\noEGpagenumber%
+\copyrightTextTitPag{\p@copyrightTextEG{\p@ConfYear}}
+\copyrightTextRunPag{\p@copyrightTextEG{\p@ConfYear}}
+ \def\@oddfoot{{\tiny\raisebox{\z@}[8pt][1pt]{\parbox[t]{18pc}{\sloppy
+  \p@copyrightTextRunPag}}}\hfill}
+\def\@evenfoot{\mbox{}\hfill {\tiny\raisebox{\z@}[8pt][1pt]{\parbox[t]{18pc}{\sloppy
+  \p@copyrightTextEGeven{\p@ConfYear}}}}} 
+\def\ps@titlepage{\let\@mkboth\@gobbletwo
+ \def\@oddhead{\raisebox{\z@}[8pt][1pt]{\parbox{\textwidth}{\small
+   \parbox[t]{\textwidth}{\sloppy\raggedright
+     \p@ConfName{} \hfill \@expressive\\
+     \p@ConfEditors{} \p@ConfEditorStrg}}%
+ }     
+ }
+ \def\@oddfoot{{\tiny\raisebox{\z@}[8pt][1pt]{\parbox[t]{18pc}{\sloppy
+  \p@copyrightTextTitPag}}}\hfill}
+ \let\@evenhead=\@oddhead
+ \let\@evenfoot=\@oddfoot
+ \let\sectionmark=\EmptySectionmark
+ \let\subsectionmark=\EmptySubsectionmark
+}}
+% -------
+\def\DigitalHeritagePaper{%
+\noEGpagenumber%
+\copyrightTextTitPag{\p@copyrightTextAuthors{\p@ConfYear}}
+\copyrightTextRunPag{\p@copyrightTextAuthors{\p@ConfYear}}
+\def\ps@titlepage{\let\@mkboth\@gobbletwo
+ \def\@oddhead{\raisebox{\z@}[8pt][1pt]{\parbox{.5\textwidth}{\small
+   \parbox[t]{.7\textwidth}{\sloppy\raggedright  
+    \p@ConfNameDH{} \\
+%     (\p@ConfYear)\\
+     \p@ConfEditors{} \p@ConfEditorStrg}}%
+ }\hfill \@digitalheritage
+}
+ \def\@oddfoot{{\tiny\raisebox{\z@}[8pt][1pt]{\parbox[t]{18pc}{\sloppy
+  \p@copyrightTextTitPag}}}\hfill}
+ \let\@evenhead=\@oddhead
+ \let\@evenfoot=\@oddfoot
+ \let\sectionmark=\EmptySectionmark
+ \let\subsectionmark=\EmptySubsectionmark
+}}
+% -------
 \def\PaperL2P{%
 \noEGpagenumber%
 \copyrightTextTitPag{\p@copyrightTextAuthors{\p@ConfYear}}
@@ -1536,6 +1513,75 @@ submitted to \textit{#1}%
  \let\sectionmark=\EmptySectionmark
  \let\subsectionmark=\EmptySubsectionmark
 }}
+% -------
+\def\STAREurovis{%  since 2016 in CGF 
+\noEGpagenumber%
+\copyrightTextTitPag{\p@copyrightTextLong{\number\p@EGyear{}}}
+\def\@oddfoot{{\tiny\raisebox{\z@}[8pt][1pt]{\parbox[t]{20pc}{\sloppy
+  \p@copyrightTextShort{\number\p@EGyear{}}}}}}
+\def\@evenfoot{\mbox{}\hfill {\tiny\raisebox{\z@}[8pt][1pt]{\parbox[t]{20pc}{\sloppy
+  \p@copyrightTextShortEven{\number\p@EGyear{}}}}}}
+\gdef\ps@titlepage{\let\@mkboth\@gobbletwo
+ \def\@oddhead{\raisebox{\z@}[8pt][1pt]{\parbox{\textwidth}{\small
+   \parbox[t]{.5\textwidth}{\sloppy\raggedright
+     EUROVIS \p@EGyear{} \\
+     \p@EuroVisSTARPresEditors{}\\
+     \p@ConfEditorStrg}% (Guest Editors)}
+   \hfill
+   \parbox[t]{.5\textwidth}{\sloppy\raggedleft
+   \textit{Volume \j@volume} (\textit{\p@ConfYear\/}),
+   \textit{Number \j@issue}\\
+   {\itshape STAR -- State of The Art Report}}}
+ }%
+}   
+   
+ \def\@oddfoot{{\tiny\raisebox{\z@}[8pt][1pt]{\parbox[t]{20pc}{\sloppy
+  \p@copyrightTextTitPag}}}\hfill}
+ \let\@evenhead=\@oddhead
+ \let\@evenfoot=\@oddfoot
+ \let\sectionmark=\EmptySectionmark
+ \let\subsectionmark=\EmptySubsectionmark
+}}
+% -------
+\def\EuroVisPoster{%
+\noEGpagenumber%
+\copyrightTextTitPag{\p@copyrightTextEG{\p@ConfYear}}
+\copyrightTextRunPag{\p@copyrightTextEG{\p@ConfYear}}
+ \def\@oddfoot{{\tiny\raisebox{\z@}[8pt][1pt]{\parbox[t]{18pc}{\sloppy
+  \p@copyrightTextRunPag}}}\hfill}
+\def\@evenfoot{\mbox{}\hfill {\tiny\raisebox{\z@}[8pt][1pt]{\parbox[t]{18pc}{\sloppy
+  \p@copyrightTextEGeven{\p@ConfYear}}}}} 
+\gdef\ps@titlepage{\let\@mkboth\@gobbletwo
+ \def\@oddhead{\raisebox{\z@}[8pt][1pt]{\parbox{\textwidth}{\small
+   EUROVIS \p@EGyear  / \p@EuroVisPosterEditors{} \hfill {\itshape Poster}}}}
+ \def\@oddfoot{{\tiny\raisebox{\z@}[8pt][1pt]{\parbox[t]{18pc}{\sloppy
+  \p@copyrightTextTitPag}}}\hfill}
+ \let\@evenhead=\@oddhead
+ \let\@evenfoot=\@oddfoot
+ \let\sectionmark=\EmptySectionmark
+ \let\subsectionmark=\EmptySubsectionmark
+}}
+% -------
+\def\EuroVisShort{%
+\noEGpagenumber%
+\copyrightTextTitPag{\p@copyrightTextEG{\p@ConfYear}}
+\copyrightTextRunPag{\p@copyrightTextEG{\p@ConfYear}}
+ \def\@oddfoot{{\tiny\raisebox{\z@}[8pt][1pt]{\parbox[t]{18pc}{\sloppy
+  \p@copyrightTextRunPag}}}\hfill}
+\def\@evenfoot{\mbox{}\hfill {\tiny\raisebox{\z@}[8pt][1pt]{\parbox[t]{18pc}{\sloppy
+  \p@copyrightTextEGeven{\p@ConfYear}}}}} 
+\gdef\ps@titlepage{\let\@mkboth\@gobbletwo
+ \def\@oddhead{\raisebox{\z@}[8pt][1pt]{\parbox{\textwidth}{\small
+   EUROVIS \p@EGyear  / \p@EuroVisShortPresEditors{} \hfill {\itshape Short Paper}}}}
+ \def\@oddfoot{{\tiny\raisebox{\z@}[8pt][1pt]{\parbox[t]{18pc}{\sloppy
+  \p@copyrightTextTitPag}}}\hfill}
+ \let\@evenhead=\@oddhead
+ \let\@evenfoot=\@oddfoot
+ \let\sectionmark=\EmptySectionmark
+ \let\subsectionmark=\EmptySubsectionmark
+}}
+%
+
 % -------
 % Headings for Running Pages
 %

@@ -1,0 +1,10 @@
+\section{Computer Algebra Representation}
+\label{sec:car}
+
+Our computer algebra representation is based on mathematical expression trees, which are hierarchies of expression instances. Those can be basic primitives, such as numbers, variables or special symbols, such as the Kronecker delta or imaginary number. Other expression types, such as integrals, derivatives, sums, products and functions build the hierarchy by referencing child expressions.
+
+Our framework further provides manipulators, which can be executed on expressions. We implemented all manipulations, which were required for the derivation of the $P_N$-equations. This includes operations, such as application of the distributive law, substitution, constant folding, reordering of nested integrals, application of identities up to more complex operations, such as factorization of unknowns and discretization of spatial variables. The derivation steps of the real-valued $P_N$-equations in the supplemental material were all carried out using our framework.
+
+Finally, frontends allow rendering the expression tree into different forms. We implemented frontends for rendering expression trees to \LaTeX~and C++ source code. The equations in the supplemental material were almost all rendered by the former. The latter was used for generating the stencil code used by our solver.
+
+Note that our framework is different from a computer algebra system (CAS), in that our framework only deals with representation and manipulation of expressions, and is not concerned with finding answers to mathematical problems. 

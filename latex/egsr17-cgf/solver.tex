@@ -1,14 +1,3 @@
-
-
-\section{$P_N$-Solver}
-\label{sec:pnsolver}
-
-The truncation order $N$ is the key input parameter to the solver. With higher values, manually coding the solver from the equations would be ardous, error prone and very time consuming. We therefore decided to make use of the equations computer algebra representation and designed our solver around it.
-
-The solver consists of two components. The first is a precomputation (section~\ref{sec:solver_precomputation}), which is done once for every single value of $N$. This steps runs a partial evaluation on the mathematical expression tree and applies the spatial discretization in a reference space we call stencil space. The precomputation step automatically generates source code from the resulting expression tree.
-
-The generated stencil code is compiled with the runtime component (section~\ref{sec:solver_runtime}) of our solver. This component gets the actual problem as input, including gid resolution and RTE parameter fields. It builds the linear system and solves it using standard methods. An overview of the solver is given in figure~\ref{fig:pnsolver}.
-
 \begin{figure*}[t!]
 \centering
 %\missingfigure{$P_N$-solver overview: generate stencil code $\rightarrow$ build system $\rightarrow$ solve $\rightarrow$ render}
@@ -18,22 +7,67 @@ The generated stencil code is compiled with the runtime component (section~\ref{
 \label{fig:pnsolver}
 \end{figure*}
 
+
+\section{$P_N$-Solver}
+\label{sec:pnsolver}
+
+The truncation order $N$ is the key input parameter to the solver. With higher values, manual implementation of the solver from the equations would be ardous, error-prone and time-consuming. We therefore decided to make use of the computer algebra representation and designed our solver around it.
+
+The solver consists of two components. The first is a precomputation (Section~\ref{sec:solver_precomputation}), which is excuted once for every single value of $N$. This steps runs a partial evaluation on the mathematical expression tree and applies the spatial discretization in a reference space we call stencil space. The precomputation step automatically generates source code from the resulting expression tree.
+
+The generated stencil code is compiled with the runtime component (Section~\ref{sec:solver_runtime}) of our solver. This component receives the actual problem as input, including grid resolution and RTE parameter fields. It then builds the linear system and solves it using standard methods. An overview of the solver is given in Figure~\ref{fig:pnsolver}.
+
+
+
 \subsection{Precomputation}
 \label{sec:solver_precomputation}
 
-The result of the precomputation is a stencil, which can be used during runtime to build the linear system for a given problem. The stencil is a pattern of indices into the solution vector, along with some weights. It expresses how the sum of the weighted solution vector components relate to the RHS for a given unknown in the system and therefore contains most information required to propagate a row in the system matrix $A$ and RHS-vector $\vec{Q}$. The index pattern does not change for different rows, giving the stencil its name.
+The result of the precomputation is a stencil, which can be used during runtime to build the linear system for a given problem. The stencil is a pattern of indices into the solution vector, along with values. It expresses how the sum of the weighted solution vector, components relate to the RHS for a given unknown in the system and therefore contains most information required to fill the system matrix $A$ and RHS-vector $\vec{Q}$ row by row. Note that while the coefficients may change, the sparsity pattern of the stencil is identical for different rows.
 
-A stencil generally is crafted by discretizing a PDE at a hypothetical center voxel $ijk$ (assuming to mean the voxel center most of the time). Finite differences create weighted references to other voxels (e.g. $i+1,jk$). After bringing the discretized equation into canonical form (a weighted sum of unknowns), one can write the stencil by reading off the weights and $ijk$-offsets. $ijk$ will only be known during runtime, when the stencil is executed for a particular unknown (row). Then the offsets can be used to find the component index into the solution-vector and weights can be evaluated for concrete world space position. We refer to the space with the hypthetical voxel $ijk$ at the center as stencil space.
+\begin{figure}[b]
+\centering
+%\missingfigure{test}
+\includegraphics[width=0.7\columnwidth]{figures/fig_stencil_pipeline.pdf}
+%\vspace{-0.2in}
+\icaption{Creating the stencil code requires several steps, usually done by hand. We express the given problem in a computer algebra representation and use it to fully automate the process.}
+\label{fig:stencile_pipeline}
+\end{figure}
 
-Typically, the stencil is coded by hand, which would be challenging with our $P_N$-equations and higher values of $N$. In our system, the stencil code is created automatically from the computer algebra representation. Spatial discretization and fatorization into canonical form are done as manipulation passes on the mathematical expression tree. The precomputation code iterates over all terms and analyzes the unkown to get the $ijk$-offset. The factor-expression is extracted from the tree and used to generate source code for evaluating the factor-expression during runtime (including calls for evaluating RTE-parameter fields).
+Stencil generation entails discretizing a PDE at a hypothetical center voxel $(i, j, k)$ (assuming to mean the voxel center most of the time). Finite differences create weighted references to other voxels (e.g. $i+1, j, k$). After bringing the discretized equation into canonical form (a weighted sum of unknowns), one can write the stencil by reading off the weights and offsets (Figure~\ref{fig:stencile_pipeline}). $(i, j, k)$ will only be known during runtime, when the stencil is executed for a particular unknown (row). Then the offsets can be used to find the component index into the solution-vector, and weights can be evaluated for concrete world space position. We refer to the space with the hypthetical voxel $(i, j, k)$ at the center as stencil space.
 
-The spatial discretization is done by parsing the expression tree of each equation from the root. All occurances of the continuous positional variable $\vec{x}$ are replaced by discrete voxel coordinates $i,j,k$, whose values are retrieved from the top of a stack. The stack is kept by the parser and is initialized with the voxel at $ijk=(0,0,0)$.
+\begin{wrapfigure}{r}{0.6\columnwidth}
+%\begin{center}
+\hspace{-.2in}
+\includegraphics[width=0.6\columnwidth]{figures/fig_discretization.pdf}
+%\end{center}
+\end{wrapfigure}The spatial discretization is done by parsing the expression tree from the root. The discrete substitute for the continuous position variable $\vec{x}$ is initialized with $ijk$. Differential operator nodes are replaced by a subtree, which expresses the finite difference approximation (including voxelsize factor $h$). The subtree of the differential operator node is duplicated for different offsets to the discrete variable $(i, j, k)$. Since this offset only applies to the substree, a stack is maintained by the parser to manage scope. Whenever the parser encounters the continuous variable $\vec{x}$ in the expression tree, its node in the tree is replaced by the discrete substitute, currently on top of the stack. Nested differential operators yield higher order finite difference stencils as expected.
 
-Whenever the parser encounters a differential operator, the current voxel position is shifted and pushed to the stack. Then the child expression is parsed and multiplied with a weight value, followed by popping the stack. This is done for each element of a central difference stencil, which provides the offset and weight values (referencing the voxelsize variable). The dimension of the stencil is given by the derivation variable of the operator. Nested derivatives are handled naturally and produce higher order finite difference stencils as expected.
+\begin{wrapfigure}{r}{0.6\columnwidth}
+%\begin{center}
+\hspace{-.2in}
+\includegraphics[width=0.6\columnwidth]{figures/fig_codegen.pdf}
+%\end{center}
+\end{wrapfigure}
+Factorization into canonical form is done as a manipulation pass on the mathematical expression tree. The result allows to implement the code generation in a straight forward fashion. For each term, the $ijk$-offset is retrieved from the unknown. The factor-expression, which is multipled with the unknown, is extracted from the tree and used to generate source code for evaluating the factor-expression during runtime (including calls for evaluating RTE-parameter fields).
 
-Another aspect to consider during discretization is the location of the variables and unknowns. As we will see later, our solver needs to support staggered grids, where the SH coefficients are not all located at the voxel center (collocated). Coefficients can also be located at face-centers, edges and intersections of voxels (staggered).
+\begin{figure}[h]
 
-Our solver supports placement of coefficients at arbitrary staggered grid locations. Whenever a coefficient is encountered during expression tree parsing for discretization, the parser checks how its location is related to the current location on the top of the stack. Depending on how the two are located to each other, the parser returns an expression, which interpolates the coefficients at the requested offset from its surrounding locations, or it returns the coefficient itself, if it happens to coincide. This is also done for RTE parameters, such as $\sigma_t$ or $p^{l,m}$, which are always located at the voxel center. The position stack of the parser is initialized with the staggered grid location defined by the coefficient, which is associated with the $l,m$-pair of the equation currently being discretized.
+%\vspace{1in}
+\centering
+\includegraphics[width=0.9\columnwidth]{figures/fig_staggered_grids.pdf}
+%\vspace{-0.2in}
+\icaption{Staggered grids place coefficients at different locations within the finite difference grid.}
+\label{fig:staggeredgrid}
+\end{figure}
+
+\begin{wrapfigure}{r}{0.6\columnwidth}
+%\begin{center}
+\hspace{-.1in}
+\includegraphics[width=0.6\columnwidth]{figures/fig_staggered_interpolation.pdf}
+\vspace{-.1in}
+%\end{center}
+\end{wrapfigure}Our solver supports placement of coefficients at arbitrary staggered grid locations (see Figure~\ref{fig:staggeredgrid}). This means, that during the discretization step, the discrete location $(i, j, k)$ (at which the unknown is meant to be evaluated) might not coincide with the location of the unknown. To solve this, depending on how the two are located to each other, the parser returns an expression, which interpolates the coefficients at $(i, j, k)$ from their defined locations. It those happen to coincide, the coefficient itsself is returned. This is also done for RTE parameters, such as $\sigma_t$ or $p^{l,m}$, which are always located at the voxel center.
+
 
 %\subsection{Stencil Code Generation}
 
@@ -47,25 +81,18 @@ Our solver supports placement of coefficients at arbitrary staggered grid locati
 \subsection{Runtime}
 \label{sec:solver_runtime}
 
-The generated stencil code is generated once for every value of $N$ and compiled with the runtime component of our solver. The runtime executes the stencil for every voxel to propagate the system matrix $A$ and RHS vector $\vec{Q}$ with numerical values.
+The stencil code is generated once for every value of $N$ and compiled with the runtime component of our solver. The runtime executes the stencil for every voxel to propagate the system matrix $A$ and RHS vector $\vec{Q}$ with numerical values.
 
-The number of rows is determined by the number of voxels times the number of coefficients per voxel (see figure~\ref{fig:matrix_layout}) and can therefore become very large for high resolution and high truncation order. The matrix $A$ is squared and fortunately very sparse, due to finite differences and the structure of the $P_N$-equations. Unfortunately, it also is non-symmetric (due to the transport term) and not diagonal dominant, which rules out many standard methods for solving linear systems. We adress this by solving the normal form $A^TA\vec{u}=A^T\vec{Q}$ instead. This gives a symmetric and positive definit system matrix $A^TA$, albeit with a higher condition number.
-
-
-The $P_N$-equations have been discretized, and the stencil has been generated, without any notion of domain boundaries and boundary conditions (BC). Our solver supports Neumann BC and Dirichlet BC. They are handled transparently by the code which runs the stencil. Whenever the stencil writes into $A$ for a boundary coefficient, the framework will either ignore the write operation (Dirichlet BC) or write into the row and column in $A$ of the coefficient in the closest voxel inside the domain (Neumann BC).
-
-In order to respect the boundary correctly, additional coefficients (which contribute additional rows and columns in $A$ and $\vec{Q}$) are necessary at boundary voxels (see Figure~\ref{fig:staggeredgrid}). This requires careful managegment and bookkeeping of coefficient indices, which is done transparently by the runtime code.
+The number of rows is determined by the number of voxels times the number of coefficients per voxel (see Figure~\ref{fig:matrix_layout}) and can therefore become very large for high resolution and high truncation order. The matrix $A$ is square and extremely sparse, due to the local structure of the finite differences discretization. Unfortunately, it is non-symmetric due to the transport term and not diagonal dominant, which rules out many standard methods for solving linear systems. We adress this by solving the normal form $A^TA\vec{u}=A^T\vec{Q}$ instead. This gives a symmetric and positive definit system matrix $A^TA$, albeit with a higher condition number. Investigation of other solution schemes (e.g. multigrid) would be an interesting avenue for future work.
 
 
+Our solver supports Neumann and Dirichlet boundary conditions. They are handled transparently by the code which generates the stencil. Whenever the stencil accumulates coefficients into a boundary location, the framework either ignores the write operation (Dirichlet BC) or accumulates into the row and column in $A$ of the coefficient in the closest voxel inside the domain (Neumann BC). This is done changing the index of the written component under the hood.
+
+%To respect the boundary correctly, additional coefficients (which contribute additional rows and columns in $A$ and $\vec{Q}$) are necessary at boundary voxels. This requires careful managegment and bookkeeping of coefficient indices, which is done transparently by the runtime code.
 
 
-\begin{figure}[h]
-\centering
-\includegraphics[width=0.5\columnwidth]{figures/fig_staggered_grids.pdf}
-%\vspace{-0.2in}
-\icaption{Staggered grids place coefficients at different locations within the finite difference grid. Additional unknowns are required in boundary cells to produce a correct result.}
-\label{fig:staggeredgrid}
-\end{figure}
+
+
 
 %\begin{figure}[h]
 %\centering

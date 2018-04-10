@@ -28,7 +28,8 @@ $P_N$-Method for Multiple Scattering in Participating Media
 
 \author
 {
-Compiled on \today
+%Compiled on \today
+paper1027
 %David Koerner$^{1,2,3}$
 %\qquad Jan Nov\'ak$^{1}$
 %\qquad Peter Kutz$^{2}$
@@ -87,14 +88,14 @@ Compiled on \today
 %\missingfigure{}
 \includegraphics[width=\linewidth]{images/nebulae_ms_groundtruth.png}
 \vspace{-0.17in}
-\caption{Ground truth}
+\caption{Brute force path tracing}
 \label{fig:teaser_gt}
 \end{subfigure}%
 %\includegraphics[width=\linewidth]{figures/eg_new}
 \vspace{-0.1in}
 \icaption
 {
-Flux-limited diffusion (\subref{fig:teaser_fld}) is an ad-hoc extension to the classical diffusion approximation (\subref{fig:teaser_cda}). It can be considered the state of the art among deterministic methods for simulating light transport in highly scattering participating media, which is a common challenge for brute-force path tracing (\subref{fig:teaser_gt}). We add the $P_N$-method (\subref{fig:teaser_pn}) to the toolbox of deterministic methods in rendering and investigate its benefits and tradeoffs against flux-limited diffusion.
+Flux-limited diffusion (\subref{fig:teaser_fld}) is an extension to the classical diffusion approximation (\subref{fig:teaser_cda}). It improves accuracy, but is based on ad-hoc assumptions about volumetric transport. We add the $P_N$-method (\subref{fig:teaser_pn}) to the toolbox of deterministic methods in rendering and investigate its benefits and tradeoffs against flux-limited diffusion.
 }
 \label{fig:teaser}
 }
@@ -107,7 +108,7 @@ Flux-limited diffusion (\subref{fig:teaser_fld}) is an ad-hoc extension to the c
 
 \begin{abstract}
 %Classical diffusion approximation (CDA) is very competitive for rendering highly scattering participating media, because in these scenarios, Monte Carlo based methods suffer from high computational cost. Variable Eddington Factor methods, such as flux-limited diffusion (FLD), have shown to further improve the results from CDA. In this paper, we look at CDA as a degenerate case of the $P_1$-method and investigate the open question, if going higher order gives a viable alternative to FLD. We derive the time-independent real-valued $P_N$-equations and introduce a framework for generating finite difference stencils directly from the computer algebra representation of the $P_N$-equations for arbitrary order. We further present a staggered-grid $P_N$-solver and compare it against FLD for various standard problems.
-Rendering highly scattering participating media is a common challenge for brute-force path tracing. Classical diffusion approximation is a competitive alternative, as it reduces the problem to solving a simple diffusion equation. Extensions, such as flux-limited diffusion, improve the former by switching to a non-linear diffusion coefficient. Both methods are based on the spherical harmonics expansion of the radiance field, truncated after the first order. In this paper, we investigate the open question of wether higher orders provide a viable alternative to these two approaches. Increasing the order introduces a set of increasingly complex coupled partial differential equations, whose growing number and complexity make them very difficult to work with. We introduce a computer algebra framework for representing and manipulating the underlying mathematical equations and use it to derive the time-independent real-valued $P_N$-equations for arbitrary orders. We further present a staggered-grid $P_N$-solver and generate its stencil code directly from the expression tree of the $P_N$-equations. Finally, we discuss how our method compares against prior work for various standard problems. We will release our computer algebra system, solver, and data as open source to ensure full reproducibility of all of our results.
+Rendering highly scattering participating media using brute force path tracing is a challenge. The diffusion approximation reduces the problem to solving a simple linear partial differential equation. Flux-limited diffusion introduces nonlinearities to alleviate the approximation error but introduces several ad-hoc assumptions. Both methods are based on the spherical harmonics expansion of the radiance field, that is truncated after the first order. In this paper, we investigate the open question of whether higher orders provide a viable alternative to these two approaches. Increasing the order introduces a set of increasingly complex coupled partial differential equations, whose growing number and complexity make them very difficult to work with. We introduce a computer algebra framework for representing and manipulating the underlying mathematical equations and use it to derive the time-independent real-valued $P_N$-equations for arbitrary orders. We further present a staggered-grid $P_N$-solver and generate its stencil code directly from the expression tree of the $P_N$-equations. Finally, we discuss how our method compares against prior work for various standard problems. We will release our computer algebra system, solver, and data as open source to ensure reproducibility of all of our results.
 %\begin{classification} % according to http://www.acm.org/class/1998/
 %\CCScat{Computer Graphics}{I.3.7}{Three-Dimensional Graphics and Realism}{Raytracing}
 %\end{classification}
@@ -134,10 +135,10 @@ Rendering highly scattering participating media is a common challenge for brute-
 \input{rendering.tex}
 
 %-------------------------------------------------------------------------
-\input{results.tex}
+\input{section_results.tex}
 
 %-------------------------------------------------------------------------
-\input{conclusion.tex}
+\input{section_conclusion.tex}
 
 
 %-------------------------------------------------------------------------

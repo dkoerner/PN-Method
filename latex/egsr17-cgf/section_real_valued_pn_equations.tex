@@ -1,64 +1,64 @@
 \section{Real-valued $P_N$-Equations}
 \label{sec:real_valued_pn_eq}
 
-With the help of our computer algebra representation framework, we are able to easily derive and work with the large and unwieldy $P_N$-equations. It is impossible to present the derivation steps in a meaningful way within the scope of this paper. We therefore decided to give only the final result in this section, and present the derivation in a supplemental document. Note that we are the first to our knowledge who write down these equations in their compact form. 
+With the help of our computer algebra representation framework, we are able to easily derive and work with the large and unwieldy $P_N$-equations. It is impossible to present the derivation steps in a meaningful way within the scope of this paper. Displaying a single intermediate step could easily take more than ten A4 pages. We therefore decided to give only the final result in this section, and present the derivation in a supplemental document. To our knowledge, this is the first time that an explicit form of these equations is provided for general $N$. 
 
-Since the real-valued SH bases (equation~\ref{eq:sh_real_basis}) have different definitions for $m<0$, $m=0$ or $m>0$,  we also get different projections for $\mathcal{S}^{l,m}$, depending on the sign of $m$.
+Since the real-valued SH bases (Equation~\ref{eq:sh_real_basis}) have different definitions for $m<0$, $m=0$ or $m>0$,  we also get different projections for $\mathcal{S}^{l,m}$, depending on the sign of $m$.
+%\vspace{5in}
 
-The real-valued $P_N$-equations are for $m<0$:
-\begin{align}
-&-\frac{1}{2}c^{\scaleto{l-1,m-1}{4pt}}
-\partial_y
-L^{\scaleto{l-1,-m+1}{4pt}}
-%\\
-+\frac{1}{2}d^{\scaleto{l+1,m-1}{4pt}}
-\partial_y
-L^{\scaleto{l+1,-m+1}{4pt}}
-%\\
--\frac{1}{2}\beta^{\scaleto{m}{4pt}}e^{\scaleto{l-1,m+1}{4pt}}
-\partial_y
-L^{\scaleto{l-1,-m-1}{4pt}}
-\nonumber
-\\&
-+\frac{1}{2}\beta^{\scaleto{m}{4pt}}f^{\scaleto{l+1,m+1}{4pt}}
-\partial_y
-L^{\scaleto{l+1,-m-1}{4pt}}
-%\\
-+\frac{1}{2}\delta_{\scaleto{m\neq -1}{4pt}}c^{\scaleto{l-1,m-1}{4pt}}
-\partial_x
-L^{\scaleto{l-1,m-1}{4pt}}
-\nonumber
-\\&
--\frac{1}{2}\delta_{\scaleto{m\neq -1}{4pt}}e^{{l-1,m+1}}
-\partial_x
-L^{\scaleto{l-1,m+1}{4pt}}
-%\\
-+\frac{1}{2}f^{\scaleto{l+1,m+1}{4pt}}
-\partial_x
-L^{\scaleto{l+1,m+1}{4pt}}
-%\\
--\frac{1}{2}d^{\scaleto{l+1,m-1}{4pt}}
-\partial_x
-L^{\scaleto{l+1,m-1}{4pt}}
-\nonumber
-\\&
-+a^{\scaleto{l-1,m}{4pt}}
-\partial_z
-L^{\scaleto{l-1,m}{4pt}}
-%\\
-+b^{\scaleto{l+1,m}{4pt}}
-\partial_z
-L^{\scaleto{l+1,m}{4pt}}
-%\\
-+\sigma_t L^{\scaleto{l,m}{4pt}}
-%\\
--\sigma_s\lambda_{\scaleto{l}{4pt}}p^{\scaleto{l,0}{4pt}}L^{\scaleto{l,m}{4pt}}
-%\\
-= Q^{\scaleto{l,m}{4pt}}
-\label{eq:rpn_m_<_z}
-\end{align}
+%\begin{align}
+%&-\frac{1}{2}c^{\scaleto{l-1,m-1}{4pt}}
+%\partial_y
+%L^{\scaleto{l-1,-m+1}{4pt}}
+%%\\
+%+\frac{1}{2}d^{\scaleto{l+1,m-1}{4pt}}
+%\partial_y
+%L^{\scaleto{l+1,-m+1}{4pt}}
+%%\\
+%-\frac{1}{2}\beta^{\scaleto{m}{4pt}}e^{\scaleto{l-1,m+1}{4pt}}
+%\partial_y
+%L^{\scaleto{l-1,-m-1}{4pt}}
+%\nonumber
+%\\&
+%+\frac{1}{2}\beta^{\scaleto{m}{4pt}}f^{\scaleto{l+1,m+1}{4pt}}
+%\partial_y
+%L^{\scaleto{l+1,-m-1}{4pt}}
+%%\\
+%+\frac{1}{2}\delta_{\scaleto{m\neq -1}{4pt}}c^{\scaleto{l-1,m-1}{4pt}}
+%\partial_x
+%L^{\scaleto{l-1,m-1}{4pt}}
+%\nonumber
+%\\&
+%-\frac{1}{2}\delta_{\scaleto{m\neq -1}{4pt}}e^{{l-1,m+1}}
+%\partial_x
+%L^{\scaleto{l-1,m+1}{4pt}}
+%%\\
+%+\frac{1}{2}f^{\scaleto{l+1,m+1}{4pt}}
+%\partial_x
+%L^{\scaleto{l+1,m+1}{4pt}}
+%%\\
+%-\frac{1}{2}d^{\scaleto{l+1,m-1}{4pt}}
+%\partial_x
+%L^{\scaleto{l+1,m-1}{4pt}}
+%\nonumber
+%\\&
+%+a^{\scaleto{l-1,m}{4pt}}
+%\partial_z
+%L^{\scaleto{l-1,m}{4pt}}
+%%\\
+%+b^{\scaleto{l+1,m}{4pt}}
+%\partial_z
+%L^{\scaleto{l+1,m}{4pt}}
+%%\\
+%+\sigma_t L^{\scaleto{l,m}{4pt}}
+%%\\
+%-\sigma_s\lambda_{\scaleto{l}{4pt}}p^{\scaleto{l,0}{4pt}}L^{\scaleto{l,m}{4pt}}
+%%\\
+%= Q^{\scaleto{l,m}{4pt}}
+%\label{eq:rpn_m_<_z}
+%\end{align}
 
-for $m=0$:
+For $m=0$:
 \begin{align}
 &
 \frac{1}{\sqrt{2}}c^{\scaleto{l-1,-1}{4pt}}\partial_x L^{\scaleto{l-1,1}{4pt}}
@@ -69,7 +69,7 @@ for $m=0$:
 \\&
 -\frac{1}{\sqrt{2}}d^{\scaleto{l+1,-1}{4pt}}\partial_y L^{\scaleto{l+1,-1}{4pt}}
 %\\&
-a^{\scaleto{l-1,0}{4pt}}\partial_z L^{\scaleto{l-1,0}{4pt}}
++a^{\scaleto{l-1,0}{4pt}}\partial_z L^{\scaleto{l-1,0}{4pt}}
 +b^{\scaleto{l+1,0}{4pt}}\partial_z L^{\scaleto{l+1,0}{4pt}}
 \nonumber
 \\&
@@ -79,33 +79,69 @@ a^{\scaleto{l-1,0}{4pt}}\partial_z L^{\scaleto{l-1,0}{4pt}}
 \label{eq:rpn_m_=_z}
 \end{align}
 
-and for $m>0$:
+%and for $m>0$:
+%\begin{align}
+%&
+%\frac{1}{2}c^{\scaleto{l-1,-m-1}{4pt}}\partial_x L^{\scaleto{l-1,m+1}{4pt}}
+%%\\&
+%-\frac{1}{2}d^{\scaleto{l+1,-m-1}{4pt}}\partial_x L^{\scaleto{l+1,m+1}{4pt}}
+%%\\&
+%-\frac{1}{2}\beta^{\scaleto{m}{4pt}}e^{\scaleto{l-1,m-1}{4pt}}\partial_x L^{\scaleto{l-1,m-1}{4pt}}
+%\nonumber
+%\\&
+%+\frac{1}{2}\beta^{\scaleto{m}{4pt}}f^{l+1,-m+1}\partial_x L^{\scaleto{l+1,m-1}{4pt}}
+%%\\&
+%+\frac{1}{2}c^{\scaleto{l-1,-m-1}{4pt}}\partial_y L^{\scaleto{l-1,-m-1}{4pt}}
+%\nonumber
+%\\&
+%-\frac{1}{2}d^{\scaleto{l+1,-m-1}{4pt}}\partial_y L^{\scaleto{l+1,-m-1}{4pt}}
+%%\nonumber
+%%\\&
+%+\delta_{\scaleto{m\neq 1}{4pt}}\frac{1}{2}e^{\scaleto{l-1,-m+1}{4pt}}%\partial_y L^{\scaleto{l-1,-m+1}{4pt}}
+%\nonumber
+%\\&
+%-\delta_{\scaleto{m\neq 1}{4pt}}\frac{1}{2}f^{\scaleto{l+1,-m+1}{4pt}}%\partial_y L^{\scaleto{l+1,-m+1}{4pt}}
+%%\\&
+%+a^{\scaleto{l-1,-m}{4pt}}\partial_z L^{\scaleto{l-1,m}{4pt}}
+%%\nonumber
+%%\\&
+%+b^{\scaleto{l+1,-m}{4pt}}\partial_z L^{\scaleto{l+1,m}{4pt}}
+%\nonumber
+%\\&
+%+\sigma_t L^{\scaleto{l,m}{4pt}}
+%-\sigma_s\lambda_{\scaleto{l}{4pt}}p^{\scaleto{l,0}{4pt}}L^{\scaleto{l,m}{4pt}}
+%= Q^{\scaleto{l,m}{4pt}}
+%%\nonumber
+%\label{eq:rpn_m_>_z}
+%\end{align}
+
+And for $m<0$ (upper sign) and $m>0$ (lower sign):
 \begin{align}
 &
-\frac{1}{2}c^{\scaleto{l-1,-m-1}{4pt}}\partial_x L^{\scaleto{l-1,m+1}{4pt}}
+\frac{1}{2}c^{\scaleto{l-1,\pm m-1}{4pt}}\partial_x L^{\scaleto{l-1,m\mp 1}{4pt}}
 %\\&
--\frac{1}{2}d^{\scaleto{l+1,-m-1}{4pt}}\partial_x L^{\scaleto{l+1,m+1}{4pt}}
+-\frac{1}{2}d^{\scaleto{l+1,\pm m-1}{4pt}}\partial_x L^{\scaleto{l+1,m\mp 1}{4pt}}
 %\\&
--\frac{1}{2}\beta^{\scaleto{m}{4pt}}e^{\scaleto{l-1,m-1}{4pt}}\partial_x L^{\scaleto{l-1,m-1}{4pt}}
+-\frac{1}{2}\beta_x^{\scaleto{m}{4pt}}e^{\scaleto{l-1,m\pm 1}{4pt}}\partial_x L^{\scaleto{l-1,m\pm 1}{4pt}}
 \nonumber
 \\&
-+\frac{1}{2}\beta^{\scaleto{m}{4pt}}f^{l+1,-m+1}\partial_x L^{\scaleto{l+1,m-1}{4pt}}
++\frac{1}{2}\beta_x^{\scaleto{m}{4pt}}f^{l+1,\pm m+1}\partial_x L^{\scaleto{l+1,m\pm 1}{4pt}}
 %\\&
-+\frac{1}{2}c^{\scaleto{l-1,-m-1}{4pt}}\partial_y L^{\scaleto{l-1,-m-1}{4pt}}
+\mp \frac{1}{2}c^{\scaleto{l-1,\pm m-1}{4pt}}\partial_y L^{\scaleto{l-1,-m\pm 1}{4pt}}
 \nonumber
 \\&
--\frac{1}{2}d^{\scaleto{l+1,-m-1}{4pt}}\partial_y L^{\scaleto{l+1,-m-1}{4pt}}
+\pm \frac{1}{2}d^{\scaleto{l+1,\pm m-1}{4pt}}\partial_y L^{\scaleto{l+1,-m \pm 1}{4pt}}
 %\nonumber
 %\\&
-+\delta_{\scaleto{m\neq 1}{4pt}}\frac{1}{2}e^{\scaleto{l-1,-m+1}{4pt}}\partial_y L^{\scaleto{l-1,-m+1}{4pt}}
+\mp \beta_y^{\scaleto{m}{4pt}}\frac{1}{2}e^{\scaleto{l-1,\pm m+1}{4pt}}\partial_y L^{\scaleto{l-1,-m\mp 1}{4pt}}
 \nonumber
 \\&
--\delta_{\scaleto{m\neq 1}{4pt}}\frac{1}{2}f^{\scaleto{l+1,-m+1}{4pt}}\partial_y L^{\scaleto{l+1,-m+1}{4pt}}
+\pm \beta_y^{\scaleto{m}{4pt}}\frac{1}{2}f^{\scaleto{l+1,\pm m+1}{4pt}}\partial_y L^{\scaleto{l+1,-m\mp 1}{4pt}}
 %\\&
-+a^{\scaleto{l-1,-m}{4pt}}\partial_z L^{\scaleto{l-1,m}{4pt}}
++a^{\scaleto{l-1,\pm m}{4pt}}\partial_z L^{\scaleto{l-1,\mp m}{4pt}}
 %\nonumber
 %\\&
-+b^{\scaleto{l+1,-m}{4pt}}\partial_z L^{\scaleto{l+1,m}{4pt}}
++b^{\scaleto{l+1,\pm m}{4pt}}\partial_z L^{\scaleto{l+1,\mp m}{4pt}}
 \nonumber
 \\&
 +\sigma_t L^{\scaleto{l,m}{4pt}}
@@ -118,19 +154,21 @@ and for $m>0$:
 with
 \begin{align*}
 \label{eq:real_sh_basis}
-\beta^{x}=
+\beta_x^{m}=
 \left\{
-\begin{array}{lr}
-\frac{2}{\sqrt{2}}, & \text{for } \vert x\vert = 1\\
-1, & \text{for } \vert x\vert \neq 1
+\begin{array}{ll}
+0, & \text{for } m = -1\\
+\frac{2}{\sqrt{2}}, & \text{for } m \neq 1\\
+1, & \text{otherwise }
 \end{array}
 \right.
 ,\quad
-\delta_{x\neq y}=
+\beta_y^{m}=
 \left\{
-\begin{array}{lr}
-1, & \text{for } x \neq y \\
-0, & \text{for } x = y
+\begin{array}{ll}
+\frac{2}{\sqrt{2}}, & \text{for } m = -1\\
+0, & \text{for } m \neq 1\\
+1, & \text{otherwise }
 \end{array}
 \right.
 \end{align*}
@@ -151,4 +189,5 @@ f^{\scaleto{l,m}{4pt}}= \sqrt{\frac{\left(l+m\right)\left(l+m-1\right)}{\left(2l
 \lambda_l=\sqrt{\frac{4\pi}{2l+1}}
 \end{align*}
 
-In the next section we will present our solver with which we solve these $P_N$-equations.
+In the next section we will present the solver that we use to solve the $P_N$-equations.
+\vspace{1in}

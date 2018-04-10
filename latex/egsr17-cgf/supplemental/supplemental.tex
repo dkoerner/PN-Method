@@ -53,9 +53,9 @@
 
 \input{../macros.tex}
 
-\title{A Deterministic Method for Simulation of Light Transport in Participating Media based on Higher Order Spherical Harmonics}
+\title{$P_N$-Method for Multiple Scattering in Participating Media}
 \subtitle{Supplemental Material}
-%\author{David Koerner}
+\author{paper1027}
 \date{}
 
 \newcommand{\wc}{.}
@@ -67,14 +67,17 @@
 %\input{title.tex}
 \maketitle
 \begin{abstract}
-This document contains the detailed derivations refered to by the article for better readability.
+This document contains the detailed derivations of the complex-valued and real-valued $P_N$-equations, referred to by the article for better readability.
 \end{abstract}
+
 \tableofcontents
 
+\newpage
 
 
 \section{Isotropic Radiative Transfer Equation}
 
+The $P_N$-equations are derived from the radiative transfer equation (RTE), which expresses the change of the radiance field $L$, with respect to an infinitesimal change of position into direction $\omega$ at point $\vec{x}$:
 % RTE ------------
 \begin{align}
 %\label{eq:rte}
@@ -90,12 +93,17 @@ p\left(\omega'\cdot\omega\right)L\left(\vec{x}, \omega \right)\ud\omega'
 +Q\left(\vec{x}, \omega\right)\nonumber
 \end{align}
 
-% RTE Matrix form ------------
-\begin{align}
-(T+C-S)\vec{u} = A\vec{u} = \vec{Q}
-\end{align}
+The left hand side (LHS) is the transport term, and we refer to the terms on the right hand side (RHS) as collision, scattering, and source term, respectively. The symbols $\sigma_t$, $\sigma_s$, $p$, and $Q$ refer to the extinction coefficient, scattering coefficient, phase function and emission term.
 
-\section{Spherical Harmonics}
+The derivation is done in two steps: First, the directional-dependent quantities are replaced by their SH-projected counterparts. For example the radiance field $L$, is replaced by its SH projection. This way the quantities are expressed in spherical harmonics, but still depend on direction $\omega$. This is why in a second step, the RTE is projected into spherical harmonics, which is done by multiplying each term with the conjugate complex of the SH basis functions.
+
+The SH basis functions are complex, which produces complex coefficients and complex $P_N$-equations. However, there are also real SH basis functions, which are defined in terms of the complex SH basis functions and which produce real coefficients and reconstructions. Since the radiance field $L$ is real, the real SH basis functions is used in our article.
+
+In the next section, the complex $P_N$-equations are derived. In order to give the derivation a better structure, the two steps mentioned above are applied to each term individually in a seperate subsection. The section concludes by putting all derived terms together. In Section~\ref{sec:real} we derive the real $P_N$-equations which are used in the article.
+
+\section{Derivation of the complex-valued $P_N$-equations}
+
+Deriving the $P_N$-equations consists of two main steps. First, all angular dependent quantities in the RTE are expressed in terms of spherical harmonics (SH) basis functions. After this, the RTE still depends on the angular variable. Therefore, the second step projects each term of the RTE by multiplying with the conjugate complex of the SH basis functions, followed by integration over solid angle to integrate out the angular variable. This gives an equation for each spherical harmonics coefficient.
 
 Spherical Harmonics are a set of very popular and well known functions on the sphere. The complex-valued SH basis functions are given by
 % complex valued SH ------------------
@@ -110,9 +118,6 @@ Spherical Harmonics are a set of very popular and well known functions on the sp
 where $P^{l,m}$ are the associated Legendre-Polynomials. The $\left(-1\right)^m$ factor is called the Condon-Shortley phase and is not part of the associated Legendre Polynomial like in other definitions.
 
 
-\section{Derivation of the complex-valued $P_N$-equations}
-
-Deriving the $P_N$-equations consists of two main steps. First, all angular dependent quantities in the RTE are expressed in terms of SH basis functions. After this, the RTE still depends on the angular variable. Therefore, the second step projects each term of the RTE by multiplying with the conjugate complex of the SH basis functions, followed by integration over solid angle to integrate out the angular variable. This gives an equation for each combination of $l$ and $m$.
 
 \subsection{Projecting Radiative Transfer Quantities}
 
@@ -595,6 +600,9 @@ The derivation of the SH projected term is equal to the derivation of the projec
 Q^{l,m}\left(\vec{x}, \omega\right)
 \end{align}
 
+% --------------------------------------------------------------
+\subsection{Final Equation}
+
 We arrive at the complex-valued $P_N$-equations after putting all the projected terms together:
 \begin{align*}
 \frac{1}{2}c^{l-1, m-1}\partial_x L^{l-1,m-1} - \frac{1}{2}d^{l+1, m-1}\partial_x L^{l+1,m-1} - \frac{1}{2}e^{l-1, m+1}\partial_x L^{l-1,m+1} + \frac{1}{2}f^{l+1, m+1}\partial_x L^{l+1,m+1}+
@@ -612,6 +620,7 @@ p^{l0}L^{l,m}(\vec{x}) + Q^{l,m}\left(\vec{x}, \omega\right)
 
 
 \section{Derivation of the real-valued $P_N$-equations}
+\label{sec:real}
 
 The real-valued $P_N$-equations are derived similar to their complex-valued counterpart. The key difference is, that the real-valued SH basis functions $\SHBR$ are used, instead of the the complex-valued SH basis functions. The real-valued SH basis functions are defined in terms of complex-valued SH basis functions:
 % real valued SH ------------------
@@ -1262,7 +1271,7 @@ L^{l'-1,-m'-1}
 \partial_y
 L^{l'+1,-m'-1}
 %\\
-+\frac{1}{2}\delta_{\scaleto{m'\neq -1}{4pt}}c^{{l'-1,m'-1}}
++\frac{1}{2}c^{{l'-1,m'-1}}
 \partial_x
 L^{l'-1,m'-1}
 \\&
@@ -1270,7 +1279,7 @@ L^{l'-1,m'-1}
 \partial_x
 L^{l'-1,m'+1}
 %\\
-+\frac{1}{2}f^{{l'+1,m'+1}}
++\frac{1}{2}\delta_{\scaleto{m'\neq -1}{4pt}}f^{{l'+1,m'+1}}
 \partial_x
 L^{l'+1,m'+1}
 %\\
@@ -2228,48 +2237,192 @@ for $m<0$, $m=0$ and $m>0$.
 
 \subsection{Final equation}
 
-For $m<0$:
+Putting all projected terms from previous subsections together, we get for $m<0$:
+\begin{align}
+&-\frac{1}{2}c^{\scaleto{l-1,m-1}{4pt}}
+\partial_y
+L^{\scaleto{l-1,-m+1}{4pt}}
+%\\
++\frac{1}{2}d^{\scaleto{l+1,m-1}{4pt}}
+\partial_y
+L^{\scaleto{l+1,-m+1}{4pt}}
+%\\
+-\frac{1}{2}\beta^{\scaleto{m}{4pt}}e^{\scaleto{l-1,m+1}{4pt}}
+\partial_y
+L^{\scaleto{l-1,-m-1}{4pt}}
+\nonumber
+\\&
++\frac{1}{2}\beta^{\scaleto{m}{4pt}}f^{\scaleto{l+1,m+1}{4pt}}
+\partial_y
+L^{\scaleto{l+1,-m-1}{4pt}}
+%\\
++\frac{1}{2}c^{\scaleto{l-1,m-1}{4pt}}
+\partial_x
+L^{\scaleto{l-1,m-1}{4pt}}
+\nonumber
+\\&
+-\frac{1}{2}\delta_{\scaleto{m\neq -1}{4pt}}e^{{l-1,m+1}}
+\partial_x
+L^{\scaleto{l-1,m+1}{4pt}}
+%\\
++\frac{1}{2}\delta_{\scaleto{m\neq -1}{4pt}}f^{\scaleto{l+1,m+1}{4pt}}
+\partial_x
+L^{\scaleto{l+1,m+1}{4pt}}
+%\\
+-\frac{1}{2}d^{\scaleto{l+1,m-1}{4pt}}
+\partial_x
+L^{\scaleto{l+1,m-1}{4pt}}
+\nonumber
+\\&
++a^{\scaleto{l-1,m}{4pt}}
+\partial_z
+L^{\scaleto{l-1,m}{4pt}}
+%\\
++b^{\scaleto{l+1,m}{4pt}}
+\partial_z
+L^{\scaleto{l+1,m}{4pt}}
+%\\
++\sigma_t L^{\scaleto{l,m}{4pt}}
+%\\
+-\sigma_s\lambda_{\scaleto{l}{4pt}}p^{\scaleto{l,0}{4pt}}L^{\scaleto{l,m}{4pt}}
+%\\
+= Q^{\scaleto{l,m}{4pt}}
+\end{align}
+
+for $m=0$:
+\begin{align}
+&
+\frac{1}{\sqrt{2}}c^{\scaleto{l-1,-1}{4pt}}\partial_x L^{\scaleto{l-1,1}{4pt}}
+-\frac{1}{\sqrt{2}}d^{\scaleto{l+1,-1}{4pt}}\partial_x L^{\scaleto{l+1,1}{4pt}}
+\frac{1}{\sqrt{2}}c^{\scaleto{l-1,-1}{4pt}}\partial_y L^{\scaleto{l-1,-1}{4pt}}
+\nonumber
+\\&
+-\frac{1}{\sqrt{2}}d^{\scaleto{l+1,-1}{4pt}}\partial_y L^{\scaleto{l+1,-1}{4pt}}
+%\\&
+a^{\scaleto{l-1,0}{4pt}}\partial_z L^{\scaleto{l-1,0}{4pt}}
++b^{\scaleto{l+1,0}{4pt}}\partial_z L^{\scaleto{l+1,0}{4pt}}
+\nonumber
+\\&
++\sigma_t L^{\scaleto{l,m}{4pt}}
+-\sigma_s\lambda_{\scaleto{l}{4pt}}p^{\scaleto{l,0}{4pt}}L^{\scaleto{l,m}{4pt}}
+= Q^{\scaleto{l,m}{4pt}}
+\end{align}
+
+
+and for $m>0$:
+\begin{align}
+&
+\frac{1}{2}c^{\scaleto{l-1,-m-1}{4pt}}\partial_x 
+%\\&
+-\frac{1}{2}d^{\scaleto{l+1,-m-1}{4pt}}\partial_x L^{\scaleto{l+1,m+1}{4pt}}
+%\\&
+-\frac{1}{2}\beta^{\scaleto{m}{4pt}}e^{\scaleto{l-1,m-1}{4pt}}\partial_x L^{\scaleto{l-1,m-1}{4pt}}
+\nonumber
+\\&
++\frac{1}{2}\beta^{\scaleto{m}{4pt}}f^{l+1,-m+1}\partial_x L^{\scaleto{l+1,m-1}{4pt}}
+%\\&
++\frac{1}{2}c^{\scaleto{l-1,-m-1}{4pt}}\partial_y L^{\scaleto{l-1,-m-1}{4pt}}
+\nonumber
+\\&
+-\frac{1}{2}d^{\scaleto{l+1,-m-1}{4pt}}\partial_y L^{\scaleto{l+1,-m-1}{4pt}}
+%\nonumber
+%\\&
++\delta_{\scaleto{m\neq 1}{4pt}}\frac{1}{2}e^{\scaleto{l-1,-m+1}{4pt}}\partial_y L^{\scaleto{l-1,-m+1}{4pt}}
+\nonumber
+\\&
+-\delta_{\scaleto{m\neq 1}{4pt}}\frac{1}{2}f^{\scaleto{l+1,-m+1}{4pt}}\partial_y L^{\scaleto{l+1,-m+1}{4pt}}
+%\\&
++a^{\scaleto{l-1,-m}{4pt}}\partial_z L^{\scaleto{l-1,m}{4pt}}
+%\nonumber
+%\\&
++b^{\scaleto{l+1,-m}{4pt}}\partial_z L^{\scaleto{l+1,m}{4pt}}
+\nonumber
+\\&
++\sigma_t L^{\scaleto{l,m}{4pt}}
+-\sigma_s\lambda_{\scaleto{l}{4pt}}p^{\scaleto{l,0}{4pt}}L^{\scaleto{l,m}{4pt}}
+= Q^{\scaleto{l,m}{4pt}}
+\end{align}
+
+
+
+with
 \begin{align*}
-&-\frac{1}{2}c^{\scaleto{l'-1,m'-1}{4pt}}
-\partial_y
-L^{\scaleto{l'-1,-m'+1}{4pt}}
-%\\
-+\frac{1}{2}d^{\scaleto{l'+1,m'-1}{4pt}}
-\partial_y
-L^{\scaleto{l'+1,-m'+1}{4pt}}
-%\\
--\frac{1}{2}\beta^{\scaleto{m'}{4pt}}e^{\scaleto{l'-1,m'+1}{4pt}}
-\partial_y
-L^{\scaleto{l'-1,-m'-1}{4pt}}
-\\&
-+\frac{1}{2}\beta^{\scaleto{m'}{4pt}}f^{\scaleto{l'+1,m'+1}{4pt}}
-\partial_y
-L^{\scaleto{l'+1,-m'-1}{4pt}}
-%\\
-+\frac{1}{2}\delta_{\scaleto{m'\neq -1}{4pt}}c^{\scaleto{l'-1,m'-1}{4pt}}
-\partial_x
-L^{\scaleto{l'-1,m'-1}{4pt}}
-\\&
--\frac{1}{2}\delta_{\scaleto{m'\neq -1}{4pt}}e^{{l'-1,m'+1}}
-\partial_x
-L^{\scaleto{l'-1,m'+1}{4pt}}
-%\\
-+\frac{1}{2}f^{\scaleto{l'+1,m'+1}{4pt}}
-\partial_x
-L^{\scaleto{l'+1,m'+1}{4pt}}
-%\\
--\frac{1}{2}d^{\scaleto{l'+1,m'-1}{4pt}}
-\partial_x
-L^{\scaleto{l'+1,m'-1}{4pt}}
-\\&
-+a^{\scaleto{l'-1,m'}{4pt}}
-\partial_z
-L^{\scaleto{l'-1,m'}{4pt}}
-%\\
-+b^{\scaleto{l'+1,m'}{4pt}}
-\partial_z
-L^{\scaleto{l'+1,m'}{4pt}}
+\beta^{x}=
+\left\{
+\begin{array}{ll}
+\frac{2}{\sqrt{2}}, & \text{for } \vert x\vert = 1\\
+1, & \text{for } \vert x\vert \neq 1
+\end{array}
+\right.
+,\quad
+\delta_{x\neq y}=
+\left\{
+\begin{array}{ll}
+1, & \text{for } x \neq y\\
+0, & \text{for } x = y
+\end{array}
+\right.
 \end{align*}
+
+and
+\begin{align*}
+&
+a^{\scaleto{l,m}{4pt}}= \sqrt{\frac{\left(l-m+1\right)\left(l+m+1\right)}{\left(2l+1\right)\left(2l-1\right)}} \qquad
+b^{\scaleto{l,m}{4pt}}= \sqrt{\frac{\left(l-m\right)\left(l+m\right)}{\left(2l+1\right)\left(2l-1\right)}}
+\\&
+c^{\scaleto{l,m}{4pt}}= \sqrt{\frac{\left(l+m+1\right)\left(l+m+2\right)}{\left(2l+3\right)\left(2l+1\right)}} \qquad
+d^{\scaleto{l,m}{4pt}}= \sqrt{\frac{\left(l-m\right)\left(l-m-1\right)}{\left(2l+1\right)\left(2l-1\right)}}
+\\&
+e^{\scaleto{l,m}{4pt}}= \sqrt{\frac{\left(l-m+1\right)\left(l-m+2\right)}{\left(2l+3\right)\left(2l+1\right)}} \qquad
+f^{\scaleto{l,m}{4pt}}= \sqrt{\frac{\left(l+m\right)\left(l+m-1\right)}{\left(2l+1\right)\left(2l-1\right)}}
+\end{align*}
+\begin{align*}
+\lambda_l=\sqrt{\frac{4\pi}{2l+1}}
+\end{align*}
+
+The equations can be written in a more compact form by using $\pm$ and $\mp$ to write the equations for $m<0$ and $m>0$ as one. This is done in the paper.
+
+%\begin{align*}
+%&-\frac{1}{2}c^{\scaleto{l'-1,m'-1}{4pt}}
+%\partial_y
+%L^{\scaleto{l'-1,-m'+1}{4pt}}
+%%\\
+%+\frac{1}{2}d^{\scaleto{l'+1,m'-1}{4pt}}
+%\partial_y
+%L^{\scaleto{l'+1,-m'+1}{4pt}}
+%%\\
+%-\frac{1}{2}\beta^{\scaleto{m'}{4pt}}e^{\scaleto{l'-1,m'+1}{4pt}}
+%\partial_y
+%L^{\scaleto{l'-1,-m'-1}{4pt}}
+%\\&
+%+\frac{1}{2}\beta^{\scaleto{m'}{4pt}}f^{\scaleto{l'+1,m'+1}{4pt}}
+%\partial_y
+%L^{\scaleto{l'+1,-m'-1}{4pt}}
+%%\\
+%+\frac{1}{2}\delta_{\scaleto{m'\neq -1}{4pt}}c^{\scaleto{l'-1,m'-1}{4pt}}
+%\partial_x
+%L^{\scaleto{l'-1,m'-1}{4pt}}
+%\\&
+%-\frac{1}{2}\delta_{\scaleto{m'\neq -1}{4pt}}e^{{l'-1,m'+1}}
+%\partial_x
+%L^{\scaleto{l'-1,m'+1}{4pt}}
+%%\\
+%+\frac{1}{2}f^{\scaleto{l'+1,m'+1}{4pt}}
+%\partial_x
+%L^{\scaleto{l'+1,m'+1}{4pt}}
+%%\\
+%-\frac{1}{2}d^{\scaleto{l'+1,m'-1}{4pt}}
+%\partial_x
+%L^{\scaleto{l'+1,m'-1}{4pt}}
+%\\&
+%+a^{\scaleto{l'-1,m'}{4pt}}
+%\partial_z
+%L^{\scaleto{l'-1,m'}{4pt}}
+%%\\
+%+b^{\scaleto{l'+1,m'}{4pt}}
+%\partial_z
+%L^{\scaleto{l'+1,m'}{4pt}}
+%\end{align*}
 %\vspace{1cm}
 %\newpage
 %\bibliographystyle{eg-alpha}

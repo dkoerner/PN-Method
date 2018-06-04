@@ -66,7 +66,7 @@ Factorization into canonical form is done as a manipulation pass on the mathemat
 \includegraphics[width=0.6\columnwidth]{figures/fig_staggered_interpolation.pdf}
 \vspace{-.1in}
 %\end{center}
-\end{wrapfigure}Our solver supports placement of coefficients at arbitrary staggered grid locations (see Figure~\ref{fig:staggeredgrid}). This means, that during the discretization step, the discrete location $(i, j, k)$ (at which the unknown is meant to be evaluated) might not coincide with the location of the unknown. To solve this, depending on how the two are located to each other, the parser returns an expression, which interpolates the coefficients at $(i, j, k)$ from their defined locations. It those happen to coincide, the coefficient itsself is returned. This is also done for RTE parameters, such as $\sigma_t$ or $p^{l,m}$, which are always located at the voxel center.
+\end{wrapfigure}Our solver supports placement of coefficients at arbitrary staggered grid locations (see Figure~\ref{fig:staggeredgrid}). This means, that during the discretization step, the discrete location $(i, j, k)$ (at which the unknown is meant to be evaluated) might not coincide with the location of the unknown. To solve this, depending on how the two are located to each other, the parser returns an expression, which interpolates the coefficients at $(i, j, k)$ from their defined locations. If those happen to coincide, the coefficient itsself is returned. This is also done for RTE parameters, such as $\sigma_t$ or $p^{l,m}$, which are always located at the voxel center.
 
 
 %\subsection{Stencil Code Generation}

@@ -55,7 +55,17 @@
 
 \title{$P_N$-Method for Multiple Scattering in Participating Media}
 \subtitle{Supplemental Material}
-\author{paper1027}
+\author
+{
+David Koerner$^1$
+\qquad Jamie Portsmouth$^2$
+\qquad Wenzel Jakob$^3$
+\\
+\small
+$^1$University of Stuttgart
+\qquad $^2$Solid Angle
+\qquad $^3$\'{E}cole polytechnique f\'{e}d\'{e}rale de Lausanne (EPFL)
+}
 \date{}
 
 \newcommand{\wc}{.}
@@ -178,13 +188,13 @@ Throughout our article, we assume an isotropic phase function, which only depend
 
 %\operatorname{cos}\theta
 \begin{align*}
-p^{l,m}(\omega_i)
+p^{l,m}
 =
 \int_\Omega
 {
 p\left(\omega_i\cdot\vec{e}_3\right)
 \SHBC^{l,m}\left(\omega_i\right)
-\ud\omega
+\ud\omega_i
 }
 \nonumber
 \end{align*}
@@ -214,12 +224,12 @@ and in spherical harmonics this would be:
 {
 e^{-i m\alpha}
 p^{l,m}
-\SHBC^{l,m} }
+\SHBC^{l,m} }\left(\omega_i\right)
 =
 \sum_{l,m}
 {
 p^{l,m}
-\SHBC^{l,m}
+\SHBC^{l,m}\left(\omega_i\right)
 }
 \end{align*}
 
@@ -229,19 +239,18 @@ By equating coefficients we get:
 p^{l,m} = p^{l,m}e^{-i m\alpha}
 \end{align*}
 
-Since $e^{-i m\alpha}=1$ for all $\alpha$ only when $m=0$, we can conclude that $p^{l,m} = 0$ for all $m\ne0$. This means that for a function which is rotationally symmetric around the pole axis, only the $m=0$ coefficients will be valid. Therefore, our phase function reconstruction only requires SH coefficients with $m=0$:
+Since $e^{-i m\alpha}=1$ for all $\alpha$ only when $m=0$, we can conclude that $p^{l,m} = 0$ for all $m\ne0$. This means that for a function, which is rotationally symmetric around the pole axis, only the $m=0$ coefficients will be valid. Therefore, our phase function reconstruction for a fixed outgoing vector ($\omega_o=\vec{e}_3$) only requires SH coefficients with $m=0$:
 
 \begin{align}
 \label{eq:sh_exp_phase}
-p(\omega) =
+p(\omega_i) =
 \sum_l
 {
 p^{l0}
-\SHBC^{l0}
+\SHBC^{l0}(\omega_i)
 }
 \end{align}
 %
- 
 
 
 \subsection{Projecting Terms of the RTE}
@@ -642,6 +651,7 @@ We use the subscript $\mathbb{R}$ and $\mathbb{C}$ do distinguish between real- 
 
 % --------------------------------------------
 \subsubsection{Radiance Field $L$ and Emission Field $Q$}
+\label{sec:real_proj_L}
 
 As with the complex-valued case, the angular dependent quantities are projected into SH coefficients. Here, those coefficients will be real-valued, since we use the real-valued SH basis.
 \begin{align}
@@ -660,7 +670,8 @@ The reconstruction $\hat{L}$ and $\hat{Q}$, is found by a truncated linear combi
 \sum_{l,m}
 {
 L^{l,m}\left(\vec{x}\right)\SHBR^{l,m}\left(\omega\right)
-}\nonumber\\
+}
+\\
 \hat{Q}\left(\vec{x}, \omega\right) =
 \sum_{l,m}
 {
@@ -719,15 +730,62 @@ L^{{l,m}}\left (\vec{x} \right )\left(\frac{1}{\sqrt{2}}\SHBC^{l, -m}(\omega )+\
 +\frac{1}{\sqrt{2}}\left(\sum_{l=0}^{N}{\sum_{m=1}^{l}{L^{{l,m}}\left (\vec{x} \right )\left({-1}\right)^{m}\SHBC^{l, m}(\omega )}}\right)
 \end{align}
 
-
-
-
-
-
-
-
+% ----------------------------------------------------
 \subsubsection{Phase Function}
 
+The real-valued spherical harmonics expansion of the phase function follows the the same derivation as the complex-valued expansion from section~\ref{sec:complex_proj_phase}. We first fix the outgoing direction vector $\omega_o$ to always align with the $z$-axis ($\omega_o=\vec{e}_3$). We compute the spherical harmonics projection over incident direction vector $\omega_i$, using the real-valued spherical harmonics basis functions:
+
+\begin{align*}
+p^{l,m}
+=
+\int_\Omega
+{
+p\left(\omega_i\cdot\vec{e}_3\right)
+\SHBR^{l,m}\left(\omega_i\right)
+\ud\omega_i
+}
+\nonumber
+\end{align*}
+
+Phase functions, which only depend on the angle between incident and outgoing vectors are rotationally symmetric around the pole axis. Like with the complex-values spherical harmonics basis functions, such a rotation $R$ of angle $\alpha$ around the pole axis is given by:
+
+\begin{align*}
+\rho_{R(\alpha)}(\SHBR^{l,m}) = e^{-i m\alpha}\SHBR^{l,m}
+\end{align*}
+
+We formulate symmetry around the pole axis with the following constraint:
+
+\begin{align*}
+\sum_{l,m}
+{
+e^{-i m\alpha}
+p^{l,m}
+\SHBR^{l,m} }\left(\omega_i\right)
+=
+\sum_{l,m}
+{
+p^{l,m}
+\SHBR^{l,m}\left(\omega_i\right)
+}
+\end{align*}
+
+By comparing coefficients we get
+
+\begin{align*}
+p^{l,m} = p^{l,m}e^{-i m\alpha}
+\end{align*}
+
+From this we can infer that $p^{l,m} = 0$ for all $m\ne0$, if the phase function is rotationally symmetric around the pole axis. We therefore have the same property as we have with complex-valued expansions of functions, which are symmetric about the pole axis: Only the $m=0$ coefficients are needed for reconstruction. We therefore have
+
+\begin{align}
+\label{eq:sh_exp_phase}
+p(\omega_i) =
+\sum_l
+{
+p^{l0}
+\SHBR^{l0}(\omega_i)
+}
+\end{align}
 
 
 
@@ -880,74 +938,74 @@ with
 
 In the next step, we substitute the radiance field function $L$ with its spherical harmonics expansion and arrive at the following expression after further expansions and transformations:
 \begin{align}
--i\alpha_c\partial_y\sum_{l,m}L^{l,m}\left (\vec{x}\right)\int{Y_{\mathbb{R}}^{l,m}\overline{Y^{l'-1, m'-1}}(\omega )\ud\omega}
+-i\alpha_c\partial_y\sum_{l,m}L^{l,m}\left (\vec{x}\right)\int{Y_{\mathbb{R}}^{l,m}\overline{\SHBC^{l'-1, m'-1}}(\omega )\ud\omega}
 %\label{eq:real_transport_expansion_unsimplified_term1}
 %\\
-+\left({-1}\right)^{m'}i&\alpha_c\partial_y\sum_{l,m}L^{l,m}\left (\vec{x}\right)\int{Y_{\mathbb{R}}^{l,m}\overline{Y^{l'-1, -m'+1}}(\omega )\ud\omega}
++\left({-1}\right)^{m'}i&\alpha_c\partial_y\sum_{l,m}L^{l,m}\left (\vec{x}\right)\int{Y_{\mathbb{R}}^{l,m}\overline{\SHBC^{l'-1, -m'+1}}(\omega )\ud\omega}
 %\label{eq:real_transport_expansion_unsimplified_term2}
 \label{eq:real_transport_expansion_unsimplified_term1_term2}
 \\
-+i\alpha_d\partial_y\sum_{l,m}L^{l,m}\left (\vec{x}\right)\int{Y_{\mathbb{R}}^{l,m}\overline{Y^{l'+1, m'-1}}(\omega )\ud\omega}
++i\alpha_d\partial_y\sum_{l,m}L^{l,m}\left (\vec{x}\right)\int{Y_{\mathbb{R}}^{l,m}\overline{\SHBC^{l'+1, m'-1}}(\omega )\ud\omega}
 %\label{eq:real_transport_expansion_unsimplified_term3}
 %\\
--\left({-1}\right)^{m'} i &\alpha_d\partial_y\sum_{l,m}L^{l,m}\left (\vec{x}\right)\int{Y_{\mathbb{R}}^{l,m}\overline{Y^{l'+1, -m'+1}}(\omega )\ud\omega}
+-\left({-1}\right)^{m'} i &\alpha_d\partial_y\sum_{l,m}L^{l,m}\left (\vec{x}\right)\int{Y_{\mathbb{R}}^{l,m}\overline{\SHBC^{l'+1, -m'+1}}(\omega )\ud\omega}
 %\label{eq:real_transport_expansion_unsimplified_term4}
 \label{eq:real_transport_expansion_unsimplified_term3_term4}
 \\
--i\alpha_e \partial_y\sum_{l,m}L^{l,m}\left (\vec{x}\right)\int{Y_{\mathbb{R}}^{l,m}\overline{Y^{l'-1, m'+1}}(\omega )\ud\omega}
+-i\alpha_e \partial_y\sum_{l,m}L^{l,m}\left (\vec{x}\right)\int{Y_{\mathbb{R}}^{l,m}\overline{\SHBC^{l'-1, m'+1}}(\omega )\ud\omega}
 %\label{eq:real_transport_expansion_unsimplified_term5}
 %\\
-+\left({-1}\right)^{m'}i &\alpha_e \partial_y\sum_{l,m}L^{l,m}\left (\vec{x}\right)\int{Y_{\mathbb{R}}^{l,m}\overline{Y^{l'-1, -m'-1}}(\omega )\ud\omega}
++\left({-1}\right)^{m'}i &\alpha_e \partial_y\sum_{l,m}L^{l,m}\left (\vec{x}\right)\int{Y_{\mathbb{R}}^{l,m}\overline{\SHBC^{l'-1, -m'-1}}(\omega )\ud\omega}
 %\label{eq:real_transport_expansion_unsimplified_term6}
 \\
-+i\alpha_f \partial_y\sum_{l,m}L^{l,m}\left (\vec{x}\right)\int{Y_{\mathbb{R}}^{l,m}\overline{Y^{l'+1, m'+1}}(\omega )\ud\omega}
++i\alpha_f \partial_y\sum_{l,m}L^{l,m}\left (\vec{x}\right)\int{Y_{\mathbb{R}}^{l,m}\overline{\SHBC^{l'+1, m'+1}}(\omega )\ud\omega}
 %\label{eq:real_transport_expansion_unsimplified_term7}
 %\\
--\left({-1}\right)^{m'}i &\alpha_f \partial_y\sum_{l,m}L^{l,m}\left (\vec{x}\right)\int{Y_{\mathbb{R}}^{l,m}\overline{Y^{l'+1, -m'-1}}(\omega )\ud\omega}
+-\left({-1}\right)^{m'}i &\alpha_f \partial_y\sum_{l,m}L^{l,m}\left (\vec{x}\right)\int{Y_{\mathbb{R}}^{l,m}\overline{\SHBC^{l'+1, -m'-1}}(\omega )\ud\omega}
 % ---------------------------------------
 %\label{eq:real_transport_expansion_unsimplified_term8}
 \\
-+\alpha_c\partial_x\sum_{l,m}L^{l,m}\left (\vec{x}\right)\int{Y_{\mathbb{R}}^{l,m}\overline{Y^{l'-1, m'-1}}(\omega )\ud\omega}
++\alpha_c\partial_x\sum_{l,m}L^{l,m}\left (\vec{x}\right)\int{Y_{\mathbb{R}}^{l,m}\overline{\SHBC^{l'-1, m'-1}}(\omega )\ud\omega}
 %\label{eq:real_transport_expansion_unsimplified_term9}
 %\\
-+\left({-1}\right)^{m'}&\alpha_c\partial_x\sum_{l,m}L^{l,m}\left (\vec{x}\right)\int{Y_{\mathbb{R}}^{l,m}\overline{Y^{l'-1, -m'+1}}(\omega )\ud\omega}
++\left({-1}\right)^{m'}&\alpha_c\partial_x\sum_{l,m}L^{l,m}\left (\vec{x}\right)\int{Y_{\mathbb{R}}^{l,m}\overline{\SHBC^{l'-1, -m'+1}}(\omega )\ud\omega}
 % ---------------------------------------
 %\label{eq:real_transport_expansion_unsimplified_term10}
 \\
--\alpha_e\partial_x\sum_{l,m}L^{l,m}\left (\vec{x}\right)\int{Y_{\mathbb{R}}^{l,m}\overline{Y^{l'-1, m'+1}}(\omega )\ud\omega}
+-\alpha_e\partial_x\sum_{l,m}L^{l,m}\left (\vec{x}\right)\int{Y_{\mathbb{R}}^{l,m}\overline{\SHBC^{l'-1, m'+1}}(\omega )\ud\omega}
 %\label{eq:real_transport_expansion_unsimplified_term11}
 %\\
--\left({-1}\right)^{m'}&\alpha_e\partial_x\sum_{l,m}L^{l,m}\left (\vec{x}\right)\int{Y_{\mathbb{R}}^{l,m}\overline{Y^{l'-1, -m'-1}}(\omega )\ud\omega}
+-\left({-1}\right)^{m'}&\alpha_e\partial_x\sum_{l,m}L^{l,m}\left (\vec{x}\right)\int{Y_{\mathbb{R}}^{l,m}\overline{\SHBC^{l'-1, -m'-1}}(\omega )\ud\omega}
 % ---------------------------------------
 %\label{eq:real_transport_expansion_unsimplified_term12}
 \\
-+\alpha_f\partial_x\sum_{l,m}L^{l,m}\left (\vec{x}\right)\int{Y_{\mathbb{R}}^{l,m}\overline{Y^{l'+1, m'+1}}(\omega )\ud\omega}
++\alpha_f\partial_x\sum_{l,m}L^{l,m}\left (\vec{x}\right)\int{Y_{\mathbb{R}}^{l,m}\overline{\SHBC^{l'+1, m'+1}}(\omega )\ud\omega}
 %\label{eq:real_transport_expansion_unsimplified_term13}
 %\\
-+\left({-1}\right)^{m'}&\alpha_f\partial_x\sum_{l,m}L^{l,m}\left (\vec{x}\right)\int{Y_{\mathbb{R}}^{l,m}\overline{Y^{l'+1, -m'-1}}(\omega )\ud\omega}
++\left({-1}\right)^{m'}&\alpha_f\partial_x\sum_{l,m}L^{l,m}\left (\vec{x}\right)\int{Y_{\mathbb{R}}^{l,m}\overline{\SHBC^{l'+1, -m'-1}}(\omega )\ud\omega}
 %\label{eq:real_transport_expansion_unsimplified_term14}
 \\
 % ---------------------------------------
--\alpha_d\partial_x\sum_{l,m}L^{l,m}\left (\vec{x}\right)\int{Y_{\mathbb{R}}^{l,m}\overline{Y^{l'+1, m'-1}}(\omega )\ud\omega}
+-\alpha_d\partial_x\sum_{l,m}L^{l,m}\left (\vec{x}\right)\int{Y_{\mathbb{R}}^{l,m}\overline{\SHBC^{l'+1, m'-1}}(\omega )\ud\omega}
 %\label{eq:real_transport_expansion_unsimplified_term15}
 %\\
 % ---------------------------------------
--\left({-1}\right)^{m'}&\alpha_d\partial_x\sum_{l,m}L^{l,m}\left (\vec{x}\right)\int{Y_{\mathbb{R}}^{l,m}\overline{Y^{l'+1, -m'+1}}(\omega )\ud\omega}
+-\left({-1}\right)^{m'}&\alpha_d\partial_x\sum_{l,m}L^{l,m}\left (\vec{x}\right)\int{Y_{\mathbb{R}}^{l,m}\overline{\SHBC^{l'+1, -m'+1}}(\omega )\ud\omega}
 %\label{eq:real_transport_expansion_unsimplified_term16}
 \\
 % ---------------------------------------
--\alpha_a\partial_z\sum_{l,m}L^{l,m}\left (\vec{x}\right)\int{Y_{\mathbb{R}}^{l,m}\overline{Y^{l'-1, m'}}(\omega )\ud\omega}
+-\alpha_a\partial_z\sum_{l,m}L^{l,m}\left (\vec{x}\right)\int{Y_{\mathbb{R}}^{l,m}\overline{\SHBC^{l'-1, m'}}(\omega )\ud\omega}
 %\label{eq:real_transport_expansion_unsimplified_term17}
 % ---------------------------------------
 %\\
-+\left({-1}\right)^{m'}&\alpha_a\partial_z\sum_{l,m}L^{l,m}\left (\vec{x}\right)\int{Y_{\mathbb{R}}^{l,m}\overline{Y^{l'-1, -m'}}(\omega )\ud\omega}
++\left({-1}\right)^{m'}&\alpha_a\partial_z\sum_{l,m}L^{l,m}\left (\vec{x}\right)\int{Y_{\mathbb{R}}^{l,m}\overline{\SHBC^{l'-1, -m'}}(\omega )\ud\omega}
 % ---------------------------------------
 %\label{eq:real_transport_expansion_unsimplified_term18}
 \\
--\alpha_b\partial_z\sum_{l,m}L^{l,m}\left (\vec{x}\right)\int{Y_{\mathbb{R}}^{l,m}\overline{Y^{l'+1, m'}}(\omega )\ud\omega}
+-\alpha_b\partial_z\sum_{l,m}L^{l,m}\left (\vec{x}\right)\int{Y_{\mathbb{R}}^{l,m}\overline{\SHBC^{l'+1, m'}}(\omega )\ud\omega}
 %\label{eq:real_transport_expansion_unsimplified_term19}
 %\\
-+\left({-1}\right)^{m'}&\alpha_b\partial_z\sum_{l,m}L^{l,m}\left (\vec{x}\right)\int{Y_{\mathbb{R}}^{l,m}\overline{Y^{l'+1, -m'}}(\omega )\ud\omega}
++\left({-1}\right)^{m'}&\alpha_b\partial_z\sum_{l,m}L^{l,m}\left (\vec{x}\right)\int{Y_{\mathbb{R}}^{l,m}\overline{\SHBC^{l'+1, -m'}}(\omega )\ud\omega}
 %\label{eq:real_transport_expansion_unsimplified_term20}
 \end{align}
 
@@ -1215,8 +1273,8 @@ Consider the seventh and 10th term from the equation above. Due to $\delta_{m=m'
 
 Therefore, the first two terms in the expansion (terms~\ref{eq:real_transport_expansion_unsimplified_term1_term2}), simplify to:
 \begin{align*}
-&-i\alpha_c\partial_y\sum_{l,m}L^{l,m}\left (\vec{x}\right)\int{Y_{\mathbb{R}}^{l,m}\overline{Y^{l'-1, m'-1}}(\omega )\ud\omega}
-+\left({-1}\right)^{m'}i\alpha_c\partial_y\sum_{l,m}L^{l,m}\left (\vec{x}\right)\int{Y_{\mathbb{R}}^{l,m}\overline{Y^{l'-1, -m'+1}}(\omega )\ud\omega}
+&-i\alpha_c\partial_y\sum_{l,m}L^{l,m}\left (\vec{x}\right)\int{Y_{\mathbb{R}}^{l,m}\overline{\SHBC^{l'-1, m'-1}}(\omega )\ud\omega}
++\left({-1}\right)^{m'}i\alpha_c\partial_y\sum_{l,m}L^{l,m}\left (\vec{x}\right)\int{Y_{\mathbb{R}}^{l,m}\overline{\SHBC^{l'-1, -m'+1}}(\omega )\ud\omega}
 \\
 &=-\frac{2}{\sqrt{2}}i
 \alpha_c\partial_y
@@ -1235,8 +1293,8 @@ L^{l'-1,-m'+1}\left (\vec{x}\right)
 
 The terms in equation~\ref{eq:real_transport_expansion_unsimplified_term3_term4} are derived in the same way with the difference, that the signs are reversed and that we have $l'+1$ instead of $l'-1$. However, this does not affect the simplification:
 \begin{align*}
-&i\alpha_d\partial_y\sum_{l,m}L^{l,m}\left (\vec{x}\right)\int{Y_{\mathbb{R}}^{l,m}\overline{Y^{l'+1, m'-1}}(\omega )\ud\omega}
--\left({-1}\right)^{m'}i\alpha_c\partial_y\sum_{l,m}L^{l,m}\left (\vec{x}\right)\int{Y_{\mathbb{R}}^{l,m}\overline{Y^{l'+1, -m'+1}}(\omega )\ud\omega}
+&i\alpha_d\partial_y\sum_{l,m}L^{l,m}\left (\vec{x}\right)\int{Y_{\mathbb{R}}^{l,m}\overline{\SHBC^{l'+1, m'-1}}(\omega )\ud\omega}
+-\left({-1}\right)^{m'}i\alpha_c\partial_y\sum_{l,m}L^{l,m}\left (\vec{x}\right)\int{Y_{\mathbb{R}}^{l,m}\overline{\SHBC^{l'+1, -m'+1}}(\omega )\ud\omega}
 \\
 &=-\frac{2}{\sqrt{2}}i
 \alpha_d\partial_y
@@ -1858,13 +1916,12 @@ The scattering term is given as a convolution of the radiance field $L$ with the
 \end{align*}
 
 where the convolution can be also expressed as a inner product integral:
-where the convolution is also the inner product integral:
 \begin{align*}
 (L\circ \rho_{R(\omega)}(p)) &= \int_{\Omega'}{L(\vec{x}, \omega')\rho_{R(\omega)}(p)(\omega')\mathbf{d}\omega'} \\
 &= \langle L,  \rho_{R(\omega)}(p)\rangle
 \end{align*}
 
-We substitute $L$ with its real-valued SH-expansion in the inner product intergal and perform some further factorizations to get:
+We substitute $L$ with its real-valued SH-expansion (equation~\ref{eq:real_sh_exp_L}) in the inner product intergal and perform some further factorizations to get:
 %\begin{align*}
 %L\left(\vec{x}, \omega\right)=
 %&
@@ -1883,10 +1940,10 @@ We substitute $L$ with its real-valued SH-expansion in the inner product interga
 L^{{l,m}}\left (\vec{x} \right )
 f^{l'0}
 \left<
-Y^{l, m}(\omega )
+\SHBC^{l, m}(\omega )
 , \rho_{R\left(\omega\right)}
 \left(
-Y^{l'0}
+\SHBC^{l'0}
 \right)
 \right>
 }
@@ -1903,10 +1960,10 @@ Y^{l'0}
 L^{{l,m}}\left (\vec{x} \right )
 f^{l'0}
 \left<
-Y^{l, -m}(\omega )
+\SHBC^{l, -m}(\omega )
 , \rho_{R\left(\omega\right)}
 \left(
-Y^{l'0}
+\SHBC^{l'0}
 \right)
 \right>
 }
@@ -1920,10 +1977,10 @@ Y^{l'0}
 L^{{l,0}}\left (\vec{x} \right )
 f^{l'0}
 \left<
-Y^{l, 0}(\omega )
+\SHBC^{l, 0}(\omega )
 , \rho_{R\left(\omega\right)}
 \left(
-Y^{l'0}
+\SHBC^{l'0}
 \right)
 \right>
 }
@@ -1938,10 +1995,10 @@ Y^{l'0}
 L^{{l,m}}\left (\vec{x} \right )
 f^{l'0}
 \left<
-Y^{l, -m}(\omega )
+\SHBC^{l, -m}(\omega )
 , \rho_{R\left(\omega\right)}
 \left(
-Y^{l'0}
+\SHBC^{l'0}
 \right)
 \right>
 }
@@ -1958,10 +2015,10 @@ Y^{l'0}
 L^{{l,m}}\left (\vec{x} \right )
 f^{l'0}
 \left<
-Y^{l, m}(\omega )
+\SHBC^{l, m}(\omega )
 , \rho_{R\left(\omega\right)}
 \left(
-Y^{l'0}
+\SHBC^{l'0}
 \right)
 \right>
 }
@@ -1978,10 +2035,10 @@ The spherial harmonics basis functions $\SHBC^{lm}$ are orthogonal. We therefore
 L^{{l,m}}\left (\vec{x} \right )
 f^{l0}
 \left<
-Y^{l, m}(\omega )
+\SHBC^{l, m}(\omega )
 , \rho_{R\left(\omega\right)}
 \left(
-Y^{l0}
+\SHBC^{l0}
 \right)
 \right>
 }
@@ -1996,7 +2053,7 @@ Y^{l0}
 L^{{l,m}}\left (\vec{x} \right )
 f^{l0}
 \left<
-Y^{l, -m}(\omega )
+\SHBC^{l, -m}(\omega )
 , \rho_{R\left(\omega\right)}
 \left(
 Y^{l0}
@@ -2011,10 +2068,10 @@ Y^{l0}
 L^{{l,0}}\left (\vec{x} \right )
 f^{l0}
 \left<
-Y^{l, 0}(\omega )
+\SHBC^{l, 0}(\omega )
 , \rho_{R\left(\omega\right)}
 \left(
-Y^{l0}
+\SHBC^{l0}
 \right)
 \right>
 }
@@ -2027,10 +2084,10 @@ Y^{l0}
 L^{{l,m}}\left (\vec{x} \right )
 f^{l0}
 \left<
-Y^{l, -m}(\omega )
+\SHBC^{l, -m}(\omega )
 , \rho_{R\left(\omega\right)}
 \left(
-Y^{l0}
+\SHBC^{l0}
 \right)
 \right>
 }
@@ -2045,10 +2102,10 @@ Y^{l0}
 L^{{l,m}}\left (\vec{x} \right )
 f^{l0}
 \left<
-Y^{l, m}(\omega )
+\SHBC^{l, m}(\omega )
 , \rho_{R\left(\omega\right)}
 \left(
-Y^{l0}
+\SHBC^{l0}
 \right)
 \right>
 }
@@ -2069,7 +2126,7 @@ this results in:
 L^{{l,m}}\left (\vec{x} \right )
 f^{l0}
 \lambda_l
-Y^{l, m}(\omega )
+\SHBC^{l, m}(\omega )
 }
 }
 \\
@@ -2082,7 +2139,7 @@ Y^{l, m}(\omega )
 L^{{l,m}}\left (\vec{x} \right )
 f^{l0}
 \lambda_l
-Y^{l, -m}(\omega )
+\SHBC^{l, -m}(\omega )
 }
 }
 \\
@@ -2092,7 +2149,7 @@ Y^{l, -m}(\omega )
 L^{{l,0}}\left (\vec{x} \right )
 f^{l0}
 \lambda_l
-Y^{l, 0}(\omega )
+\SHBC^{l, 0}(\omega )
 }
 \\
 +
@@ -2103,7 +2160,7 @@ Y^{l, 0}(\omega )
 L^{{l,m}}\left (\vec{x} \right )
 f^{l0}
 \lambda_l
-Y^{l, -m}(\omega )
+\SHBC^{l, -m}(\omega )
 }
 }
 \\
@@ -2116,7 +2173,7 @@ Y^{l, -m}(\omega )
 L^{{l,m}}\left (\vec{x} \right )
 f^{l0}
 \lambda_l
-Y^{l, m}(\omega )
+\SHBC^{l, m}(\omega )
 }
 }
 \end{align}

@@ -7,6 +7,7 @@
 \label{fig:pnsolver}
 \end{figure*}
 
+\vspace{-0.75in}
 
 \section{$P_N$-Solver}
 \label{sec:pnsolver}
@@ -33,7 +34,11 @@ The result of the precomputation is a stencil, which can be used during runtime 
 \label{fig:stencile_pipeline}
 \end{figure}
 
+\vspace{0.6in}
+
 Stencil generation entails discretizing a PDE at a hypothetical center voxel $(i, j, k)$ (assuming to mean the voxel center most of the time). Finite differences create weighted references to other voxels (e.g. $i+1, j, k$). After bringing the discretized equation into canonical form (a weighted sum of unknowns), one can write the stencil by reading off the weights and offsets (Figure~\ref{fig:stencile_pipeline}). $(i, j, k)$ will only be known during runtime, when the stencil is executed for a particular unknown (row). Then the offsets can be used to find the component index into the solution-vector, and weights can be evaluated for concrete world space position. We refer to the space with the hypthetical voxel $(i, j, k)$ at the center as stencil space.
+
+\vspace{0.2in}
 
 \begin{wrapfigure}{r}{0.6\columnwidth}
 %\begin{center}
@@ -83,8 +88,7 @@ Factorization into canonical form is done as a manipulation pass on the mathemat
 
 The stencil code is generated once for every value of $N$ and compiled with the runtime component of our solver. The runtime executes the stencil for every voxel to propagate the system matrix $A$ and RHS vector $\vec{Q}$ with numerical values.
 
-The number of rows is determined by the number of voxels times the number of coefficients per voxel (see Figure~\ref{fig:matrix_layout}) and can therefore become very large for high resolution and high truncation order. The matrix $A$ is square and extremely sparse, due to the local structure of the finite differences discretization. Unfortunately, it is non-symmetric due to the transport term and not diagonal dominant, which rules out many standard methods for solving linear systems. We adress this by solving the normal form $A^TA\vec{u}=A^T\vec{Q}$ instead. This gives a symmetric and positive definit system matrix $A^TA$, albeit with a higher condition number. Investigation of other solution schemes (e.g. multigrid) would be an interesting avenue for future work.
-
+The number of rows is determined by the number of voxels times the number of coefficients per voxel (see Figure~\ref{fig:matrix_layout}) and can therefore become very large for high resolution and high truncation order. The matrix $A$ is square and extremely sparse, due to the local structure of the finite differences discretization. Unfortunately, it is non-symmetric due to the transport term and not diagonal dominant, which rules out many \rev{iterative} methods for solving linear systems. \rev{Iterative methods are useful, as they allow balancing accuracy against performance by tweaking the convergence threshold.} We adress this by solving the normal form $A^TA\vec{u}=A^T\vec{Q}$ instead. This gives a symmetric and positive definit system matrix $A^TA$, albeit with a higher condition number. Investigation of other solution schemes (e.g. multigrid) would be an interesting avenue for future work. \rev{However, more importantly, in the presence of vacuum regions, the matrix $A$ becomes singular and the system cannot be solved at all. This requires the introduction of a minimum threshold for the extinction coefficient $\sigma_t$.}
 
 Our solver supports Neumann and Dirichlet boundary conditions. They are handled transparently by the code which generates the stencil. Whenever the stencil accumulates coefficients into a boundary location, the framework either ignores the write operation (Dirichlet BC) or accumulates into the row and column in $A$ of the coefficient in the closest voxel inside the domain (Neumann BC). This is done changing the index of the written component under the hood.
 

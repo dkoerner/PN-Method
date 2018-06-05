@@ -1,0 +1,223 @@
+
+
+\documentclass[11pt,letterpaper,headsepline,DIV15]{scrartcl}
+
+\def\bf{\normalfont\bfseries}
+
+\usepackage{enumitem}
+\usepackage{bm} % for bold greek symbols
+\usepackage{color}
+
+\usepackage{alltt}
+%\renewcommand{\ttdefault}{txtt}
+
+%checkmark
+\usepackage{pifont}% http://ctan.org/pkg/pifont
+\newcommand{\cmark}{\color{green}\ding{51}\color{black}}%
+\newcommand{\xmark}{\color{red}\ding{55}\color{black}}%
+
+% strike out text
+\usepackage{soul,xcolor}
+
+
+\definecolor{red}{RGB}{120,0,0}
+\definecolor{gray}{RGB}{150,150,150}
+\definecolor{todoColor}{RGB}{120,30,60}
+
+\def\todo#1{{\textbf{\em \textcolor{todoColor}{\{TODO: #1\}}}}}
+\def\todogm#1{{\textbf{\em \textcolor{todoColor}{\{TODO-G: #1\}}}}}
+\def\todofs#1{{\textbf{\em \textcolor{todoColor}{\{TODO-F: #1\}}}}}
+
+\definecolor{answerColor}{RGB}{40,60,140}
+%\newcounter{aCounter}
+%\setcounter{aCounter}{0}
+%%\newcommand{\answer}[1]{\textcolor{answerColor}{\textbf{#1}}}
+%%\newcommand{\answer}[0]{\noindent\stepcounter{aCounter}\textcolor{answerColor}{Reply	 \arabic{aCounter} }}
+%\newcommand{\answer}[1]{\noindent\stepcounter{aCounter}\textcolor{answerColor}{\bf Reply \arabic{aCounter}\\}{\textcolor{answerColor}{#1}}}
+%%\newcommand{\answer}[2]{\noindent\stepcounter{aCounter}\textcolor{answerColor}{\label{#1}\bf Reply \arabic{aCounter}\\}{\textcolor{answerColor}{#2}}}
+
+
+
+% -------- comment --------------
+\usepackage{verbatim}
+\newcounter{cmntcounter}
+\renewcommand{\thecmntcounter}{\arabic{cmntcounter}}
+
+\newcommand{\nextcomment}[1]{\refstepcounter{cmntcounter}\label{#1}\textcolor{red}{\textbf{comment-\thecmntcounter}}}
+
+
+
+% -------- reply --------------
+\newcounter{rplcounter}
+%\renewcommand{\thefpcounter}{\thechapter.\arabic{fpcounter}}
+%\renewcommand{\thefpcounter}{\thesection.\arabic{fpcounter}}
+\renewcommand{\therplcounter}{\arabic{rplcounter}}
+
+\newenvironment{reply}[2]{%
+\refstepcounter{rplcounter}%
+\label{#1}%
+\noindent\textbf{\textcolor{answerColor}{Reply~\therplcounter}\\}%
+\color{answerColor}
+}%
+{}%
+
+\newcommand{\tocomment}[1]{\bf#1}
+
+\usepackage[T1]{fontenc}
+\newcommand{\changefont}[3]{
+\fontfamily{#1} \fontseries{#2} \fontshape{#3} \selectfont}
+\changefont{phv}{m}{n}
+\renewcommand{\familydefault}{\sfdefault}
+
+%\title{{\small Cover Letter for VisWeek 2013 -- Paper Id 130, Minor Revision}\\
+
+% {\Large Coronal Holes Extraction Based on Isocline Surfaces}}
+
+\title{\normalsize Cover Letter for EGSR2018-- Submission 1027 (EI\&I), Revised Version}
+
+\vspace{1cm}
+%\author{M. \"Uffinger, F. Sadlo, T. Ertl}
+%\date{2013-11-22}
+\date{}
+
+\begin{document}
+
+\maketitle
+\noindent Dear Program Chairs, Dear Reviewers,
+\\
+
+\noindent thank you for reviewing our submission and accepting it for publication at EGSR2018 EI\&I track with a minor revision.
+\\
+
+\noindent Common among the reviews is the request for more rendering evaluations, which unfortunately we have not available yet. While we took care in presenting results, which validated the theory (pointsource problem) and demonstrated applicability in rendering (Nebulae), we agree that more results are needed. The lack thereof is one of the reasons, why we submitted to the EI\&I track. We are planning to have more renderings of different datasets for the next stage of this project.
+\\
+
+\noindent In the following, we cite the original comments with non-proportional black font and use bold font for the parts we address in the subsequent replies, which are in blue color. Attached to this response, is the revised version where our changes in the text are highlighted in red.
+\\
+\\
+\noindent Respectfully,\\
+the Authors.
+
+\clearpage
+
+%\section*{Improved TVCG submission}
+
+\vspace{0.5cm}
+
+
+
+
+
+
+{\scriptsize\begin{alltt}
+-------------------- Review 17707 --------------------
+
+Although finite-element-based solutions to the RTE are well known in many areas, this topic is underexplored in
+computer graphics. The solution proposed in the paper seems practical, and the paper has the potential to encourage
+future research along this direction.
+
+\tocomment{
+The main issue of this paper is the lack of rendering evaluations: the only actual rendered results are in Figure 1, and the P_5 result is only slightly better than classical diffusion approximation and arguably worse than flux-limited diffusion. Thus, the practical usefulness of the proposed technique for graphics applications remain unclear.
+}
+\end{alltt}}
+
+\begin{reply}{}{}
+We agree with the reviewer on that the practical usefulness of our technique is unclear. In fact, at this stage, we admit that in comparison to flux-limited diffusion, our technique does not appear to be competitive. We mention this in the conclusion of our paper. At this point, the value in our submission is, that it closes a knowledge gap in the graphics community on the PN-method, presents the real-valued PN-equations and also introduces an interesting approach for solving general coupled PDE's. Making this method competitive in comparison to other deterministic approaches is our plan going forward.
+\end{reply}
+
+{\scriptsize\begin{alltt}
+-------------------- Review 17724 --------------------
+This paper is huge in terms of scope, and it opens exploration in multiple ways, even with very few results.
+This paper is a nice contribution to the E&I Track.
+
+There are some open questions that might need some discussion:
+\tocomment{
+- The need to create a custom CAS should be really justified, as it seems like overkill. There are some CAS libraries (SymPy for Python,
+GiNaC for C++) that would probably fit perfectly this approach, and that are able to generate C++ code and LaTeX. Both of them enable exploration and parsing of their "tree". In any case, for a potential future version it might make sense to opensource the specific CAS library, write a technical report about it and cite it. Right now it adds some extra noise to the paper's story (which might be summarized as "we use a CAS library to derive and generate stencil code for the P-N equations").}
+\end{alltt}}
+
+\begin{reply}{}{}
+We agree with the reviewer in that other off-the-shelve computer algebra frameworks, such as SymPy, would be suitable for the tasks of expression manipulation and automated discretization. The reason why we went for our own solution is simply, that we started with a very small lightweight implementation for initial tests and stuck with it throughout the project.
+\newline
+\newline
+The reviewer suggests, that simply pointing to an existing computer algebra framework would allow to summarize things as "we use a CAS library to derive and generate stencil code for the P-N equations". While we agree, that the fact that we created our own computer algebra representation is of no importance to the paper, we find that covering how to use any of such a representation for automated discretization is an important aspect of our work. Computer algebra frameworks, such as SimPy, are primarily known for and used to perform symbolic computation. We feel, that it is worth covering in more detail, how such a framework can be used for automated discretization. This argument is backed up by the fact, that none of the off-the-shelf packages offers a manipulation step for discretizing a given equation. We find that implementing such a manipulation step is not trivial, especially in the presence of coupling and staggered grid locations.
+\newline
+\newline
+So in order to account for the reviewers comment, we made changes to the text in various places, which de-emphasize the use of our own implementation.
+%\begin{itemize}
+%	\item abstract: We intoduce a computer algebra framework $\rightarrow$ We use a computer algebra framework
+%\end{itemize}
+Further, we reworked section 4, which was used to introduce our own CAS-framework. We now state, that any computer algebra representation can be used and reference SymPy as an example. We also shortened this section by removing the text which was dedicated to explaining the capabilities of our representation as those are only a subset of what most of the alternatives can do. We kept a paragraph, which summarizes the concept of such frameworks and also kept figure 4, which expresses the idea of computer algebra representations visually. Arguably, this is known by most of the readers, but we find it useful to briefly summarize the concept, because we refer to it in more detail in section 6.1, when we explain the automated discretization.
+\newline
+\newline
+Section 6.1 explains the implementation of a discretization step, independent from the computer algebra framework used. As already mentioned, such a manipulation would have to be implemented for any framework and this section gives a good summary on how to go about it. We therefore see enough value in this section to keep it as is.
+\end{reply}
+
+{\scriptsize\begin{alltt}
+\tocomment{
+- The use of P-N for diffusion in participating media might be an unviable solution. The paper in the discussion section points to avenues of future work in terms of speed-up (multigrid linear solver, for instance) but there should be some avenue of future work regarding convergence. Results look adequate, but would it ever converge, given enough order in spherical harmonics? In which cases the solution is closer to the ground truth? Which kinds of participating media are better represented? From my point of view that is much more important than render time.}
+\end{alltt}}
+
+\begin{reply}{}{}
+\label{rpl:gg}
+We very much agree with this comment. To be clear: The $P_N$-method is only not converging, when vacuum or close-to vacuum regions are present, because the matrix $A$ is singular in these cases. If the extinction coefficient is sufficiently large throughout the domain, the method does converge (but might still require a lot of computation for that).
+\newline
+\newline
+The presence of vacuum regions and its problem with conergence was particularily important to us, as vacuum regions are common in rendering. This problem seems to be closely related to second order methods, which we mention in the conclusion section of the paper (e.g. the work of Hansen et al.~\cite{Hansen14}). Some of those second order methods are said to have the benefit of being able to deal with vacuum regions. They are an active research topic in the neutron transport community. By solving the normal form ($A^TA$), we basically solved the naive second order form of the RTE and we found that it is able to deal with vacuum regions in the sense, that it does not break down formally (e.g. due to division by zero), but at the same time it does not converge, since $A^TA$ is still singular if $A$ happens to be singular. A paragraph in the conclusion section is dedicated to this insight.
+\newline
+\newline
+We have not been very clear about the singularity of $A$ in the presence of vacuum. We added a comment on this in section 6.2.
+\newline
+\newline
+There are different second order forms, such as Even-Odd-Parity (EOP), Self-adjoint angular flux (SAAF) or the least-squares form introduced by Hansen et al.~\cite{Hansen14} and evaluating their properties for rendering applications would be a very interesting avenue for future work. We mention this at the end of the conclusion section. However, these research questions really do exceed the scope of our paper, which is primarily about giving the theory and a practical implementation of the $P_N$-mehod with some validation.
+\end{reply}
+
+{\scriptsize\begin{alltt}
+\tocomment{
+- The linear system to be solved during runtime targets the normal form A^T A because it is not simmetric. However, the used library (Eigen) provides a variety of solvers that would probably ensure accuracy even for non-simmetric matrices (LU? SVD? QR?).
+In that case, why is it better to use the normal form with a naturally higher condition number?}
+\end{alltt}}
+
+\begin{reply}{}{}
+If no vacuum regions are present, the mentioned alternatives would work for both, the first order form ($A\vec{x}=\vec{b}$) and the normal form of the problem. The reason why we introduced the normal form is, that it enables the use of standard iterative methods, such as conjugate gradient. These iterative methods allow balancing the computation time against accuracy by tweaking the convergence threshold. We adjusted the text in section 6.2 to outline this decision.
+
+As mentioned in reply~\ref{rpl:gg}, we have not been explicit about the singularity of $A$ in the presence of vacuum. In these cases, iterative solvers will not converge and solvers, such as LU factorization will not be applicable. We added a remark in the text in section 6.2.
+%mention inverse of the scattering/collision operator
+%introduce text referencing the lspn stuff and talking about the relation to normal form of the RTE
+
+%When we take the normal form of the linear system $A\vec{x}=Q$ (which we arrive at after discretization), we essentially get the coefficient matrix of the naive second order form of the RTE. The neutron transport literature states, that standard first order forms are not able to cope with vacuum regions, since their solution requires inversion of the scattering/collision operator. And those break down in vacuum. We saw that solvers, such as LU were not able to converge. such as the least-squares $P_N$ method introduced by 
+\end{reply}
+
+
+{\scriptsize\begin{alltt}
+\tocomment{
+Last, I would like to congratulate the authors for their work and I would like to encourage them to keep this research until a final version, that most surely I would like to read.}
+\end{alltt}}
+
+\begin{reply}{}{}
+We are really thankful for your comment and encouragement. Deterministic methods are a niche topic and it is unclear, whether they will find a place in rendering long-term. However, investigating these methods and providing a clear understanding about their traits and their applicability is valuable research for which the EI\&I track seems to be a good place. We are very happy that all reviewers seem to agree.
+\end{reply}
+
+
+{\scriptsize\begin{alltt}
+-------------------- Review 17681 --------------------
+
+The previous paragraphs explain the reasons why I will reference the paper. I think that beyond the CG community,
+this paper can have a larger influence in many work dealing with the volume Rendering.
+
+It is very important to make sure that the supplemental materials and the source code are released at the same time
+than the paper.
+
+\tocomment{Note to the authors: the section 3.1.2 of the supplemental material is empty. Make sure to correct for the final version of the paper.}
+\end{alltt}}
+\begin{reply}{}{}
+We completed section 3.1.2 in the supplemental material on the real-valued spherical harmonics expansion of the phase function and also fixed some minor notation issues throughout the text.
+\end{reply}
+
+
+
+%\bibliographystyle{plain}
+\bibliographystyle{eg-alpha}
+\bibliography{bibliography}
+
+\end{document}

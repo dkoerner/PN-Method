@@ -1,0 +1,3403 @@
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% author: Jan Novak
+% keep the citations ordered by the year of publication
+
+
+@string{cgf         = {Computer Graphics Forum}}
+
+@string{cgf_eg      = {Computer Graphics Forum (Proc. of Eurographics)}}
+
+# do we need this?
+@string{cgf_eg93    = {CGF (Proc. of Eurographics '93)}}
+
+@string{cgf_egsr    = {CGF (Proc. of Eurographics Symposium on Rendering)}}
+
+@string{cgf_pg      = {CGF (Proc. of Pacific Graphics)}}
+
+@string{egrt96      = {Proc. of Eurographics Workshop on Rendering Techniques}}
+
+@string{egrt        = {Proc. of Eurographics Workshop on Rendering Techniques}}
+
+@string{egsr        = {Proc. of EGSR}}
+
+@string{gi          = {Proc. of GI}}
+
+@string{hpg         = {Proc. of HPG}}
+
+@string{i3d         = {Proc. of Symposium on Interactive 3D Graphics and Games}}
+
+@string{jgt         = {Journal of Graphics, GPU, and Game Tools}}
+
+@string{sig_tog     = {ACM TOG (Proc. of SIGGRAPH)}}
+
+@string{siga_tog    = {ACM TOG (Proc. of SIGGRAPH Asia)}}
+
+@string{sig_93_01   = {Proc. of SIGGRAPH}}
+
+@string{sig_74_92   = {Computer Graphics (Proc. of SIGGRAPH)}}
+
+@string{tog         = {ACM TOG}}
+
+@string{tap         = {ACM TAP}}
+
+@string{tvcg        = {IEEE TVCG}}
+
+@string{irt         = {Proc. of IEEE Symposium on Interactive Ray Tracing}}
+
+@string{pg          = {Proc. of Pacific Graphics}}
+
+@string{vmv         = {Proc. of Vision, Modeling and Visualization}}
+
+
+@inproceedings{Dahm17,
+ author = {Dahm, Ken and Keller, Alexander},
+ title = {Learning Light Transport the Reinforced Way},
+ booktitle = {ACM SIGGRAPH 2017 Talks},
+ series = {SIGGRAPH '17},
+ year = {2017},
+ isbn = {978-1-4503-5008-2},
+ location = {Los Angeles, California},
+ pages = {73:1--73:2},
+ articleno = {73},
+ numpages = {2},
+ url = {http://doi.acm.org/10.1145/3084363.3085032},
+ doi = {10.1145/3084363.3085032},
+ acmid = {3085032},
+ publisher = {ACM},
+ address = {New York, NY, USA},
+ keywords = {Monte Carlo, integral equations, path tracing, quasi-monte carlo methods, reinforcement learning, rendering},
+} 
+
+@article{Mueller17,
+    author = {M\"{u}ller, Thomas and Gross, Markus and Nov\'{a}k, Jan},
+    title = {Practical Path Guiding for Efficient Light-Transport Simulation},
+    journal = {Computer Graphics Forum},
+    volume = {36},
+    number = {4},
+    issn = {1467-8659},
+    url = {http://dx.doi.org/10.1111/cgf.13227},
+    doi = {10.1111/cgf.13227},
+    pages = {91--100},
+    month = jun,
+    year = {2017},
+    numpages = {10},
+    keywords = {global illumination, ray tracing},
+}
+
+@ARTICLE{Wald17,
+author={I. Wald and G. Johnson and J. Amstutz and C. Brownlee and A. Knoll and J. Jeffers and J. Günther and P. Navratil},
+journal={IEEE Transactions on Visualization and Computer Graphics},
+title={OSPRay - A CPU Ray Tracing Framework for Scientific Visualization},
+year={2017},
+volume={23},
+number={1},
+pages={931-940},
+keywords={ray tracing;rendering (computer graphics);scientific information systems;HPC resources;OSPRay;SIMD widths;device backends;high-level API simplicity;modular device support;production-use scientific visualization;rasterization-based visualization;rendering;scientific data;scientific visualization workflows;turn-key CPU ray tracing;visualization workloads;Computational modeling;Data models;Data visualization;Graphics processing units;Pipelines;Ray tracing;Rendering (computer graphics)},
+doi={10.1109/TVCG.2016.2599041},
+ISSN={1077-2626},
+month={Jan},
+}
+
+% 2017 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+@article{Vorba16,
+ author     = {Vorba, Ji{\v{r}}{\'{i}} and K{\v{r}}iv{\'{a}}nek, Jaroslav},
+ title      = {Adjoint-Driven Russian Roulette and Splitting in Light Transport Simulation},
+ journal    = {ACM Trans. Graph.},
+ volume = {35},
+ number = {4},
+ month = jul,
+ year = {2016},
+ issn = {0730-0301},
+ pages = {1--11},
+ numpages = {11},
+ publisher = {ACM},
+ address = {New York, NY, USA},
+ note = {(accepted for publication)}
+}
+
+
+@inproceedings {Koerner16,
+booktitle = {Eurographics Symposium on Rendering - Experimental Ideas \& Implementations},
+editor = {Elmar Eisemann and Eugene Fiume},
+title = {{Subdivision Next-Event Estimation for Path-Traced Subsurface Scattering}},
+author = {Koerner, David and Novak, Jan and Kutz, Peter and Habel, Ralf and Jarosz, Wojciech},
+year = {2016},
+publisher = {The Eurographics Association},
+ISSN = {1727-3463},
+ISBN = {978-3-03868-019-2},
+DOI = {10.2312/sre.20161214}
+}
+
+@article{Heitz16,
+ author = {Heitz, Eric and Hanika, Johannes and d'Eon, Eugene and Dachsbacher, Carsten},
+ title = {Multiple-scattering Microfacet BSDFs with the Smith Model},
+ journal = {ACM Trans. Graph.},
+ issue_date = {July 2016},
+ volume = {35},
+ number = {4},
+ month = jul,
+ year = {2016},
+ issn = {0730-0301},
+ pages = {58:1--58:14},
+ articleno = {58},
+ numpages = {14},
+ url = {http://doi.acm.org/10.1145/2897824.2925943},
+ doi = {10.1145/2897824.2925943},
+ acmid = {2925943},
+ publisher = {ACM},
+ address = {New York, NY, USA},
+ keywords = {BRDF, BSDF, microfacet theory, multiple scattering},
+}
+
+@inproceedings {Dupuy16,
+booktitle = {Eurographics Symposium on Rendering - Experimental Ideas \& Implementations},
+editor = {Elmar Eisemann and Eugene Fiume},
+title = {{Additional Progress Towards the Unification of Microfacet and Microflake Theories}},
+author = {Dupuy, Jonathan and Heitz, Eric and D'Eon, Eugene},
+year = {2016},
+publisher = {The Eurographics Association},
+ISSN = {1727-3463},
+ISBN = {978-3-03868-019-2},
+DOI = {10.2312/sre.20161214}
+}
+
+
+% 2016 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+@article{Holzschuch15,
+    author      = {Holzschuch, Nicolas},
+    title       = {Accurate Computation of Single Scattering in Participating Media with Refractive Boundaries.},
+    journal     = cgf_egsr,
+    volume      = 34,
+    number      = 6,
+    year        = 2015,
+    pages       = {48-59},
+    url         = {http://dblp.uni-trier.de/db/journals/cgf/cgf34.html#Holzschuch15},
+}
+
+@article {Hanika15,
+    author      = {Hanika, Johannes and Droske, Marc and Fascione, Luca},
+    title       = {Manifold Next Event Estimation},
+    journal     = cgf_egsr,
+    volume      = {34},
+    number      = {4},
+    pages       = {87--97},
+    year        = {2015},
+    issn        = {1467-8659},
+    url         = {http://dx.doi.org/10.1111/cgf.12681},
+    doi         = {10.1111/cgf.12681},
+}
+
+@article{Meng15,
+    author = {Johannes Meng and Marios Papas and Ralf Habel and Carsten Dachsbacher and Steve Marschner and Markus Gross and Wojciech Jarosz},
+    title = {Multi-Scale Modeling and Rendering of Granular Materials},
+    journal = sig_tog,
+    volume = {34},
+    number = {4},
+    year = {2015},
+    month = jul,
+    keywords = {physically based rendering, granular media, discrete random media}
+}
+
+@book{Mazumder2015,
+  title={Numerical Methods for Partial Differential Equations: Finite Difference and Finite Volume Methods},
+  author={Mazumder, S.},
+  isbn={9780128034842},
+  url={https://books.google.de/books?id=XQFMrgEACAAJ},
+  year={2015},
+  publisher={Elsevier Science \& Technology Books}
+}
+
+
+% 2015 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+
+@article{Hansen14,
+author = {Jon Hansen and Jacob Peterson and Jim Morel and Jean Ragusa and Yaqi Wang},
+title = {A Least-Squares Transport Equation Compatible with Voids},
+journal = {Journal of Computational and Theoretical Transport},
+volume = {43},
+number = {1-7},
+pages = {374-401},
+year  = {2014},
+publisher = {Taylor & Francis},
+doi = {10.1080/00411450.2014.927364}
+}
+
+
+
+
+@inproceedings{Krivanek14,
+ author = {K\v{r}iv\'{a}nek, Jaroslav and d'Eon, Eugene},
+ title = {A Zero-variance-based Sampling Scheme for Monte Carlo Subsurface Scattering},
+ booktitle = {ACM SIGGRAPH 2014 Talks},
+ series = {SIGGRAPH '14},
+ year = {2014},
+ isbn = {978-1-4503-2960-6},
+ location = {Vancouver, Canada},
+ pages = {66:1--66:1},
+ articleno = {66},
+ numpages = {1},
+ url = {http://doi.acm.org/10.1145/2614106.2614138},
+ doi = {10.1145/2614106.2614138},
+ acmid = {2614138},
+ publisher = {ACM},
+ address = {New York, NY, USA},
+} 
+
+@inproceedings{Elek14,
+    author = {Elek, Oskar and Ritschel, Tobias and Dachsbacher, Carsten and Seidel, Hans-Peter},
+    title = {Interactive Light Scattering with Principal-ordinate Propagation},
+    booktitle = {Proceedings of Graphics Interface 2014},
+    series = {GI '14},
+    year = {2014},
+    isbn = {978-1-4822-6003-8},
+    location = {Montreal, Quebec, Canada},
+    pages = {87--94},
+    numpages = {8},
+    url = {http://dl.acm.org/citation.cfm?id=2619648.2619663},
+    acmid = {2619663},
+    publisher = {Canadian Information Processing Society},
+    address = {Toronto, Ont., Canada, Canada},
+} 
+
+@inproceedings{Krivanek14:ZV,
+    author      = {K\v{r}iv\'{a}nek, Jaroslav and d'Eon, Eugene},
+    title       = {A Zero-variance-based Sampling Scheme for {M}onte {C}arlo Subsurface Scattering},
+    booktitle   = {ACM SIGGRAPH 2014 Talks},
+    series      = {SIGGRAPH '14},
+    year        = {2014},
+    isbn        = {978-1-4503-2960-6},
+    location    = {Vancouver, Canada},
+    pages       = {66:1--66:1},
+    articleno   = {66},
+    numpages    = {1},
+    url         = {http://doi.acm.org/10.1145/2614106.2614138},
+    doi         = {10.1145/2614106.2614138},
+    acmid       = {2614138},
+    publisher   = {ACM},
+    address     = {New York, NY, USA},
+} 
+
+@article{Krivanek14,
+    author      = {K\v{r}iv\'{a}nek, Jaroslav and Georgiev, Iliyan and Toshiya Hachisuka and Petr V\'{e}voda and Martin \v{S}ik and Derek Nowrouzezahrai and Wojciech Jarosz},
+    title       = {Unifying points, beams, and paths in volumetric light transport simulation},
+    journal     = sig_tog,
+    volume      = {33},
+    number      = {4},
+    month       = aug,
+    year        = {2014},
+    pages       = {103:1--103:13},
+    publisher   = {ACM},
+    address     = {New York, NY, USA},
+}
+
+@article{Hayakawa14, 
+    title       = {Comparative analysis of discrete and continuous absorption weighting estimators used in {M}onte {C}arlo simulations of radiative transport in turbid media}, 
+    author      = {Carole K. Hayakawa and Jerome Spanier and Vasan Venugopalan}, 
+    journal     = {J. Opt. Soc. Am. A}, 
+    number      = {2}, 
+    pages       = {301--311}, 
+    publisher   = {OSA},
+    volume      = {31}, 
+    month       = {Feb},
+    year        = {2014},
+}
+
+@article{Vorba14,
+    title       = {On-line Learning of Parametric Mixture Models for Light Transport Simulation},
+    author      = {Vorba, Ji\v{r}\'{\i} and Karl\'{\i}k, Ond\v{r}ej and \v{S}ik, Martin and Ritschel, Tobias and K\v{r}iv\'{a}nek, Jaroslav},
+    journal     = sig_tog,
+    issue_date  = {July 2014},
+    volume      = {33},
+    number      = {4},
+    month       = jul,
+    year        = {2014},
+    issn        = {0730-0301},
+    pages       = {101:1--101:11},
+    articleno   = {101},
+    numpages    = {11},
+    url         = {http://doi.acm.org/10.1145/2601097.2601203},
+    doi         = {10.1145/2601097.2601203},
+    acmid       = {2601203},
+    publisher   = {ACM},
+    address     = {New York, NY, USA},
+}
+
+@article{Koerner14,
+  author    = {David Koerner and
+               Jamie Portsmouth and
+               Filip Sadlo and
+               Thomas Ertl and
+               Bernd Eberhardt},
+  title     = {Flux-Limited Diffusion for Multiple Scattering in Participating Media},
+  journal   = {CoRR},
+  volume    = {abs/1403.8105},
+  year      = {2014},
+  url       = {http://arxiv.org/abs/1403.8105},
+  timestamp = {Tue, 01 Apr 2014 11:56:46 +0200},
+  biburl    = {http://dblp.uni-trier.de/rec/bib/journals/corr/KoernerPSEE14},
+  bibsource = {dblp computer science bibliography, http://dblp.org}
+}
+
+@article{Seibold14,
+ author = {Seibold, Benjamin and Frank, Martin},
+ title = {StaRMAP---A Second Order Staggered Grid Method for Spherical Harmonics Moment Equations of Radiative Transfer},
+ journal = {ACM Trans. Math. Softw.},
+ issue_date = {October 2014},
+ volume = {41},
+ number = {1},
+ month = oct,
+ year = {2014},
+ issn = {0098-3500},
+ pages = {4:1--4:28},
+ articleno = {4},
+ numpages = {28},
+ url = {http://doi.acm.org/10.1145/2590808},
+ doi = {10.1145/2590808},
+ acmid = {2590808},
+ publisher = {ACM},
+ address = {New York, NY, USA},
+ keywords = {Matlab, Radiative transfer, hyperbolic balance law, method of moments, numerical method, staggered grid},
+}
+
+% 2014 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+@article{Radice13,
+title = "A new spherical harmonics scheme for multi-dimensional radiation transport I. Static matter configurations",
+journal = "Journal of Computational Physics",
+volume = "242",
+pages = "648 - 669",
+year = "2013",
+issn = "0021-9991",
+doi = "https://doi.org/10.1016/j.jcp.2013.01.048",
+url = "http://www.sciencedirect.com/science/article/pii/S0021999113001125",
+author = "David Radice and Ernazar Abdikamalov and Luciano Rezzolla and Christian D. Ott",
+keywords = "Radiation transport, -method, Asymptotic diffusion limit, Discontinuous Galerkin"
+}
+
+@article{Kroes13,
+    author = {Kroes, Thomas AND Post, Frits H. AND Botha, Charl P.},
+    journal = {PLOS ONE},
+    publisher = {Public Library of Science},
+    title = {Exposure Render: An Interactive Photo-Realistic Volume Rendering Framework},
+    year = {2013},
+    month = {04},
+    volume = {8},
+    url = {http://dx.doi.org/10.1371%2Fannotation%2F23e9f360-dbf5-434e-9a5a-a78172c6cba8},
+    pages = {},
+    abstract = {},
+    number = {4},
+    doi = {10.1371/annotation/23e9f360-dbf5-434e-9a5a-a78172c6cba8}
+}
+
+@inproceedings{Zhang13,
+ author = {Zhang, Yubo and Ma, Kwan-Liu},
+ title = {Fast Global Illumination for Interactive Volume Visualization},
+ booktitle = {Proceedings of the ACM SIGGRAPH Symposium on Interactive 3D Graphics and Games},
+ series = {I3D '13},
+ year = {2013},
+ isbn = {978-1-4503-1956-0},
+ location = {Orlando, Florida},
+ pages = {55--62},
+ numpages = {8},
+ url = {http://doi.acm.org/10.1145/2448196.2448205},
+ doi = {10.1145/2448196.2448205},
+ acmid = {2448205},
+ publisher = {ACM},
+ address = {New York, NY, USA},
+ keywords = {global illumination, interactive visualization, volume rendering},
+} 
+
+
+
+@article{Galtier13,
+    title       = {Integral formulation of null-collision {M}onte {C}arlo algorithms },
+    author      = {M. Galtier and S. Blanco and C. Caliot and C. Coustet and J. Dauchet and M. El Hafi and V. Eymet and R. Fournier and J. Gautrais and A. Khuong and B. Piaud and G. Terrée},
+    journal     = {Journal of Quantitative Spectroscopy and Radiative Transfer},
+    volume      = {125},
+    pages       = {57--68},
+    year        = {2013},
+    month       = apr,
+}
+
+
+@article{Museth13,
+    title       = {{VDB}: High-resolution Sparse Volumes with Dynamic Topology},
+    author      = {Museth, Ken},
+    journal     = tog,
+    year        = {2013},
+    volume      = {32},
+    number      = {3},
+    month       = jul,
+    pages       = {27:1--27:22},
+    publisher   = {ACM},
+    address     = {New York, NY, USA},
+} 
+
+@inproceedings{Ulbrich13,
+    title       = {Progressive Visibility Caching for Fast Indirect Illumination},
+    author      = {Justus Ulbrich and Jan Nov\'{a}k and Hauke Rehfeld and Carsten Dachsbacher},
+    booktitle   = vmv,
+    pages       = {203--210},
+    year        = {2013},
+    location    = {Lugano, Switzerland},
+    publisher   = {Eurographics Association},
+}
+
+@article {Dachsbacher13,
+    title       = {Scalable Realistic Rendering with Many-Light Methods},
+    author      = {Dachsbacher, Carsten and K{\v{r}}iv{\'a}nek, Jaroslav and Ha\v{s}an, Milo\v{s} and Arbree, Adam and Walter, Bruce and Nov\'{a}k, Jan},
+    journal     = cgf,
+    _doi         = {10.1111/cgf.12256},
+    volume      = {33},
+    number      = {1},
+    pages       = {88--104},
+    year        = {2013},
+}
+
+@article{Lehtinen13,
+    title       = {Gradient-Domain Metropolis Light Transport},
+    author      = {Lehtinen, Jaakko and Karras, Tero and Laine, Samuli and Aittala, Miika and Durand, Fr{\'e}do and Aila, Timo},
+    journal     = sig_tog,
+    volume      = {32},
+    number      = {4},
+    month       = jul,
+    year        = {2013},
+    pages       = {95:1--95:12},
+    publisher   = {ACM},
+    address     = {New York, NY, USA},
+}
+
+@article{Schmidt13,
+    title       = {Path-Space Manipulation of Physically-Based Light Transport},
+    author      = {Thorsten-Walther Schmidt and Jan Nov\'{a}k and Johannes Meng and Anton S. Kaplanyan and Tim Reiner and Derek Nowrouzezahrai and Carsten Dachsbacher},
+    journal     = sig_tog,
+    volume      = {32},
+    number      = {4},
+    pages       = {129:1--129:11},
+    year        = {2013},
+    month       = jul,
+    publisher   = {ACM},
+    address     = {New York, NY, USA},
+}
+
+@article{Georgiev13,
+    title       = {Joint Importance Sampling of Low-Order Volumetric Scattering},
+    author      = {Georgiev, Iliyan and K\v{r}iv\'{a}nek, Jaroslav and Hachisuka, Toshiya and Nowrouzezahrai, Derek and Jarosz, Wojciech},
+    journal     = siga_tog,
+    volume      = {32},
+    number      = {6},
+    month       = nov,
+    year        = {2013},
+    pages       = {164:1--164:14},
+    publisher   = {ACM},
+    address     = {New York, NY, USA},
+} 
+
+@article{Habel13,
+    title       = {Photon Beam Diffusion: A Hybrid Monte Carlo Method for Subsurface Scattering},
+    author      = {Ralf Habel and Per H. Christensen and Wojciech Jarosz},
+    journal     = cgf_egsr,
+    volume      = {32},
+    number      = {4},
+    year        = {2013},
+    month       = jun,
+}
+
+@article{Kaplanyan13PSR,
+    title       = {Path Space Regularization for Holistic and Robust Light Transport},
+    author      = {Kaplanyan, Anton S. and Dachsbacher, Carsten},
+    journal     = cgf_eg,
+    volume      = {32},
+    number      = {2},
+    year        = {2013},
+    pages       = {63--72},
+    publisher   = {John Wiley \& Sons, Inc.},
+    address     = {New York, NY, USA},
+}
+
+@article{Kaplanyan13APPM,
+    title       = {Adaptive Progressive Photon Mapping},
+    author      = {Kaplanyan, Anton S. and Dachsbacher, Carsten},
+    journal     = tog,
+    volume      = {32},
+    number      = {2},
+    month       = apr,
+    year        = {2013},
+    pages       = {16:1--16:13},
+    publisher   = {ACM},
+    address     = {New York, NY, USA},
+} 
+
+@article{Sun13,
+    title       = {Line Segment Sampling with Blue-Noise Properties},
+    author      = {Sun, Xin and Zhou, Kun and Guo, Jie and Xie, Guofu and Pan, Jingui and Wang, Wencheng and Guo, Baining},
+    journal     = sig_tog,
+    volume      = {32},
+    number      = {4},
+    month       = jul,
+    pages       = {127:1--127:14},    
+    year        = {2013},
+    publisher   = {ACM},
+    address     = {New York, NY, USA},
+}
+
+@inproceedings{Karras13,
+    title       = {Fast Parallel Construction of High-Quality Bounding Volume Hierarchies},
+    author      = {Karras, Tero and Aila, Timo},
+    booktitle   = hpg,
+    year        = {2013},
+    pages       = {89--99},
+    location    = {Anaheim, California},
+    publisher   = {ACM},
+    address     = {New York, NY, USA},
+    _series      = {HPG '13},
+} 
+
+
+% 2013 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+@article{Engelhardt12,
+    author      = {Engelhardt, Thomas and Nov{\'a}k, Jan and Schmidt, Thorsten-W. and Dachsbacher, Carsten},
+    title       = {Approximate Bias Compensation for Rendering Scenes with Heterogeneous Participating Media},
+    journal     = cgf_pg,
+    volume      = {31},
+    number      = {7},
+    year        = {2012},
+    month       = sep,
+    pages       = {2145--2154},
+    publisher   = {John Wiley \& Sons, Inc.},
+    address     = {New York, NY, USA},
+} 
+
+@article{Georgiev12,
+    title       = {Importance Caching for Complex Illumination},
+    author      = {Georgiev, Iliyan and K{\v{r}}iv{\'a}nek, Jaroslav and Popov, Stefan and Slusallek, Philipp},
+    journal     = cgf_eg,
+    volume      = {31},
+    number      = {3},
+    pages       = {701--710},
+    month       = may,
+    year        = {2012},
+    publisher   = {John Wiley \& Sons, Inc.},
+    address     = {New York, NY, USA},
+}
+
+@article{Novak12RBVH,
+    title       = {Rasterized Bounding Volume Hierarchies},
+    author      = {Nov\'{a}k, Jan and Dachsbacher, Carsten},
+    journal     = cgf_eg,
+    volume      = {31},
+    number      = {3},
+    pages       = {403--412},
+    month       = may,
+    year        = {2012},
+    publisher   = {John Wiley \& Sons, Inc.},
+    address     = {New York, NY, USA},
+} 
+
+@inproceedings{Davidovic12,
+    title       = {Progressive Lightcuts for {GPU}},
+    author      = {Davidovi\v{c}, Tom'\{a}\v{s} and Georgiev, Iliyan and Slusallek, Philipp},
+    booktitle   = {ACM SIGGRAPH 2012 Talks},
+    year        = {2012},
+    location    = {Los Angeles, California},
+}
+
+@article{Barringer12,
+    title       = {High-Quality Curve Rendering Using Line Sampled Visibility},
+    author      = {Barringer, Rasmus and Gribel, Carl Johan and Akenine-M\"{o}ller, Tomas},
+    journal     = siga_tog,
+    volume      = {31},
+    number      = {6},
+    month       = nov,
+    year        = {2012},
+    pages       = {162:1--162:10},
+    publisher   = {ACM},
+    address     = {New York, NY, USA},
+} 
+
+@article{Novak12VRL,
+    title       = {Virtual Ray Lights for Rendering Scenes with Participating Media},
+    author      = {Nov\'{a}k, Jan and Nowrouzezahrai, Derek and Dachsbacher, Carsten and Jarosz, Wojciech},
+    journal     = sig_tog,
+    volume      = {31},
+    number      = {4},
+    year        = {2012},
+    month       = jul,
+    pages       = {60:1--60:11},
+    publisher   = {ACM},
+    address     = {New York, NY, USA},
+}
+
+@article{Walter12,
+    title       = {Bidirectional Lightcuts},
+    author      = {Walter, Bruce and Khungurn, Pramook and Bala, Kavita},
+    journal     = sig_tog,
+    volume      = {31},
+    number      = {4},
+    year        = {2012},
+    month       = jul,
+    pages       = {59:1--59:11},
+    publisher   = {ACM},
+    address     = {New York, NY, USA},
+}
+
+@article{Jakob12,
+    title       = {Manifold Exploration: a {Markov Chain Monte Carlo} Technique for Rendering Scenes with Difficult Specular Transport},
+    author      = {Jakob, Wenzel and Marschner, Steve},
+    journal     = sig_tog,
+    volume      = {31},
+    number      = {4},
+    month       = jul,
+    year        = {2012},
+    issn        = {0730-0301},
+    pages       = {58:1--58:13},
+    publisher   = {ACM},
+    address     = {New York, NY, USA},
+}
+
+@article{Novak12VBL,
+    author      = {Nov\'{a}k, Jan and Nowrouzezahrai, Derek and Dachsbacher, Carsten and Jarosz, Wojciech},
+    title       = {Progressive Virtual Beam Lights},
+    journal     = cgf_egsr,
+    volume      = {31},
+    number      = {4},
+    month       = jun,
+    year        = {2012},
+    pages       = {1407--1413},
+    publisher   = {John Wiley \& Sons, Inc.},
+    address     = {New York, NY, USA},
+} 
+
+@article{Kulla12,
+    title       = {Importance Sampling Techniques for Path Tracing in Participating Media},
+    author      = {Kulla, Christopher and Fajardo, Marcos},
+    journal     = cgf_egsr,
+    volume      = {31},
+    number      = {4},
+    month       = jun,
+    year        = {2012},
+    pages       = {1519--1528},
+    publisher   = {John Wiley \& Sons, Inc.},
+    address     = {New York, NY, USA},
+} 
+
+@article{Scherzer12,
+    title       = {Pre-convolved Radiance Caching},
+    author      = {Scherzer, Daniel and Nguyen, Chuong H. and Ritschel, Tobias and Seidel, Hans-Peter},
+    journal     = cgf_egsr,
+    number      = {31},
+    volume      = {4},
+    month       = jun,
+    year        = {2012},
+    pages       = {1391--1397},
+    publisher   = {John Wiley \& Sons, Inc.},
+    address     = {New York, NY, USA},
+} 
+
+@inproceedings{Olsson12,
+    title       = {Clustered Deferred and Forward Shading},
+    author      = {Olsson, Ola and Billeter, Markus and Assarsson, Ulf},
+    booktitle   = hpg,
+    year        = {2012},
+    location    = {Paris, France},
+    pages       = {87--96},
+    publisher   = {Eurographics Association},
+    address     = {Aire-la-Ville, Switzerland},
+    _booktitle  = {Proceedings of the Fourth ACM SIGGRAPH / Eurographics conference on High-Performance Graphics},
+    _series     = {EGGH-HPG'12},
+} 
+
+@inproceedings{Tzeng12,
+    title       = {High-Quality Parallel Depth-of-Field Using Line Samples},
+    author      = {Tzeng, Stanley and Patney, Anjul and Davidson, Andrew and Ebeida, Mohamed S. and Mitchell, Scott A. and Owens, John D.},
+    booktitle   = hpg,
+    year        = {2012},
+    location    = {Paris, France},
+    pages       = {23--31},
+    publisher   = {Eurographics Association},
+    address     = {Aire-la-Ville, Switzerland},
+    _booktitle  = {Proceedings of the Fourth ACM SIGGRAPH / Eurographics conference on High-Performance Graphics},
+    _series     = {EGGH-HPG'12},
+} 
+
+@inproceedings{Karras12,
+    title       = {Maximizing Parallelism in the Construction of {BVHs}, Octrees, and {kD}-trees},
+    author      = {Karras, Tero},
+    booktitle   = hpg,
+    year        = {2012},
+    location    = {Paris, France},
+    pages       = {33--37},
+    publisher   = {Eurographics Association},
+    address     = {Aire-la-Ville, Switzerland},
+    _series      = {EGGH-HPG'12},
+} 
+
+@inproceedings{Prutkin12,
+    title       = {Reflective Shadow Map Clustering for Real-Time Global Illumination},
+    author      = {Prutkin, Roman and Kaplanyan, Anton and Dachsbacher, Carsten},
+    booktitle   = {Eurographics 2012 - Short Papers},
+    year        = {2012},
+    address     = {Cagliari, Italy},
+    publisher   = {Eurographics Association},
+}
+
+
+% 2012 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+@article{Schaefer11,
+  title={Diffusive Corrections to PN Approximations},
+  author={Matthias Sch{\"a}fer and Martin Frank and C. David Levermore},
+  journal={Multiscale Modeling and  Simulation},
+  year={2011},
+  volume={9},
+  pages={1-28}
+}
+
+@article{Hachisuka11,
+    author      = {Hachisuka, Toshiya and Jensen, Henrik Wann},
+    title       = {Robust Adaptive Photon Tracing Using Photon Path Visibility},
+    journal     = tog,
+    issue_date  = {October 2011},
+    volume      = {30},
+    number      = {5},
+    month       = oct,
+    year        = {2011},
+    issn        = {0730-0301},
+    pages       = {114:1--114:11},
+    url         = {http://doi.acm.org/10.1145/2019627.2019633},
+    doi         = {10.1145/2019627.2019633},
+    publisher   = {ACM},
+    address     = {New York, NY, USA},
+} 
+
+@article{Ritschel11,
+    title       = {Making Imperfect Shadow Maps View-Adaptive: High-Quality Global Illumination in Large Dynamic Scenes},
+    author      = {Ritschel, Tobias and Eisemann, Elmar and Ha, Inwo and Kim, James and Seidel, Hans-Peter},
+    journal     = cgf,
+    volume      = {30},
+    number      = {8},
+    pages       = {2258--2269},
+    year        = {2011},
+}
+
+@article{SzirmayKalos11,
+    title       = {Free Path Sampling in High Resolution Inhomogeneous Participating Media},
+    author      = {Szirmay-Kalos, L\'aszl\'o and T\'oth, Bal\'azs and Magdics, Mil\'an},
+    journal     = cgf,
+    volume      = {30},
+    number      = {1},
+    publisher   = {Blackwell Publishing Ltd},
+    year        = {2011},
+    pages       = {85--97},
+}
+
+@article{Hollander11,
+    title       = {ManyLoDs: Parallel Many-View Level-of-Detail Selection for Real-Time Global Illumination},
+    author      = {Holl\"{a}nder, Matthias and Ritschel, Tobias and Eisemann, Elmar and Boubekeur, Tamy},
+    journal     = cgf_egsr,
+    number      = {4},
+    volume      = {30},
+    year        = {2011},
+}
+
+@article{Kalojanov11,
+    title       = {Two-Level Grids for Ray Tracing on {GPU}s},
+    author      = {Javor Kalojanov and Markus Billeter and Philipp Slusallek},
+    journal     = cgf_eg,
+    number      = {2},    
+    volume      = {30},
+    year        = {2011},
+    pages       = {307--314},
+    address     = {Llandudno, UK},
+    publisher   = {Eurographics Association},
+}
+
+@article{Olsson11,
+    title       = {Tiled Shading},
+    author      = {Olsson, Ola and Assarsson, Ulf},
+    journal     = jgt,
+    volume      = {15},
+    number      = {4},
+    pages       = {235-251},
+    year        = {2011},
+}
+
+@article{Ou11,
+    title       = {LightSlice: Matrix Slice Sampling for the Many-Lights Problem},
+    author      = {Ou, Jiawei and Pellacini, Fabio},
+    journal     = siga_tog,
+    volume      = {30},
+    number      = {6},
+    month       = dec,
+    year        = {2011},
+    pages       = {179:1--179:8},
+    publisher   = {ACM},
+    address     = {New York, NY, USA},
+}
+
+@article{Jarosz11PPB,
+    title       = {Progressive Photon Beams},
+    author      = {Wojciech Jarosz and Derek Nowrouzezahrai and Robert Thomas and Peter-Pike Sloan and Matthias Zwicker},
+    journal     = siga_tog,
+    volume      = {30},
+    number      = {6},
+    month       = dec,
+    year        = {2011},
+    pages       = {181:1--181:12},
+    publisher   = {ACM},
+    address     = {New York, NY, USA},
+}
+
+@article{Knaus11,
+    author      = {Knaus, Claude and Zwicker, Matthias},
+    title       = {Progressive Photon Mapping: A Probabilistic Approach},
+    journal     = tog,
+    volume      = {30},
+    number      = {3},
+    month       = may,
+    year        = {2011},
+    pages       = {25:1--25:13},
+    articleno   = {25},
+    publisher   = {ACM},
+    address     = {New York, NY, USA},
+} 
+
+@article{Jarosz11Comp,
+    author      = {Jarosz, Wojciech and Nowrouzezahrai, Derek and Sadeghi, Iman and Jensen, Henrik Wann},
+    title       = {A comprehensive theory of volumetric radiance estimation using photon points and beams},
+    journal     = tog,
+    volume      = {30},
+    number      = {1},
+    month       = feb,
+    year        = {2011},
+    pages       = {5:1--5:19},
+    publisher   = {ACM},
+    address     = {New York, NY, USA},
+} 
+
+@article{dEon11,
+    title       = {A Quantized-Diffusion Model for Rendering Translucent Materials},
+    author      = {d'Eon, Eugene and Irving, Geoffrey},
+    journal     = sig_tog,
+    volume      = {30},
+    number      = {4},
+    month       = jul,
+    year        = {2011},
+    pages       = {56:1--56:14},
+    publisher   = {ACM},
+    address     = {New York, NY, USA},
+} 
+
+
+@inproceedings{Novak11,
+    title       = {Screen-Space Bias Compensation for Interactive High-quality Global Illumination with Virtual Point Lights},
+    author      = {Nov\'{a}k, Jan and Engelhardt, Thomas and Dachsbacher, Carsten},
+    booktitle   = i3d,
+    year        = {2011},
+    pages       = {119--124},
+    numpages    = {6},
+    location    = {San Francisco, California},
+    publisher   = {ACM},
+    _address     = {New York, NY, USA},
+    _series      = {I3D '11},
+} 
+
+
+@inproceedings{Garanzha11,
+    title       = {Simpler and Faster {HLBVH} with Work Queues},
+    author      = {Garanzha, Kirill and Pantaleoni, Jacopo and McAllister, David},
+    booktitle   = hpg,
+    year        = {2011},
+    pages       = {59--64},
+    publisher   = {ACM},
+    location    = {Vancouver, British Columbia, Canada},
+    address     = {New York, NY, USA},
+    _series     = {HPG '11},
+} 
+
+@inproceedings{Pegoraro11,
+    title       = {A Mathematical Framework for Efficient Closed-Form Single Scattering},
+    author      = {Vincent Pegoraro and Mathias Schott and Philipp Slusallek},
+    booktitle   = {Proc. of the 37th Graphics Interface Conference},
+    pages       = {151--158},
+    year        = {2011}
+}
+
+@article{Crassin11,
+    title       = {Interactive Indirect Illumination Using Voxel Cone Tracing},
+    author      = {Crassin, Cyril and Neyret, Fabrice and Sainz, Miguel and Green, Simon and Eisemann, Elmar},
+    journal     = cgf_pg,
+    number      = {7},
+    volume      = {30},
+    month       = sep,
+    year        = {2011},
+    pages       = {207--207},
+}
+
+@phdthesis{CrassinThesis11,
+    title       = {GigaVoxels: A Voxel-Based Rendering Pipeline For Efficient Exploration Of Large And Detailed Scenes},
+    author      = {Crassin, Cyril},
+    school      = {Universit\'e de Grenoble},
+    month       = jul,
+    year        = {2011},
+}
+
+@inproceedings{Novak11GPUGems,
+    title       = {Path Regeneration for Random Walks},
+    author      = {Nov\'{a}k, Jan and Havran, Vlastimil and Dachsbacher, Carsten},
+    booktitle   = {GPU Computing Gems},
+    series      = {chapter 26},
+    editor      = {Wen-mei W. Hwu},
+    publisher   = {Morgan Kaufmann},
+    month       = feb,
+    year        = {2011},
+    pages       = {401--411},
+}
+
+@PHDTHESIS{Petkova11,
+   author = {{Petkova}, M.},
+    title = "{Numerical Radiative Transfer and the Hydrogen Reionization of the Universe}",
+   school = {Ludwig Maximilians Universitat Munchen},
+     year = 2011,
+    month = March,
+   adsurl = {http://adsabs.harvard.edu/abs/2011PhDT.......155P},
+  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+
+
+% 2011 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+@article{Ryan10,
+author = { Ryan G. McClarren },
+title = {Theoretical Aspects of the Simplified Pn Equations},
+journal = {Transport Theory and Statistical Physics},
+volume = {39},
+number = {2-4},
+pages = {73-109},
+year  = {2010},
+publisher = {Taylor & Francis},
+doi = {10.1080/00411450.2010.535088}
+}
+
+
+
+@article{Davidovic10,
+    title       = {Combining Global and Local Virtual Lights for Detailed Glossy Illumination},
+    author      = {Davidovi\v{c}, Tom\'{a}\v{s} and K\v{r}iv\'{a}nek, Jaroslav and Ha\v{s}an, Milo\v{s} and Slusallek, Philipp and Bala, Kavita},
+    journal     = siga_tog,
+    volume      = {29},
+    number      = {6},
+    pages       = {143:1--143:8},
+    year        = {2010},
+    month       = dec,
+    publisher   = {ACM},
+    address     = {New York, NY, USA},
+}
+
+@article{Baran10,
+    title       = {A Hierarchical Volumetric Shadow Algorithm for Single Scattering},
+    author      = {Baran, Ilya and Chen, Jiawen and Ragan-Kelley, Jonathan and Durand, Fr{\'e}do and Lehtinen, Jaakko},
+    journal     = siga_tog,
+    volume      = {29},
+    number      = {6},
+    pages       = {178:1--178:10},
+    year        = {2010},
+    month       = dec,
+    publisher   = {ACM},
+    address     = {New York, NY, USA},
+} 
+
+@misc{Mitsuba,
+    title       = {Mitsuba renderer},
+    author      = {Wenzel Jakob},
+    year        = {2010},
+    note        = {http://www.mitsuba-renderer.org},
+}
+
+@article{Jakob10,
+    title = {A Radiative Transfer Framework for Rendering Materials with Anisotropic Structure},
+    author = {Wenzel Jakob and Jonathan T. Moon and Adam Arbree and Kavita Bala and Steve Marschner},
+    journal = sig_tog,
+    volume = {29},
+    number = {10},
+    pages = {53:1--53:13},
+    year = {2010}, month = jul, doi = {10.1145/1778765.1778790}
+}
+
+@techreport{Jakob10TR,
+    title = {A Radiative Transfer Framework for Rendering Materials with Anisotropic Structure},
+    author = {Wenzel Jakob and Jonathan T. Moon and Adam Arbree and Kavita Bala and Steve Marschner},
+    institution = {Cornell University},
+    year = {2010}, month = jul
+}
+
+@article{Yue10,
+    title       = {Unbiased, Adaptive Stochastic Sampling for Rendering Inhomogeneous Participating Media},
+    author      = {Yue, Yonghao and Iwasaki, Kei and Chen, Bing-Yu and Dobashi, Yoshinori and Nishita, Tomoyuki},
+    journal     = siga_tog,
+    volume      = {29},
+    number      = {6},
+    pages       = {177:1--177:8},
+    year        = {2010},
+    month       = dec,
+    publisher   = {ACM},
+    address     = {New York, NY, USA},
+} 
+
+@article{Sun10,
+    title       = {Line Space Gathering for Single Scattering in Large Scenes},
+    author      = {Sun, Xin and Zhou, Kun and Lin, Stephen and Guo, Baining},
+    journal     = sig_tog,
+    volume      = {29},
+    number      = {4},
+    pages       = {54:1--54:8},
+    year        = {2010},
+    month       = jul,
+    publisher   = {ACM},
+    address     = {New York, NY, USA},
+} 
+
+@article{Krivanek10,
+    title       = {Effects of global illumination approximations on material appearance},
+    author      = {K\v{r}iv\'{a}nek, Jaroslav and Ferwerda, James A. and Bala, Kavita},
+    journal     = sig_tog,
+    volume      = {29},
+    number      = {4},
+    pages       = {112:1--112:10},
+    year        = {2010},
+    month       = jul,
+    publisher   = {ACM},
+    address     = {New York, NY, USA},
+} 
+
+@article{Pantaleoni10,
+    title       = {{PantaRay}: fast ray-traced occlusion caching of massive scenes},
+    author      = {Pantaleoni, Jacopo and Fascione, Luca and Hill, Martin and Aila, Timo},
+    journal     = sig_tog,
+    volume      = {29},
+    number      = {4},
+    pages       = {37:1--37:10},
+    year        = {2010},
+    month       = jul,
+    publisher   = {ACM},
+    address     = {New York, NY, USA},
+} 
+
+@inproceedings{Engelhardt10,
+    author      = {Engelhardt, Thomas and Dachsbacher, Carsten},
+    title       = {Epipolar sampling for shadows and crepuscular rays in participating media with single scattering},
+    booktitle   = i3d,
+    year        = {2010},
+    pages       = {119--125},
+    location    = {Washington, D.C.},
+    publisher   = {ACM},
+    address     = {New York, NY, USA},
+} 
+
+@inproceedings{Laine10,
+    title       = {Efficient Sparse Voxel Octrees},
+    author      = {Samuli Laine and Tero Karras},
+    booktitle   = i3d,
+    year        = {2010},
+    pages       = {55--63},
+    location    = {Washington, D.C.},
+    publisher   = {ACM},
+    address     = {New York, NY, USA},
+} 
+
+@inproceedings{Georgiev10,
+    title       = {Simple and Robust Iterative Importance Sampling of Virtual Point Lights},
+    author      = {Georgiev, Iliyan and Slusallek, Philipp},
+    booktitle   = {Eurographics 2010 - Short Papers},
+    year        = {2010},
+    pages       = {57-60},
+    address     = {Norrk\"oping, Sweden},
+    publisher   = {Eurographics Association},
+}
+
+@inproceedings{Novak10,
+    title       = {Path Regeneration for Interactive Path Tracing},
+    author      = {Jan Nov\'{a}k and Vlastimil Havran and Carsten Dachsbacher},
+    booktitle   = {Eurographics 2010 - Short Papers},
+    year        = {2010},
+    pages       = {61--64},
+    _address     = {Norrk\"oping, Sweden},
+    publisher   = {Eurographics Association},
+}
+
+@techreport{Engelhardt10Instant,
+    title       = {Instant Multiple Scattering for Interactive Rendering of Heterogeneous Participating Media},
+    author      = {Thomas Engelhardt and Jan Nov{\'a}k and Carsten Dachsbacher},
+    institution = {Karlsruhe Institute of Technology, Germany},
+    month       = dec,
+    year        = {2010},
+}
+
+@book{Baranoski10,
+    title       = {Light \& Skin Interactions: Simulations for Computer Graphics Applications},
+    author      = {Baranoski, Gladimir V. G. and Krishnaswamy, Aravind},
+    year        = {2010},
+    publisher   = {Morgan Kaufmann Publishers Inc.},
+    address     = {San Francisco, CA, USA},
+    _isbn       = {0123750938, 9780123750938},
+} 
+
+@book{Pharr10,
+    title       = {Physically Based Rendering: From Theory to Implementation},
+    author      = {Pharr, Matt and Humphreys, Greg},
+    year        = {2010},
+    edition     = {2nd},
+    publisher   = {Morgan Kaufmann Publishers Inc.},
+    address     = {San Francisco, CA, USA},
+    _isbn       = {0123750792, 9780123750792},
+} 
+
+@book{Howell10,
+    title       = {Thermal Radiation Heat Transfer},
+    author      = {Howell, John R. and Siegel, Robert and Menguc, M. Pinar},
+    year        = {2010},
+    edition     = {5th},
+    publisher   = {CRC Press},
+}
+
+@article{Pegoraro10,
+    title       = {A Closed-Form Solution to Single Scattering for General Phase Functions and Light Distributions},
+    author      = {Vincent Pegoraro and Mathias Schott and Steven G. Parker},
+    journal     = cgf_egsr,
+    volume      = {29},
+    number      = {4},
+    pages       = {1365--1374},
+    year        = {2010}
+}
+
+@article{Salvi10,
+    title       = {Adaptive Volumetric Shadow Maps},
+    author      = {Marco Salvi and Kiril Vidimce and Andrew Lauritzen and Aaron Lefohn },
+    journal     = cgf_egsr,
+    volume      = {29},
+    number      = {4},
+    pages       = {1289-1296},
+    year        = {2010},
+}
+
+@article{Yao10,
+    title       = {Multi-Image Based Photon Tracing for Interactive Global Illumination of Dynamic Scenes},
+    author      = {Chunhui Yao and Bin Wang and Bin Chan and Junhai Yong and Jean-Claude Paul},
+    journal     = cgf_egsr,
+    volume      = {29},
+    number      = {4},
+    pages       = {1315--1324},
+    year        = {2010},
+}
+
+@article{Damnertz10,
+    title       = {Progressive Point-Light-Based Global Illumination},
+    author      = {Holger Dammertz and Alexander Keller and Hendrik Lensch},
+    journal     = cgf,
+    volume      = 29,
+    number      = 8,
+    year        = 2010,
+    pages       = {2504--2515},
+    publisher   = {Blackwell Publishing Ltd},
+}
+
+@article{Nichols10,
+    title       = {Interactive Indirect Illumination Using Adaptive Multiresolution Splatting},
+    author      = {Nichols, Greg and Wyman, Chris},
+    journal     = tvcg,
+    volume      = {16},
+    number      = {5},
+    month       = sep,
+    year        = {2010},
+    pages       = {729--741},
+    publisher   = {IEEE Educational Activities Department},
+    address     = {Piscataway, NJ, USA},
+} 
+
+@article{Dachsbacher10,
+    title       = {Analyzing Visibility Configurations},
+    author      = {Carsten Dachsbacher},
+    journal     = tvcg,
+    volume      = {17},
+    number      = {4},
+    pages       = {475--486},
+    year        = {2010},
+    publisher   = {IEEE Educational Activities Department},
+    address     = {Piscataway, NJ, USA},
+}
+
+
+@inproceedings{Gribel10,
+    title       = {Analytical Motion Blur Rasterization with Compression},
+    author      = {Gribel, Carl Johan and Doggett, Michael and Akenine-M\"{o}ller, Tomas},
+    booktitle   = hpg,
+    year        = {2010},
+    pages       = {163--172},
+    location    = {Saarbrucken, Germany},
+    publisher   = {Eurographics Association},
+    address     = {Aire-la-Ville, Switzerland},
+    _series     = {HPG '10},
+} 
+
+@inproceedings{Pantaleoni10HLBVH,
+    author      = {Pantaleoni, J. and Luebke, D.},
+    title       = {{HLBVH}: hierarchical {LBVH} construction for real-time ray tracing of dynamic geometry},
+    booktitle   = hpg,
+    year        = {2010},
+    pages       = {87--95},
+    location    = {Saarbrucken, Germany},
+    publisher   = {Eurographics Association},
+    address     = {Aire-la-Ville, Switzerland},
+    _series     = {HPG '10},
+} 
+
+@inproceedings{Choi10,
+    title       = {Parallel {SAH} {k-D} Tree Construction},
+    author      = {Choi, Byn and Komuravelli, Rakesh and Lu, Victor and Sung, Hyojin and Bocchino, Robert L. and Adve, Sarita V. and Hart, John C.},
+    booktitle   = hpg,
+    year        = {2010},
+    pages       = {77--86},
+    location    = {Saarbrucken, Germany},
+    publisher   = {Eurographics Association},
+    address     = {Aire-la-Ville, Switzerland},
+    _series     = {HPG '10},
+} 
+
+@inproceedings{Hanika10,
+    title       = {Two-level Ray Tracing with Reordering for Highly Complex Scenes},
+    author      = {Hanika, Johannes and Keller, Alexander and Lensch, Hendrik P. A.},
+    booktitle   = gi,
+    year        = {2010},
+    pages       = {145--152},
+    location    = {Ottawa, Ontario, Canada},
+    publisher   = {Canadian Information Processing Society},
+    address     = {Toronto, Ont., Canada},
+    _series     = {GI '10},
+} 
+
+@misc{Hoberock10,
+    author      = {Jared Hoberock and Nathan Bell},
+    title       = {Thrust: A Parallel Template Library},
+    year        = {2010},
+    url         = {http://thrust.github.io/},
+    note        = {Version 1.7.0},
+}
+
+@article{Leppanen10,
+    author      = {Jaakko Lepp\"{a}nen},
+    title       = "Performance of {W}oodcock delta-tracking in lattice physics applications using the {S}erpent {M}onte {C}arlo reactor physics burnup calculation cod",
+    journal     = "Annals of Nuclear Energy",
+    volume      = "37",
+    number      = "5",
+    pages       = "715 - 722",
+    year        = "2010",
+}
+
+@article{Kaplanyan10,
+    author      = {Kaplanyan, Anton S. and Dachsbacher, Carsten},
+    title       = {Cascaded Light Propagation Volumes for Real-time Indirect Illumination},
+    journal     = i3d,
+    year        = {2010},
+    pages = {99--107},
+    numpages = {9},
+    url = {http://doi.acm.org/10.1145/1730804.1730821},
+    doi = {10.1145/1730804.1730821},
+    acmid = {1730821},
+    publisher = {ACM},
+    address = {New York, NY, USA},
+    keywords = {global illumination, real-time rendering},
+}
+
+
+% 2010 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+@article{Walter09,
+    author      = {Walter, Bruce and Zhao, Shuang and Holzschuch, Nicolas and Bala, Kavita},
+    title       = {Single Scattering in Refractive Media with Triangle Mesh Boundaries},
+    journal     = sig_tog,
+    issue_date  = {August 2009},
+    volume      = {28},
+    number      = {3},
+    month       = jul,
+    year        = {2009},
+    issn        = {0730-0301},
+    pages       = {92:1--92:8},
+    articleno   = {92},
+    numpages    = {8},
+    url         = {http://doi.acm.org/10.1145/1531326.1531398},
+    doi         = {10.1145/1531326.1531398},
+    acmid       = {1531398},
+    publisher   = {ACM},
+    address     = {New York, NY, USA},
+} 
+
+@article{Hykes09,
+    title       = "Non-analog {M}onte {C}arlo estimators for radiation momentum deposition",
+    author      = "Joshua M. Hykes and Jeffery D. Densmore",
+    journal     = "Journal of Quantitative Spectroscopy and Radiative Transfer",
+    volume      = "110",
+    number      = "13",
+    pages       = "1097--1110",
+    year        = "2009",
+}
+
+@inproceedings{Aila09,
+    title       = {Understanding the Efficiency of Ray Traversal on {GPU}s},
+    author      = {Aila, Timo and Laine, Samuli},
+    booktitle   = hpg,
+    year        = {2009},
+    pages       = {145--149},
+    location    = {New Orleans, Louisiana},
+    publisher   = {ACM},
+    address     = {New York, NY, USA},
+    _series     = {HPG '09},
+}
+
+@inproceedings{Stich09,
+    title       = {Spatial Splits in Bounding Volume Hierarchies},
+    author      = {Stich, Martin and Friedrich, Heiko and Dietrich, Andreas},
+    booktitle   = hpg,
+    year        = {2009},
+    pages       = {7--13},
+    location    = {New Orleans, Louisiana},
+    publisher   = {ACM},
+    address     = {New York, NY, USA},
+    _series     = {HPG '09},
+}
+
+@inproceedings{Popov09,
+    title       = {Object Partitioning Considered Harmful: Space Subdivision for {BVH}s},
+    author      = {Popov, Stefan and Georgiev, Iliyan and Dimov, Rossen and Slusallek, Philipp},
+    booktitle   = hpg,
+    year        = {2009},
+    pages       = {15--22},
+    location    = {New Orleans, Louisiana},
+    publisher   = {ACM},
+    address     = {New York, NY, USA},
+    _series     = {HPG '09},
+} 
+
+@article{Yu09,
+    title       = {Perceptual Influence of Approximate Visibility in Indirect Illumination},
+    author      = {Yu, Insu and Cox, Andrew and Kim, Min H and Ritschel, Tobias and Grosch, Thorsten and Dachsbacher, Carsten and Kautz, Jan},
+    journal     = tap,
+    volume      = {6},
+    number      = {4},
+    pages       = {24:1--24:14},
+    year        = {2009},
+}
+
+@article{Jimenez09,
+    title       = {Screen-Space Perceptual Rendering of Human Skin},
+    author      = {Jorge Jimenez and Veronica Sundstedt and Diego Gutierrez},
+    journal     = tap,
+    volume      = {6},
+    number      = {4},
+    pages       = {23:1--23:15},
+    year        = {2009},
+}
+
+@inproceedings{Dong09,
+    title       = {Real-time Indirect Illumination with Clustered Visibility},
+    author      = {Dong, Zhao and Grosch, Thorsten and Ritschel, Tobias and Seidel, Hans-Peter},
+    booktitle   = vmv,
+    pages       = {187--196},
+    year        = {2009},
+    publisher   = {Otto-Von-Guericke-Universit\"{a}t},
+    address     = {Braunschweig, Germany},  
+}
+
+@inproceedings{Ritschel09SSDO,
+    title       = {Approximating Dynamic Global Illumination in Image Space},
+    author      = {Ritschel, Tobias and Grosch, Thorsten and Seidel, Hans-Peter},
+    booktitle   = i3d,
+    year        = {2009},
+    location    = {Boston, Massachusetts},
+    pages       = {75--82},
+    publisher   = {ACM},
+    address     = {New York, NY, USA},
+    _series     = {I3D '09},
+}
+
+@inproceedings{Nichols09MRS,
+    title       = {Multiresolution Splatting for Indirect Illumination},
+    author      = {Nichols, Greg and Wyman, Chris},
+    booktitle   = i3d,
+    year        = {2009},
+    location    = {Boston, Massachusetts},
+    pages       = {83--90},
+    publisher   = {ACM},
+    address     = {New York, NY, USA},
+    _series     = {I3D '09},
+}
+
+@inproceedings{Crassin09,
+    title       = {GigaVoxels: Ray-Guided Streaming for Efficient and Detailed Voxel Rendering},
+    author      = {Crassin, Cyril and Neyret, Fabrice and Lefebvre, Sylvain and Eisemann, Elmar},
+    booktitle   = i3d,
+    year        = {2009},
+    location    = {Boston, Massachusetts},
+    pages       = {15--22},
+    publisher   = {ACM},
+    address     = {New York, NY, USA},
+    _series     = {I3D '09},
+}
+
+@article{Nichols09ISR,
+    title       = {Hierarchical Image-Space Radiosity for Interactive Global Illumination},
+    author      = {Nichols, Greg and Shopf, Jeremy and Wyman, Chris},
+    journal     = cgf_egsr,
+    year        = {2009},
+    pages       = {1141-1149},
+    volume      = {28},
+    number      = {4},  
+} 
+
+@phdthesis{PegoraroThesis09,
+    title       = {Efficient Physically-Based Simulation of Light Transport in Participating Media},
+    author      = {Pegoraro, Vincent},
+    school      = {University of Utah},
+    year        = {2009},
+}
+
+
+@inproceedings{Pegoraro09aniso,
+    title       = {An Analytical Approach to Single Scattering for Anisotropic Media and Light Distributions},
+    author      = {Vincent Pegoraro and Mathias Schott and Steven G. Parker},
+    booktitle   = gi,
+    pages       = {71--77},
+    year        = {2009},
+    publisher   = {Canadian Information Processing Society},
+    address     = {Toronto, Ont., Canada},
+}
+
+@article{Pegoraro09iso,
+    title       = {An Analytical Solution to Single Scattering in Homogeneous Participating Media},
+    author      = {Pegoraro, Vincent and Parker, Steven G.},
+    journal     = cgf_eg,
+    number      = {2},
+    volume      = {28},
+    pages       = {329--335},
+    year        = {2009},
+}
+
+@article{Lauterbach09,
+    title       = {Fast {BVH} Construction on {GPU}s.},
+    author      = {Christian Lauterbach and Michael Garland and Shubhabrata Sengupta and David Luebke and Dinesh Manocha},
+    journal     = cgf_eg,
+    number      = {2},
+    volume      = {28},
+    pages       = {375-384},
+    year        = {2009},
+}
+
+@article{Hasan09,
+    title       = {Virtual Spherical Lights for Many-Light Rendering of Glossy Scenes},
+    author      = {Ha\v{s}an, Milo\v{s} and K\v{r}iv\'{a}nek, Jaroslav and Walter, Bruce and Bala, Kavita},
+    journal     = siga_tog,
+    volume      = {28},
+    number      = {5},
+    month       = dec,
+    year        = {2009},
+    pages       = {1--6},
+    articleno   = {143},
+    numpages    = {6},
+    publisher   = {ACM},
+    address     = {New York, NY, USA},
+} 
+
+@article{Hachisuka09,
+    title       = {Stochastic Progressive Photon Mapping},
+    author      = {Hachisuka, Toshiya and Jensen, Henrik Wann},
+    journal     = siga_tog,
+    volume      = {28},
+    number      = {5},
+    month       = dec,
+    year        = {2009},
+    pages       = {141:1--141:8},
+    publisher   = {ACM},
+    address     = {New York, NY, USA},
+} 
+
+@article{Ritschel09,
+    title       = {Micro-rendering for Scalable, Parallel Final Gathering},
+    author      = {Ritschel, T. and Engelhardt, T. and Grosch, T. and Seidel, H.-P. and Kautz, J. and Dachsbacher, C.},
+    journal     = siga_tog,
+    volume      = {28},
+    number      = {5},
+    month       = dec,
+    year        = {2009},
+    pages       = {132:1--132:8},
+    publisher   = {ACM},
+    address     = {New York, NY, USA},
+}
+
+% 2009 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+
+@article {Pegoraro08,
+author = {Pegoraro, Vincent and Wald, Ingo and Parker, Steven G.},
+title = {Sequential Monte Carlo Adaptation in Low-Anisotropy Participating Media},
+journal = {Computer Graphics Forum},
+volume = {27},
+number = {4},
+publisher = {Blackwell Publishing Ltd},
+issn = {1467-8659},
+url = {http://dx.doi.org/10.1111/j.1467-8659.2008.01247.x},
+doi = {10.1111/j.1467-8659.2008.01247.x},
+pages = {1097--1104},
+keywords = {I.3.7 [Computer Graphics]: Three-Dimensional Graphics and Realism - Ray-tracing, G.3 [Probability and Statistics]: Probabilistic Algorithms},
+year = {2008},
+}
+
+
+
+@article{Ritschel08,
+    title       = {Imperfect Shadow Maps for Efficient Computation of Indirect Illumination},
+    author      = {Ritschel, T and Grosch, T and Kim, M H and Seidel, H P and Dachsbacher, C and Kautz, J},
+    journal     = siga_tog,
+    volume      = {27},
+    number      = {5},
+    pages       = {129:1--129:8},
+    month       = dec,
+    year        = {2008},
+    publisher   = {ACM},
+    address     = {New York, NY, USA},
+}
+
+@article{Zhou08,
+    title       = {Real-Time {kD}-tree Construction on Graphics Hardware},
+    author      = {Zhou, Kun and Hou, Qiming and Wang, Rui and Guo, Baining},
+    journal     = siga_tog,
+    volume      = {27},
+    number      = {5},
+    pages       = {126:1--126:11},
+    month       = dec,
+    year        = {2008},
+    publisher   = {ACM},
+    address     = {New York, NY, USA},
+}
+
+@article{Annen08,
+    title       = {Real-Time, All-Frequency Shadows in Dynamic Scenes},
+    author      = {Annen, Thomas and Dong, Zhao and Mertens, Tom and Bekaert, Philippe and Seidel, Hans-Peter and Kautz, Jan},
+    journal     = sig_tog,
+    volume      = {27},
+    number      = {3},
+    month       = aug,
+    year        = {2008},
+    pages       = {34:1--34:8},
+    publisher   = {ACM},
+    address     = {New York, NY, USA},
+} 
+
+@article{Jarosz08,
+    title       = {Radiance Caching for Participating Media},
+    author      = {Jarosz, Wojciech and Donner, Craig and Zwicker, Matthias and Jensen, Henrik Wann},
+    journal     = tog,
+    volume      = {27},
+    number      = {1},
+    month       = mar,
+    year        = {2008},
+    pages       = {7:1--7:11},
+    publisher   = {ACM},
+    address     = {New York, NY, USA},
+} 
+
+@article{Jarosz08BRE,
+    title       = {The Beam Radiance Estimate for Volumetric Photon Mapping},
+    author      = {Wojciech Jarosz and Matthias Zwicker and Henrik Wann Jensen},
+    journal     = cgf_eg,
+    volume      = {27},
+    number      = {2},
+    year        = {2008},
+    month       = apr,
+    pages       = {557--566}
+}
+
+@article{Dammertz08ShallowBVH,
+    title       = {Shallow Bounding Volume Hierarchies for Fast {SIMD} Ray Tracing of Incoherent Rays},
+    author      = {Holger Dammertz and Johannes Hanika and Alexander Keller},
+    journal     = cgf_eg,
+    volume      = {27},
+    number      = {2},
+    pages       = {1225--1233},
+    year        = {2008},
+}
+
+@Article{Arbree08,
+    title       = {Single-pass Scalable Subsurface Rendering with Lightcuts},
+    author      = {Adam Arbree and Bruce Walter and Kavita Bala},
+    journal     = cgf_eg,
+    volume      = {27},
+    number      = {2},
+    year        = {2008},
+    month       = apr,
+    pages       = {507--516},
+}
+
+@article{deToledo08,
+    author       = {Rodrigo de Toledo and Bin Wang and Bruno L{\'e}vy},
+    title        = {Geometry Textures and Applications},
+    journal      = cgf,
+    volume       = {27},
+    number       = {8},
+    pages        = {2053-2065},
+    year         = {2008},
+}
+
+@article{SzirmayKalos08,
+    title        = {Displacement Mapping on the {GPU} - State of the Art},
+    author       = {L{\'a}szl{\'o} Szirmay-Kalos and Tam{\'a}s Umenhoffer},
+    journal      = cgf,
+    volume       = {27},
+    number       = {6},
+    pages        = {1567-1592},
+    year         = {2008},
+}
+
+@article{Hachisuka08,
+    title       = {Progressive Photon Mapping},
+    author      = {Hachisuka, Toshiya and Ogaki, Shinji and Jensen, Henrik Wann},
+    journal     = siga_tog,
+    volume      = {27},
+    number      = {5},
+    month       = dec,
+    year        = {2008},
+    pages       = {130:1--130:8},
+    publisher   = {ACM},
+    address     = {New York, NY, USA},
+}
+
+@article{Hachisuka08MAS,
+    title       = {Multidimensional Adaptive Sampling and Reconstruction for Ray Tracing},
+    author      = {Hachisuka, Toshiya and Jarosz, Wojciech and Weistroffer, Richard Peter and Dale, Kevin and Humphreys, Greg and Zwicker, Matthias and Jensen, Henrik Wann},
+    journal     = sig_tog,
+    volume      = {27},
+    number      = {3},
+    month       = aug,
+    year        = {2008},
+    pages       = {33:1--33:10},
+    publisher   = {ACM},
+    address     = {New York, NY, USA},
+} 
+
+@phdthesis{BouthorsThesis08,
+    author      = "Bouthors, Antoine",
+    title       = "Realistic rendering of clouds in real-time / Rendu r\'ealiste de nuages en temps-r\'eel",
+    school      = "Universit\'e Joseph Fourier",
+    month       = "june",
+    year        = "2008",
+    address     = "Grenoble, France",
+    _type       = "PhD thesis",
+}
+
+@incollection{Raab08,
+    title       = {Unbiased Global Illumination with Participating Media},
+    author      = {Raab, Matthias and Seibert, Daniel and Keller, Alexander},
+    booktitle   = {Monte Carlo and Quasi-Monte Carlo Methods 2006},
+    pages       = {591--606},
+    publisher   = {Springer},
+    year        = {2008},
+    _editors    = {Keller, Alexander and Heinrich, Stefan and Niederreiter, Harald},
+}
+
+@inproceedings{Bavoil08,
+    title       = {Image-Space Horizon-Based Ambient Occlusion},
+    author      = {Bavoil, Louis and Sainz, Miguel and Dimitrov, Rouslan},
+    booktitle   = {ACM SIGGRAPH 2008 talks},
+    year        = {2008},
+    location    = {Los Angeles, California},
+} 
+
+@inproceedings{Hasan08,
+    title       = {Tensor Clustering for Rendering Many-Light Animations},
+    author      = {Ha\v{s}an, Milo\v{s} and Vel\'{a}zquez-Armendariz, Edgar and Pellacini, Fabio and Bala, Kavita},
+    booktitle   = egsr,
+    year        = {2008},
+    location    = {Sarajevo, Bosnia and Herzegovina},
+    pages       = {1105--1114},
+    publisher   = {Eurographics Association},
+    address     = {Aire-la-Ville, Switzerland},
+} 
+
+@inproceedings{Wyman08,
+    title       = {Interactive Volumetric Shadows in Participating Media with Single Scattering},
+    author      = {Chris Wyman and Shaun Ramsey},
+    booktitle   = irt,
+    pages       = {87--92},
+    year        = {2008},
+}
+
+@inproceedings{Dammertz08EVH,
+    title       = {Edge Volume Heuristic - Robust Triangle Subdivision for Improved {BVH} Performance},
+    author      = {Holger Dammertz and Alexander Keller},
+    booktitle   = irt,
+    pages       = {155--158},
+    year        = {2008},
+}
+
+% 2008 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+@book{Saleh07Photonics,
+    title       = {Fundamentals of Photonics},
+    author      = {Saleh, B.E.A. and Teich, M.C.},
+    series      = {Wiley Series in Pure and Applied Optics},
+    year        = {2007},
+    publisher   = {John Wiley \& Sons},
+}
+
+@book{Gradshteyn07,
+    title       = {Table of Integrals, Series, and Products},
+    author      = {Gradshteyn, I. S. and Ryzhik, I. M.},
+    edition     = {Seventh},
+    publisher   = {Academic Press, Amsterdam},
+    year        = 2007,
+}
+
+@book{Gross07,
+    author      = {Markus Gross and Hans-Peter Pfister},
+    title       = {Point-Based Graphics},
+    year        = {2007},
+    publisher   = {Elsevier}
+}
+
+@article{Frisvad07,
+    title        = {Computing the Scattering Properties of Participating Media using Lorenz-Mie Theory},
+    author       = {Frisvad, Jeppe Revall and Christensen, Niels J{\o}rgen and Jensen, Henrik Wann},
+    journal      = sig_tog,
+    year         = {2007},
+    volume       = {26},
+    number       = {3},
+    month        = {jul},
+    publisher    = {ACM},
+    address      = {New York, NY, USA},
+    articleno    = {60},
+} 
+
+@article{Hasan07,
+    title       = {Matrix Row-Column Sampling for the Many-Light Problem},
+    author      = {Ha\v{s}an, Milo\v{s} and Pellacini, Fabio and Bala, Kavita},
+    journal     = sig_tog,
+    volume      = {26},
+    number      = {3},
+    month       = jul,
+    year        = {2007},
+    publisher   = {ACM},
+    address     = {New York, NY, USA},
+} 
+
+@article{Herzog07,
+    title       = {Global Illumination using Photon Ray Splatting},
+    author      = {Robert Herzog and Vlastimil Havran and Shinichi Kinuwaki and Karol Myszkowski and Hans-Peter Seidel},
+    journal     = cgf_eg,
+    number      = 3,
+    pages       = {503--513},
+    volume      = 26,
+    year        = {2007},
+}
+
+@inproceedings{Wald07,
+    title        = {State of the Art in Ray Tracing Animated Scenes},
+    author       = {Ingo Wald and William R. Mark and Johannes G{\"u}nther and Solomon Boulos and Thiago Ize and Warren Hunt and Steven G. Parker and Peter Shirley},
+    booktitle    = {STAR Proceedings of Eurographics 2007},
+    pages        = {89--116},
+    year         = {2007},
+    month        = sep,
+    publisher    = "The Eurographics Association",
+    location     = "Prague, Czech Republic",
+}
+
+@inproceedings{Laine07,
+    title       = {Incremental Instant Radiosity for Real-Time Indirect Illumination},
+    author      = {Laine, Samuli and Saransaari, Hannu and Kontkanen, Janne and Lehtinen, Jaakko and Aila, Timo},
+    booktitle   = egsr,
+    year        = {2007},
+    pages       = {277--286},
+    location    = {Grenoble, France},
+    publisher   = {Eurographics Association},
+    address     = {Aire-la-Ville, Switzerland},
+    _series     = {EGSR'07},
+} 
+
+@inproceedings{dEon07,
+    title       = {Efficient Rendering of Human Skin},
+    author      = {d'Eon, Eugene and Luebke, David and Enderton, Eric},
+    booktitle   = egsr,
+    year        = {2007},
+    pages       = {147--157},
+    location    = {Grenoble, France},
+    publisher   = {Eurographics Association},
+    address     = {Aire-la-Ville, Switzerland},
+    _series     = {EGSR'07},
+} 
+
+
+@article{Segovia07,
+    title       = {Metropolis Instant Radiosity},
+    author      = {Segovia, B and Iehl, J C and P\'{e}roche, B},
+    journal     = cgf,
+    number      = {3},
+    pages       = {425--434},
+    volume      = {26},
+    publisher   = {Blackwell Publishing}, 
+    year        = {2007},
+}
+
+@inproceedings{Lefebvre07,
+    title       = {TileTrees},
+    author      = {Lefebvre, Sylvain and Dachsbacher, Carsten},
+    booktitle   = i3d,
+    year        = {2007},
+    pages       = {25--31},
+    location    = {Seattle, Washington},
+    publisher   = {ACM},
+    address     = {New York, NY, USA},
+}
+
+@inproceedings{Ernst07,
+    title       = {Early Split Clipping for Bounding Volume Hierarchies},
+    author      = {Ernst, Manfred and Greiner, Gunther},
+    booktitle   = irt,
+    year        = {2007},
+    pages       = {73--78},
+    numpages    = {6},
+    publisher   = {IEEE Computer Society},
+    address     = {Washington, DC, USA},
+    _series     = {RT '07},
+} 
+
+% 2007 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+@article{Boubekeur06,
+    title       = {Volume-Surface Trees},
+    author      = {Boubekeur, Tamy and Heidrich, Wolfgang and Granier, Xavier and Schlick, Christophe},
+    journal     = cgf_eg,
+    number      = {3},
+    volume      = {25},
+    pages       = {399--406},
+    year        = {2006},
+}
+
+@inproceedings{Segovia06,
+    title       = {Bidirectional Instant Radiosity},
+    author      = {Segovia, B and Iehl, J C and Mitanchey, R and P\'{e}roche, B},
+    booktitle   = egsr,
+    pages       = {389--398},
+    year        = {2006},
+}
+
+@book{Dutre06,
+    title       = {Advanced Global Illumination},
+    author      = {Dutr{\'e}, Philip and Bala, Kavita and Bekaert, Philippe},
+    year        = {2006},
+    edition     = {2nd},
+    publisher   = {A K Peters},
+    location    = {Wellesley, Massachusetts, USA},
+}
+
+@article{Biri06,
+    title       = {Real Time Rendering of Atmospheric Scattering and Volumetric Shadows},
+    author      = {Biri, V. and Arqu\`{e}s, D. and Michelin, S.},
+    journal     = {Journal of WSCG},
+    volume      = {14},
+    number      = {1},
+    pages       = {65--72},
+    year        = {2006}
+}
+
+@inproceedings{Segovia06NDS,
+    title       = {Non-Interleaved Deferred Shading of Interleaved Sample Patterns},
+    author      = {Segovia, B. and Iehl, J. C. and Mitanchey, R. and P{\'e}roche, B.},
+    booktitle   = {Proc. of the 21st Symposium on Graphics Hardware},
+    year        = {2006},
+    location    = {Vienna, Austria},
+    pages       = {53--60},
+    publisher   = {ACM},
+    address     = {New York, NY, USA},
+    _series     = {GH '06},
+} 
+
+@inproceedings{Carr06,
+    title       = {Fast {GPU} Ray Tracing of Dynamic Meshes Using Geometry Images},
+    author      = {Carr, Nathan A. and Hoberock, Jared and Crane, Keenan and Hart, John C.},
+    booktitle   = gi,
+    pages       = {203--209},
+    year        = {2006},
+    location    = {Quebec, Canada},
+    publisher   = {Canadian Information Processing Society},
+    address     = {Toronto, Ont., Canada},
+    _series     = {GI '06},
+}
+
+@inproceedings{Baboud06,
+    title       = {Rendering Geometry with Relief Textures},
+    author      = {Baboud, Lionel and D\'{e}coret, Xavier},
+    booktitle   = gi,
+    pages       = {195--201},
+    year        = {2006},
+    location    = {Quebec, Canada},
+    publisher   = {Canadian Information Processing Society},
+    address     = {Toronto, Ont., Canada},
+    _series     = {GI '06},
+}
+
+@inproceedings{Dachsbacher06,
+    title       = {Splatting Indirect Illumination},
+    author      = {Dachsbacher, Carsten and Stamminger, Marc},
+    booktitle   = i3d,
+    pages       = {93--100},
+    year        = {2006},
+    location    = {Redwood City, California},
+    publisher   = {ACM},
+    address     = {New York, NY, USA},
+}
+
+@article{Moon06,
+    title       = {Simulating Multiple Scattering in Hair Using a Photon Mapping Approach},
+    author      = {Moon, Jonathan T. and Marschner, Stephen R.},
+    journal     = sig_tog,
+    volume      = {25},
+    number      = {3},
+    month       = jul,
+    year        = {2006},
+    pages       = {1067--1074},
+    publisher   = {ACM},
+    address     = {New York, NY, USA},
+} 
+
+@article{Walter06,
+    title       = {Multidimensional Lightcuts},
+    author      = {Walter, Bruce and Arbree, Adam and Bala, Kavita and Greenberg, D P},
+    journal     = sig_tog,
+    number      = {3},
+    volume      = {25},
+    pages       = {1081--1088},
+    month       = jul,
+    year        = {2006},
+    publisher   = {ACM},
+    address     = {New York, NY, USA},
+}
+
+% 2006 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+@article{Walter05,
+    title       = {Lightcuts: A Scalable Approach to Illumination},
+    author      = {Walter, Bruce and Fernandez, Sebastian and Arbree, Adam and Bala, Kavita and Donikian, Michael and Greenberg, Donald P},
+    journal     = sig_tog,
+    number      = {3},
+    volume      = {24},
+    pages       = {1098--1107},
+    month       = jul,
+    year        = {2005},
+    publisher   = {ACM},
+    address     = {New York, NY, USA},
+}
+
+@article{Arikan05,
+    title       = {Fast and Detailed Approximate Global Illumination by Irradiance Decomposition},
+    author      = {Arikan, Okan and Forsyth, David A. and O'Brien, James F.},
+    journal     = sig_tog,
+    number      = {3},
+    volume      = {24},
+    pages       = {1108--1114},
+    month       = jul,
+    year        = {2005},
+    publisher   = {ACM},
+    address     = {New York, NY, USA},
+} 
+
+
+@article{Donner05,
+    title       = {Light Diffusion in Multi-Layered Translucent Materials},
+    author      = {Donner, Craig and Jensen, Henrik Wann},
+    journal     = sig_tog,
+    number      = {3},
+    volume      = {24},
+    pages       = {1032--1039},
+    month       = jul,
+    year        = {2005},
+    publisher   = {ACM},
+    address     = {New York, NY, USA},
+} 
+
+@article{Krivanek05,
+    title       = {Radiance Caching for Efficient Global Illumination Computation},
+    author      = {K{\v{r}}iv{\'a}nek, Jaroslav and Gautron, Pascal and Pattanaik, Sumanta and Bouatouch, Kadi},
+    journal     = tvcg,
+    year        = {2005},
+    month       = {Sept.-Oct.},
+    volume      = {11},
+    number      = {5},
+    pages       = {550 -561},
+}
+
+@inproceedings{Dachsbacher05,
+    title       = {Reflective Shadow Maps},
+    author      = {Dachsbacher, Carsten and Stamminger, Marc},
+    booktitle   = i3d,
+    pages       = {203--208},
+    year        = {2005},
+    location    = {Washington, District of Columbia},
+    publisher   = {ACM},
+    address     = {New York, NY, USA},
+}
+
+@inproceedings{Boudet05,
+    title       = {Photon Splatting for participating media},
+    author      = {Boudet, Antoine and Pitot, Paul and Pratmarty, David and Paulin, Mathias},
+    booktitle   = {Proc. of the 3rd international conference on Computer graphics and interactive techniques in Australasia and South East Asia},
+    series      = {GRAPHITE '05},
+    year        = {2005},
+    location    = {Dunedin, New Zealand},
+    pages       = {197--204},
+    publisher   = {ACM},
+    address     = {New York, NY, USA},
+} 
+
+@article{Cline05,
+    title       = {Energy Redistribution Path Tracing},
+    author      = {Cline, David and Talbot, Justin and Egbert, Parris},
+    journal     = sig_tog,
+    volume      = {24},
+    number      = {3},
+    month       = jul,
+    year        = {2005},
+    pages       = {1186--1195},
+    publisher   = {ACM},
+    address     = {New York, NY, USA},
+} 
+
+@article{Sun05,
+    title       = {A Practical Analytic Single Scattering Model for Real Time Rendering},
+    author      = {Sun, Bo and Ramamoorthi, Ravi and Narasimhan, Srinivasa G. and Nayar, Shree K.},
+    journal     = sig_tog,
+    number      = {3},
+    pages       = {1040--1049},
+    volume      = {24},
+    year        = {2005}
+}
+
+@inproceedings{Havran05,
+    title       = {Ray Maps for Global Illumination},
+    author      = {Vlastimil Havran and Jiri Bittner and Robert Herzog and Hans-Peter Seidel},
+    booktitle   = egsr,
+    pages       = {43--54},
+    month       = jun,
+    year        = {2005},
+    publisher   = {Eurographics Association},
+    address     = {Aire-la-Ville, Switzerland},
+}
+
+@article{Cerezo05,
+    title       = {A Survey on Participating Media Rendering Techniques},
+    author      = {Cerezo, Eva and P{\'{e}}rez, Frederic and Pueyo, Xavier and Seron, Francisco J. and Sillion, Fran{\c{c}}ois X.},
+    journal     = {The Visual Computer},
+    number      = {5},
+    volume      = {21},
+    pages       = {303--328},
+    year        = {2005},
+}
+
+% 2005 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+@inproceedings{Premoze04,
+    title       = {Practical Rendering of Multiple Scattering Effects in Participating Media},
+    author      = {Premo\v{z}e, Simon and Ashikhmin, Michael and Tessendorf, Jerry and Ramamoorthi, Ravi and Nayar, Shree},
+    booktitle   = egsr,
+    year        = {2004},
+    location    = {Norrk\"{o}ping, Sweden},
+    pages       = {363--374},
+    publisher   = {Eurographics Association},
+    address     = {Aire-la-Ville, Switzerland},
+} 
+
+@incollection{Kollig04,
+    title       = {Illumination in the Presence of Weak Singularities},
+    author      = {Kollig, Thomas and Keller, Alexander},
+    booktitle   = {Monte Carlo and Quasi-Monte Carlo Methods 2004},
+    pages       = {245--257},
+    year        = {2006},
+    publisher   = {Springer},
+}
+
+@book{Tipler04,
+    title       = {Physics for Scientists and Engineers},
+    author      = {Tipler, Paul Allen and Mosca, Gene},
+    year        = {2004},
+    address     = {New York},
+    publisher   = {W. H. Freeman},
+    edition     = {5th extended},
+}
+
+@book{Pharr04,
+    title       = {Physically Based Rendering, From Theory To Implementation},
+    author      = {Pharr, Matt and Humphreys, Greg},
+    year        = {2004},
+    publisher   = {Morgan Kaufmann Publishers Inc.},
+    address     = {San Francisco, CA, USA},
+} 
+
+@article {Grassmann04,
+    title       = {Size Measurement of Very Small Spherical Particles by Mie Scattering Imaging {(MSI)}},
+    author      = {Gra{\ss}mann, Arne and Peters, Franz},
+    journal     = {Particle \& Particle Systems Characterization},
+    year        = {2004},
+    volume      = {21},
+    number      = {5},
+    publisher   = {WILEY-VCH Verlag},
+    pages       = {379--389},
+}
+
+@inproceedings{Geist04,
+    author = {Geist, Robert and Rasche, Karl and Westall, James and Schalkoff, Robert},
+    title = {Lattice-Boltzmann Lighting},
+    booktitle = egsr,
+    series = {EGSR'04},
+    year = {2004},
+    isbn = {3-905673-12-6},
+    location = {Norrk\&\#246;ping, Sweden},
+    pages = {355--362},
+    numpages = {8},
+    url = {http://dx.doi.org/10.2312/EGWR/EGSR04/355-362},
+    doi = {10.2312/EGWR/EGSR04/355-362},
+    acmid = {2383582},
+    publisher = {Eurographics Association},
+    address = {Aire-la-Ville, Switzerland, Switzerland},
+}
+
+% 2004 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+@inproceedings{Dachsbacher03,
+    title       = {Translucent Shadow Maps},
+    author      = {Dachsbacher, Carsten and Stamminger, Marc},
+    booktitle   = egsr,
+    year        = {2003},
+    location    = {Leuven, Belgium},
+    pages       = {197--201},
+    publisher   = {Eurographics Association},
+    address     = {Aire-la-Ville, Switzerland},
+} 
+
+@inproceedings{Premoze03,
+    title       = {Path Integration for Light Transport in Volumes},
+    author      = {Premo\v{z}e, Simon and Ashikhmin, Michael and Shirley, Peter},
+    booktitle   = egsr,
+    year        = {2003},
+    location    = {Leuven, Belgium},
+    pages       = {52--63},
+    publisher   = {Eurographics Association},
+    address     = {Aire-la-Ville, Switzerland},
+} 
+
+@inproceedings{Brown03,
+    title       = {Direct sampling of {M}onte {C}arlo flight paths in media with continuously varying cross-sections},
+    author      = {Brown, Forrest B. and Martin, William R.},
+    booktitle   = {Proc. of ANS Mathematics \& Computation Topical Meeting},
+    year        = {2003},
+    month       = {April},
+    pages       = {6--11},
+    location    = {Gatlinburg, TN, USA},
+}
+
+@article{Christensen03,
+    title       = {Adjoints and Importance in Rendering: An Overview},
+    author      = {Per H. Christensen},
+    journal     = tvcg,
+    year        = {2003},
+    volume      = {9},
+    number      = {3},
+    pages       = {329--340},
+    address     = {Los Alamitos, CA, USA},
+    publisher   = {IEEE Computer Society},
+}
+
+@article{Cohen03,
+    title       = {A Survey of Visibility for Walkthrough Applications},
+    author      = {Cohen-Or, D. and Chrysanthou, Y. L. and Silva, C. T. and Durand, F.},
+    journal     = tvcg,
+    volume      = {9},
+    number      = {3},
+    year        = {2003},
+    month       = jul,
+    pages       = {412--431},
+    publisher   = {IEEE Educational Activities Department},
+    address     = {Piscataway, NJ, USA},
+} 
+
+@article{Heino03,
+  title = {Anisotropic effects in highly scattering media},
+  author = {Heino, Jenni and Arridge, Simon and Sikora, Jan and Somersalo, Erkki},
+  journal = {Phys. Rev. E},
+  volume = {68},
+  issue = {3},
+  pages = {031908},
+  numpages = {8},
+  year = {2003},
+  month = {Sep},
+  publisher = {American Physical Society},
+  doi = {10.1103/PhysRevE.68.031908},
+  url = {http://link.aps.org/doi/10.1103/PhysRevE.68.031908}
+}
+
+% 2003 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+@article{Jensen02,
+    title       = {A Rapid Hierarchical Rendering Technique for Translucent Materials},
+    author      = {Jensen, Henrik Wann and Buhler, Juan},
+    journal     = sig_tog,
+    volume      = {21},
+    number      = {3},
+    year        = {2002},
+    month       = jul,
+    pages       = {576--581},
+    publisher   = {ACM},
+    address     = {New York, NY, USA},
+} 
+
+@inproceedings{Wald02,
+    author      = {Wald, Ingo and Kollig, Thomas and Benthin, Carsten and Keller, Alexander and Slusallek, Philipp},
+    title       = {Interactive Global Illumination Using Fast Ray Tracing},
+    booktitle   = egrt,
+    year        = {2002},
+    location    = {Pisa, Italy},
+    pages       = {15--24},
+    publisher   = {Eurographics Association},
+    address     = {Aire-la-Ville, Switzerland},
+} 
+
+@inproceedings{Lastra02,
+    title       = {A Particle-Path based Method for Monte Carlo Density Estimation},
+    author      = {Lastra, M. and Ure{\~{n}}a, C. and Revelles, J. and Montes, R.},
+    booktitle   = egrt,
+    pages       = {7-14},
+    year        = {2002},
+    location    = {Pisa, Italy},
+    publisher   = {Eurographics Association},
+    address     = {Aire-la-Ville, Switzerland},
+}
+
+% 2002 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+@inproceedings{Keller01,
+    author      = {Keller, Alexander and Heidrich, Wolfgang},
+    title       = {Interleaved Sampling},
+    booktitle   = egrt,
+    year        = {2001},
+    pages       = {269--276},
+    publisher   = {Springer-Verlag},
+    address     = {London, UK},
+} 
+
+@inproceedings{Jensen01,
+    title       = {A Practical Model for Subsurface Light Transport},
+    author      = {Jensen, Henrik Wann and Marschner, Stephen R. and Levoy, Marc and Hanrahan, Pat},
+    booktitle   = sig_93_01 # { 01},
+    series      = {Annual Conference Series},
+    year        = {2001},
+    pages       = {511--518},
+    publisher   = {ACM},
+    address     = {New York, NY, USA},
+} 
+
+
+@article{Gnedin01,
+title = "Multi-dimensional cosmological radiative transfer with a Variable Eddington Tensor formalism ",
+journal = "New Astronomy ",
+volume = "6",
+number = "7",
+pages = "437 - 455",
+year = "2001",
+note = "",
+issn = "1384-1076",
+doi = "http://dx.doi.org/10.1016/S1384-1076(01)00068-9",
+url = "http://www.sciencedirect.com/science/article/pii/S1384107601000689",
+author = "Nickolay Y. Gnedin and Tom Abel",
+keywords = "Cosmology: theory",
+keywords = "Large-scale structure of universe",
+keywords = "Galaxies: formation",
+keywords = "Intergalactic medium "
+}
+
+% 2001 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+@inproceedings{Pauly00,
+    title       = {Metropolis Light Transport for Participating Media},
+    author      = {Pauly, Mark and Kollig, Thomas and Keller, Alexander},
+    booktitle   = egrt,
+    year        = {2000},
+    pages       = {11--22},
+    publisher   = {Springer-Verlag},
+    address     = {London, UK},
+} 
+
+@inproceedings{Jones00,
+    title       = {Antialiasing with Line Samples},
+    author      = {Jones, Thouis R. and Perry, Ronald N.},
+    booktitle   = egrt,
+    year        = {2000},
+    pages       = {197--206},
+    publisher   = {Springer-Verlag},
+    address     = {London, UK},
+} 
+
+@inproceedings{Heidrich00,
+    title       = {Soft Shadow Maps for Linear Lights},
+    author      = {Heidrich, Wolfgang and Brabec, Stefan and Seidel, Hans-Peter},
+    booktitle   = egrt,
+    year        = {2000},
+    pages       = {269-280},
+    publisher   = {Springer-Verlag},
+    address     = {London, UK},
+}
+
+@inproceedings{Lecocq00,
+    title       = {Mathematical Approximation for Real-Time Lighting Rendering Through Participating Media},
+    author      = {Lecocq, P. and Kemeny, A. and Michelin, S. and Arqu\`{e}s, D.},
+    booktitle   = {Proc. of the 8th Pacific Conference on Computer Graphics and Applications},
+    year        = {2000},
+    publisher   = {IEEE Computer Society},
+    address     = {Washington, DC, USA},
+    _pages      = {400--},
+} 
+
+@phdthesis{HavranThesis00,
+    title       = {Heuristic Ray Shooting Algorithms},
+    author      = {Vlastimil Havran},
+    school      = {Department of Computer Science and Engineering, Faculty of Electrical Engineering, Czech Technical University in Prague},
+    year        = {2000},
+    month       = nov,
+}
+
+@article{Olson00,
+title = "Diffusion, P1, and other approximate forms of radiation transport ",
+journal = "Journal of Quantitative Spectroscopy and Radiative Transfer ",
+volume = "64",
+number = "6",
+pages = "619 - 634",
+year = "2000",
+note = "",
+issn = "0022-4073",
+doi = "http://dx.doi.org/10.1016/S0022-4073(99)00150-8",
+url = "http://www.sciencedirect.com/science/article/pii/S0022407399001508",
+author = "Gordon L. Olson and Lawrence H. Auer and Michael L. Hall",
+keywords = "Time-dependent radiation transport",
+keywords = "Diffusion",
+keywords = "P1 approximation",
+keywords = "P1/3 approximation",
+keywords = "Radiation transport",
+keywords = "Flux-limited diffusion",
+keywords = "Eddington factors "
+}
+
+
+
+% 2000 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+@book{Born99,
+    title       = {Principles of Optics: Electromagnetic Theory of Propagation, Interference and Diffraction of Light},
+    author      = {Born, M. and Wolf, E.},
+    year        = {1999},
+    publisher   = {Cambridge University Press},
+    _isbn       = {9780521784498},
+    _url        = {http://books.google.de/books?id=oV80AAAAIAAJ},
+}
+
+@inproceedings{Jensen98,
+    title       = {Efficient Simulation of Light Transport in Scenes with Participating Media using Photon Maps},
+    author      = {Jensen, Henrik Wann and Christensen, Per H.},
+    booktitle   = sig_93_01 # { 98},
+    series      = {Annual Conference Series},
+    year        = {1998},
+    pages       = {311--320},
+    address     = {New York, NY, USA},
+    publisher   = {ACM},
+} 
+
+@inproceedings{Keller97,
+    title       = {Instant Radiosity},
+    author      = {Keller, Alexander},
+    booktitle   = sig_93_01 # { 97},
+    series      = {Annual Conference Series},
+    year        = {1997},
+    pages       = {49--56},
+    publisher   = {ACM Press/Addison-Wesley Publishing Co.},
+    address     = {New York, NY, USA},
+} 
+
+@inproceedings{Hoppe97,
+    title       = {View-Dependent Refinement of Progressive Meshes},
+    author      = {Hoppe, Hugues},
+    booktitle   = sig_93_01 # { 97},
+    series      = {Annual Conference Series},
+    year        = {1997},
+    pages       = {189--198},
+    publisher   = {ACM Press/Addison-Wesley Publishing Co.},
+    address     = {New York, NY, USA},
+} 
+
+@phdthesis{VeachThesis97,
+    title       = {Robust Monte Carlo Methods for Light Transport Simulation},
+    author      = {Veach, Eric},
+    year        = {1997},
+    month       = dec,
+    school      = {Stanford University},
+    address     = {Stanford, CA, USA},
+    _advisor    = {Guibas, Leonidas J.},
+} 
+
+@inproceedings{Veach97,
+    title       = {Metropolis Light Transport},
+    author      = {Veach, Eric and Guibas, Leonidas J.},
+    booktitle   = sig_93_01 # { 97},
+    series      = {Annual Conference Series},
+    year        = {1997},
+    pages       = {65--76},
+    publisher   = {ACM Press/Addison-Wesley Publishing Co.},
+    address     = {New York, NY, USA},
+} 
+
+@inproceedings{Veach96,
+    title       = {Non-symmetric Scattering in Light Transport Algorithms},
+    author      = {Eric Veach},
+    booktitle   = egrt96,
+    year        = {1996},
+    month       = aug,
+    pages       = {81--90},
+    location    = {Porto, Portugal},
+    publisher   = {Springer-Verlag},
+    address     = {London, UK},
+}
+
+@inproceedings{Jensen96,
+    title       = {Global Illumination using Photon Maps},
+    author      = {Jensen, Henrik Wann},
+    booktitle   = egrt96,
+    year        = {1996},
+    month       = aug,
+    pages       = {21--30},
+    location    = {Porto, Portugal},
+    publisher   = {Springer-Verlag},
+    address     = {London, UK},
+} 
+
+@inproceedings{Lafortune96,
+    title       = {Rendering Participating Media with Bidirectional Path Tracing},
+    author      = {Lafortune, Eric P. and Willems, Yves D.},
+    booktitle   = egrt96,
+    year        = {1996},
+    month       = aug,  
+    pages       = {91--100},
+    location    = {Porto, Portugal},
+    publisher   = {Springer-Verlag},
+    address     = {London, UK},
+} 
+
+@incollection{Rushmeier95,
+    title       = {Rendering Participating Media: Problems and Solutions from Application Areas},
+    author      = {Rushmeier, Holly},
+    booktitle   = {Photorealistic Rendering Techniques},
+    series      = {Focus on Computer Graphics},
+    year        = {1995},
+    publisher   = {Springer Berlin Heidelberg},
+    pages       = {37-59},
+    _editor     = {Sakas, Georgios and Müller, Stefan and Shirley, Peter},
+}
+
+
+@inproceedings{Shirley95,
+    title       = {Global Illumination via Density-Estimation},
+    author      = {Peter Shirley and Bretton Wade and Philip M. Hubbard and David Zareski and Bruce Walter and Donald P. Greenberg},
+    booktitle   = egrt,
+    year        = {1995},
+    pages       = {219--230},
+    publisher   = {Springer-Verlag},
+}
+
+@incollection{Stam95,
+    title       = {Multiple Scattering as a Diffusion Process},
+    author      = {Stam, Jos},
+    booktitle   = egrt,
+    year        = {1995},
+    pages       = {41--50},
+    publisher   = {Springer-Verlag},
+}
+
+@inbook{Languenou95,
+    author="Langu{\'e}nou, Eric and Bouatouch, Kadi and Chelle, Michael",
+    editor="Sakas, Georgios and M{\"u}ller, Stefan and Shirley, Peter",
+    title="Global Illumination in Presence of Participating Media with General Properties",
+    bookTitle="Photorealistic Rendering Techniques",
+    year="1995",
+    publisher="Springer Berlin Heidelberg",
+    address="Berlin, Heidelberg",
+    pages="71--86",
+    abstract="In the recent years a number of techniques have been devised by computer graphics researchers for rendering participating media like haze, fog, clouds, dust{\ldots} Due to the complexity of the underlying physics, strong assumptions (isotropy, single scattering, no spontaneous emission{\ldots}) are often made to make these techniques tractable. In this paper, we propose a method which lifts these assumptions. It relies on the discrete ordinate method and allows light transfer simulation in an environment made up of diffuse objects and participating media.",
+    isbn="978-3-642-87825-1",
+    doi="10.1007/978-3-642-87825-1_6",
+    url="https://doi.org/10.1007/978-3-642-87825-1_6"
+}
+
+@inbook{Max95,
+    author="Max, Nelson",
+    editor="Sakas, Georgios and M{\"u}ller, Stefan and Shirley, Peter",
+    title="Efficient Light Propagation for Multiple Anisotropic Volume Scattering",
+    bookTitle="Photorealistic Rendering Techniques",
+    year="1995",
+    publisher="Springer Berlin Heidelberg",
+    address="Berlin, Heidelberg",
+    pages="87--104",
+    abstract="Realistic rendering of participating media like clouds requires multiple anisotropic light scattering. This paper presents a propagation approximation for light scattered into M direction bins, which reduces the ``ray effect'' problem in the traditional ``discrete ordinates'' method. For a regular grid volume of n                3 elements, it takes O(Mn                3 log n + M                2                n                3) time and 0(Mn                3 + M                2) space.",
+    isbn="978-3-642-87825-1",
+    doi="10.1007/978-3-642-87825-1_7",
+    url="https://doi.org/10.1007/978-3-642-87825-1_7"
+}
+
+
+@INPROCEEDINGS{Veach95MIS,
+  author = {Veach, Eric and Guibas, Leonidas},
+  title = {Optimally Combining Sampling Techniques for {M}onte {C}arlo Rendering},
+  booktitle = sig_93_01,
+  year = {1995},
+}
+
+@phdthesis{ArvoThesis95,
+    title       = {Analytic methods for simulated light transport},
+    author      = {Arvo, James R.},
+    year        = {1995},
+    school      = {Yale University},
+    address     = {New Haven, CT, USA},
+} 
+
+@inproceedings{Veach94,
+    title       = {Bidirectional Estimators for Light Transport},
+    author      = {Veach, Eric and Guibas, Leonidas J.},
+    booktitle   = {Proc. of Eurographics Rendering Workshop 1994},
+    pages       = {147--162},
+    year        = 1994,
+}
+
+@book{Revuz94,
+    title = "Continuous martingales and Brownian motion",
+    author = "Revuz, Daniel and Yor, Marc Jean",
+    series = "Grundlehren der mathematischen Wissenschaften",
+    publisher = "Springer",
+    address = "Berlin, Heidelberg",
+    url = "http://opac.inria.fr/record=b1081120",
+    isbn = "0-387-57622-3",
+    year = 1994
+}
+
+@inproceedings{Smits94,
+    title       = {A Clustering Algorithm for Radiosity in Complex Environments},
+    author      = {Smits, Brian and Arvo, James and Greenberg, Donald},
+    booktitle   = sig_93_01 # { 94},
+    series      = {Annual Conference Series},
+    year        = {1994},
+    pages       = {435--442},
+    publisher   = {ACM},
+    address     = {New York, NY, USA},
+} 
+
+@inproceedings{Arvo94,
+    title       = {A Framework for the Analysis of error in Global Illumination Algorithms},
+    author      = {Arvo, James R. and Torrance, Kenneth and Smits, Brian},
+    booktitle   = sig_93_01 # { 94},
+    series      = {Annual Conference Series},
+    year        = {1994},
+    pages       = {75--84},
+    publisher   = {ACM},
+    address     = {New York, NY, USA},
+} 
+
+
+@article{Pattanaik93,
+    title       = "Efficient Potential Equation Solutions for Global Illumination Computation",
+    author      = "Sumanta N. Pattanaik and S. P. Mudur",
+    journal     = "Computers \& Graphics",
+    volume      = 17,
+    number      = 4,
+    pages       = "387--396",
+    publisher   = "Pergamon Press",
+    year        = 1993,
+}
+
+@inproceedings{Aupperle93,
+    title       = {A Hierarchical Illumination Algorithm for Surfaces with Glossy Reflection},
+    author      = {Aupperle, Larry and Hanrahan, Pat},
+    booktitle   = sig_93_01 # { 93},
+    series      = {Annual Conference Series},
+    year        = {1993},
+    location    = {Anaheim, CA},
+    pages       = {155--162},
+    publisher   = {ACM},
+    address     = {New York, NY, USA},
+} 
+
+@article{Blasi93,
+    title       = {A Rendering Algorithm for Discrete Volume Density Objects},
+    author      = {Blasi, Philippe and Le Saec, Bertrand and Schlick, Christophe},
+    journal     = cgf_eg93,
+    volume      = {12},
+    number      = {3},
+    pages       = {201--210},
+    year        = {1993},
+    publisher   = {Blackwell Science Ltd},
+}
+
+@article{Shirman93,
+    author      = {Leon A. Shirman and Salim S. Abi-Ezzi},
+    title       = {The Cone of Normals Technique for Fast Processing of Curved Patches},
+    journal     = cgf_eg93,
+    volume      = {12},
+    number      = {3},
+    pages       = {261--272},
+    year        = {1993},
+    publisher   = {Blackwell Science Ltd},
+}
+
+
+@inproceedings{Lafortune93,
+    title       = {Bi-Directional Path Tracing},
+    author      = {Lafortune, Eric P. and Willems, Yves D.},
+    booktitle   = {Compugraphics '93},
+    pages       = {145--153},
+    location    = {Alvor, Portugal},
+    year        = {1993},
+}
+
+@article{Smits92,
+    title       = {An Importance-driven Radiosity Algorithm},
+    author      = {Smits, Brian E. and Arvo, James R. and Salesin, David H.},
+    journal     = sig_74_92,
+    volume      = {26},
+    number      = {2},
+    month       = jul,
+    year        = {1992},
+    pages       = {273--282},
+    publisher   = {ACM},
+    address     = {New York, NY, USA},
+} 
+@article{Lischinski92,
+    title       = {Discontinuity Meshing for Accurate Radiosity},
+    author      = {Lischinski, Dani and Tampieri, Filippo and Greenberg, Donald P.},
+    journal     = {IEEE Computer Graphics and Applications},
+    volume      = {12},
+    number      = {6},
+    month       = nov,
+    year        = {1992},
+    pages       = {25--39},
+    publisher   = {IEEE Computer Society Press},
+    address     = {Los Alamitos, CA, USA},
+} 
+
+@phdthesis{HeckbertThesis91,
+    title       = {Simulating Global Illumination using Adaptive Meshing},
+    author      = {Heckbert, Paul S.},
+    year        = {1991},
+    school      = {EECS Department, University of California, Berkeley},
+    _publisher  = {EECS Department},
+    _Month      = {Jun},
+    _URL        = {http://www.eecs.berkeley.edu/Pubs/TechRpts/1991/5531.html},
+    _Number     = {UCB/CSD-91-636},
+}
+
+@book{Lux91,
+    title       = {Monte Carlo Particle Transport Methods: Neutron and Photon Calculations},
+    author      = {Lux, I. and Koblinger, L.},
+    year        = {1991},
+    publisher   = {CRC Press},
+}
+
+@article{Sillion91,
+    title       = {A Global Illumination Solution for General Reflectance Distributions},
+    author      = {Sillion, Fran\c{c}is X. and Arvo, James R. and Westin, Stephen H. and Greenberg, Donald P.},
+    journal     = sig_74_92,
+    volume      = {25},
+    number      = {4},
+    month       = jul,
+    year        = {1991},
+    pages       = {187--196},
+    publisher   = {ACM},
+    address     = {New York, NY, USA},
+} 
+
+@article{Arvo90,
+    title       = {Particle Transport and Image Synthesis},
+    author      = {Arvo, James and Kirk, David},
+    journal     = sig_74_92,
+    volume      = {24},
+    number      = {4},
+    month       = sep,
+    year        = {1990},
+    pages       = {63--66},
+    publisher   = {ACM},
+    address     = {New York, NY, USA},
+} 
+
+@article{Saito90,
+    author      = {Saito, Takafumi and Takahashi, Tokiichiro},
+    title       = {Comprehensible Rendering of {3-D} Shapes},
+    journal     = sig_74_92,
+    volume      = {24},
+    number      = {4},
+    month       = sep,
+    year        = {1990},
+    pages       = {197--206},
+    publisher   = {ACM},
+    address     = {New York, NY, USA},
+} 
+
+@inproceedings{Shirley90,
+    title       = {A Ray Tracing Method for Illumination Calculation in Diffuse-Specular Scenes},
+    author      = {Shirley, P.},
+    booktitle   = {Proc. of Graphics Interface '90},
+    year        = {1990},
+    location    = {Halifax, Nova Scotia},
+    pages       = {205--212},
+    publisher   = {Canadian Information Processing Society},
+    address     = {Toronto, Ont., Canada},
+} 
+
+
+% 1990 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+@article{Perlin89,
+    title       = {Hypertexture},
+    author      = {Perlin, Ken H. and Hoffert, Eric M.},
+    journal     = sig_74_92,
+    year        = {1989},
+    month       = jul,
+    volume      = {23},
+    number      = {3},
+    publisher   = {ACM},
+    address     = {New York, NY, USA},
+    pages       = {253--262},
+    _issn       = {0097-8930},
+    _numpages   = {10},
+    _url        = {http://doi.acm.org/10.1145/74334.74359},
+    _doi        = {10.1145/74334.74359},
+    _acmid      = {74359},
+    _issue_date = {July 1989},
+}
+
+@article{Ward88,
+    author      = {Ward, Gregory J. and Rubinstein, Francis M. and Clear, Robert D.},
+    title       = {A Ray Tracing Solution for Diffuse Interreflection},
+    journal     = sig_74_92,
+    volume      = {22},
+    number      = {4},
+    month       = jun,
+    year        = {1988},
+    pages       = {85--92},
+    publisher   = {ACM},
+    address     = {New York, NY, USA},
+} 
+
+@article{Deering88,
+    title       = {The Triangle Processor and Normal Vector Shader: a {VLSI} System for High Performance Graphics},
+    author      = {Deering, Michael and Winner, Stephanie and Schediwy, Bic and Duffy, Chris and Hunt, Neil},
+    journal     = sig_74_92,
+    volume      = {22},
+    number      = {4},
+    month       = jun,
+    year        = {1988},
+    pages       = {21--30},
+    publisher   = {ACM},
+    address     = {New York, NY, USA},
+} 
+
+@article{Rushmeier87,
+    title       = {The Zonal Method for Calculating Light Intensities in the Presence of a Participating Medium},
+    author      = {Rushmeier, Holly E. and Torrance, Kenneth E.},
+    journal     = sig_74_92,
+    volume      = {21},
+    number      = {4},
+    month       = aug,
+    year        = {1987},
+    pages       = {293--302},
+    publisher   = {ACM},
+    address     = {New York, NY, USA},
+} 
+
+@article{Nishita87,
+    title       = {A Shading Model for Atmospheric Scattering Considering Luminous Intensity Distribution of Light Sources},
+    author      = {Nishita, Tomoyuki and Miyawaki, Yasuhiro and Nakamae, Eihachiro},
+    journal     = sig_74_92,
+    year        = {1987},
+    pages       = {303--310},
+    publisher   = {ACM},
+    location    = {New York, NY, USA}
+}
+
+@inproceedings{Amanatides87,
+    title       = {{A fast voxel traversal algorithm for ray tracing}},
+    author      = {Amanatides, John and Woo, Andrew},
+    booktitle   = {Eurographics '87},
+    pages       = {3--10},
+    year        = {1987}
+}
+
+
+@article{Wallace87,
+    author      = {Wallace, John R. and Cohen, Michael F. and Greenberg, Donald P.},
+    title       = {A two-pass solution to the rendering equation: A synthesis of ray tracing and radiosity methods},
+    journal     = sig_74_92,
+    volume      = {21},
+    number      = {4},
+    month       = aug,
+    year        = {1987},
+    pages       = {311--320},
+    publisher   = {ACM},
+    address     = {New York, NY, USA},
+} 
+
+@book{CIEILV87,
+    title       = {CIE International Lighting Vocabulary : IEC International Electrotechnical Vocabulary},
+    author      = {CIE},
+    edition     = {4th},
+    year        = {1987},
+    publisher   = {CIE},
+    _series     = {CIE Publication},
+}
+
+@inproceedings{Arvo86,
+    title       = {Backward Ray Tracing},
+    author      = {James Arvo},
+    booktitle   = {In ACM SIGGRAPH '86 Course Notes - Developments in Ray Tracing},
+    year        = {1986},
+    pages       = {259--263}
+}
+
+@article{Kajiya86,
+    title       = {The Rendering Equation},
+    author      = {James T. Kajiya},
+    journal     = sig_74_92,
+    pages       = {143--150},
+    year        = {1986},
+}
+
+@book{Kalos86,
+    title       = {Monte Carlo methods. Vol. 1: basics},
+    author      = {Kalos, Malvin H. and Whitlock, Paula A.},
+    year        = {1986},
+    publisher   = {Wiley-Interscience},
+    address     = {New York, NY, USA},
+} 
+
+@article{Immel86,
+    title       = {A Radiosity Method for Non-diffuse Environments},
+    author      = {Immel, David S. and Cohen, Michael F. and Greenberg, Donald P.},
+    journal     = sig_74_92,
+    volume      = {20},
+    number      = {4},
+    month       = aug,
+    year        = {1986},
+    pages       = {133--142},
+    publisher   = {ACM},
+    address     = {New York, NY, USA},
+} 
+
+@article{Nishita85,
+    title       = {Continuous tone representation of three-dimensional objects taking account of shadows and interreflection},
+    author      = {Nishita, Tomoyuki and Nakamae, Eihachiro},
+    journal     = sig_74_92,
+    volume      = {19},
+    number      = {3},
+    month       = jul,
+    year        = {1985},
+    pages       = {23--30},
+    publisher   = {ACM},
+    address     = {New York, NY, USA},
+} 
+
+@article{Cohen85,
+    title       = {The hemi-cube: a radiosity solution for complex environments},
+    author      = {Cohen, Michael F. and Greenberg, Donald P.},
+    journal     = sig_74_92,
+    volume      = {19},
+    number      = {3},
+    month       = jul,
+    year        = {1985},
+    pages       = {31--40},
+    publisher   = {ACM},
+    address     = {New York, NY, USA},
+} 
+
+@article{Kajiya84,
+    title       = {Ray Tracing Volume Densities},
+    author      = {Kajiya, James T. and Von Herzen, Brian P},
+    journal     = sig_74_92,
+    volume      = {18},
+    number      = {3},
+    month       = jan,
+    year        = {1984},
+    pages       = {165--174},
+    publisher   = {ACM},
+    address     = {New York, NY, USA},
+} 
+
+@article{Cook84,
+    title       = {Distributed ray tracing},
+    author      = {Cook, Robert L. and Porter, Thomas and Carpenter, Loren},
+    journal     = sig_74_92,
+    volume      = {18},
+    number      = {3},
+    month       = jan,
+    year        = {1984},
+    pages       = {137--145},
+    publisher   = {ACM},
+    address     = {New York, NY, USA},
+} 
+
+@article{Goral84,
+    title       = {Modeling the Interaction of Light between Diffuse Surfaces},
+    author      = {Goral, Cindy M. and Torrance, Kenneth E. and Greenberg, Donald P. and Battaile, Bennett},
+    journal     = sig_74_92,
+    volume      = {18},
+    number      = {3},
+    month       = jan,
+    year        = {1984},
+    pages       = {213--222},
+    publisher   = {ACM},
+    address     = {New York, NY, USA},
+}
+
+@article{Levermore84,
+title = "Relating Eddington factors to flux limiters",
+journal = "Journal of Quantitative Spectroscopy and Radiative Transfer",
+volume = "31",
+number = "2",
+pages = "149 - 160",
+year = "1984",
+note = "",
+issn = "0022-4073",
+doi = "http://dx.doi.org/10.1016/0022-4073(84)90112-2",
+url = "http://www.sciencedirect.com/science/article/pii/0022407384901122",
+author = "C.D. Levermore",
+}
+
+% 1984 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+@article{Dwivedi82,
+    title       = {A new importance biasing scheme for deep-penetration {M}onte {C}arlo},
+    author      = {S.R. Dwivedi},
+    journal     = {Annals of Nuclear Energy},
+    volume      = {9},
+    number      = {7},
+    pages       = {359 - 368},
+    year        = {1982},
+    issn        = {0306-4549},
+    doi         = {http://dx.doi.org/10.1016/0306-4549(82)90038-X},
+    url         = {http://www.sciencedirect.com/science/article/pii/030645498290038X},
+}
+
+@inbook{Whalen82, place={United States}, title={Variable Eddington factors and flux-limiting diffusion coefficients}, url={http://www.osti.gov/scitech/servlets/purl/5278781}, abstractNote={Variable Eddington factors and flux limiting diffusion coefficients arise in two common techniques of closing the moment equations of transport. The first two moment equations of the full transport equation are still frequently used to solve many problems of radiative or particle transport. An approximate analysis, developed by Levermore, exhibits the relation between the coefficients of the two different techniques. This analysis is described and then used to test the validity of several commonly used flux limiters and Eddington factors. All of the ad-hoc flux limiters have limited validity. All of the variable Eddington factors derived from some underlying description of the angular distribution function are generally valid. The use of coefficients from Minerbo’s elegant maximum entropy Eddington factor analysis is suggested for use in either flux limited diffusion or variable Eddington factor equations.}, author={Whalen, P.P.}, year={1982}, month={Jan}}
+
+% 1982 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+@ARTICLE{Levermore81,
+   author = {{Levermore}, C.~D. and {Pomraning}, G.~C.},
+    title = "{A flux-limited diffusion theory}",
+  journal = {Astrophysical Journal},
+ keywords = {DIFFUSION THEORY, RADIANT FLUX DENSITY, RADIATIVE TRANSFER, TRANSPORT THEORY, BOLTZMANN TRANSPORT EQUATION, BOUNDARY VALUE PROBLEMS, DIFFUSION COEFFICIENT, GASEOUS DIFFUSION},
+     year = 1981,
+    pages = {321-334},
+   volume = 248,
+  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+
+% 1981 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+@article{Whitted80,
+    title       = {An Improved Illumination Model for Shaded Display},
+    author      = {Whitted, Turner},
+    journal     = {Communications of the ACM},
+    volume      = {23},
+    number      = {6},
+    month       = jun,
+    year        = {1980},
+    pages       = {343--349},
+    publisher   = {ACM},
+    address     = {New York, NY, USA},
+} 
+
+% 1980 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+@article{Spanier79,
+    title       = {A New Family of Estimators for Random Walk Problems},
+    author      = {Spanier, J },
+    journal     = {IMA Journal of Applied Mathematics},
+    publisher   = {Oxford University Press },
+    year        = {1979},
+    volume      = {23}, 
+    number      = {1}, 
+    pages       = {1-31}, 
+}
+
+% 1979 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+@article{Lin78,
+    author      = {S.L. Lin and J.N. Bardsley},
+    title       = {The null-event method in computer simulation},
+    journal     = {Computer Physics Communications},
+    volume      = {15},
+    number      = {3–4},
+    pages       = {161--163},
+    year        = {1978},
+}
+
+@article{Williams78,
+    title       = {Casting Curved Shadows on Curved Surfaces},
+    author      = {Williams, Lance},
+    journal     = sig_74_92,
+    volume      = {12},
+    number      = {3},
+    pages       = {270--274},
+    year        = {1978},
+    month       = aug,
+    publisher   = {ACM},
+    address     = {New York, NY, USA},
+}
+
+@ARTICLE{Minerbo78,
+   author = {{Minerbo}, G.~N.},
+    title = "{Maximum entropy Eddington factors.}",
+  journal = {Journal of Quantitative Spectroscopy and Radiative Transfer},
+ keywords = {Radiative Transfer},
+     year = 1978,
+   volume = 20,
+    pages = {541--545},
+      doi = {10.1016/0022-4073(78)90024-9},
+   adsurl = {http://adsabs.harvard.edu/abs/1978JQSRT..20..541M},
+  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+
+@article{Ishimaru78,
+    title       = {Wave Propagation and Scattering in Random Media.
+Single Scattering and Transport Theory},
+    author      = {Ishimaru, Akira},
+    volume      = {1},
+    year        = {1978},
+    publisher   = {Academic Press},
+    address     = {New York, NY, USA},
+}
+
+
+
+% 1978 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+@book{Nicodemus77,
+    title       = {Geometrical Considerations and Nomenclature for Reflectance},
+    author      = {F. E. Nicodemus and J. C. Richmond and J. J. Hsia and I. W. Ginsberg and T. Limperis},
+    series      = {Monograph 161},
+    year        = {1977},
+    publisher   = {National Bureau of Standards (US)},
+    _number     = {nos. 160-166},
+    _lccn       = {77022966},
+    _url        = {http://books.google.de/books?id      = gw1RAAAAMAAJ},
+}
+
+@techreport{Kalli77,
+    title       = {Evaluation of three {M}onte {C}arlo estimation schemes for flux at a point },
+    author      = {Kalli, H.J. and Cashwell, E.D.},
+    number      = {LA-6865-MS},
+    year        = {1977},
+    institution = {Los Alamos Scientific Lab, New Mexico, USA},
+    month       = sep,
+}
+
+% 1977 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+@book{Kershaw76,
+  author = {{Kershaw}, D.~.S},
+  title={Flux Limiting Nature's Own Way - A New Method for Numerical Solution of the Transport Equation},
+  year={1976},
+  month = July,
+  publisher={Lawrence Livermore National Laboratory}
+}
+
+% 1976 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+@article{Carter72,
+    title       = {{M}onte {C}arlo Sampling with Continuously Varying Cross Sections Along Flight Paths},
+    author      = {Carter, L. L. and Cashwell, E. D. and Taylor, W. M.},
+    journal     = {Nuclear Science and Engineering},
+    pages       = {403--411},
+    volume      = {48},
+    number      = {4},
+    year        = {1972},
+}
+
+% 1972 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+@article{Steinberg71,
+    title       = {Bounded Estimators for Flux at a Point in {Monte Carlo}},
+    author      = {Steinberg, H. A. and Kalos, Malvin H.},
+    journal     = {Nuclear Science and Engineering},
+    pages       = {406--412},
+    volume      = {44},
+    year        = {1971},
+}
+
+% 1971 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+@book{Spanier69,
+    title       = {Monte Carlo Principles and Neutron Transport Problems},
+    author      = {Spanier, J. and Gelbard, E. M.},
+    year        = {1969},
+    publisher   = {Addison-Wesley Pub. Co.},
+    series      = {Addison-Wesley series in computer science and information processing},
+}
+
+% 1969 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+@inproceedings{Appel68,
+    title       = {Some Techniques for Shading Machine Renderings of Solids},
+    author      = {Appel, Arthur},
+    booktitle   = {Proc. of the Spring Joint Computer Conference},
+    pages       = {37--45},
+    numpages    = {9},
+    publisher   = {ACM},
+    address     = {New York, NY, USA},
+    year        = {1968},
+    _location   = {Atlantic City, New Jersey},
+    _series     = {AFIPS '68 (Spring)},
+} 
+
+@article{Coleman68,
+    title       = {Mathematical Verification of a certain {M}onte {C}arlo Sampling Technique and Applications of the Technique to Radiation Transport Problems},
+    author      = {Coleman, W. A.},
+    journal     = {Nuclear Science and Engineering},
+    volume      = {32},
+    number      = {1},
+    month       = apr,
+    pages       = {76--81}, 
+    year        = {1968},
+}
+
+@article{Skullerud68,
+    title       = {The stochastic computer simulation of ion motion in a gas subjected to a constant electric field},
+    author      = {Skullerud, H. R.},
+    journal     = {Journal of Physics D: Applied Physics},
+    volume      = {1},
+    number      = {11},
+    pages       = {1567--1568}, 
+    year        = {1968},
+}
+
+% 1968 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+@article{Coveyou67,
+    title       = {Adjoint and Importance in {M}onte {C}arlo Application},
+    author      = {Coveyou, R. R. and Cain, V. R. and Yost K. J.},
+    journal     = {Nuclear Science and Engineering},
+    pages       = {219--234},
+    volume      = {27},
+    number      = {2},
+    year        = {1967},
+}
+
+
+% 1967 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+@article{Gelbard66,
+    author      = {E. M. Gelbard and L. A. {Ondis, II} and J. Spanier},
+    title       = {A New Class of {Monte Carlo} Estimators},
+    journal     = {{SIAM} Journal on Applied Mathematics},
+    volume      = {14},
+    number      = {4},
+    pages       = {697--701},
+    month       = jul,
+    year        = {1966},
+}
+
+@article{Spanier66,
+    author      = {J. Spanier},
+    title       = {Two Pairs of Families of Estimators for Transport Problems},
+    journal     = {{SIAM} Journal on Applied Mathematics},
+    volume      = {14},
+    number      = {4},
+    pages       = {702--713},
+    month       = jul,
+    year        = {1966},
+}
+
+% 1966 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+@book{Feynman65,
+    title       = {Quantum Mechanics and Path Integrals},
+    author      = {Feynman, R.P. and Hibbs, A.R.},
+    series      = {International series in pure and applied physics},
+    year        = {1965},
+    publisher   = {McGraw-Hill},
+}
+
+@book{Akhiezer65,
+  title={The classical moment problem: and some related questions in analysis},
+  author={Akhiezer, N.I.},
+  series={University mathematical monographs},
+  url={https://books.google.de/books?id=OvZvAAAAIAAJ},
+  year={1965},
+  publisher={Oliver \& Boyd}
+} 
+
+% 1965 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+@inproceedings{Woodcock65,
+    title       = {Techniques used in the {GEM} code for {M}onte {C}arlo neutronics calculations in reactors and other systems of complex geometry},
+    author      = {Woodcock, E.R. and Murphy, T. and Hemmings, P.J. and Longworth T.C.},
+    booktitle   = {Applications of Computing Methods to Reactor Problems},
+    organization= {Argonne National Laboratory},
+    year        = {1965},
+}
+
+@book{Hammersley64,
+    title       = {Monte Carlo Methods},
+    author      = {Hammersley, John Michael and Handscomb, David Christopher},
+    series      = {Monographs on statistics and applied probability},
+    publisher   = {Chapman and Hall},
+    address     = {London, New York},
+    year        = 1964,
+}
+
+@article{Kalos63,
+    title       = {On the Estimation of Flux at a Point by {Monte Carlo}},
+    author      = {Kalos, Malvin H.},
+    journal     = {Nuclear Science and Engineering},
+    pages       = {111--117},
+    volume      = {16},
+    year        = {1963},
+}
+
+@book{Chandrasekhar60,
+    title       = {Radiative Transfer},
+    author      = {Chandrasekhar, Subrahmanyan},
+    publisher   = {Dover Publications},
+    year        = {1960},
+}
+
+@article{Gibbson58, 
+    author      = {Mathew G. Gibbsons},
+    journal     = {Journal of the Optical Society of America},
+    number      = {8},
+    pages       = {550--555},
+    publisher   = {OSA},
+    title       = {Radiation Received by an Uncollimated Receiver from a 4$\pi$ Source},
+    volume      = {48},
+    month       = aug,
+    year        = {1958},
+}
+
+
+@article{Neumann51,
+    author      = {von Neumann, John},
+    title       = {Various Techniques Used in Connection with Random Digits},
+    journal     = {Journal of Research of the National Bureau of Standards, Appl. Math. Series 12},
+    series      = {12},
+    year        = {1951},
+    pages       = {36--38},
+}
+
+@article{Metropolis49,
+    title       = {The Monte Carlo Method},
+    author      = {Metropolis, Nicholas and Ulam, Stanislaw M.},
+    journal     = {Journal of the American Statistical Association},
+    month       = sep,
+    number      = {247},
+    pages       = {335--341},
+    volume      = {44},
+    year        = {1949},
+    publisher   = {American Statistical Association},
+}
+
+@article{Henyey41,
+    title       = {Diffuse radiation in the Galaxy},
+    author      = {{Henyey}, L.~G. and {Greenstein}, J.~L.},
+    journal     = {Astrophysical Journal},
+    year        = 1941,
+    month       = jan,
+    volume      = 93,
+    pages       = {70--83},
+    _doi        = {10.1086/144246},
+    _adsurl     = {http://adsabs.harvard.edu/abs/1941ApJ....93...70H},
+    _adsnote    = {Provided by the SAO/NASA Astrophysics Data System}
+}
+
+@book{vonHelmholtz24,
+    title       = {Helmholtz's Treatise on Physiological Optics},
+    author      = {von Helmholtz, H. and Southall, J.P.C.},
+    year        = {1924},
+    publisher   = {The Optical Society of America},
+    _lccn       = {24029441},
+    _series     = {Helmholtz's Treatise on Physiological Optics},
+    _url        = {http://books.google.de/books?id      = 9UrPAAAAMAAJ},
+}
+
+@article{Mie1908,
+    title       = {Beitr{\"a}ge zur Optik tr{\"u}ber Medien, speziell kolloidaler Metall{\"o}sungen},
+    author      = {Mie, Gustav},
+    journal     = {Annalen der Physik},
+    year        = 1908,
+    volume      = 330,
+    pages       = {377--445},
+    _doi        = {10.1002/andp.19083300302},
+    _adsurl     = {http://adsabs.harvard.edu/abs/1908AnP...330..377M},
+    _adsnote    = {Provided by the SAO/NASA Astrophysics Data System}
+}
+
+
+% 1900 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+@inproceedings{Lorenz1890,
+    title       ={Lysbev{\ae}gelsen i og uden for en af plane Lysb{\o}lger belyst Kugle},
+    author      ={Lorenz, Ludwig},
+    booktitle   ={Det Kongelige Danske Videnskabernes Selskabs Skrifter (trykt utg.): Naturvidenskabelig og Mathematisk Afdeling},
+    year        ={1890},
+}
+
+@article{Rayleigh1871,
+    title       = {On the scattering of light by small particles},
+    author      = {Rayleigh, John William Strutt Lord},
+    journal     = {Philosophical Magazine},
+    year        = {1871},
+    pages       = {447--454},
+    volume      = {64},
+}
+
+@article{Fick1855,
+    author      = {Fick, Adolf},
+    title       = {\"{U}ber {D}iffusion},
+    journal     = {Annalen der Physik},
+    volume      = {170},
+    number      = {1},
+    publisher   = {WILEY-VCH Verlag},
+    pages       = {59--86},
+    year        = {1855},
+}
+
+
+
+
+
+
+
+
+

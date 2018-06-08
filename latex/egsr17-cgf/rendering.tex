@@ -4,18 +4,20 @@
 We use an approach similar to Koerner et al.~\cite{Koerner14}, where we seperate the radiance field into single scattered light $L_{ss}$ and multiple scattered light $L_{ms}$:
 \begin{align}
 L\left(\vec{x},\omega\right) = L_{ss}\left(\vec{x},\omega\right) + L_{ms}\left(\vec{x},\omega\right)
+\ .
 \end{align}
 
 The single scattered light is folded into the emission term $Q$:
 \begin{align}
 Q(\vec{x}, \omega) = L_{ss}(\vec{x}, \omega) = \sigma_s\left(\vec{x}\right)\int_\Omega{ p\left(\omega'\rightarrow\omega\right) L_{u}\left(\vec{x}, \omega'\right)\ud\omega' }
+\ .
 \end{align}
 
 This means that, our solver will solve for the multiple scattered light $L_{ms}$. The quantity $L_u$ is the uncollided light, which was emitted from the light source and attenuated by the volume without undergoing any scattering event.
-We compute it using a few light samples per voxel, which quickly converge to a useful result for Dirac Delta light sources.
+We compute it using a few light samples per voxel, which quickly converge to a useful result for Dirac delta light sources.
 
 Running the solver gives solution vector $\vec{u}$. We then un-stagger the solution by interpolating all coefficients to voxel centers. The additional coefficients at boundary voxels are no longer needed. This operation is represented as a matrix that produces a three-dimensional voxel grid with SH coefficients for order $N$ at the center of each voxel.
 
-For rendering, we use a simple forward path tracing approach, where we start tracing from the camera. At the first scattering event, we use next event estimation to account for $L_{ss}$. Then we sample a new direction according to the phase function. Instead of continuing tracing into the new direction, we evaluate the inscattering integral using $\widehat{L}_{ms}$. The SH coefficients at $\vec{x}$ are found by trilinear interpolation from the voxel grid of SH coefficients.
+For rendering, we use a simple forward path tracing approach, where we start tracing from the camera. At the first scattering event, we use next event estimation to account for $L_{ss}$. Then we sample a new direction according to the phase function. Instead of continuing tracing into the new direction, we evaluate the in-scattering integral using $\widehat{L}_{ms}$. The SH coefficients at $\vec{x}$ are found by trilinear interpolation from the voxel grid of SH coefficients.
 
 

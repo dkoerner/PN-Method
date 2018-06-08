@@ -1,14 +1,16 @@
-\section{Introduction}
 
-Simulating light transport in paticipating media remains a challenging problem for image synthesis in computer graphics. Due to their ability to produce unbiased results and conceptional simplicity, Monte Carlo based techniques have become the standard approach. The main downside of these methods are their computational demands when rendering participating media, which exhibits strong scattering or anisotropy.
+\section{Introduction}
+\vspace{0.1in}
+
+Simulating light transport in participating media remains a challenging problem for image synthesis in computer graphics. Due to their ability to produce unbiased results and conceptual simplicity, Monte Carlo based techniques have become the standard approach. The main downside of these methods are their computational demands when rendering media with strong scattering or anisotropy.
 
 Deterministic methods have enjoyed less popularity, because they suffer from discretization artifacts, produce biased results, cannot be coupled easily with surface rendering problems and are trickier to implement. However, their appeal lies in the fact that they produce a global solution across the whole domain and have better performance for certain problems.
 
-The work on path guiding techniques from recent years has shown, how approximate representations of the steady-state transport in a scene can be used to accelerate Monte Carlo integration techniques, such as path tracing. Instead of generating these approximate representations using Monte Carlo methods, deterministic methods may offer a viable alternative. Hybrid methods could combine benefits of deterministic methods while generating unbiased results.
+The work on path guiding techniques from recent years has shown how approximate representations of the steady-state transport in a scene can be used to accelerate Monte Carlo integration techniques, such as path tracing. Instead of generating these approximate representations using Monte Carlo methods, deterministic methods may offer a viable alternative. Hybrid methods could combine the performance benefits of deterministic methods with accurate and unbiased Monte Carlo results.
 
-Deterministic methods also lend themselves to applications where fast approximate solutions are preferable over correct, but slowly converging results. For this reason, we find it important to study deterministic methods and have a solid understanding about their characteristics and performance traits for typical rendering problems.
+Deterministic methods also lend themselves to applications where fast approximate solutions are preferable over correct, but slowly converging results. For this reason, we suggest it is important for volume-rendering researchers to study deterministic methods and have a solid understanding of their characteristics and performance traits for typical rendering problems.
 
-The $P_N$-method is a deterministic method, which is popular in fields like medical imaging and nuclear sciences, but has not found use in computer graphics thus far. The purpose and main contribution of our paper is to gain a solid understanding of its foundations and present a method for using it in the context of rendering. In particular, we present these theoretical and practical contributions:
+The $P_N$-method is a deterministic method which is popular in fields like medical imaging and nuclear sciences, but has not found use in computer graphics thus far. The purpose and main contribution of our paper is to gain a solid understanding of its foundations and present a method for using it in the context of rendering. In particular, we present these theoretical and practical contributions:
 \begin{itemize}
 	\item We derive and present the time-independent real-valued $P_N$-equations. To our knowledge, we are the first to derive and write down their compact form.
 	\item We introduce a staggered-grid solver, for which we generate stencil code automatically from a computer algebra representation of the $P_N$-equations. This allows us to deal with the increasingly complex equations, which the $P_N$-method produces for higher order. It further allows our solver to be used for any (potentially coupled) partial differential equation, which results in a system of linear equations after discretization.

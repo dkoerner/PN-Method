@@ -1,7 +1,7 @@
 \section{Real-valued $P_N$-Equations}
 \label{sec:real_valued_pn_eq}
 
-With the help of \rev{a} computer algebra representation framework, we are able to easily derive and work with the large and unwieldy $P_N$-equations. It is impossible to present the derivation steps in a meaningful way within the scope of this paper. Displaying a single intermediate step could easily take more than ten A4 pages. We therefore decided to give only the final result in this section, and present the derivation in a supplemental document. To our knowledge, this is the first time that an explicit form of these equations is provided for general $N$. 
+With the help of \rev{a} computer algebra representation framework, we are able to easily derive and work with the large and unwieldy $P_N$-equations. It is impossible to present the derivation steps in a meaningful way within the scope of this paper. Displaying a single intermediate step could easily take more than ten A4 pages. We therefore decided to give only the final result in this section, and present the derivation in a supplemental document. We present here the final $P_N$-equations, for a general $N$ and in three dimensions, in a very compact form which we have not found elsewhere in the literature
 
 Since the real-valued SH bases (Equation~\ref{eq:sh_real_basis}) have different definitions for $m<0$, $m=0$ or $m>0$,  we also get different projections for $\mathcal{S}^{l,m}$, depending on the sign of $m$.
 %\vspace{5in}
@@ -58,7 +58,7 @@ Since the real-valued SH bases (Equation~\ref{eq:sh_real_basis}) have different 
 %\label{eq:rpn_m_<_z}
 %\end{align}
 
-For $m=0$:
+For $m=0$ we have
 \begin{align}
 &
 \frac{1}{\sqrt{2}}c^{\scaleto{l-1,-1}{4pt}}\partial_x L^{\scaleto{l-1,1}{4pt}}
@@ -75,7 +75,7 @@ For $m=0$:
 \\&
 +\sigma_t L^{\scaleto{l,m}{4pt}}
 -\sigma_s\lambda_{\scaleto{l}{4pt}}p^{\scaleto{l,0}{4pt}}L^{\scaleto{l,m}{4pt}}
-= Q^{\scaleto{l,m}{4pt}}
+= Q^{\scaleto{l,m}{4pt}}\quad ,
 \label{eq:rpn_m_=_z}
 \end{align}
 
@@ -115,7 +115,7 @@ For $m=0$:
 %\label{eq:rpn_m_>_z}
 %\end{align}
 
-And for $m<0$ (upper sign) and $m>0$ (lower sign):
+and for $m<0$ (upper sign) and $m>0$ (lower sign) we have
 \begin{align}
 &
 \frac{1}{2}c^{\scaleto{l-1,\pm m-1}{4pt}}\partial_x L^{\scaleto{l-1,m\mp 1}{4pt}}
@@ -147,6 +147,7 @@ And for $m<0$ (upper sign) and $m>0$ (lower sign):
 +\sigma_t L^{\scaleto{l,m}{4pt}}
 -\sigma_s\lambda_{\scaleto{l}{4pt}}p^{\scaleto{l,0}{4pt}}L^{\scaleto{l,m}{4pt}}
 = Q^{\scaleto{l,m}{4pt}}
+\quad ,
 %\nonumber
 \label{eq:rpn_m_>_z}
 \end{align}
@@ -187,6 +188,7 @@ f^{\scaleto{l,m}{4pt}}= \sqrt{\frac{\left(l+m\right)\left(l+m-1\right)}{\left(2l
 \end{align*}
 \begin{align*}
 \lambda_l=\sqrt{\frac{4\pi}{2l+1}}
+\quad .
 \end{align*}
 
 In the next section we will present the solver that we use to solve the $P_N$-equations.

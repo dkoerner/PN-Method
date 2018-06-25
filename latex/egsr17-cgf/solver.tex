@@ -2,6 +2,7 @@
 \centering
 %\missingfigure{$P_N$-solver overview: generate stencil code $\rightarrow$ build system $\rightarrow$ solve $\rightarrow$ render}
 \includegraphics[width=\textwidth]{figures/fig_pipeline.pdf}
+%\missingfigure{figures fig pipeline}
 \vspace{-0.2in}
 \icaption{Overview of our $P_N$-solver. After generating the stencil source code from the expression trees representing the $P_N$-equations, the linear system $A\vec{u}=\vec{Q}$ is built using RTE parameter fields and additional user input, such as grid resolution and type of boundary conditions. The resulting system is solved for $\vec{u}$, which is then used in our rendering application.}
 \label{fig:pnsolver}
@@ -37,6 +38,7 @@ Stencil generation entails discretizing a PDE at a hypothetical center voxel $(i
 \centering
 %\missingfigure{test}
 \includegraphics[width=0.7\columnwidth]{figures/fig_stencil_pipeline.pdf}
+%\missingfigure{figures fig stencil pipeline}
 %\vspace{-0.2in}
 \icaption{Creating the stencil code requires several steps, usually done by hand. We express the given problem in a computer algebra representation and use it to fully automate the process.}
 \label{fig:stencile_pipeline}
@@ -48,6 +50,7 @@ Stencil generation entails discretizing a PDE at a hypothetical center voxel $(i
 %\begin{center}
 \hspace{-.2in}
 \includegraphics[width=0.6\columnwidth]{figures/fig_discretization.pdf}
+%\missingfigure{figures fig discretization}
 %\end{center}
 \end{wrapfigure}The spatial discretization is done by parsing the expression tree from the root. The discrete substitute for the continuous position variable $\vec{x}$ is initialized with $ijk$. Differential operator nodes are replaced by a subtree, which expresses the finite difference approximation (including voxelsize factor $h$). The subtree of the differential operator node is duplicated for different offsets to the discrete variable $(i, j, k)$. Since this offset only applies to the subtree, a stack is maintained by the parser to manage scope. Whenever the parser encounters the continuous variable $\vec{x}$ in the expression tree, its node in the tree is replaced by the discrete substitute, currently on top of the stack. Nested differential operators yield higher order finite difference stencils as expected.
 
@@ -55,6 +58,7 @@ Stencil generation entails discretizing a PDE at a hypothetical center voxel $(i
 %\begin{center}
 \hspace{-.2in}
 \includegraphics[width=0.6\columnwidth]{figures/fig_codegen.pdf}
+%\missingfigure{figures fig codegen}
 %\end{center}
 \end{wrapfigure}
 Factorization into canonical form is done as a manipulation pass on the mathematical expression tree. The result allows us to implement the code generation in a straightforward fashion. For each term, the $ijk$-offset is retrieved from the unknown. The factor-expression, which is multipled with the unknown, is extracted from the tree and used to generate source code for evaluating the factor-expression during runtime (including calls for evaluating RTE-parameter fields).
@@ -64,6 +68,7 @@ Factorization into canonical form is done as a manipulation pass on the mathemat
 %\vspace{1in}
 \centering
 \includegraphics[width=0.9\columnwidth]{figures/fig_staggered_grids.pdf}
+%\missingfigure{figures fig staggered grids}
 %\vspace{-0.2in}
 \icaption{Staggered grids place coefficients at different locations within the finite difference grid.}
 \label{fig:staggeredgrid}
@@ -73,6 +78,7 @@ Factorization into canonical form is done as a manipulation pass on the mathemat
 %\begin{center}
 \hspace{-.1in}
 \includegraphics[width=0.6\columnwidth]{figures/fig_staggered_interpolation.pdf}
+%\missingfigure{figures fig staggered interpolation}
 \vspace{-.1in}
 %\end{center}
 \end{wrapfigure}Our solver supports placement of coefficients at arbitrary staggered grid locations (see Figure~\ref{fig:staggeredgrid}). This means, that during the discretization step, the discrete location $(i, j, k)$ (at which the unknown is meant to be evaluated) might not coincide with the location of the unknown. To solve this, depending on how the two are located relativeto each other, the parser returns an expression which interpolates the coefficients at $(i, j, k)$ from their defined locations. If those happen to coincide, the coefficient itsself is returned. This is also done for RTE parameters, such as $\sigma_t$ or $p^{l,m}$, which are always located at the voxel center.

@@ -25,12 +25,10 @@ Solving the standard checkerboard problem, allows us to validate our solver agai
 \begin{figure}[h]
 \centering
 \begin{subfigure}{0.49\columnwidth}
-%\missingfigure{test}
 \includegraphics[width=\columnwidth]{images/checkerboard2d_p1_neumann_staggered_starmap.png}
 \end{subfigure}%
 \hspace{0.01\columnwidth}
 \begin{subfigure}{0.49\columnwidth}
-%\missingfigure{test2}
 \includegraphics[width=\columnwidth]{images/checkerboard2d_p1_neumann_staggered.png}
 \end{subfigure}%
 \vspace{-0.2in}
@@ -48,14 +46,14 @@ We also run our solver for the point source problem, a single point light in a h
 \centering
 \begin{subfigure}{0.45\columnwidth}
 \includegraphics[width=\columnwidth]{figures/pointsource_pn.pdf}
-%\missingfigure{test}
+%\missingfigure{figures fig pointsource pn}
 \caption{$P_N$ vs. ground truth}
 \label{fig:pointsource_pn}
 \end{subfigure}%
 \hspace{0.05\columnwidth}
 \begin{subfigure}{0.45\columnwidth}
-%\missingfigure{test2}
 \includegraphics[width=\columnwidth]{figures/pointsource_p5.pdf}
+%\missingfigure{figures fig pointsource p5}
 \caption{$P_5$ vs. CDA and FLD}
 \label{fig:pointsource_p5}
 \end{subfigure}%
@@ -90,9 +88,8 @@ The main characteristic of the nebulae dataset is the presence of vacuum. We fou
 
 \begin{figure}[h]
 \centering
-%\missingfigure{test}
 \includegraphics[width=0.9\columnwidth]{figures/fig_nebulae_p1_convergence.pdf}
-%\vspace{-0.2in}
+%\missingfigure{figures fig nebulae p1 convergence}
 \vspace{-0.1in}
 \icaption{Convergence behavior of our solver with $N=1$ for the nebulae dataset and for varying minimum thresholds of the extinction coefficient $\sigma_t$. Threshold values and an estimate for the condition number of $A$ (Matlabs condest function) are shown next to the plots. The convergence deteriorates as the threshold decreases. Once it reaches zero, the presence of pure vacuum makes the condition number infinite.}
 \label{fig:results_convergence}

@@ -29,6 +29,7 @@
 
 # we want to include pdf images for latex
 !/*/images/*.pdf
+!/*/figures/*.pdf
 
 # no python dlls
 *.pyd

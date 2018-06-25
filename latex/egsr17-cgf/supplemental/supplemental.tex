@@ -139,10 +139,10 @@ Radiative transfer quantities, which depend on position $\vec{x}$ and angle $\om
 \begin{align}
 L^{l,m}\left(\vec{x}\right)
 &=
-\int_\Omega{L\left(\vec{x}, \omega\right)\SHBC^{l,m}\ud\omega}\nonumber\\
+\int_\Omega{L\left(\vec{x}, \omega\right)\overline{\SHBC^{l,m}}\ud\omega}\nonumber\\
 Q^{l,m}\left(\vec{x}\right)
 &=
-\int_\Omega{Q\left(\vec{x}, \omega\right)\SHBC^{l,m}\ud\omega}\nonumber
+\int_\Omega{Q\left(\vec{x}, \omega\right)\overline{\SHBC^{l,m}}\ud\omega}\nonumber
 \end{align} 
 
 The function is completely reconstructed by using all SH basis functions up to infinite order. The $P_N$-equations introduce a truncation error by only using SH basis functions up to order $N$ for the reconstruction $\hat{L}$ and $\hat{Q}$:
@@ -640,7 +640,7 @@ The real-valued $P_N$-equations are derived similar to their complex-valued coun
 \begin{array}{lr}
 \frac{\iu}{\sqrt{2}}\left(\SHBC^{l,m}-\left(-1\right)^m\SHBC^{l,-m}\right), & \text{for } m < 0\\
 \SHBC^{l,m}, & \text{for } m = 0\\
-\frac{1}{\sqrt{2}}\left(\SHBC^{l,-m}-\left(-1\right)^m\SHBC^{l,m}\right), & \text{for } m > 0
+\frac{1}{\sqrt{2}}\left(\SHBC^{l,-m}+\left(-1\right)^m\SHBC^{l,m}\right), & \text{for } m > 0
 \end{array}
 \right.
 \end{align}

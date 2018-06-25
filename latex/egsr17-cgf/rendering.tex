@@ -13,7 +13,7 @@ Q(\vec{x}, \omega) = L_{ss}(\vec{x}, \omega) = \sigma_s\left(\vec{x}\right)\int_
 \ .
 \end{align}
 
-This means that, our solver will solve for the multiple scattered light $L_{ms}$. The quantity $L_u$ is the uncollided light, which was emitted from the light source and attenuated by the volume without undergoing any scattering event.
+This means that our solver will solve for the multiple scattered light $L_{ms}$. The quantity $L_u$ is the uncollided light, which was emitted from the light source and attenuated by the volume without undergoing any scattering event.
 We compute it using a few light samples per voxel, which quickly converge to a useful result for Dirac delta light sources.
 
 Running the solver gives solution vector $\vec{u}$. We then un-stagger the solution by interpolating all coefficients to voxel centers. The additional coefficients at boundary voxels are no longer needed. This operation is represented as a matrix that produces a three-dimensional voxel grid with SH coefficients for order $N$ at the center of each voxel.

@@ -1,7 +1,7 @@
 \section{Discretized Radiative Transfer Equation}
 \label{sec:discretized_rte}
 
-Our method derives from the radiative transfer equation (RTE), which expresses the change of the radiance field $L$, with respect to an infinitesimal change of position into direction $\omega$ at point $\vec{x}$:
+Our method derives from the radiative transfer equation (RTE), which expresses the change of the radiance field $L$, with respect to an infinitesimal change of position in direction $\omega$ at point $\vec{x}$:
 \begin{align}
 %\label{eq:rte}
 \left(\nabla\cdot\omega\right)L\left(\vec{x}, \omega \right)
@@ -26,9 +26,9 @@ The RTE is often given in operator notation, where transport, collision, and sca
 \quad .
 \end{align}
 
-Deterministic methods are derived by discretizing the angular and spatial domain. This gives rise to a linear system of equations, which can be solved using standard methods. For the $P_N$-method, the angular variable is first discretized, using a truncated spherical harmonics expansion. This results in the $P_N$-equations, a system of coupled PDE's that still depend on a continuous spatial variable.
+Deterministic methods are derived by discretizing the angular and spatial domain. This gives rise to a linear system of equations, which can be solved using standard methods. For the $P_N$-method, the angular variable is first discretized, using a truncated spherical harmonics expansion. This results in the $P_N$-equations, a system of coupled PDEs that still depend on a continuous spatial variable.
 
-The number of equations grows with the truncation order $N$. This is why the discretization is hard and error prone if done by hand. We therefore use a computer algebra representation to automate this process. After giving an outline of the general discretization in this section, we will present our computer algebra representation in the next section. The $P_N$-equations that result from our automated discretization are given in Section~\ref{sec:real_valued_pn_eq}. 
+The number of equations grows with the truncation order $N$. This is why the discretization is laborious and difficult to do without errors if done by hand. We therefore use a computer algebra representation to automate this process. After giving an outline of the general discretization in this section, we will present our computer algebra representation in the next section. The $P_N$-equations that result from our automated discretization are given in Section~\ref{sec:real_valued_pn_eq}. 
 
 Since the radiance field $L$ is real, we use the real-valued SH basis functions $\SHBR^{l,m}$, which are defined in terms of the complex-valued SH basis functions $\SHBC^{l,m}$:
 \begin{align}

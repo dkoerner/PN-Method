@@ -10,11 +10,11 @@ Our method derives from the radiative transfer equation (RTE), which expresses t
 &
 +\sigma_s\left(\vec{x}\right) \int_{\Omega}
 {
-p\left(\omega'\cdot\omega\right)L\left(\vec{x}, \omega \right)\ud\omega'
+p\left(\omega'\cdot\omega\right)L\left(\vec{x}, \omega' \right)\ud\omega'
 }\nonumber\\
 &
 +Q\left(\vec{x}, \omega\right)\nonumber
-\quad .
+\  .
 \label{eq:rte}
 \end{align}
 
@@ -23,7 +23,7 @@ The left hand side (LHS) is the transport term, and we refer to the terms on the
 The RTE is often given in operator notation, where transport, collision, and scattering are expressed as operators $\mathcal{T}$, $\mathcal{C}$ and $\mathcal{S}$, which are applied to the radiance field $L$:
 \begin{align}
 \mathcal{T}\left(L\right) = -\mathcal{C}\left(L\right) + \mathcal{S}\left(L\right) + Q
-\quad .
+\ .
 \end{align}
 
 Deterministic methods are derived by discretizing the angular and spatial domain. This gives rise to a linear system of equations, which can be solved using standard methods. For the $P_N$-method, the angular variable is first discretized, using a truncated spherical harmonics expansion. This results in the $P_N$-equations, a system of coupled PDEs that still depend on a continuous spatial variable.
@@ -40,7 +40,6 @@ Since the radiance field $L$ is real, we use the real-valued SH basis functions 
 \frac{1}{\sqrt{2}}\left(\SHBC^{l,-m}-\left(-1\right)^m\SHBC^{l,m}\right), & \text{for } m > 0
 \end{array}
 \right.
-\ .
 \label{eq:sh_real_basis}
 \end{align}
 
@@ -93,7 +92,7 @@ $T$, $C$, $S$ are matrices, which result from the discretized transport, collisi
 \begin{figure}[h]
 \centering
 %\missingfigure{test}
-\includegraphics[width=\columnwidth]{figures/fig_matrix_layout.pdf}
+\includegraphics[width=\columnwidth]{figures/fig_matrix_layout_small.pdf}
 %\missingfigure{figures fig matrix layout}
 \vspace{-0.2in}
 \icaption{Structure of coefficient matrix $A$ and solution vector $\vec{u}$ after discretization of the $P_N$-equations on a finite difference grid.}

@@ -12,7 +12,7 @@ The solver for classical diffusion is based on the diffusion equation, which is 
 \label{eq:cda}
 \end{align}
 
-Since our solver can work with any PDE, which results in a linear system of equations, we put Equation~\ref{eq:cda} into our computer algebra representation and provide it as an input to our solver, which generates the correct stencil code automatically.
+Since our solver can work with any PDE which results in a linear system of equations, we put Equation~\ref{eq:cda} into our computer algebra representation and provide it as an input to our solver, which generates the correct stencil code automatically.
 
 Since FLD is based on a non-linear diffusion equation, we were not able to use our system in the same way. Our implementation closely follows the implementation in~\cite{Koerner14} (though ours runs on CPU) and we refer to their paper for more details.
 
@@ -45,14 +45,14 @@ We also run our solver for the point source problem, a single point light in a h
 \begin{figure}[h]
 \centering
 \begin{subfigure}{0.45\columnwidth}
-\includegraphics[width=\columnwidth]{figures/pointsource_pn.pdf}
+\includegraphics[width=\columnwidth]{figures/pointsource_pn_small.pdf}
 %\missingfigure{figures fig pointsource pn}
 \caption{$P_N$ vs. ground truth}
 \label{fig:pointsource_pn}
 \end{subfigure}%
 \hspace{0.05\columnwidth}
 \begin{subfigure}{0.45\columnwidth}
-\includegraphics[width=\columnwidth]{figures/pointsource_p5.pdf}
+\includegraphics[width=\columnwidth]{figures/pointsource_p5_small.pdf}
 %\missingfigure{figures fig pointsource p5}
 \caption{$P_5$ vs. CDA and FLD}
 \label{fig:pointsource_p5}
@@ -62,7 +62,7 @@ We also run our solver for the point source problem, a single point light in a h
 \label{fig:pointsource}
 \end{figure}
 
-For our test case, we choose a FD resolution of $80\times80\times80$, an extinction coefficient $\sigma_t=8.0$ and albedo $\alpha=0.9$. We run the solver for different truncation values $N$. In Figure~\ref{fig:pointsource}~\subref{fig:pointsource_pn}, we see that the solution becomes increasingly accurate for higher truncation order. The ground truth is underestimated when $N$ is odd, and overestimated when $N$ is even. We further see that the $P_1$ solution exactly matches the results from CDA, which confirms that the latter is only a collapsed version of the former. The time to solve is significant with $10m$ for $P_1$ and $45m$ with $P_5$. With these performance characteristics, the $P_N$-method is clearly not competitive in comparison with CDA and FLD solver, which are much faster.
+For our test case, we choose a FD resolution of $80\times80\times80$, an extinction coefficient $\sigma_t=8.0$ and albedo $\alpha=0.9$. We run the solver for different truncation values $N$. In Figure~\ref{fig:pointsource}~\subref{fig:pointsource_pn}, we see that the solution becomes increasingly accurate for higher truncation order. The ground truth is underestimated when $N$ is odd, and overestimated when $N$ is even. We further see that the $P_1$ solution exactly matches the results from CDA, which confirms that the latter is only a collapsed version of the former. The time to solve is significant with $10m$ for $P_1$ and $45m$ with $P_5$. With these performance characteristics, our $P_N$-solver is clearly not competitive in comparison with CDA and FLD solver, which are much faster.
 
 \subsection{Nebulae}
 
@@ -88,7 +88,7 @@ The main characteristic of the nebulae dataset is the presence of vacuum. We fou
 
 \begin{figure}[h]
 \centering
-\includegraphics[width=0.9\columnwidth]{figures/fig_nebulae_p1_convergence.pdf}
+\includegraphics[width=0.9\columnwidth]{figures/fig_nebulae_p1_convergence_small.pdf}
 %\missingfigure{figures fig nebulae p1 convergence}
 \vspace{-0.1in}
 \icaption{Convergence behavior of our solver with $N=1$ for the nebulae dataset and for varying minimum thresholds of the extinction coefficient $\sigma_t$. Threshold values and an estimate for the condition number of $A$ (Matlabs condest function) are shown next to the plots. The convergence deteriorates as the threshold decreases. Once it reaches zero, the presence of pure vacuum makes the condition number infinite.}

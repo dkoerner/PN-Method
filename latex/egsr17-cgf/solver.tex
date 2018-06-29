@@ -1,7 +1,7 @@
 \begin{figure*}[t!]
 \centering
 %\missingfigure{$P_N$-solver overview: generate stencil code $\rightarrow$ build system $\rightarrow$ solve $\rightarrow$ render}
-\includegraphics[width=\textwidth]{figures/fig_pipeline.pdf}
+\includegraphics[width=\textwidth]{figures/fig_pipeline_small.pdf}
 %\missingfigure{figures fig pipeline}
 \vspace{-0.2in}
 \icaption{Overview of our $P_N$-solver. After generating the stencil source code from the expression trees representing the $P_N$-equations, the linear system $A\vec{u}=\vec{Q}$ is built using RTE parameter fields and additional user input, such as grid resolution and type of boundary conditions. The resulting system is solved for $\vec{u}$, which is then used in our rendering application.}
@@ -15,7 +15,7 @@
 
 The truncation order $N$ is the key input parameter to the solver. With higher values, manual implementation of the solver from the equations would be arduous, error-prone and time-consuming. We therefore decided to make use of the computer algebra representation and designed our solver around it.
 
-The solver consists of two components. The first is a precomputation (Section~\ref{sec:solver_precomputation}), which is excuted once for every single value of $N$. This steps runs a partial evaluation on the mathematical expression tree and applies the spatial discretization in a reference space we call stencil space. The precomputation step automatically generates source code from the resulting expression tree.
+The solver consists of two components. The first is a precomputation (Section~\ref{sec:solver_precomputation}), which is excuted once for every single value of $N$. This step runs a partial evaluation on the mathematical expression tree and applies the spatial discretization in a reference space we call stencil space. The precomputation step automatically generates source code from the resulting expression tree.
 
 The generated stencil code is compiled with the runtime component (Section~\ref{sec:solver_runtime}) of our solver. This component receives the actual problem as input, including grid resolution and RTE parameter fields. It then builds the linear system and solves it using standard methods. An overview of the solver is given in Figure~\ref{fig:pnsolver}.
 
@@ -24,7 +24,7 @@ The generated stencil code is compiled with the runtime component (Section~\ref{
 \subsection{Precomputation}
 \label{sec:solver_precomputation}
 
-The result of the precomputation is a stencil, which can be used during runtime to build the linear system for a given problem. The stencil is a pattern of indices into the solution vector, along with values. It expresses how the sum of the weighted solution vector, components relate to the RHS for a given unknown in the system and therefore contains most information required to fill the system matrix $A$ and RHS-vector $\vec{Q}$ row by row. Note that while the coefficients may change, the sparsity pattern of the stencil is identical for different rows.
+The result of the precomputation is a stencil, which can be used during runtime to build the linear system for a given problem. The stencil is a pattern of indices into the solution vector, along with values. It expresses how the sum of the weighted solution vector components relate to the RHS for a given unknown in the system and therefore contains most information required to fill the system matrix $A$ and RHS-vector $\vec{Q}$ row by row. Note that while the coefficients may change, the sparsity pattern of the stencil is identical for different rows.
 
 
 
@@ -37,7 +37,7 @@ Stencil generation entails discretizing a PDE at a hypothetical center voxel $(i
 \begin{figure}[h]
 \centering
 %\missingfigure{test}
-\includegraphics[width=0.7\columnwidth]{figures/fig_stencil_pipeline.pdf}
+\includegraphics[width=0.7\columnwidth]{figures/fig_stencil_pipeline_small.pdf}
 %\missingfigure{figures fig stencil pipeline}
 %\vspace{-0.2in}
 \icaption{Creating the stencil code requires several steps, usually done by hand. We express the given problem in a computer algebra representation and use it to fully automate the process.}
@@ -49,7 +49,7 @@ Stencil generation entails discretizing a PDE at a hypothetical center voxel $(i
 \begin{wrapfigure}{r}{0.6\columnwidth}
 %\begin{center}
 \hspace{-.2in}
-\includegraphics[width=0.6\columnwidth]{figures/fig_discretization.pdf}
+\includegraphics[width=0.6\columnwidth]{figures/fig_discretization_small.pdf}
 %\missingfigure{figures fig discretization}
 %\end{center}
 \end{wrapfigure}The spatial discretization is done by parsing the expression tree from the root. The discrete substitute for the continuous position variable $\vec{x}$ is initialized with $ijk$. Differential operator nodes are replaced by a subtree, which expresses the finite difference approximation (including voxelsize factor $h$). The subtree of the differential operator node is duplicated for different offsets to the discrete variable $(i, j, k)$. Since this offset only applies to the subtree, a stack is maintained by the parser to manage scope. Whenever the parser encounters the continuous variable $\vec{x}$ in the expression tree, its node in the tree is replaced by the discrete substitute, currently on top of the stack. Nested differential operators yield higher order finite difference stencils as expected.
@@ -57,7 +57,7 @@ Stencil generation entails discretizing a PDE at a hypothetical center voxel $(i
 \begin{wrapfigure}{r}{0.6\columnwidth}
 %\begin{center}
 \hspace{-.2in}
-\includegraphics[width=0.6\columnwidth]{figures/fig_codegen.pdf}
+\includegraphics[width=0.6\columnwidth]{figures/fig_codegen_small.pdf}
 %\missingfigure{figures fig codegen}
 %\end{center}
 \end{wrapfigure}
@@ -67,7 +67,7 @@ Factorization into canonical form is done as a manipulation pass on the mathemat
 
 %\vspace{1in}
 \centering
-\includegraphics[width=0.9\columnwidth]{figures/fig_staggered_grids.pdf}
+\includegraphics[width=0.9\columnwidth]{figures/fig_staggered_grids_small.pdf}
 %\missingfigure{figures fig staggered grids}
 %\vspace{-0.2in}
 \icaption{Staggered grids place coefficients at different locations within the finite difference grid.}
@@ -77,11 +77,11 @@ Factorization into canonical form is done as a manipulation pass on the mathemat
 \begin{wrapfigure}{r}{0.6\columnwidth}
 %\begin{center}
 \hspace{-.1in}
-\includegraphics[width=0.6\columnwidth]{figures/fig_staggered_interpolation.pdf}
+\includegraphics[width=0.6\columnwidth]{figures/fig_staggered_interpolation_small.pdf}
 %\missingfigure{figures fig staggered interpolation}
 \vspace{-.1in}
 %\end{center}
-\end{wrapfigure}Our solver supports placement of coefficients at arbitrary staggered grid locations (see Figure~\ref{fig:staggeredgrid}). This means, that during the discretization step, the discrete location $(i, j, k)$ (at which the unknown is meant to be evaluated) might not coincide with the location of the unknown. To solve this, depending on how the two are located relativeto each other, the parser returns an expression which interpolates the coefficients at $(i, j, k)$ from their defined locations. If those happen to coincide, the coefficient itself is returned. This is also done for RTE parameters, such as $\sigma_t$ or $p^{l,m}$, which are always located at the voxel center.
+\end{wrapfigure}Our solver supports placement of coefficients at arbitrary staggered grid locations (see Figure~\ref{fig:staggeredgrid}). This means that during the discretization step, the discrete location $(i, j, k)$ (at which the unknown is meant to be evaluated) might not coincide with the location of the unknown. To solve this, depending on how the two are located relative to each other, the parser returns an expression which interpolates the coefficients at $(i, j, k)$ from their defined locations. If those happen to coincide, the coefficient itself is returned. This is also done for RTE parameters, such as $\sigma_t$ or $p^{l,m}$, which are always located at the voxel center.
 
 
 %\subsection{Stencil Code Generation}

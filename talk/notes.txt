@@ -1,0 +1,113 @@
+
+
+Introduction (what is this talk about. what are the takeaway points)
+---------------------
+-The PN-equations, are a set of equations for approximating radiative transfer in participating media. They are very popular in other fields such as astrophysics and nuclear sciences. The work we present here today started as a througough investigation into their merit for applications in rendering.
+-we didn't invent the equations. However, understanding their derivation and how to work with them proved to be not easy. In our paper, we wanted to share what we learned with the graphics community. In addition, our approach for solving the PN-equations is new and interesting. Therefore we felt that our work would be a valuable contribution to the EI&I track of EGSR. We are very happy that our reviewers shared this view. What is missing is more results and evaluations for a variety of practical rendering applications. Also our results show that more research is necessary to make this method really practical and competitive to other existing techniques.
+-in particular, the contributions of our paper are:
+    -a clear derivation of the PN-equations which are the basis for our PN-method. In particular, we derived a very concise and compact form of the real-valued PN-equations which we havent seen in the literature before
+    -we present a new solver for the PN-equations which is based on the idea of fully automatic discretization. The input to our solver is a generic potentially coupled PDE along with discretization parameters and input fields. The result is the solution vector x, which is a discretized version of the radiance field L over the whole problem domain. Since our solver works with arbitrary PDE's, it might be of interest to other problems in computer graphics, where potentially coupled PDE's are involved
+    <schaubild solver black box>
+    -finally, with a good understanding of the theory and our solver, we are able to evaluate its characteristics and compare it to other deterministic methods for rendering participating media, allowing a clear assessment of the method.
+-outline of the talk
+    -Motivation
+    -previous work
+    -outline PN-equations
+    -the solver
+    -discuss results
+    -future directions
+
+Motivation
+--------------------
+-rendering volumes
+    -which phenomena
+    -introduce RTE
+    -standard method for solving them: Monte-Carlo (non-deterministic)
+-what are deterministic methods?
+    -explain discretization/projection operator
+    -explain discretization error
+-Why deterministic methods?
+    -noise free results. application in realtime rendering (LPV, VCT)
+    -global solution for the radiance field
+        -useful for rendering (no recomputation needed when changing the camera)
+        -radiative hydrodynamics (effect of radiation on fluid dynamics i.e. combustion simulation)
+            -applications in astrophysics and nuclear sciences
+        -path guiding -> boost monte carlo methods
+            -very promising avenue
+            -mention russian roulette and splitting paper from Vorba which is based on a paper which used solution from discrete ordinates method to drive russian roulette and splitting
+            -problem of bootstrapping the cache used for guiding. Requires to store the result of non-deterministic method in a cache requires discretization and therefore introduces discretization error. Might as well use a deterministic method to initialize the cache.
+    -high performance computing for rendering
+        -using Monte-Carlo based rendering methods on a HPC is doable but does not play well to the architecture of those systems. These systems have been designed and build to be really good at solving large matrix systems Ax=b. Deterministic methods allow to present rendering problems as a simple system of linear equations. 
+
+Previous work
+---------------
+-diffusion
+    -stam
+    -fld
+    -arbree (finite element stuff)
+    -Jacob anisotrpoic diffusion
+    -Kajiya
+        -mention the paper and nelsons comment and oscillation artefacts and complex-valued PN-equations
+
+The PN-equations (the value in this section should be to give the audience a nice intuitive explanation of the pn-equations derivation)
+----------------------
+-reference?
+    -mention starmap
+        -no 3d (2d only)
+        -solve time-dependent RTE using a time stepping procedure. deal with stepsize etc. Not really interesting for rendering where we are mostly concerned with a steady state solution
+        -but was an important puzzle piece for working out the theory and also inspired the use of staggered grids later on
+-outline derivation of real-valued PN-equations using RTE terms
+    -as discretization of continuous angular variable
+
+-mention full derivation in the complementary material to the paper
+
+
+A new method for solving the PN-equations
+-----------------------------------------
+
+-outline general approach for deterministic methods
+    -discretization of continuous variables 
+-outline how our solver is a implementation of these steps in an automatic fashion
+    -use of computer algebra representation
+    -spatial discretization as manipulation pass on that representation
+    -factorization and canonical form as another manipulation pass
+    -generation of stencil code from that representation
+    -solver framework
+    -boundary conditions
+-show results for collocated grids
+-introduce staggered grids 
+    -implications on boundary conditions
+-properties of the system matrix
+    -mention normal form for iterative methods
+-rendering 
+    -seperating light field in unscattered and scattered light
+    -
+
+Discussion of results
+----------------------
+-checkerboard problem
+-point light problem
+-nebulae
+-convergence
+
+Outlook and future work
+------------------------
+-more practical results (anisotropic phase function etc.)
+-higher order
+-make more competitive (multigrid?)
+-use solver for variations DN, SPN, FPN, LSPN and see how they compare etc.
+-mention github rep: https://github.com/dkoerner/PN-Method
+
+
+core:
+-Introduction
+-Motivation
+-real-valued on equations
+-solver
+-results
+-outlook
+
+a^2+2ab+b^2
+
+
+

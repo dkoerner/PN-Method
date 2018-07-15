@@ -345,7 +345,7 @@ Although the $P_N$-method should provide an increasingly accurate solution to th
 Our method derives from the radiative transfer equation (RTE), which expresses the change of the radiance field $L$, with respect to an infinitesimal change of position in direction $\omega$ at point $\vec{x}$:
 \begin{align}
 %\label{eq:rte}
-\left(\nabla\cdot\omega\right)L\left(\vec{x}, \omega \right)
+\left(\omega\cdot\nabla\right)L\left(\vec{x}, \omega \right)
 =&
 -\sigma_t\left(\vec{x}\right) L\left(\vec{x}, \omega \right)\nonumber\\
 &
@@ -441,7 +441,7 @@ $T$, $C$, $S$ are matrices, which result from the discretized transport, collisi
 
 \tocless\section{Computer Algebra Representation \label{sec:car}}
 
-So far, we have only given the $P_N$-equations in high-level operator notation (Equation~\ref{eq:pn_operator_notation}). Carrying out the full derivation creates large, unwieldy equations and requires a string of expansions and applications of identities. These are challenging to manipulate if done by hand. We \rev{therefore used a computer algebra representation}, which allowed us to derive and discretize the $P_N$-equation in a semi-automatic fashion (Figure~\ref{fig:car})).
+So far, we have only given the $P_N$-equations in high-level operator notation (Equation~\ref{eq:pn_operator_notation}). Carrying out the full derivation creates large, unwieldy equations and requires a string of expansions and applications of identities. These are challenging to manipulate if done by hand. We \rev{therefore used a computer algebra representation}, which allowed us to derive and discretize the $P_N$-equation in a semi-automatic fashion (Figure~\ref{fig:car}).
 
 \rev{It represents the equations using a tree of mathematical expressions, which represent numbers, symbols and other expression types, such as integrals, derivatives, sums, products and functions. Further, manipulators can be executed on these expression trees to perform substitution, constant folding, reordering of nested integrals, application of identities and more complex operations. Finally, frontends allow rendering the expression tree into different forms, such as \LaTeX~and C++ source code. While we ended up implementing our own lightweight framework, off-the-shelf packages, such as SymPy (www.sympy.org), exist and would be equally suitable for our use case.}
 
@@ -460,7 +460,7 @@ So far, we have only given the $P_N$-equations in high-level operator notation (
 
 With the help of \rev{a} computer algebra representation framework, we are able to easily derive and work with the large and unwieldy $P_N$-equations. We present here the final real-valued $P_N$-equations, for a general $N$ and in three dimensions, in a very compact form which we have not found elsewhere in the literature. The derivation of the real-valued equations is rather long and takes many pages to describe in detail. We therefore give only the final result in this section, and present the full derivation for reference in Appendix~\ref{appendix}. 
 
-Since the real-valued SH bases (Equation~\ref{eq:sh_real_basis}) have different definitions for $m<0$, $m=0$ or $m>0$,  we get different projections for $\mathcal{S}^{l,m}$, depending on the sign of $m$.
+Since the real-valued SH bases (Equation~\ref{eq:sh_real_basis}) have different definitions for $m<0$, $m=0$ or $m>0$,  we get different projections for $\mathcal{S}^{l,m}$, depending on the sign of $m$. Note that in cases where $L^{l,m}$ would appear with $l<0$ or $|m|>l$, this term is implicitly set to zero.
 %\vspace{5in}
 %\begin{align}
 %&-\frac{1}{2}c^{\scaleto{l-1,m-1}{4pt}}
@@ -515,25 +515,22 @@ Since the real-valued SH bases (Equation~\ref{eq:sh_real_basis}) have different 
 %\end{align}
 
 For $m=0$ we have
-\begin{align}
-&
-\frac{1}{\sqrt{2}}c^{\scaleto{l-1,-1}{4pt}}\partial_x L^{\scaleto{l-1,1}{4pt}}
--\frac{1}{\sqrt{2}}d^{\scaleto{l+1,-1}{4pt}}\partial_x L^{\scaleto{l+1,1}{4pt}}
-%\\&
-\frac{1}{\sqrt{2}}c^{\scaleto{l-1,-1}{4pt}}\partial_y L^{\scaleto{l-1,-1}{4pt}}
-\nonumber
-\\&
--\frac{1}{\sqrt{2}}d^{\scaleto{l+1,-1}{4pt}}\partial_y L^{\scaleto{l+1,-1}{4pt}}
-%\\&
-+a^{\scaleto{l-1,0}{4pt}}\partial_z L^{\scaleto{l-1,0}{4pt}}
-+b^{\scaleto{l+1,0}{4pt}}\partial_z L^{\scaleto{l+1,0}{4pt}}
-\nonumber
-\\&
-+\sigma_t L^{\scaleto{l,m}{4pt}}
--\sigma_s\lambda_{\scaleto{l}{4pt}}p^{\scaleto{l,0}{4pt}}L^{\scaleto{l,m}{4pt}}
-= Q^{\scaleto{l,m}{4pt}}\quad .
+\begin{eqnarray}
+&&\frac{1}{\sqrt{2}} \left( 
+         c^{\scaleto{l-1,-1}{4pt}} \partial_x L^{\scaleto{l-1,1}{4pt}}
+        -d^{\scaleto{l+1,-1}{4pt}} \partial_x L^{\scaleto{l+1,1}{4pt}}  \right)
+\nonumber \\
+&& \frac{1}{\sqrt{2}} \left(
+         c^{\scaleto{l-1,-1}{4pt}} \partial_y L^{\scaleto{l-1,-1}{4pt}}
+        -d^{\scaleto{l+1,-1}{4pt}} \partial_y L^{\scaleto{l+1,-1}{4pt}}  \right)
+\nonumber \\
+&&+ \,a^{\scaleto{l-1,0}{4pt}} \partial_z L^{\scaleto{l-1,0}{4pt}}
+  + \,b^{\scaleto{l+1,0}{4pt}} \partial_z L^{\scaleto{l+1,0}{4pt}} 
+  +\,\sigma_t L^{\scaleto{l,m}{4pt}}
+  -\,\sigma_s \lambda_{\scaleto{l}{4pt}} p^{\scaleto{l,0}{4pt}} L^{\scaleto{l,m}{4pt}}
+ = Q^{\scaleto{l,m}{4pt}}\quad .
 \label{eq:rpn_m_=_z}
-\end{align}
+\end{eqnarray}
 %and for $m>0$:
 %\begin{align}
 %&
@@ -572,41 +569,25 @@ For $m=0$ we have
 
 For $m<0$ (upper sign) and $m>0$ (lower sign) we have
 \begin{align}
-&
-\frac{1}{2}c^{\scaleto{l-1,\pm m-1}{4pt}}\partial_x L^{\scaleto{l-1,m\mp 1}{4pt}}
-%\\&
--\frac{1}{2}d^{\scaleto{l+1,\pm m-1}{4pt}}\partial_x L^{\scaleto{l+1,m\mp 1}{4pt}}
-%\\&
--\frac{1}{2}\beta_x^{\scaleto{m}{4pt}}e^{\scaleto{l-1,m\pm 1}{4pt}}\partial_x L^{\scaleto{l-1,m\pm 1}{4pt}}
-\nonumber
-\\&
-+\frac{1}{2}\beta_x^{\scaleto{m}{4pt}}f^{l+1,\pm m+1}\partial_x L^{\scaleto{l+1,m\pm 1}{4pt}}
-%\\&
-\mp \frac{1}{2}c^{\scaleto{l-1,\pm m-1}{4pt}}\partial_y L^{\scaleto{l-1,-m\pm 1}{4pt}}
-\nonumber
-\\&
-\pm \frac{1}{2}d^{\scaleto{l+1,\pm m-1}{4pt}}\partial_y L^{\scaleto{l+1,-m \pm 1}{4pt}}
-%\nonumber
-%\\&
-\mp \beta_y^{\scaleto{m}{4pt}}\frac{1}{2}e^{\scaleto{l-1,\pm m+1}{4pt}}\partial_y L^{\scaleto{l-1,-m\mp 1}{4pt}}
-\nonumber
-\\&
-\pm \beta_y^{\scaleto{m}{4pt}}\frac{1}{2}f^{\scaleto{l+1,\pm m+1}{4pt}}\partial_y L^{\scaleto{l+1,-m\mp 1}{4pt}}
-%\\&
+  \frac{1}{2} c^{\scaleto{l-1,\pm m-1}{4pt}} \partial_x L^{\scaleto{l-1,m\mp 1}{4pt}}
+&-\frac{1}{2} d^{\scaleto{l+1,\pm m-1}{4pt}} \partial_x L^{\scaleto{l+1,m\mp 1}{4pt}}
+\nonumber \\
+ -\frac{1}{2} \beta_x^{\scaleto{m}{4pt}} e^{\scaleto{l-1, m\pm 1}{4pt}} \partial_x L^{\scaleto{l-1,m\pm 1}{4pt}}
+&+\frac{1}{2} \beta_x^{\scaleto{m}{4pt}} f^{\scaleto{l+1,\pm m+1}{4pt}} \partial_x L^{\scaleto{l+1,m\pm 1}{4pt}}
+\nonumber \\
+ \mp \frac{1}{2} c^{\scaleto{l-1,\pm m-1}{4pt}} \partial_y L^{\scaleto{l-1,-m\pm 1}{4pt}}
+&\pm \frac{1}{2} d^{\scaleto{l+1,\pm m-1}{4pt}} \partial_y L^{\scaleto{l+1,-m \pm 1}{4pt}}
+\nonumber \\
+ \mp \frac{1}{2} \beta_y^{\scaleto{m}{4pt}} e^{\scaleto{l-1,\pm m+1}{4pt}} \partial_y L^{\scaleto{l-1,-m\mp 1}{4pt}}
+&\pm \frac{1}{2} \beta_y^{\scaleto{m}{4pt}} f^{\scaleto{l+1,\pm m+1}{4pt}} \partial_y L^{\scaleto{l+1,-m\mp 1}{4pt}}
+\nonumber \\
 +a^{\scaleto{l-1,\pm m}{4pt}}\partial_z L^{\scaleto{l-1,\mp m}{4pt}}
-%\nonumber
-%\\&
 +b^{\scaleto{l+1,\pm m}{4pt}}\partial_z L^{\scaleto{l+1,\mp m}{4pt}}
-\nonumber
-\\&
-+\sigma_t L^{\scaleto{l,m}{4pt}}
+&+\sigma_t L^{\scaleto{l,m}{4pt}}
 -\sigma_s\lambda_{\scaleto{l}{4pt}}p^{\scaleto{l,0}{4pt}}L^{\scaleto{l,m}{4pt}}
-= Q^{\scaleto{l,m}{4pt}}
-\quad ,
-%\nonumber
+= Q^{\scaleto{l,m}{4pt}}  \;
 \label{eq:rpn_m_>_z}
 \end{align}
-
 with
 \begin{align*}
 \label{eq:real_sh_basis}
@@ -719,19 +700,19 @@ Factorization into canonical form is done as a manipulation pass on the mathemat
 \includegraphics[width=0.8\columnwidth]{fig_staggered_grids_small.pdf}
 %\missingfigure{figures fig staggered grids}
 %\vspace{-0.2in}
-\icaption{\emph{Staggering} distributes the coefficients of the solution vector $\vec{u}$ onto four disjoint grids, indicated by the symbols, in a way which guarantees second order accuracy~\cite{Seibold14}.\vspace{-.2in}}
+\icaption{\emph{Staggering} distributes the coefficients of the solution vector $\vec{u}$ onto disjoint grids, indicated by the symbols, in a way which guarantees second order accuracy~\cite{Seibold14}.\vspace{-.2in}}
 \label{fig:staggeredgrid}
 \end{figure}
 
-\begin{wrapfigure}{r}{0.6\columnwidth}
+\begin{wrapfigure}{r}{0.5\columnwidth}
 %\begin{center}
 \hspace{-.1in}
-\includegraphics[width=0.6\columnwidth]{fig_staggered_interpolation_small.pdf}
+\includegraphics[width=0.5\columnwidth]{fig_staggered_interpolation_small.pdf}
 %\missingfigure{figures fig staggered interpolation}
 \vspace{-.25in}
 %\end{center}
-\end{wrapfigure}Our solver supports placement of coefficients at arbitrary staggered grid locations (see Figure~\ref{fig:staggeredgrid}). This means that during the discretization step, the discrete location $(i, j, k)$ (at which the unknown is meant to be evaluated) might not coincide with the location of the unknown. To solve this, depending on how the two are located relative to each other, the parser returns an expression which interpolates the coefficients at $(i, j, k)$ from their defined locations. If those happen to coincide, the coefficient itself is returned. This is also done for RTE parameters, such as $\sigma_t$ or $p^{l,m}$, which are always located at the voxel center. We use the staggering scheme introduced by Seibold et al.~\cite{Seibold14} for their solver \textsf{StaRMAP}, which they proved ensures second order accuracy, i.e. a truncation error of $O(h^2)$, and prevents the growth of non-physical oscillations in the solution (see their paper for the full details of the staggered coefficient placement).
-
+\end{wrapfigure}Our solver supports placement of coefficients at arbitrary staggered grid locations (see Figure~\ref{fig:staggeredgrid}). This means that during the discretization step, the discrete location $(i, j, k)$ (at which the unknown is meant to be evaluated) might not coincide with the location of the unknown. To solve this, depending on how the two are located relative to each other, the parser returns an expression which interpolates the coefficients at $(i, j, k)$ from their defined locations. If those happen to coincide, the coefficient itself is returned. This is also done for RTE parameters, such as $\sigma_t$ or $p^{l,m}$, which are always located at the voxel center. We use the staggering scheme introduced by Seibold et al.~\cite{Seibold14} for their solver \textsf{StaRMAP}, which they proved ensures second order accuracy, i.e. a truncation error of $O(h^2)$, and prevents the growth of non-physical oscillations in the solution. This involves placing the SH coefficients onto disjoint grids --- 4 in 2D as in Figure~\ref{fig:staggeredgrid}, and 8 in 3D (see their paper for the full details of the staggered coefficient placement).
+\vspace{-.15in}
 
 %\subsection{Stencil Code Generation}
 
@@ -742,8 +723,7 @@ Factorization into canonical form is done as a manipulation pass on the mathemat
 
 
 %\subsection{System Building and Solving}
-\tocless\subsection{Runtime}
-\label{sec:solver_runtime}
+\tocless\subsection{Runtime \label{sec:solver_runtime}}
 
 The stencil code is generated once for every value of $N$ and compiled with the runtime component of our solver. The runtime executes the stencil for every voxel to populate the system matrix $A$ and RHS vector $\vec{Q}$ with numerical values.
 
@@ -912,6 +892,7 @@ The main characteristic of the nebulae dataset is the presence of vacuum. We fou
 
 
 %-------------------------------------------------------------------------
+
 \newpage
 \tocless\section{Conclusion \label{sec:conclusion}}
 
@@ -1485,7 +1466,7 @@ The real-valued $P_N$-equations are derived similar to their complex-valued coun
 \end{array}
 \right.
 \end{align}
-Note we use the subscript $\mathbb{R}$ and $\mathbb{C}$ do distinguish between real- and complex-valued SH basis functions respectively.
+Note we use the subscript $\mathbb{R}$ and $\mathbb{C}$ to distinguish between real- and complex-valued SH basis functions respectively.
 
 \subsection{Projecting Radiative Transfer Quantities}
 
@@ -3090,7 +3071,7 @@ Putting all projected terms from previous subsections together, we get for $m=0$
 &
 \frac{1}{\sqrt{2}}c^{\scaleto{l-1,-1}{4pt}}\partial_x L^{\scaleto{l-1,1}{4pt}}
 -\frac{1}{\sqrt{2}}d^{\scaleto{l+1,-1}{4pt}}\partial_x L^{\scaleto{l+1,1}{4pt}}
-\frac{1}{\sqrt{2}}c^{\scaleto{l-1,-1}{4pt}}\partial_y L^{\scaleto{l-1,-1}{4pt}}
++\frac{1}{\sqrt{2}}c^{\scaleto{l-1,-1}{4pt}}\partial_y L^{\scaleto{l-1,-1}{4pt}}
 \nonumber
 \\&
 -\frac{1}{\sqrt{2}}d^{\scaleto{l+1,-1}{4pt}}\partial_y L^{\scaleto{l+1,-1}{4pt}}
@@ -3157,7 +3138,7 @@ L^{\scaleto{l+1,m}{4pt}}
 And for $m>0$:
 \begin{align}
 &
-\frac{1}{2}c^{\scaleto{l-1,-m-1}{4pt}}\partial_x
+\frac{1}{2}c^{\scaleto{l-1,-m-1}{4pt}}\partial_x L^{\scaleto{l-1,-m-1}{4pt}}
 %\\&
 -\frac{1}{2}d^{\scaleto{l+1,-m-1}{4pt}}\partial_x L^{\scaleto{l+1,m+1}{4pt}}
 %\\&

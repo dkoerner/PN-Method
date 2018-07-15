@@ -1,0 +1,104 @@
+\newcommand{\etalchar}[1]{$^{#1}$}
+\begin{thebibliography}{\uppercase{RARO13}}
+
+\bibitem[Bru02]{Brunner02}
+\textsc{{Brunner} T.~A.}:
+\newblock {Forms of Approximate Radiation Transport}.
+\newblock \emph{Tech. Rep. SAND2002-1778, Sandia National
+Laboratories} (2002).
+
+\bibitem[Cha60]{Chandrasekhar60}
+\textsc{Chandrasekhar S.}:
+\newblock \emph{Radiative Transfer}.
+\newblock Dover Publications, 1960.
+
+\bibitem[dI11]{dEon11}
+\textsc{d'Eon E., Irving G.}:
+\newblock A Quantized-Diffusion Model for Rendering Translucent Materials.
+\newblock \emph{ACM TOG (Proc. of SIGGRAPH) 30}, 4 (July 2011), 56:1--56:14.
+
+\bibitem[HPM{\etalchar{*}}14]{Hansen14}
+\textsc{Hansen J., Peterson J., Morel J., Ragusa J., Wang Y.}:
+\newblock A Least-Squares Transport Equation Compatible with Voids.
+\newblock \emph{Journal of Computational and Theoretical Transport 43}, 1-7
+  (2014), 374--401.
+
+\bibitem[JCJ09]{Jarosz09}
+\textsc{Jarosz, W., Carr, N.~A., Jensen, H.~W.}:
+\newblock Importance Sampling Spherical Harmonics. 
+\newblock \emph{Computer Graphics Forum (Proceedings of Eurographics)} (2009), 577--586.
+
+\bibitem[Kaj86]{Kajiya86}
+\textsc{Kajiya J.~T.}:
+\newblock The rendering equation.
+\newblock \emph{Computer Graphics (Proc. of SIGGRAPH)} (1986), 143--150.
+
+\bibitem[KPS{\etalchar{*}}14]{Koerner14}
+\textsc{Koerner D., Portsmouth J., Sadlo F., Ertl T., Eberhardt B.}:
+\newblock Flux-limited Diffusion for Multiple Scattering in Participating
+  media.
+\newblock \emph{CoRR abs/1403.8105} (2014).
+
+\bibitem[KVH84]{Kajiya84}
+\textsc{Kajiya J.~T., Von~Herzen B.~P.}:
+\newblock Ray tracing volume densities.
+\newblock \emph{Computer Graphics (Proc. of SIGGRAPH) 18}, 3 (Jan. 1984),
+  165--174.
+
+\bibitem[LP81]{Levermore81}
+\textsc{{Levermore} C.~D., {Pomraning} G.~C.}:
+\newblock {A flux-limited diffusion theory}.
+\newblock \emph{Astrophysical Journal 248} (1981), 321--334.
+
+\bibitem[Max95]{Max95}
+\textsc{Max N.}:
+\newblock \emph{Efficient Light Propagation for Multiple Anisotropic Volume
+  Scattering}.
+\newblock Springer Berlin Heidelberg, Berlin, Heidelberg, 1995, pp.~87--104.
+
+\bibitem[McC10]{Ryan10}
+\textsc{McClarren R.~G.}:
+\newblock Theoretical Aspects of the Simplified Pn Equations.
+\newblock \emph{Transport Theory and Statistical Physics 39}, 2-4 (2010),
+  73--109.
+
+\bibitem[MGN17]{Muller17}
+\textsc{Muller, T., Gross, M., Novak, J.}:
+\newblock Practical Path Guiding for Efficient Light Transport Simulation.
+\newblock \emph{Computer Graphics Forum} (2017), 36:91--36:100
+
+\bibitem[NGHJ18]{Novak18}
+\textsc{Novak, J., Georgiev, I., Hanika, J., Jarosz, W.}:
+\newblock Monte Carlo Methods for Volumetric Light Transport Simulation. 
+\newblock \emph{Computer Graphics Forum (Proceedings of Eurographics - State of the Art Reports)} (2018), 37(2).
+
+\bibitem[OAH00]{Olson00}
+\textsc{Olson G.~L., Auer L.~H., Hall M.~L.}:
+\newblock Diffusion, P1, and other approximate forms of radiation transport.
+\newblock \emph{Journal of Quantitative Spectroscopy and Radiative Transfer
+  64}, 6 (2000), 619 -- 634.
+
+\bibitem[RARO13]{Radice13}
+\textsc{Radice D., Abdikamalov E., Rezzolla L., Ott C.~D.}:
+\newblock A New Spherical Harmonics Scheme for Multi-Dimensional Radiation
+  Transport I. Static Matter Configurations.
+\newblock \emph{Journal of Computational Physics 242} (2013), 648 -- 669.
+
+\bibitem[SF14]{Seibold14}
+\textsc{Seibold B., Frank M.}:
+\newblock StaRMAP---A second order staggered grid method for spherical
+  harmonics moment equations of radiative transfer.
+\newblock \emph{ACM Trans. Math. Softw. 41}, 1 (Oct. 2014), 4:1--4:28.
+
+\bibitem[SFL11]{Schaefer11}
+\textsc{Sch{\"a}fer M., Frank M., Levermore C.~D.}:
+\newblock Diffusive Corrections to Pn Approximations.
+\newblock \emph{Multiscale Modeling and Simulation 9} (2011), 1--28.
+
+\bibitem[Sta95]{Stam95}
+\textsc{Stam J.}:
+\newblock Multiple scattering as a diffusion process.
+\newblock In \emph{Proc. of Eurographics Workshop on Rendering Techniques}.
+  Springer-Verlag, 1995, pp.~41--50.
+
+\end{thebibliography}

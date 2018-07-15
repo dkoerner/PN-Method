@@ -460,7 +460,7 @@ So far, we have only given the $P_N$-equations in high-level operator notation (
 
 With the help of \rev{a} computer algebra representation framework, we are able to easily derive and work with the large and unwieldy $P_N$-equations. We present here the final real-valued $P_N$-equations, for a general $N$ and in three dimensions, in a very compact form which we have not found elsewhere in the literature. The derivation of the real-valued equations is rather long and takes many pages to describe in detail. We therefore give only the final result in this section, and present the full derivation for reference in Appendix~\ref{appendix}. 
 
-Since the real-valued SH bases (Equation~\ref{eq:sh_real_basis}) have different definitions for $m<0$, $m=0$ or $m>0$,  we get different projections for $\mathcal{S}^{l,m}$, depending on the sign of $m$. Note that in cases where $L^{l,m}$ would appear with $l<0$ or $|m|>l$, this term is implicitly set to zero.
+Since the real-valued SH bases (Equation~\ref{eq:sh_real_basis}) have different definitions for $m<0$, $m=0$ or $m>0$,  we get different projections for $\mathcal{S}^{l,m}$, depending on the sign of $m$. (Note that in cases where $L^{l,m}$ would appear with $l<0$ or $|m|>l$, this term is implicitly set to zero.)
 %\vspace{5in}
 %\begin{align}
 %&-\frac{1}{2}c^{\scaleto{l-1,m-1}{4pt}}
@@ -520,15 +520,15 @@ For $m=0$ we have
          c^{\scaleto{l-1,-1}{4pt}} \partial_x L^{\scaleto{l-1,1}{4pt}}
         -d^{\scaleto{l+1,-1}{4pt}} \partial_x L^{\scaleto{l+1,1}{4pt}}  \right)
 \nonumber \\
-&& \frac{1}{\sqrt{2}} \left(
+&+& \frac{1}{\sqrt{2}} \left(
          c^{\scaleto{l-1,-1}{4pt}} \partial_y L^{\scaleto{l-1,-1}{4pt}}
         -d^{\scaleto{l+1,-1}{4pt}} \partial_y L^{\scaleto{l+1,-1}{4pt}}  \right)
 \nonumber \\
-&&+ \,a^{\scaleto{l-1,0}{4pt}} \partial_z L^{\scaleto{l-1,0}{4pt}}
+&+& \,a^{\scaleto{l-1,0}{4pt}} \partial_z L^{\scaleto{l-1,0}{4pt}}
   + \,b^{\scaleto{l+1,0}{4pt}} \partial_z L^{\scaleto{l+1,0}{4pt}} 
   +\,\sigma_t L^{\scaleto{l,m}{4pt}}
   -\,\sigma_s \lambda_{\scaleto{l}{4pt}} p^{\scaleto{l,0}{4pt}} L^{\scaleto{l,m}{4pt}}
- = Q^{\scaleto{l,m}{4pt}}\quad .
+ = Q^{\scaleto{l,m}{4pt}} \ . \quad
 \label{eq:rpn_m_=_z}
 \end{eqnarray}
 %and for $m>0$:
@@ -585,7 +585,7 @@ For $m<0$ (upper sign) and $m>0$ (lower sign) we have
 +b^{\scaleto{l+1,\pm m}{4pt}}\partial_z L^{\scaleto{l+1,\mp m}{4pt}}
 &+\sigma_t L^{\scaleto{l,m}{4pt}}
 -\sigma_s\lambda_{\scaleto{l}{4pt}}p^{\scaleto{l,0}{4pt}}L^{\scaleto{l,m}{4pt}}
-= Q^{\scaleto{l,m}{4pt}}  \;
+= Q^{\scaleto{l,m}{4pt}} \;
 \label{eq:rpn_m_>_z}
 \end{align}
 with

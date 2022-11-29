@@ -1,5 +1,5 @@
 # PN-Method
-Source files accompanying the paper "PN-Method for Multiple Scattering in Participating Media" from EGSR18. The architecture and inner workings of the solver are described in detail in chapter 3 of [my thesis](https://elib.uni-stuttgart.de/bitstream/11682/12154/3/dkoerner_thesis_final.pdf).
+Source files accompanying the paper ["PN-Method for Multiple Scattering in Participating Media" from EGSR18](https://rgl.epfl.ch/publications/Koerner2018Pn). The architecture and inner workings of the solver are described in detail in chapter 3 of [my phd thesis](https://elib.uni-stuttgart.de/bitstream/11682/12154/3/dkoerner_thesis_final.pdf).
 
 File structure:
 - `./cpp`

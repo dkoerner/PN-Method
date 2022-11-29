@@ -6,7 +6,7 @@ File structure:
 - `./cpp/pnsolver`: the pn solver implementation.  Note that [pybind](https://github.com/pybind/pybind11) is used to create a python module.
 - `./cpp/renderer`: cpu path-tracer for rendering volumetric datasets using ground truth illumination or a cached PN solution.
 - `./python/notebooks`: jupyter notebooks with various tests and investigations done throughout the project.
-- `./python/pnsolver`: python scripts which use the pnsolver to run various experiments and problems.
+- `./python/pnsolver`: python scripts which uses the pnsolver to run various experiments and problems.
 - `./python/pnsolver/notebooks`: jupyter notebooks for analysing and visualizing pnsolver results.
   
   
